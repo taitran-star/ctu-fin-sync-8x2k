@@ -1,0 +1,55 @@
+name: Cattasaurus Meta Ads sync
+
+on:
+  schedule:
+    # Every 30 minutes at :15 and :45 UTC - offset from the Amazon job (:00/:30)
+    # so the two workflows don't try to push to the repo at the same moment.
+    - cron: "15,45 * * * *"
+  workflow_dispatch: {}   # lets you click "Run workflow" manually to test
+
+permissions:
+  contents: write
+
+concurrency:
+  group: meta-ads-sync
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch Meta Ads insights
+        env:
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID }}
+          # Optional overrides (uncomment to use):
+          # META_API_VERSION: v23.0
+          # META_ATTRIBUTION: 7d_click,1d_view
+        run: python fetch_meta_ads.py
+
+      - name: Commit updated data file if changed
+        run: |
+          git config user.name "cattasaurus-meta-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/meta_ads.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Update Meta Ads data ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          # The Amazon workflow commits to the same repo; rebase-then-push with a
+          # few retries so a concurrent push from it never fails this job.
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            echo "Push attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "Could not push after 5 attempts." && exit 1
