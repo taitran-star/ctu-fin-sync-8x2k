@@ -360,7 +360,9 @@ def main():
 
     now = datetime.now(timezone.utc)
     posted_after = iso(now - timedelta(days=WINDOW_DAYS))
-    posted_before = iso(now)
+    # Amazon rejects a PostedBefore too close to "now" (clock-skew tolerance is only ~2 min);
+    # back off by 5 minutes for safety margin.
+    posted_before = iso(now - timedelta(minutes=5))
 
     daily = {}
     warnings = set()
