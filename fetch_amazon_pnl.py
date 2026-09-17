@@ -103,8 +103,15 @@ def get_access_token(client_id, client_secret, refresh_token):
     }).encode()
     req = urllib.request.Request(LWA_TOKEN_URL, data=data, method="POST")
     req.add_header("Content-Type", "application/x-www-form-urlencoded")
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        body = json.loads(resp.read().decode())
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            body = json.loads(resp.read().decode())
+    except urllib.error.HTTPError as e:
+        err_body = e.read().decode(errors="replace")
+        log(f"LWA token exchange failed: HTTP {e.code} - {err_body[:1000]}")
+        log(f"client_id used (first/last 6 chars): {client_id[:6]}...{client_id[-6:]} (len={len(client_id)})")
+        log(f"refresh_token length: {len(refresh_token)} (starts with: {refresh_token[:5]})")
+        raise
     return body["access_token"]
 
 
