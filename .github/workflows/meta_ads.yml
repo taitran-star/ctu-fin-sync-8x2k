@@ -30,6 +30,10 @@ jobs:
         env:
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
           META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID }}
+          # Campaign-level detail (script v2): product = first " - " segment of the
+          # campaign name; aliases fix names that don't follow the grammar.
+          META_CAMPAIGNS: "1"
+          META_PRODUCT_ALIASES: '{"litter": "Litter Box", "peekaboo": "Peekaboo", "fountain": "Water Fountain"}'
           # Optional overrides (uncomment to use):
           # META_API_VERSION: v23.0
           # META_ATTRIBUTION: 7d_click,1d_view
