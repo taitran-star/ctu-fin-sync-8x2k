@@ -1,0 +1,67 @@
+name: Cattasaurus Google Ads sync
+
+on:
+  schedule:
+    # Every 30 minutes at :20 and :50 UTC - offset from Amazon (:00/:30),
+    # Shopify (:05/:35) and Meta (:15/:45) so pushes never collide.
+    - cron: "20,50 * * * *"
+  workflow_dispatch: {}   # lets you click "Run workflow" manually to test
+
+permissions:
+  contents: write
+
+concurrency:
+  group: google-ads-sync
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install google-auth (service-account token exchange)
+        run: pip install --quiet google-auth requests
+
+      - name: Fetch Google Ads spend
+        env:
+          # Auth route (a): service-account key (blocked by the cattasaurus.com org policy
+          # at the moment - leave empty), or route (b): OAuth client + refresh token.
+          GOOGLE_ADS_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_ADS_SERVICE_ACCOUNT_JSON }}
+          GOOGLE_ADS_CLIENT_ID: ${{ secrets.GOOGLE_ADS_CLIENT_ID }}
+          GOOGLE_ADS_CLIENT_SECRET: ${{ secrets.GOOGLE_ADS_CLIENT_SECRET }}
+          GOOGLE_ADS_REFRESH_TOKEN: ${{ secrets.GOOGLE_ADS_REFRESH_TOKEN }}
+          GOOGLE_ADS_CUSTOMER_ID: ${{ secrets.GOOGLE_ADS_CUSTOMER_ID }}
+          # Only needed when the service account was added to a MANAGER account
+          # instead of the Cattasaurus account itself (leave the secret empty otherwise).
+          GOOGLE_ADS_LOGIN_CUSTOMER_ID: ${{ secrets.GOOGLE_ADS_LOGIN_CUSTOMER_ID }}
+          # Product label per campaign = first " - " segment of the campaign name;
+          # aliases fix campaigns that don't follow the naming grammar.
+          GOOGLE_PRODUCT_ALIASES: '{"litter": "Litter Box", "peekaboo": "Peekaboo", "fountain": "Water Fountain"}'
+          # Optional overrides:
+          # GOOGLE_ADS_API_VERSION: v25
+          # WINDOW_DAYS: 45
+        run: python fetch_google_ads.py
+
+      - name: Commit updated data file if changed
+        run: |
+          git config user.name "cattasaurus-google-ads-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/google_ads.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Update Google Ads data ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            echo "Push attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "Could not push after 5 attempts." && exit 1
