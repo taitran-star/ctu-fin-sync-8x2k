@@ -30,6 +30,15 @@ Optional env vars:
   OUTPUT_PATH           default data/meta_ads.json
   META_ATTRIBUTION      optional, e.g. 7d_click,1d_view - if unset the ad
                         account's default attribution setting is used.
+  META_CAMPAIGNS        default 1 - also pull campaign-level daily insights
+                        (spend, reach, frequency, link clicks, ATC, checkout,
+                        purchases, value) so the dashboard can rank products /
+                        campaigns. Set 0 to keep account-level only.
+  META_PRODUCT_ALIASES  optional JSON mapping a substring of the campaign name
+                        (case-insensitive) to a product label, e.g.
+                        {"litter": "Litter Box", "peekaboo": "Peekaboo"}.
+                        Without a match the product is the campaign name's
+                        first " - " segment.
 
 Output shape (per day, all money in the ad account currency):
   spend           what Meta charged for the day
@@ -64,6 +73,51 @@ PURCHASE_ACTION_PRIORITY = [
 ]
 
 DAILY_FIELDS = ["spend", "impressions", "clicks", "purchases", "purchase_value", "roas"]
+
+CAMPAIGNS_ENABLED = os.environ.get("META_CAMPAIGNS", "1").strip() not in ("0", "false", "no")
+CAMPAIGN_FIELDS = ["spend", "impressions", "reach", "clicks", "link_clicks", "add_to_cart",
+                   "initiate_checkout", "purchases", "purchase_value"]
+ATC_PRIORITY = ["omni_add_to_cart", "add_to_cart", "offsite_conversion.fb_pixel_add_to_cart"]
+IC_PRIORITY = ["omni_initiated_checkout", "initiate_checkout", "offsite_conversion.fb_pixel_initiate_checkout"]
+# Campaign-name grammar used by Cattasaurus: "<Product> - <strategy> - <market> - <stage>".
+MARKET_TOKENS = {"us": "US", "usa": "US", "ca": "CA", "canada": "CA", "uk": "UK", "au": "AU", "eu": "EU"}
+STAGE_TOKENS = {"testing": "Testing", "test": "Testing", "test adset": "Testing", "scaling": "Scaling",
+                "scale": "Scaling", "control": "Control", "retargeting": "Retargeting", "rt": "Retargeting"}
+
+
+def parse_product_aliases():
+    raw = os.environ.get("META_PRODUCT_ALIASES", "").strip()
+    if not raw:
+        return {}
+    try:
+        return {str(k).lower(): str(v) for k, v in (json.loads(raw) or {}).items()}
+    except ValueError:
+        log("META_PRODUCT_ALIASES is not valid JSON - ignoring")
+        return {}
+
+
+PRODUCT_ALIASES = parse_product_aliases()
+
+
+def classify_campaign(name):
+    """Split 'Peekaboo - Bidcap - Control - Low Bid - CA' into product/market/stage/strategy."""
+    parts = [p.strip() for p in (name or "").split(" - ") if p.strip()]
+    product = parts[0] if parts else (name or "?")
+    low = (name or "").lower()
+    for needle, label in PRODUCT_ALIASES.items():
+        if needle in low:
+            product = label
+            break
+    market, stage = None, None
+    for p in parts[1:]:
+        pl = p.lower()
+        if pl in MARKET_TOKENS:
+            market = MARKET_TOKENS[pl]
+        for tok, label in STAGE_TOKENS.items():
+            if pl == tok or pl.startswith(tok + " ") or pl.endswith(" " + tok):
+                stage = label
+    strategy = [p for p in parts[1:] if p.lower() not in MARKET_TOKENS and p.lower() not in STAGE_TOKENS]
+    return {"product": product, "market": market or "US", "stage": stage or "Other", "strategy": " / ".join(strategy) or None}
 
 # Graph API error codes that mean "slow down and retry".
 RATE_LIMIT_CODES = {4, 17, 32, 613, 80000, 80004}
@@ -227,6 +281,121 @@ def fetch_insights(token, account_id, since, until, daily, warnings, action_type
     return rows_total, currency
 
 
+def new_campaign_bucket():
+    return {f: 0 for f in CAMPAIGN_FIELDS}
+
+
+def derive_campaign_metrics(d):
+    """Add CPM/CPC/CTR/CPA/ROAS/AOV/frequency-friendly derived numbers in place."""
+    sp, imp, lc, pur, val = d["spend"], d["impressions"], d["link_clicks"], d["purchases"], d["purchase_value"]
+    d["cpm"] = round(sp / imp * 1000, 2) if imp else 0
+    d["cpc"] = round(sp / lc, 2) if lc else 0
+    d["ctr"] = round(lc / imp * 100, 3) if imp else 0
+    d["cpa"] = round(sp / pur, 2) if pur else 0
+    d["roas"] = round(val / sp, 4) if sp else 0
+    d["aov"] = round(val / pur, 2) if pur else 0
+    d["frequency"] = round(imp / d["reach"], 2) if d.get("reach") else 0
+    for f in ("spend", "purchase_value"):
+        d[f] = round(d[f], 2)
+    return d
+
+
+def fetch_campaign_meta(token, account_id):
+    """Campaign objects: status, objective, budgets."""
+    out = {}
+    url = f"{GRAPH_HOST}/{API_VERSION}/{account_id}/campaigns"
+    params = {"access_token": token, "limit": 200,
+              "fields": "id,name,objective,effective_status,daily_budget,lifetime_budget,bid_strategy,start_time,stop_time"}
+    while True:
+        resp = graph_get(url, params) if params else graph_get(url, None)
+        for c in resp.get("data", []) or []:
+            out[c["id"]] = {
+                "name": c.get("name"), "objective": c.get("objective"), "status": c.get("effective_status"),
+                "daily_budget": (to_float(c.get("daily_budget")) / 100) if c.get("daily_budget") else None,
+                "lifetime_budget": (to_float(c.get("lifetime_budget")) / 100) if c.get("lifetime_budget") else None,
+                "bid_strategy": c.get("bid_strategy"),
+            }
+        nxt = (resp.get("paging") or {}).get("next")
+        if not nxt:
+            break
+        url, params = nxt, None
+    return out
+
+
+def fetch_campaign_insights(token, account_id, since, until, campaigns, warnings):
+    """Daily rows per campaign -> campaigns[id]['daily'][date] buckets."""
+    params = {
+        "access_token": token,
+        "level": "campaign",
+        "time_increment": 1,
+        "time_range": json.dumps({"since": since, "until": until}),
+        "fields": "campaign_id,campaign_name,date_start,spend,impressions,reach,clicks,inline_link_clicks,actions,action_values",
+        "limit": 500,
+    }
+    if ATTRIBUTION:
+        params["action_attribution_windows"] = json.dumps([w.strip() for w in ATTRIBUTION.split(",") if w.strip()])
+    url = f"{GRAPH_HOST}/{API_VERSION}/{account_id}/insights"
+    rows_total = 0
+    while True:
+        resp = graph_get(url, params) if params else graph_get(url, None)
+        for row in resp.get("data", []) or []:
+            cid = row.get("campaign_id")
+            day = row.get("date_start")
+            if not cid or not day:
+                continue
+            c = campaigns.setdefault(cid, {"name": row.get("campaign_name"), "daily": {}})
+            c["name"] = c.get("name") or row.get("campaign_name")
+            d = c["daily"].setdefault(day, new_campaign_bucket())
+            d["spend"] += to_float(row.get("spend"))
+            d["impressions"] += to_int(row.get("impressions"))
+            d["reach"] += to_int(row.get("reach"))
+            d["clicks"] += to_int(row.get("clicks"))
+            d["link_clicks"] += to_int(row.get("inline_link_clicks"))
+            _, atc = pick_action(row.get("actions"), ATC_PRIORITY)
+            _, ic = pick_action(row.get("actions"), IC_PRIORITY)
+            _, pur = pick_action(row.get("actions"), PURCHASE_ACTION_PRIORITY)
+            _, val = pick_action(row.get("action_values"), PURCHASE_ACTION_PRIORITY)
+            d["add_to_cart"] += atc
+            d["initiate_checkout"] += ic
+            d["purchases"] += pur
+            d["purchase_value"] += val
+            rows_total += 1
+        nxt = (resp.get("paging") or {}).get("next")
+        if not nxt:
+            break
+        url, params = nxt, None
+    return rows_total
+
+
+def finalise_campaigns(campaigns, meta_by_id, window_start, window_end, last30_start):
+    for cid, c in campaigns.items():
+        info = meta_by_id.get(cid, {})
+        c.update({k: v for k, v in info.items() if k != "name"})
+        c["name"] = c.get("name") or info.get("name")
+        c.update(classify_campaign(c["name"]))
+        for d in c["daily"].values():
+            derive_campaign_metrics(d)
+        tot = new_campaign_bucket()
+        l30 = new_campaign_bucket()
+        for day, d in c["daily"].items():
+            for f in CAMPAIGN_FIELDS:
+                tot[f] += d[f]
+                if day >= last30_start:
+                    l30[f] += d[f]
+        c["window"] = derive_campaign_metrics(tot)
+        c["last_30d"] = derive_campaign_metrics(l30)
+    # roll-up by product for the window
+    products = {}
+    for c in campaigns.values():
+        p = products.setdefault(c["product"], {"campaigns": 0, **new_campaign_bucket()})
+        p["campaigns"] += 1
+        for f in CAMPAIGN_FIELDS:
+            p[f] += c["window"][f]
+    for p in products.values():
+        derive_campaign_metrics(p)
+    return products
+
+
 def main():
     token = os.environ.get("META_ACCESS_TOKEN", "").strip()
     raw_ids = os.environ.get("META_AD_ACCOUNT_ID", "").strip()
@@ -267,6 +436,22 @@ def main():
         }
     finalise(daily)
 
+    campaigns, products, campaign_rows = {}, {}, 0
+    if CAMPAIGNS_ENABLED:
+        last30 = (now - timedelta(days=30)).strftime("%Y-%m-%d")
+        meta_by_id = {}
+        for account_id in account_ids:
+            try:
+                meta_by_id.update(fetch_campaign_meta(token, account_id))
+                log(f"Fetching {account_id} campaign-level insights...")
+                campaign_rows += fetch_campaign_insights(token, account_id, since, until, campaigns, warnings)
+            except SystemExit:
+                raise
+            except Exception as e:  # noqa: BLE001 - campaign detail must never break the account-level file
+                warnings.add(f"campaign-level fetch failed for {account_id}: {str(e)[:200]}")
+        products = finalise_campaigns(campaigns, meta_by_id, since, until, last30)
+        log(f"Campaigns: {len(campaigns)} ({campaign_rows} daily rows), products: {sorted(products)}")
+
     today_key = until
     mtd_start = now.strftime("%Y-%m-01")
     last30_start = (now - timedelta(days=30)).strftime("%Y-%m-%d")
@@ -286,7 +471,12 @@ def main():
             "mtd": sum_range(daily, mtd_start, today_key),
             "last_30d": sum_range(daily, last30_start, today_key),
         },
+        "campaigns": campaigns,
+        "products": products,
         "meta": {
+            "schema": 2 if CAMPAIGNS_ENABLED else 1,
+            "script_version": "2.0",
+            "campaign_rows": campaign_rows,
             "rows_processed": rows_total,
             "accounts": per_account,
             "action_types_seen": sorted(action_types_seen),
