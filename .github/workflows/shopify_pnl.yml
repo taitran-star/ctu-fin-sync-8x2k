@@ -1,0 +1,72 @@
+name: Cattasaurus Shopify + Snowball sync
+
+on:
+  schedule:
+    # Every 30 minutes at :05 and :35 UTC - offset from Amazon (:00/:30) and
+    # Meta (:15/:45) so the three workflows never push to the repo at the same moment.
+    - cron: "5,35 * * * *"
+  workflow_dispatch: {}   # lets you click "Run workflow" manually to test
+
+permissions:
+  contents: write
+
+concurrency:
+  group: shopify-pnl-sync
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch Shopify orders + Snowball commissions
+        env:
+          SHOPIFY_SHOP: ${{ secrets.SHOPIFY_SHOP }}
+          SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_CLIENT_ID }}
+          SHOPIFY_CLIENT_SECRET: ${{ secrets.SHOPIFY_CLIENT_SECRET }}
+          # Snowball > Settings > Advanced > Revenue Calculation has BOTH
+          # "include tax" and "include shipping" switched on for Cattasaurus,
+          # so commissions are computed on the order total.
+          SNOWBALL_COMMISSION_BASE: total
+          # Commission rate per Snowball program (program name exactly as it
+          # appears after "Referral - SS - " in the Shopify order tag).
+          # Values are percentages. Programs missing here fall back to the
+          # number in their name, then to SNOWBALL_DEFAULT_RATE (0) + a warning
+          # in data/shopify_pnl.json -> meta.warnings.
+          # Fallback only - rates are LEARNED from the Snowball conversions exports in
+          # data/snowball_conversions/ (exact commission per order id). Verified from the
+          # 18/08-17/09/2026 export: Peekaboo Affiliate 15 pays 20% (the "15" is the customer
+          # discount), B1G2F_WEEKEND 30%, "Organic short content" pays a 10% discount code (no cash).
+          SNOWBALL_PROGRAM_RATES: '{"Peekaboo Affiliate 15": 20, "30% Commision": 30, "B1G2F_WEEKEND": 30, "homebodycatclub_partner": 15, "15% CODE + 10% commission": 10, "Organic short content": 0, "THANKYOU20_CAMP": 0}'
+          SNOWBALL_CONVERSIONS_DIR: data/snowball_conversions
+          # Optional overrides:
+          # SHOPIFY_API_VERSION: 2026-07
+          # WINDOW_DAYS: 45
+          # PAGE_SIZE: 60
+        run: python fetch_shopify_pnl.py
+
+      - name: Commit updated data file if changed
+        run: |
+          git config user.name "cattasaurus-shopify-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/shopify_pnl.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Update Shopify + Snowball data ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          # The Amazon and Meta workflows commit to the same repo; rebase-then-push
+          # with a few retries so a concurrent push from them never fails this job.
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            echo "Push attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "Could not push after 5 attempts." && exit 1
