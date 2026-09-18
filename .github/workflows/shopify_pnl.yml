@@ -46,6 +46,11 @@ jobs:
           # discount), B1G2F_WEEKEND 30%, "Organic short content" pays a 10% discount code (no cash).
           SNOWBALL_PROGRAM_RATES: '{"Peekaboo Affiliate 15": 20, "30% Commision": 30, "B1G2F_WEEKEND": 30, "homebodycatclub_partner": 15, "15% CODE + 10% commission": 10, "Organic short content": 0, "THANKYOU20_CAMP": 0}'
           SNOWBALL_CONVERSIONS_DIR: data/snowball_conversions
+          # Live feed: Google Sheet filled by Zapier (Social Snowball "New Conversion" ->
+          # Google Sheets "Create Spreadsheet Row"), published as CSV. Stored as a repo
+          # secret so the sheet link is not visible in this public repo. Optional - when
+          # the secret is empty the script only reads the CSV files in the folder above.
+          SNOWBALL_CONVERSIONS_URLS: ${{ secrets.SNOWBALL_CONVERSIONS_URLS }}
           # Optional overrides:
           # SHOPIFY_API_VERSION: 2026-07
           # WINDOW_DAYS: 45
