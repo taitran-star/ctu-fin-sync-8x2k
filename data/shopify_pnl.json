@@ -739,7 +739,7 @@
       "total_sales": 16503.33
     }
   },
-  "generated_at": "2026-09-18T05:45:41Z",
+  "generated_at": "2026-09-18T06:07:54Z",
   "meta": {
     "api_cost_actual": 7874,
     "api_cost_requested_max": 106,
@@ -755,19 +755,17 @@
       "refunds_counted": 487,
       "refunds_outside_window": 16,
       "snowball_attr_without_tag": 52,
-      "snowball_exact": 151,
+      "snowball_exact": 152,
       "snowball_export_without_tag": 0,
       "snowball_tagged": 290
     },
     "pages": 167,
     "schema": 1,
-    "script_version": "1.1",
+    "script_version": "1.3",
     "throttled_waits": 0,
     "warnings": [
       "52 orders carry the __snowball attribute but no 'Referral - SS - *' tag (Snowball rejected/untracked them) - not counted as referrals",
-      "no rate known for Snowball program 'Default program' - using SNOWBALL_DEFAULT_RATE=0",
-      "program mismatch on order 7593802465590: Shopify tag '15% CODE + 10% commissio' vs export '15% CODE + 10% commission' - using the export's commission",
-      "rate for Snowball program '15% CODE + 10% commissio' inferred from its name (15%) - set SNOWBALL_PROGRAM_RATES to pin it"
+      "no rate known for Snowball program 'Default program' - using SNOWBALL_DEFAULT_RATE=0"
     ]
   },
   "shop": "shoproxstore.myshopify.com",
@@ -973,11 +971,15 @@
       {
         "file": "conversions-2026-08-18_2026-09-17.csv",
         "rows": 152
+      },
+      {
+        "file": "live feed #1",
+        "rows": 1
       }
     ],
-    "conversions_loaded": 152,
+    "conversions_loaded": 153,
     "programs": {
-      "15% CODE + 10% commissio": {
+      "15% CODE + 10% commission": {
         "commission": 0.0,
         "commission_net": 0.0,
         "orders": 1,
@@ -1043,7 +1045,7 @@
       }
     },
     "rate_sources": {
-      "15% CODE + 10% commissio": "inferred_from_name",
+      "15% CODE + 10% commission": "learned_from_export",
       "30% Commision": "learned_from_export",
       "B1G2F_WEEKEND": "learned_from_export",
       "Default program": "default",
@@ -1071,7 +1073,7 @@
       "Organic short content": {
         "payout": "discount_code",
         "rate": 0.0,
-        "samples": 73
+        "samples": 74
       },
       "Peekaboo Affiliate 15": {
         "payout": "cash",
