@@ -84,7 +84,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "1.1"
+SCRIPT_VERSION = "1.3"
 SCHEMA = 1
 
 SHOP = os.environ.get("SHOPIFY_SHOP", "").strip().lower().replace("https://", "").rstrip("/")
@@ -100,6 +100,13 @@ DEFAULT_RATE = float(os.environ.get("SNOWBALL_DEFAULT_RATE", "0") or 0)
 # Every CSV found is read: rows give the EXACT commission per Shopify order id, and the
 # per-program rate is learned from them for orders the exports don't cover.
 CONVERSIONS_DIR = os.environ.get("SNOWBALL_CONVERSIONS_DIR", "data/snowball_conversions")
+# Live conversions feed(s): comma/newline-separated CSV URLs fetched on every run, e.g. a
+# Google Sheet that a Zapier zap (Social Snowball "New Conversion" -> "Create Spreadsheet
+# Row") appends to, published via File > Share > Publish to web > CSV. Same columns as the
+# Snowball export (Order ID, Program, Conversion Date, Revenue, Commission, Payout Status,
+# Payout Method; header names are matched case-insensitively). Rows from URLs are read
+# AFTER the files, so the live feed wins when both hold the same order.
+CONVERSIONS_URLS = [u.strip() for u in re.split(r"[,\n]", os.environ.get("SNOWBALL_CONVERSIONS_URLS", "")) if u.strip()]
 
 DAILY_FIELDS = [
     "orders", "gross_sales", "discounts", "net_sales", "returns", "refunded_total",
@@ -183,49 +190,101 @@ LEARNED_RATES = {}    # program -> {"rate": fraction, "samples": n, "payout": "c
 CONVERSION_FILES = []
 
 
+def _money(v):
+    """'$12.34', '12,34', ' 12.5 ' -> 12.34 / 12.34 / 12.5 ; anything else -> None."""
+    s = (v or "").strip().replace("$", "").replace(" ", "")
+    if not s:
+        return None
+    if s.count(",") == 1 and "." not in s:
+        s = s.replace(",", ".")
+    s = s.replace(",", "")
+    try:
+        return float(s)
+    except ValueError:
+        return None
+
+
+def _ingest_conversion_rows(rows, per_program):
+    """Consume dict rows (Snowball export columns, header names case-insensitive). Returns rows used."""
+    n = 0
+    for raw in rows:
+        row = {(k or "").strip().lower(): (v or "") for k, v in raw.items()}
+        oid = row.get("order id", "").strip()
+        if oid.startswith("gid://"):
+            oid = oid.rsplit("/", 1)[-1]
+        oid = oid.lstrip("#")
+        program = row.get("program", "").strip()
+        if not oid or not program:
+            continue
+        method = row.get("payout method", "").strip()
+        status = row.get("payout status", "").strip()
+        raw_c = row.get("commission", "").strip()
+        rev = _money(row.get("revenue")) or 0.0
+        # Zapier "New Referral Sale" rows (Google Sheet feed) carry the program's SETTING
+        # instead of a computed commission: Commission Type (Percentage|Fixed), Commission
+        # Amount (10 = 10% or $10) and Payout Type (cash|discount|store credit ...).
+        ctype = row.get("commission type", "").strip().lower()
+        camt = _money(row.get("commission amount"))
+        ptype = row.get("payout type", "").strip().lower()
+        if not method and ptype:
+            method = "Discount Code" if "discount" in ptype else "Cash"
+        commission = _money(raw_c)
+        if commission is None and not raw_c and camt is not None:
+            if method.lower() == "discount code":
+                commission = 0.0
+            elif ctype.startswith("percent") or (not ctype and camt <= 100):
+                commission = round(rev * camt / 100.0, 2)
+            else:
+                commission = camt
+        if commission is None:
+            commission = 0.0 if (not raw_c or method.lower() == "discount code") else None
+        if status.lower() == "voided":
+            commission = 0.0
+        CONVERSIONS[oid] = {"commission": commission, "program": program, "method": method,
+                            "status": status, "revenue": rev}
+        p = per_program.setdefault(program, {"rates": [], "methods": set(), "n": 0})
+        p["n"] += 1
+        p["methods"].add(method.lower())
+        if commission is not None and rev > 0 and status.lower() != "voided" and method.lower() == "cash":
+            p["rates"].append(commission / rev)
+        n += 1
+    return n
+
+
+def _fetch_csv_text(url):
+    req = urllib.request.Request(url, headers={"User-Agent": "cattasaurus-shopify-sync/" + SCRIPT_VERSION})
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        return resp.read().decode("utf-8-sig", errors="replace")
+
+
 def load_conversions(warnings):
-    """Read every Snowball conversions CSV in CONVERSIONS_DIR (safe if the folder is missing)."""
+    """Read every Snowball conversions CSV in CONVERSIONS_DIR (safe if the folder is missing),
+    then every live CSV feed in SNOWBALL_CONVERSIONS_URLS (a Zapier-filled Google Sheet)."""
     import csv
     import glob
+    import io
     import statistics
-    if not os.path.isdir(CONVERSIONS_DIR):
-        return
     per_program = {}
-    for path in sorted(glob.glob(os.path.join(CONVERSIONS_DIR, "*.csv"))):
-        n = 0
+    if os.path.isdir(CONVERSIONS_DIR):
+        for path in sorted(glob.glob(os.path.join(CONVERSIONS_DIR, "*.csv"))):
+            try:
+                with open(path, newline="", encoding="utf-8-sig") as f:
+                    n = _ingest_conversion_rows(csv.DictReader(f), per_program)
+            except (OSError, csv.Error) as e:
+                warnings.add(f"could not read Snowball export {os.path.basename(path)}: {e}")
+                continue
+            CONVERSION_FILES.append({"file": os.path.basename(path), "rows": n})
+    for i, url in enumerate(CONVERSIONS_URLS, 1):
+        label = f"live feed #{i}"
         try:
-            with open(path, newline="", encoding="utf-8-sig") as f:
-                for row in csv.DictReader(f):
-                    oid = (row.get("Order ID") or "").strip()
-                    program = (row.get("Program") or "").strip()
-                    if not oid or not program:
-                        continue
-                    method = (row.get("Payout Method") or "").strip()
-                    status = (row.get("Payout Status") or "").strip()
-                    raw_c = (row.get("Commission") or "").strip()
-                    try:
-                        rev = float(row.get("Revenue") or 0)
-                    except ValueError:
-                        rev = 0.0
-                    commission = None
-                    try:
-                        commission = float(raw_c)
-                    except ValueError:
-                        commission = 0.0 if (not raw_c or method.lower() == "discount code") else None
-                    if status.lower() == "voided":
-                        commission = 0.0
-                    CONVERSIONS[oid] = {"commission": commission, "program": program, "method": method,
-                                        "status": status, "revenue": rev}
-                    p = per_program.setdefault(program, {"rates": [], "methods": set(), "n": 0})
-                    p["n"] += 1
-                    p["methods"].add(method.lower())
-                    if commission is not None and rev > 0 and status.lower() != "voided" and method.lower() == "cash":
-                        p["rates"].append(commission / rev)
-                    n += 1
-        except (OSError, csv.Error) as e:
-            warnings.add(f"could not read Snowball export {os.path.basename(path)}: {e}")
+            text = _fetch_csv_text(url)
+            n = _ingest_conversion_rows(csv.DictReader(io.StringIO(text)), per_program)
+        except (OSError, urllib.error.URLError, csv.Error, ValueError) as e:
+            warnings.add(f"could not read Snowball {label}: {e}")
             continue
-        CONVERSION_FILES.append({"file": os.path.basename(path), "rows": n})
+        if n == 0:
+            warnings.add(f"Snowball {label} returned no usable rows (check the sheet header row: Order ID, Program, Commission, Revenue ...)")
+        CONVERSION_FILES.append({"file": label, "rows": n})
     for program, p in per_program.items():
         if p["rates"]:
             LEARNED_RATES[program] = {"rate": round(statistics.median(p["rates"]), 4), "samples": len(p["rates"]), "payout": "cash"}
@@ -235,8 +294,21 @@ def load_conversions(warnings):
             LEARNED_RATES[program] = {"rate": 0.0, "samples": p["n"], "payout": "none"}
 
 
+def canonical_program(program):
+    """Shopify tags are capped at 40 characters, so a long program name arrives truncated
+    ("15% CODE + 10% commissio"). Map it back to the full name seen in the exports/config."""
+    if program in LEARNED_RATES or program in PROGRAM_RATES:
+        return program
+    if len(TAG_PREFIX) + len(program) >= 40:
+        for known in list(LEARNED_RATES) + list(PROGRAM_RATES):
+            if known.startswith(program) and known != program:
+                return known
+    return program
+
+
 def rate_for_program(program, warnings, rate_sources):
     """Return the commission fraction for a Snowball program name."""
+    program = canonical_program(program)
     if program in LEARNED_RATES:
         rate_sources[program] = "learned_from_export"
         return LEARNED_RATES[program]["rate"]
@@ -397,7 +469,7 @@ def snowball_program(tags):
         if isinstance(t, str) and t.startswith(TAG_PREFIX):
             name = t[len(TAG_PREFIX):].strip()
             if name:
-                return name
+                return canonical_program(name)
     return None
 
 
