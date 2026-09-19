@@ -33,6 +33,13 @@ Optional env vars:
   OUTPUT_PATH              default data/shopify_pnl.json
   PAGE_SIZE                orders per request, default 60 (auto-halves if the
                            API says the query cost is too high)
+  LATE_ORDERS_MODE         which orders created BEFORE the window are scanned for
+                           refunds issued inside it: "all" (default - every old order
+                           updated inside the window; the only way to catch order
+                           edits, which remove items from a PAID order without any
+                           refund status) or "refunded" (only orders whose financial
+                           status is refunded/partially refunded - fewer API calls,
+                           misses order edits)
   SNOWBALL_TAG_PREFIX      default "Referral - SS - "
   SNOWBALL_ATTR_KEY        default "__snowball"
   SNOWBALL_PROGRAM_RATES   JSON {"Peekaboo Affiliate 15": 15}. Values > 1 are
@@ -59,15 +66,35 @@ Optional env vars:
 Rate precedence per program: learned from CSV > SNOWBALL_PROGRAM_RATES > number in
 the program name > SNOWBALL_DEFAULT_RATE. Per order: exact CSV commission > rate x base.
 
-Output (per day, shop currency, all positive numbers, shop-timezone days):
-  orders, gross_sales, discounts, net_sales (= gross - discounts, before returns),
-  returns (item value refunded, pre-tax, on the REFUND date), refunded_total
-  (money actually sent back incl. tax/shipping), shipping, tax,
-  total_sales (= net_sales - returns + shipping + tax),
+Output (per day, shop currency, shop-timezone days) - every line is defined exactly
+like the matching line of Shopify Analytics (Reports > Sales), so the day totals can
+be checked against it to the cent:
+  orders, gross_sales, discounts, net_sales (= gross - discounts, BEFORE returns;
+  Shopify's "Net sales" = this - returns),
+  returns  (Shopify "Returns" / sales_reversals: pre-tax value of returned items PLUS
+            any extra money refunded, booked on the refund's processed date - see
+            Aggregator.add_order for the exact formula),
+  refunded_total (cash actually sent back incl. tax/shipping),
+  refunded_shipping, refunded_tax (Shopify nets these out of "Shipping charges" and
+            "Taxes" rather than out of returns),
+  shipping, tax (as charged on the order date),
+  total_sales (= net_sales - returns + shipping - refunded_shipping + tax - refunded_tax
+            = Shopify "Total sales" whenever duties / additional fees are 0),
   snowball_orders, snowball_revenue (commission base of referred orders),
   snowball_commission (earned that day), snowball_reversals (commission clawed
   back by refunds that day), snowball_commission_net.
 Top-level "snowball" block: per-program and per-affiliate totals for the window.
+
+Order edits: Shopify Analytics books an item ADDED by an order edit on the edit date (and
+the removed item as a return on that date). Order.subtotalPriceSet already contains the
+added items, so for edited orders the script reads Shopify's sales ledger
+(Order.agreements -> OrderEditAgreement.sales) and moves the additions to the edit date.
+
+IMPORTANT - orders older than 60 days: without the read_all_orders access scope the
+Admin API silently hides orders created more than 60 days ago, INCLUDING their refunds.
+A return processed today on a 3-month-old order is then invisible and Shopify
+Analytics' returns will be higher than ours. The script probes this every run and
+reports it in meta.orders_visibility ("all" | "last_60_days") plus a warning.
 """
 import json
 import os
@@ -84,14 +111,17 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "1.4"
-SCHEMA = 1
+SCRIPT_VERSION = "1.5"
+SCHEMA = 2
 
 SHOP = os.environ.get("SHOPIFY_SHOP", "").strip().lower().replace("https://", "").rstrip("/")
 API_VERSION = os.environ.get("SHOPIFY_API_VERSION", "2026-07").strip()
 WINDOW_DAYS = int(os.environ.get("WINDOW_DAYS", "45"))
 OUTPUT_PATH = os.environ.get("OUTPUT_PATH", "data/shopify_pnl.json")
 PAGE_SIZE = int(os.environ.get("PAGE_SIZE", "60"))
+LATE_ORDERS_MODE = os.environ.get("LATE_ORDERS_MODE", "all").strip().lower() or "all"
+# Orders created more than this many days ago are hidden from apps without read_all_orders.
+ORDER_VISIBILITY_DAYS = 60
 TAG_PREFIX = os.environ.get("SNOWBALL_TAG_PREFIX", "Referral - SS - ")
 ATTR_KEY = os.environ.get("SNOWBALL_ATTR_KEY", "__snowball")
 COMMISSION_BASE = os.environ.get("SNOWBALL_COMMISSION_BASE", "subtotal").strip().lower()
@@ -110,18 +140,22 @@ CONVERSIONS_URLS = [u.strip() for u in re.split(r"[,\n]", os.environ.get("SNOWBA
 
 DAILY_FIELDS = [
     "orders", "gross_sales", "discounts", "net_sales", "returns", "refunded_total",
+    "refunded_shipping", "refunded_tax",
     "shipping", "tax", "total_sales",
     "snowball_orders", "snowball_revenue", "snowball_commission", "snowball_reversals",
     "snowball_commission_net",
 ]
 MONEY_FIELDS = [f for f in DAILY_FIELDS if f not in ("orders", "snowball_orders")]
 
+# processedAt + orderAdjustments are what make "returns" equal Shopify Analytics'
+# sales_reversals (see Aggregator.add_order). The small pageInfo blocks only tell us
+# when a refund has more line items / adjustments than we asked for.
 ORDERS_QUERY = """
 query Orders($first: Int!, $after: String, $q: String, $refundsFirst: Int!) {
   orders(first: $first, after: $after, query: $q, sortKey: CREATED_AT) {
     pageInfo { hasNextPage endCursor }
     nodes {
-      id name createdAt cancelledAt test displayFinancialStatus tags
+      id name createdAt cancelledAt test displayFinancialStatus tags edited
       customAttributes { key value }
       subtotalPriceSet { shopMoney { amount } }
       totalDiscountsSet { shopMoney { amount } }
@@ -129,18 +163,66 @@ query Orders($first: Int!, $after: String, $q: String, $refundsFirst: Int!) {
       totalTaxSet { shopMoney { amount } }
       totalPriceSet { shopMoney { amount } }
       refunds {
-        id createdAt
+        id createdAt processedAt
         totalRefundedSet { shopMoney { amount } }
-        refundShippingLines(first: 3) { nodes { subtotalAmountSet { shopMoney { amount } } } }
+        refundShippingLines(first: 5) {
+          nodes { subtotalAmountSet { shopMoney { amount } } taxAmountSet { shopMoney { amount } } }
+        }
         refundLineItems(first: $refundsFirst) {
+          pageInfo { hasNextPage }
           nodes {
             subtotalSet { shopMoney { amount } }
             totalTaxSet { shopMoney { amount } }
+            lineItem { title requiresShipping }
+          }
+        }
+        orderAdjustments(first: 20) {
+          pageInfo { hasNextPage }
+          nodes { reason amountSet { shopMoney { amount } } taxAmountSet { shopMoney { amount } } }
+        }
+      }
+    }
+  }
+}
+"""
+
+# Shopify's own sales ledger for EDITED orders only. Order.subtotalPriceSet & co. already
+# include items added by an order edit, but Shopify Analytics books those additions on the
+# EDIT date, not on the order date. The OrderEditAgreement lists exactly what was added
+# (actionType ORDER) - removals (actionType RETURN) are the refund we already process.
+EDIT_AGREEMENTS_QUERY = """
+query EditAgreements($ids: [ID!]!, $agreementsFirst: Int!, $salesFirst: Int!) {
+  nodes(ids: $ids) {
+    ... on Order {
+      id
+      agreements(first: $agreementsFirst) {
+        pageInfo { hasNextPage }
+        nodes {
+          __typename id happenedAt reason
+          sales(first: $salesFirst) {
+            pageInfo { hasNextPage }
+            nodes {
+              actionType lineType
+              totalAmount { shopMoney { amount } }
+              totalDiscountAmountBeforeTaxes { shopMoney { amount } }
+              totalTaxAmount { shopMoney { amount } }
+            }
           }
         }
       }
     }
   }
+}
+"""
+EDIT_BATCH = int(os.environ.get("EDIT_BATCH", "7"))
+EDIT_LIMITS = (6, 20)        # agreements per order, sales per agreement (first pass)
+EDIT_LIMITS_RETRY = (25, 80)  # one order per request when the first pass was truncated
+
+# One cheap call: can this token see an order created before the 60-day visibility
+# window at all? (Empty answer = read_all_orders missing, or a shop younger than that.)
+VISIBILITY_PROBE_QUERY = """
+query Probe($q: String) {
+  orders(first: 1, query: $q, sortKey: CREATED_AT) { nodes { id createdAt } }
 }
 """
 
@@ -369,7 +451,7 @@ def get_access_token():
     Token lives 24h; we mint a fresh one every run so nothing ever expires."""
     direct = os.environ.get("SHOPIFY_ACCESS_TOKEN", "").strip()
     if direct:
-        return direct, "static_token"
+        return direct, "static_token", ""
     cid = os.environ.get("SHOPIFY_CLIENT_ID", "").strip()
     sec = os.environ.get("SHOPIFY_CLIENT_SECRET", "").strip()
     if not (cid and sec):
@@ -392,7 +474,20 @@ def get_access_token():
     scope = resp.get("scope", "")
     if "read_orders" not in scope and "read_all_orders" not in scope:
         log(f"WARNING: granted scope is '{scope}' - read_orders missing. Add it to the app version, Release, and re-install the app.")
-    return token, "client_credentials"
+    return token, "client_credentials", scope
+
+
+def probe_order_visibility(client, now_utc):
+    """'all' when an order older than ORDER_VISIBILITY_DAYS is readable, 'last_60_days'
+    when the API hides them (read_all_orders scope missing), 'unknown' on error."""
+    cutoff = (now_utc - timedelta(days=ORDER_VISIBILITY_DAYS + 1)).strftime("%Y-%m-%dT00:00:00Z")
+    try:
+        data = client.query(VISIBILITY_PROBE_QUERY, {"q": f"created_at:<{cutoff}"})
+    except (SystemExit, Exception) as e:  # noqa: BLE001 - a failed probe must never kill the sync
+        log(f"visibility probe failed: {e}")
+        return "unknown"
+    nodes = ((data.get("orders") or {}).get("nodes") or [])
+    return "all" if nodes else f"last_{ORDER_VISIBILITY_DAYS}_days"
 
 
 class Client:
@@ -481,6 +576,12 @@ def affiliate_code(custom_attributes):
     return None
 
 
+def is_tip_line(refund_line_item):
+    """Shopify's tipping feature adds a non-shippable line item titled 'Tip' with no variant."""
+    li = (refund_line_item or {}).get("lineItem") or {}
+    return (li.get("title") or "").strip().lower() == "tip" and not li.get("requiresShipping", True)
+
+
 def commission_base(subtotal, shipping, tax, total):
     if COMMISSION_BASE == "subtotal_shipping":
         return subtotal + shipping
@@ -502,13 +603,17 @@ class Aggregator:
         self.programs = {}
         self.affiliates = {}
         self.seen_orders = set()
+        self.edited = {}      # order gid -> {"order_day": day the sale was booked on, or None when not booked}
         self.counts = {
             "orders_seen": 0, "orders_counted": 0, "orders_skipped_test": 0,
             "orders_skipped_voided": 0, "orders_outside_window": 0,
             "refunds_counted": 0, "refunds_outside_window": 0,
+            "refunds_with_adjustments": 0, "refunds_edit_removals": 0,
+            "refund_lists_truncated": 0, "refund_tip_lines": 0,
+            "orders_edited": 0, "edit_additions_moved": 0, "edit_lists_truncated": 0,
             "snowball_tagged": 0, "snowball_attr_without_tag": 0,
             "snowball_exact": 0, "snowball_export_without_tag": 0,
-            "late_refund_orders": 0,
+            "late_orders_scanned": 0, "late_refund_orders": 0,
         }
 
     def in_window(self, day):
@@ -557,7 +662,13 @@ class Aggregator:
             self.counts["snowball_export_without_tag"] += 1
 
         day = local_day(o.get("createdAt"), self.tz)
-        if not late_refunds_only and self.in_window(day):
+        booked = bool(not late_refunds_only and self.in_window(day))
+        if o.get("edited"):
+            # items added by an order edit are inside these order-level totals; they are moved
+            # to the edit date once the ledger is fetched (see apply_edit_agreements)
+            self.edited[oid] = {"order_day": day if booked else None}
+            self.counts["orders_edited"] += 1
+        if booked:
             d = self.bucket(day)
             d["orders"] += 1
             d["gross_sales"] += subtotal + discounts
@@ -585,37 +696,67 @@ class Aggregator:
         elif not late_refunds_only:
             self.counts["orders_outside_window"] += 1
 
-        # Refunds are booked on the refund date (Shopify Analytics "Returns" does the same).
-        # Shopify often records ONE return as TWO Refund objects: one carrying the
-        # returned line items with $0 money, another carrying the money with no line
-        # items. So decide per ORDER: when any refund lists line items, the returned
-        # value is the line items' subtotal (pre-tax) and money-only refunds are just
-        # cash movements of the same return; only when no refund lists items at all
-        # (goodwill / price adjustment) is the money itself the returned value.
+        # Refunds are booked on the day Shopify PROCESSED them, exactly like the "Returns"
+        # (sales_reversals) line of Shopify Analytics. Per refund Shopify reverses
+        #
+        #     returned_value = SUM(refundLineItems.subtotal) - SUM(orderAdjustments.amount)
+        #
+        # i.e. the pre-tax value of the returned items PLUS any money refunded on top of
+        # (or instead of) items: Shopify books that extra money as a NEGATIVE "refund
+        # discrepancy" order adjustment (a $20 goodwill refund with no line item is one
+        # adjustment of -20). A $0-cash line-item refund - an order edit that removes an
+        # item, or a return whose money is sent in a later refund - carries a POSITIVE
+        # adjustment cancelling its money, and the later money-only refund carries the
+        # negative one, so summing the adjustments of every refund reproduces Shopify's
+        # daily sales_reversals to the cent (verified against ShopifyQL, Sep 2026).
+        # Refunded shipping and refunded tax are kept apart because Shopify nets them out
+        # of "Shipping charges" / "Taxes", not out of returns. Negative returned_value is
+        # rare but real (failed refund transaction on a return) and left as-is so the day
+        # still matches Shopify. A refunded "Tip" line is skipped: tips are never part of
+        # gross sales (Order.subtotalPriceSet excludes them too), so Shopify does not
+        # reverse them either.
         refunds = o.get("refunds") or []
-        parsed = []
-        items_total = 0.0
-        for r in refunds:
-            items_sub = sum(money(li.get("subtotalSet")) for li in ((r.get("refundLineItems") or {}).get("nodes") or []))
-            ship_ref = sum(money(sl.get("subtotalAmountSet")) for sl in ((r.get("refundShippingLines") or {}).get("nodes") or []))
-            refunded_total = money(r.get("totalRefundedSet"))
-            items_total += items_sub
-            parsed.append((local_day(r.get("createdAt"), self.tz), items_sub, ship_ref, refunded_total))
         reversed_so_far = 0.0
-        for rday, items_sub, ship_ref, refunded_total in parsed:
+        touched_window = False
+        for r in refunds:
+            li_nodes = [li for li in ((r.get("refundLineItems") or {}).get("nodes") or []) if not is_tip_line(li)]
+            self.counts["refund_tip_lines"] += len(((r.get("refundLineItems") or {}).get("nodes") or [])) - len(li_nodes)
+            sl_nodes = ((r.get("refundShippingLines") or {}).get("nodes") or [])
+            adj_nodes = ((r.get("orderAdjustments") or {}).get("nodes") or [])
+            for key in ("refundLineItems", "orderAdjustments"):
+                if ((r.get(key) or {}).get("pageInfo") or {}).get("hasNextPage"):
+                    self.counts["refund_lists_truncated"] += 1
+                    self.warnings.add(f"refund {r.get('id')} has more {key} than fetched - raise the page size in ORDERS_QUERY")
+            items_sub = sum(money(li.get("subtotalSet")) for li in li_nodes)
+            items_tax = sum(money(li.get("totalTaxSet")) for li in li_nodes)
+            ship_ref = sum(money(sl.get("subtotalAmountSet")) for sl in sl_nodes)
+            ship_tax = sum(money(sl.get("taxAmountSet")) for sl in sl_nodes)
+            adj_amount = sum(money(a.get("amountSet")) for a in adj_nodes)
+            adj_tax = sum(money(a.get("taxAmountSet")) for a in adj_nodes)
+            refunded_total = money(r.get("totalRefundedSet"))
+            rday = local_day(r.get("processedAt") or r.get("createdAt"), self.tz)
             if not self.in_window(rday):
                 self.counts["refunds_outside_window"] += 1
                 continue
-            if items_total > 0:
-                returned_value = items_sub
-            else:
-                returned_value = max(0.0, refunded_total - ship_ref)
+            touched_window = True
+            returned_value = items_sub - adj_amount
+            refunded_tax = items_tax + ship_tax - adj_tax
             d = self.bucket(rday)
             d["returns"] += returned_value
+            d["refunded_shipping"] += ship_ref
+            d["refunded_tax"] += refunded_tax
             d["refunded_total"] += refunded_total
             self.counts["refunds_counted"] += 1
+            if adj_nodes:
+                self.counts["refunds_with_adjustments"] += 1
+            elif li_nodes and refunded_total == 0:
+                self.counts["refunds_edit_removals"] += 1   # order edit: item removed, no money moved
             if program and rate > 0 and returned_value > 0:
-                rev_base = returned_value + (ship_ref if COMMISSION_BASE in ("subtotal_shipping", "total") else 0.0)
+                rev_base = returned_value
+                if COMMISSION_BASE in ("subtotal_shipping", "total"):
+                    rev_base += ship_ref
+                if COMMISSION_BASE in ("subtotal_tax", "total"):
+                    rev_base += max(0.0, refunded_tax)
                 reversal = rev_base * rate
                 if base > 0:  # never claw back more than the order earned
                     reversal = min(reversal, base * rate - reversed_so_far)
@@ -628,11 +769,67 @@ class Aggregator:
                 af = self.affiliates.setdefault(akey, {"program": program, "orders": 0, "revenue": 0.0, "commission": 0.0, "reversals": 0.0})
                 af["reversals"] += reversal
         if late_refunds_only:
-            self.counts["late_refund_orders"] += 1
+            self.counts["late_orders_scanned"] += 1
+            if touched_window:
+                self.counts["late_refund_orders"] += 1
+
+    def apply_edit_agreements(self, oid, agreements):
+        """Move what an order edit ADDED from the order date to the edit date, the way Shopify
+        Analytics books it. Returns True when the agreement lists were complete."""
+        info = self.edited.get(oid)
+        if info is None:
+            return True
+        applied = info.setdefault("applied", set())
+        complete = not ((agreements.get("pageInfo") or {}).get("hasNextPage"))
+        for ag in (agreements.get("nodes") or []):
+            if ag.get("__typename") != "OrderEditAgreement" and ag.get("reason") != "ORDER_EDIT":
+                continue
+            if ag.get("id") in applied:
+                continue
+            sales = ag.get("sales") or {}
+            if (sales.get("pageInfo") or {}).get("hasNextPage"):
+                complete = False   # apply nothing from a partial list - the retry re-reads it whole
+                continue
+            applied.add(ag.get("id"))
+            gross_add = disc_add = tax_add = ship_add = 0.0
+            for s in (sales.get("nodes") or []):
+                if s.get("actionType") == "RETURN":
+                    continue        # a removal = the $0 refund we already booked from Order.refunds
+                total = money(s.get("totalAmount"))
+                disc = money(s.get("totalDiscountAmountBeforeTaxes"))
+                tax = money(s.get("totalTaxAmount"))
+                lt = s.get("lineType")
+                if lt == "PRODUCT":
+                    gross_add += total - tax + disc
+                    disc_add += disc
+                    tax_add += tax
+                elif lt == "SHIPPING":
+                    ship_add += total - tax + disc
+                    tax_add += tax
+                # TIP / DUTY / FEE / GIFT_CARD lines are not sales in Shopify Analytics either
+            if not any(abs(v) > 0.004 for v in (gross_add, disc_add, tax_add, ship_add)):
+                continue
+            edit_day = local_day(ag.get("happenedAt"), self.tz)
+            moves = (("gross_sales", gross_add), ("discounts", disc_add), ("net_sales", gross_add - disc_add),
+                     ("tax", tax_add), ("shipping", ship_add))
+            if info["order_day"] is not None:
+                src = self.bucket(info["order_day"])
+                for f, v in moves:
+                    src[f] -= v
+            if self.in_window(edit_day):
+                dst = self.bucket(edit_day)
+                for f, v in moves:
+                    dst[f] += v
+            self.counts["edit_additions_moved"] += 1
+        return complete
 
     def finalise(self):
         for d in self.daily.values():
-            d["total_sales"] = d["net_sales"] - d["returns"] + d["shipping"] + d["tax"]
+            # = Shopify Analytics "Total sales" (net sales + shipping charges + taxes,
+            # both already net of what was refunded) when duties/additional fees are 0.
+            d["total_sales"] = (d["net_sales"] - d["returns"]
+                                + d["shipping"] - d["refunded_shipping"]
+                                + d["tax"] - d["refunded_tax"])
             d["snowball_commission_net"] = d["snowball_commission"] - d["snowball_reversals"]
             for f in MONEY_FIELDS:
                 d[f] = round(d[f], 2)
@@ -657,7 +854,7 @@ def sum_range(daily, start_key, end_key):
 # ---------------------------------------------------------------- fetching
 def fetch_orders(client, q, agg, late_refunds_only=False):
     page_size = PAGE_SIZE
-    refunds_first = 10
+    refunds_first = 25   # line items per refund; a truncated refund is reported in meta.warnings
     after = None
     pages = 0
     while True:
@@ -683,11 +880,54 @@ def fetch_orders(client, q, agg, late_refunds_only=False):
     return pages
 
 
+def fetch_edit_agreements(client, agg):
+    """Second pass for edited orders only: pull their sales ledger and move edit additions
+    to the edit date. Batches shrink automatically when Shopify says the query is too costly;
+    a truncated ledger is re-read alone with bigger limits."""
+    ids = list(agg.edited)
+    if not ids:
+        return 0
+    requests = 0
+
+    def run(order_ids, batch, limits):
+        nonlocal requests
+        pending = list(order_ids)
+        truncated = []
+        while pending:
+            chunk, pending = pending[:batch], pending[batch:]
+            try:
+                data = client.query(EDIT_AGREEMENTS_QUERY, {"ids": chunk, "agreementsFirst": limits[0], "salesFirst": limits[1]})
+            except CostTooHigh as e:
+                if batch <= 1:
+                    raise
+                pending = chunk + pending
+                batch = max(1, batch // 2)
+                log(f"edit-agreements query too costly ({e}) - retrying with batches of {batch}")
+                continue
+            requests += 1
+            for node in (data.get("nodes") or []):
+                if node and not agg.apply_edit_agreements(node.get("id"), node.get("agreements") or {}):
+                    truncated.append(node.get("id"))
+        return truncated
+
+    # apply_edit_agreements skips agreements it has already booked and ignores any agreement
+    # whose sales list was cut off, so re-reading a truncated order alone with bigger limits
+    # is safe (nothing is ever double-booked).
+    still = run(ids, max(1, EDIT_BATCH), EDIT_LIMITS)
+    if still:
+        still = run(still, 1, EDIT_LIMITS_RETRY)
+    for oid in still:
+        agg.counts["edit_lists_truncated"] += 1
+        agg.warnings.add(f"order {oid} has more agreements/sales than fetched even at {EDIT_LIMITS_RETRY} - some edit additions stay on the order date")
+    log(f"  edited orders: {len(ids)}, edit additions moved to their edit date: {agg.counts['edit_additions_moved']}, ledger requests: {requests}")
+    return requests
+
+
 def main():
     if not SHOP:
         log("Missing SHOPIFY_SHOP (e.g. yourstore.myshopify.com)")
         sys.exit(1)
-    token, auth_mode = get_access_token()
+    token, auth_mode, scope = get_access_token()
     client = Client(token)
 
     shop = (client.query(SHOP_QUERY).get("shop") or {})
@@ -726,15 +966,33 @@ def main():
     q_start = (now_utc - timedelta(days=WINDOW_DAYS + 2)).strftime("%Y-%m-%dT00:00:00Z")
     q = f"created_at:>={q_start}"
     log(f"Shop {shop.get('name')} ({shop.get('myshopifyDomain')}), tz {tzname}, window {window_start}..{window_end}, auth {auth_mode}, API {API_VERSION}")
+    visibility = probe_order_visibility(client, now_utc)
+    if visibility == "all":
+        log("order visibility: all orders (read_all_orders OK)")
+    else:
+        log(f"order visibility: {visibility} - refunds on orders older than {ORDER_VISIBILITY_DAYS} days are INVISIBLE to this token; "
+            "grant the app the read_all_orders scope (and re-install it) so returns match Shopify Analytics")
+        agg.warnings.add(f"orders older than {ORDER_VISIBILITY_DAYS} days are hidden from this app (read_all_orders scope missing) - "
+                         "returns on such orders are not counted, so Shopify Analytics' returns will be higher than ours")
     log(f"Fetching orders {q} ...")
     pages = fetch_orders(client, q, agg)
 
-    # Refunds issued inside the window on orders created BEFORE it (a return today
-    # on a 50-day-old order): fetch only refunded orders updated in the window.
-    q_late = (f"created_at:<{q_start} AND updated_at:>={q_start} AND "
-              f"(financial_status:refunded OR financial_status:partially_refunded)")
-    log(f"Fetching late refunds {q_late} ...")
+    # Refunds issued inside the window on orders created BEFORE it (a return today on a
+    # 50-day-old order, or an order EDIT removing an item from an old PAID order). Order
+    # edits leave the financial status at "paid", so by default every old order updated
+    # inside the window is scanned; LATE_ORDERS_MODE=refunded keeps the cheaper filter.
+    if LATE_ORDERS_MODE == "refunded":
+        q_late = (f"created_at:<{q_start} AND updated_at:>={q_start} AND "
+                  f"(financial_status:refunded OR financial_status:partially_refunded)")
+    else:
+        q_late = f"created_at:<{q_start} AND updated_at:>={q_start}"
+    log(f"Fetching late refunds ({LATE_ORDERS_MODE}) {q_late} ...")
     pages += fetch_orders(client, q_late, agg, late_refunds_only=True)
+    log(f"  late orders scanned: {agg.counts['late_orders_scanned']}, with refunds in the window: {agg.counts['late_refund_orders']}")
+
+    # Edited orders: book what an edit added on the edit date (Shopify Analytics does).
+    log(f"Fetching sales ledger for {len(agg.edited)} edited orders ...")
+    pages += fetch_edit_agreements(client, agg)
 
     agg.finalise()
     if agg.counts["snowball_attr_without_tag"]:
@@ -784,6 +1042,11 @@ def main():
             "script_version": SCRIPT_VERSION,
             "schema": SCHEMA,
             "auth_mode": auth_mode,
+            "granted_scope": scope,
+            "orders_visibility": visibility,
+            "late_orders_mode": LATE_ORDERS_MODE,
+            "returns_basis": "shopify_sales_reversals",   # returns = SUM(refund line items) - SUM(order adjustments), by processed date
+            "order_edits": "booked_on_edit_date",         # items added by an order edit count on the edit date (Order.agreements ledger)
             "pages": pages,
             "api_requests": client.requests,
             "api_cost_actual": client.cost_actual,
