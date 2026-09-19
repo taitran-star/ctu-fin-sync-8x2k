@@ -49,7 +49,12 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
-SCRIPT_VERSION = "1.0"
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:  # pragma: no cover
+    ZoneInfo = None
+
+SCRIPT_VERSION = "1.1"
 SCHEMA = 1
 
 API_VERSION = os.environ.get("GOOGLE_ADS_API_VERSION", "v25").strip()
@@ -57,6 +62,14 @@ HOST = "https://googleads.googleapis.com"
 WINDOW_DAYS = int(os.environ.get("WINDOW_DAYS", "45"))
 OUTPUT_PATH = os.environ.get("OUTPUT_PATH", "data/google_ads.json")
 SCOPE = "https://www.googleapis.com/auth/adwords"
+# Google reports segments.date/hour in the AD ACCOUNT's timezone (Cattasaurus: Asia/Saigon).
+# The P&L buckets every source on REPORT_TIMEZONE days, so rows are fetched per HOUR and
+# re-bucketed: account-tz hour -> UTC -> report-tz calendar day.
+REPORT_TIMEZONE = os.environ.get("REPORT_TIMEZONE", "America/Los_Angeles").strip() or "UTC"
+# Google still reports some accounts with legacy tz names that newer tzdata only carries as links.
+TZ_ALIASES = {"Asia/Saigon": "Asia/Ho_Chi_Minh", "Asia/Calcutta": "Asia/Kolkata", "US/Pacific": "America/Los_Angeles",
+              "US/Eastern": "America/New_York", "US/Central": "America/Chicago", "US/Mountain": "America/Denver",
+              "Asia/Katmandu": "Asia/Kathmandu", "Asia/Rangoon": "Asia/Yangon", "Europe/Kiev": "Europe/Kyiv"}
 
 DAILY_FIELDS = ["spend", "impressions", "clicks", "conversions", "conversion_value", "roas"]
 CAMPAIGN_FIELDS = ["spend", "impressions", "clicks", "conversions", "conversion_value",
@@ -236,6 +249,27 @@ def micros(v):
         return 0.0
 
 
+def make_rebucket(account_tz_name):
+    """Return f(date, hour) -> report-tz calendar day. Identity when no conversion is possible."""
+    account_tz_name = TZ_ALIASES.get(account_tz_name, account_tz_name)
+    if ZoneInfo is None or not account_tz_name or account_tz_name == REPORT_TIMEZONE:
+        return (lambda day, hour: day), False
+    try:
+        src, dst = ZoneInfo(account_tz_name), ZoneInfo(REPORT_TIMEZONE)
+    except Exception as e:  # noqa: BLE001
+        log(f"WARNING: cannot convert account timezone {account_tz_name!r} -> {REPORT_TIMEZONE!r} ({e}); days left in account timezone")
+        return (lambda day, hour: day), False
+    cache = {}
+    def f(day, hour):
+        key = (day, hour)
+        if key not in cache:
+            y, m, d = (int(x) for x in day.split("-"))
+            local = datetime(y, m, d, int(hour or 0), 30, tzinfo=src)   # mid-hour, DST-safe
+            cache[key] = local.astimezone(dst).strftime("%Y-%m-%d")
+        return cache[key]
+    return f, True
+
+
 def fnum(v):
     try:
         return float(v or 0)
@@ -274,15 +308,18 @@ def fetch_account(client, cid, since, until):
     info_rows = client.search_stream(cid, "SELECT customer.id, customer.descriptive_name, "
                                           "customer.currency_code, customer.time_zone, customer.manager FROM customer")
     info = (info_rows[0] if info_rows else {}).get("customer", {})
+    rebucket, converted = make_rebucket(info.get("timeZone"))
+    hour_sel = "segments.hour, " if converted else ""
     rows = client.search_stream(cid, f"""
-        SELECT segments.date, metrics.cost_micros, metrics.impressions, metrics.clicks,
+        SELECT segments.date, {hour_sel}metrics.cost_micros, metrics.impressions, metrics.clicks,
                metrics.conversions, metrics.conversions_value
         FROM customer
         WHERE segments.date BETWEEN '{since}' AND '{until}'
     """)
     daily = {}
     for r in rows:
-        day = r.get("segments", {}).get("date")
+        seg = r.get("segments", {})
+        day = rebucket(seg.get("date"), seg.get("hour")) if seg.get("date") else None
         m = r.get("metrics", {})
         if not day:
             continue
@@ -292,12 +329,16 @@ def fetch_account(client, cid, since, until):
         d["clicks"] += int(m.get("clicks") or 0)
         d["conversions"] += fnum(m.get("conversions"))
         d["conversion_value"] += fnum(m.get("conversionsValue"))
+    info["_rebucket"] = rebucket
+    info["_converted"] = converted
     return info, daily, len(rows)
 
 
-def fetch_campaigns(client, cid, since, until, campaigns):
+def fetch_campaigns(client, cid, since, until, campaigns, rebucket=None, converted=False):
+    rebucket = rebucket or (lambda day, hour: day)
+    hour_sel = "segments.hour, " if converted else ""
     rows = client.search_stream(cid, f"""
-        SELECT segments.date, campaign.id, campaign.name, campaign.status,
+        SELECT segments.date, {hour_sel}campaign.id, campaign.name, campaign.status,
                campaign.advertising_channel_type,
                metrics.cost_micros, metrics.impressions, metrics.clicks,
                metrics.conversions, metrics.conversions_value,
@@ -307,7 +348,8 @@ def fetch_campaigns(client, cid, since, until, campaigns):
           AND metrics.impressions > 0
     """)
     for r in rows:
-        c, m, day = r.get("campaign", {}), r.get("metrics", {}), r.get("segments", {}).get("date")
+        c, m, seg = r.get("campaign", {}), r.get("metrics", {}), r.get("segments", {})
+        day = rebucket(seg.get("date"), seg.get("hour")) if seg.get("date") else None
         cid_ = str(c.get("id"))
         if not day or not cid_:
             continue
@@ -354,9 +396,14 @@ def main():
     client = Client(token)
 
     now = datetime.now(timezone.utc)
-    since = (now - timedelta(days=WINDOW_DAYS)).strftime("%Y-%m-%d")
-    until = now.strftime("%Y-%m-%d")
-    last30 = (now - timedelta(days=30)).strftime("%Y-%m-%d")
+    now_local = now.astimezone(ZoneInfo(REPORT_TIMEZONE)) if ZoneInfo else now
+    # Query one day wider on both sides in the account's own calendar so every report-tz
+    # day inside the window is complete after re-bucketing; trimmed below.
+    since = (now - timedelta(days=WINDOW_DAYS + 1)).strftime("%Y-%m-%d")
+    until = (now + timedelta(days=1)).strftime("%Y-%m-%d")
+    keep_from = (now_local - timedelta(days=WINDOW_DAYS)).strftime("%Y-%m-%d")
+    keep_to = now_local.strftime("%Y-%m-%d")
+    last30 = (now_local - timedelta(days=30)).strftime("%Y-%m-%d")
 
     daily, campaigns, warnings, per_account = {}, {}, set(), {}
     currency, rows_total, campaign_rows = None, 0, 0
@@ -377,14 +424,21 @@ def main():
         for d in acct_daily.values():
             derive(d)
         try:
-            campaign_rows += fetch_campaigns(client, cid, since, until, campaigns)
+            campaign_rows += fetch_campaigns(client, cid, since, until, campaigns, info.get("_rebucket"), info.get("_converted"))
         except SystemExit:
             raise
         except Exception as e:  # noqa: BLE001 - campaign detail must never break the account-level file
             warnings.add(f"campaign-level fetch failed for {cid}: {str(e)[:200]}")
         per_account[cid] = {"name": info.get("descriptiveName"), "currency": acct_currency,
-                            "time_zone": info.get("timeZone"), "days": len(acct_daily),
-                            "last_30d": sum_range(acct_daily, last30, until)}
+                            "time_zone": info.get("timeZone"), "rebucketed_to": REPORT_TIMEZONE if info.get("_converted") else None,
+                            "days": len(acct_daily), "last_30d": sum_range(acct_daily, last30, keep_to)}
+    # trim to the report-tz window (edges are partial in the wider account-tz query)
+    for day in [k for k in daily if k < keep_from or k > keep_to]:
+        daily.pop(day)
+    for c in campaigns.values():
+        for day in [k for k in c["daily"] if k < keep_from or k > keep_to]:
+            c["daily"].pop(day)
+    since, until = keep_from, keep_to
     for d in daily.values():
         derive(d)
     if not daily:
@@ -396,6 +450,7 @@ def main():
         "source": "google_ads_api",
         "generated_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "customer_ids": account_ids,
+        "timezone": REPORT_TIMEZONE,
         "api_version": API_VERSION,
         "currency": currency or "USD",
         "window_days": WINDOW_DAYS,
