@@ -99,11 +99,18 @@ def make_rebucket(account_tz_name):
 
 
 def fetch_account_info(token, account_id):
+    """Ad account timezone. META_ACCOUNT_TIMEZONE (env) wins; otherwise read from the account node.
+    A failure here must never kill the run (the insights calls are what matter), so SystemExit
+    raised by graph_get on auth errors is swallowed and the days stay in the account timezone."""
+    forced = os.environ.get("META_ACCOUNT_TIMEZONE", "").strip()
+    if forced:
+        return {"timezone_name": forced, "source": "env"}
     url = f"{GRAPH_HOST}/{API_VERSION}/{account_id}"
     try:
-        return graph_get(url, {"access_token": token, "fields": "timezone_name,account_currency,name"}) or {}
-    except Exception as e:  # noqa: BLE001
-        log(f"could not read account info for {account_id}: {str(e)[:120]}")
+        # AdAccount node fields: `currency` (NOT `account_currency`, which only exists on insights rows).
+        return graph_get(url, {"access_token": token, "fields": "timezone_name,currency,name"}) or {}
+    except (Exception, SystemExit) as e:  # noqa: BLE001
+        log(f"WARNING: could not read account info for {account_id} ({str(e)[:120]}) - set META_ACCOUNT_TIMEZONE to enable re-bucketing")
         return {}
 
 # Which action_type to treat as "a purchase". Meta reports the same purchase
@@ -579,7 +586,7 @@ def main():
         "products": products,
         "meta": {
             "schema": 2 if CAMPAIGNS_ENABLED else 1,
-            "script_version": "2.1",
+            "script_version": "2.2",
             "campaign_rows": campaign_rows,
             "rows_processed": rows_total,
             "accounts": per_account,
