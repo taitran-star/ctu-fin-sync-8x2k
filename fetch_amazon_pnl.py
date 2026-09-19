@@ -704,29 +704,35 @@ def ingest_orders_report(tsv_text, daily, warnings, stats):
 
 
 def probe_token_roles(access_token, refresh_token):
-    """One cheap call per role family so the log says exactly which role the token carries.
-    Finances = the original role; Orders API and Reports list = the 'Inventory and Order
-    Tracking' role added on 19/09. Never fatal."""
+    """Endpoints chosen so each answer is decisive (never fatal):
+      - FBA inventory summaries: roles Amazon Fulfillment / Inventory and Order Tracking / Product
+        Listing ONLY (Finance and Accounting is NOT enough) -> proves whether the refresh token was
+        generated after the new roles were saved.
+      - reports list filtered to a Finance-role report (settlement) -> proves whether the Reports
+        API works at all for this token.
+      - reports list filtered to the All Orders report -> the exact permission createReport needs."""
     import hashlib
     fp = hashlib.sha256((refresh_token or "").encode()).hexdigest()[:10]
-    log(f"token fingerprint sha256[:10]={fp} len={len(refresh_token or '')} (compare across runs: same fingerprint = same secret)")
+    log(f"token fingerprint sha256[:10]={fp} len={len(refresh_token or '')} (same fingerprint across runs = same secret)")
+    mk = MARKETPLACE_IDS[0]
     probes = [
-        ("finances  (Finance and Accounting role)", "/finances/v0/financialEventGroups", {"MaxResultsPerPage": 1}),
-        ("orders API (Inventory and Order Tracking role)", "/orders/v0/orders",
-         {"MarketplaceIds": ",".join(MARKETPLACE_IDS), "CreatedAfter": iso(datetime.now(timezone.utc) - timedelta(days=2)), "MaxResultsPerPage": 1}),
-        ("reports list (Inventory and Order Tracking role)", "/reports/2021-06-30/reports",
-         {"reportTypes": ORDERS_REPORT_TYPE, "pageSize": 1}),
+        ("fba_inventory", "FBA inventory (needs Inventory and Order Tracking / Amazon Fulfillment - Finance role is NOT enough)",
+         "/fba/inventory/v1/summaries", {"details": "false", "granularityType": "Marketplace", "granularityId": mk, "marketplaceIds": mk}),
+        ("reports_finance", "reports list, settlement report (Finance and Accounting role)",
+         "/reports/2021-06-30/reports", {"reportTypes": "GET_V2_SETTLEMENT_REPORT_DATA_FLAT_FILE", "pageSize": 1}),
+        ("reports_orders", "reports list, All Orders report (Inventory and Order Tracking role)",
+         "/reports/2021-06-30/reports", {"reportTypes": ORDERS_REPORT_TYPE, "pageSize": 1}),
     ]
     result = {}
-    for label, path, params in probes:
+    for key, label, path, params in probes:
         try:
             sp_api_get(path, access_token, params)
-            result[label] = "OK"
+            result[key] = "OK"
         except urllib.error.HTTPError as e:
-            result[label] = f"HTTP {e.code}"
+            result[key] = f"HTTP {e.code}"
         except Exception as e:  # noqa: BLE001
-            result[label] = f"error {str(e)[:80]}"
-        log(f"role probe: {label} -> {result[label]}")
+            result[key] = f"error {str(e)[:80]}"
+        log(f"role probe: {label} -> {result[key]}")
     return result
 
 
@@ -819,14 +825,21 @@ def main():
         orders_stats["enabled"] = True
         orders_stats["role_probes"] = probes
         if not orders_stats.get("complete"):
-            if any(v.startswith("HTTP 403") for k, v in probes.items() if "Inventory" in k):
-                log("DIAGNOSIS: the refresh token in AMAZON_SP_API_REFRESH_TOKEN does NOT carry the 'Inventory and Order Tracking' role. "
-                    "Either the GitHub secret still holds the old token, or the token was generated before the app roles were saved. "
-                    "Fix: Developer Console > app > Authorize > 'Authorize app' (after roles are saved) > copy the NEW refresh token > update the secret.")
+            inv, rep_fin, rep_ord = probes.get("fba_inventory", ""), probes.get("reports_finance", ""), probes.get("reports_orders", "")
+            if inv.startswith("HTTP 403"):
+                log("DIAGNOSIS: the refresh token in AMAZON_SP_API_REFRESH_TOKEN was generated BEFORE the new roles were saved on the app "
+                    "(FBA inventory, which the old Finance role cannot open, is refused). Fix: Developer Console > app > Authorize > "
+                    "'Authorize app' > copy the NEW refresh token > update the GitHub secret > run again.")
+            elif rep_fin.startswith("HTTP 403") and rep_ord.startswith("HTTP 403"):
+                log("DIAGNOSIS: token carries the new roles (FBA inventory OK) but the Reports API is refused for EVERY report type, "
+                    "even Finance ones - the Reports API itself is blocked for this app/account, not a role problem. "
+                    "Next: Amazon SP-API support case, or switch the order-date feed to the Orders API.")
+            elif rep_ord.startswith("HTTP 403"):
+                log("DIAGNOSIS: Reports API works for Finance reports but refuses the All Orders report - Amazon has not yet applied "
+                    "the new role to this authorization. Usually clears within a few hours; if not, revoke the self-authorization "
+                    "and authorize again.")
             else:
-                log("DIAGNOSIS: token has the Orders/Reports roles but createReport for this report type is refused - "
-                    "report type itself is blocked for this account/app; will need a different report or Amazon support.")
-        log(f"orders report: {orders_stats}")
+                log("DIAGNOSIS: probes pass but createReport still failed - see the HTTP error above (parameter or report-type issue).")
     compute_net_sales(daily)
 
     today_key = now_local.strftime("%Y-%m-%d")
@@ -850,7 +863,7 @@ def main():
             "events_processed": total_events,
             "warnings": sorted(warnings),
             "schema": 3,   # 2 = other_fees + giftwrap_credits + diagnostics; 3 = ordered_* fields by order date (dashboard handles 1-3)
-            "script_version": "2.4.1",   # 2.3 = days in REPORT_TIMEZONE; 2.4 = All Orders report (sales by order date, MCF split) next to Finances
+            "script_version": "2.4.2",   # 2.3 = days in REPORT_TIMEZONE; 2.4 = All Orders report (sales by order date, MCF split) next to Finances
             "orders_report": orders_stats,
             "sales_basis": {
                 "ordered": "ordered_* = All Orders report by purchase date (Seller Central / Sellerboard basis), Amazon.com channel, cancelled excluded",
