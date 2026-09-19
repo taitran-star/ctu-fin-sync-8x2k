@@ -1,0 +1,43 @@
+name: Meta Ads - diagnose token (one-off)
+
+# Run by hand (Actions > this workflow > Run workflow). Uses the META_ACCESS_TOKEN
+# secret already stored in the repo to call the Graph API three times and prints
+# what Meta answers - the token itself is never printed.
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Graph API with the stored token
+        env:
+          TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          ACCOUNT: ${{ secrets.META_AD_ACCOUNT_ID }}
+          API: v23.0
+        run: |
+          set +e
+          if [ -z "$TOKEN" ]; then echo "META_ACCESS_TOKEN secret is EMPTY"; exit 1; fi
+          echo "::add-mask::$TOKEN"
+          ACT="$ACCOUNT"; case "$ACT" in act_*) ;; *) ACT="act_$ACT";; esac
+          echo "Token length: ${#TOKEN} chars, ad account: $ACT"
+          call () {
+            echo; echo "=== $1"
+            curl -sS "https://graph.facebook.com/$API/$2&access_token=$TOKEN" | python3 -c '
+          import json,sys
+          d=json.load(sys.stdin)
+          if "error" in d:
+              e=d["error"]; print("ERROR code", e.get("code"), "subcode", e.get("error_subcode"), "type", e.get("type"))
+              print("message:", e.get("message")); print("user_title:", e.get("error_user_title")); print("user_msg:", e.get("error_user_msg"))
+          else:
+              print(json.dumps(d, indent=1)[:1500])'
+          }
+          call "1. Who is this token (/me)"                      "me?fields=id,name"
+          call "2. Ad account status"                            "$ACT?fields=name,account_status,disable_reason,timezone_name,currency"
+          call "3. Insights yesterday (what the sync calls)"     "$ACT/insights?fields=spend,impressions&date_preset=yesterday"
+          call "4. Token info (debug_token)"                     "debug_token?input_token=$TOKEN"
+          echo; echo "Done. account_status 1 = active, 2 = disabled, 3 = unsettled, 7 = pending risk review, 9 = in grace period, 100 = pending closure, 101 = closed."
