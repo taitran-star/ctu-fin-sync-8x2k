@@ -84,7 +84,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "1.3"
+SCRIPT_VERSION = "1.4"
 SCHEMA = 1
 
 SHOP = os.environ.get("SHOPIFY_SHOP", "").strip().lower().replace("https://", "").rstrip("/")
@@ -691,7 +691,11 @@ def main():
     client = Client(token)
 
     shop = (client.query(SHOP_QUERY).get("shop") or {})
-    tzname = shop.get("ianaTimezone") or "UTC"
+    # REPORT_TIMEZONE (shared by every fetcher, default America/Los_Angeles) wins over the
+    # shop's own timezone so all P&L sources bucket on the same calendar days.
+    tzname = os.environ.get("REPORT_TIMEZONE", "").strip() or shop.get("ianaTimezone") or "UTC"
+    if shop.get("ianaTimezone") and tzname != shop.get("ianaTimezone"):
+        log(f"NOTE: bucketing days in {tzname} (REPORT_TIMEZONE), shop timezone is {shop.get('ianaTimezone')} - Shopify Analytics will differ at day edges")
     tz = None
     if ZoneInfo is not None:
         try:
