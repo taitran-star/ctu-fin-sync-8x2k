@@ -56,11 +56,55 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:  # pragma: no cover
+    ZoneInfo = None
+
 API_VERSION = os.environ.get("META_API_VERSION", "v23.0")
 GRAPH_HOST = "https://graph.facebook.com"
 WINDOW_DAYS = int(os.environ.get("WINDOW_DAYS", "45"))
 OUTPUT_PATH = os.environ.get("OUTPUT_PATH", "data/meta_ads.json")
 ATTRIBUTION = os.environ.get("META_ATTRIBUTION", "").strip()
+# Meta reports date_start in the AD ACCOUNT's timezone. The P&L buckets every source on
+# REPORT_TIMEZONE days, so when the two differ the insights are fetched with the hourly
+# breakdown (advertiser time zone) and re-bucketed hour by hour into report-tz days.
+REPORT_TIMEZONE = os.environ.get("REPORT_TIMEZONE", "America/Los_Angeles").strip() or "UTC"
+TZ_ALIASES = {"Asia/Saigon": "Asia/Ho_Chi_Minh", "Asia/Calcutta": "Asia/Kolkata", "US/Pacific": "America/Los_Angeles",
+              "US/Eastern": "America/New_York", "US/Central": "America/Chicago", "US/Mountain": "America/Denver"}
+HOURLY_BREAKDOWN = "hourly_stats_aggregated_by_advertiser_time_zone"
+
+
+def make_rebucket(account_tz_name):
+    """f(date_start, hourly_breakdown_value) -> report-tz day. (identity, False) when not needed."""
+    account_tz_name = TZ_ALIASES.get(account_tz_name, account_tz_name)
+    if ZoneInfo is None or not account_tz_name or account_tz_name == REPORT_TIMEZONE:
+        return (lambda day, hour: day), False
+    try:
+        src, dst = ZoneInfo(account_tz_name), ZoneInfo(REPORT_TIMEZONE)
+    except Exception as e:  # noqa: BLE001
+        log(f"WARNING: cannot convert account timezone {account_tz_name!r} -> {REPORT_TIMEZONE!r} ({e}); days left in account timezone")
+        return (lambda day, hour: day), False
+    cache = {}
+
+    def f(day, hour):
+        # hour arrives as "13:00:00 - 13:59:59" from the hourly breakdown
+        h = int(str(hour or "0")[:2]) if hour is not None else 0
+        key = (day, h)
+        if key not in cache:
+            y, m, d = (int(x) for x in day.split("-"))
+            cache[key] = datetime(y, m, d, h, 30, tzinfo=src).astimezone(dst).strftime("%Y-%m-%d")
+        return cache[key]
+    return f, True
+
+
+def fetch_account_info(token, account_id):
+    url = f"{GRAPH_HOST}/{API_VERSION}/{account_id}"
+    try:
+        return graph_get(url, {"access_token": token, "fields": "timezone_name,account_currency,name"}) or {}
+    except Exception as e:  # noqa: BLE001
+        log(f"could not read account info for {account_id}: {str(e)[:120]}")
+        return {}
 
 # Which action_type to treat as "a purchase". Meta reports the same purchase
 # under several overlapping action types; take the first one present in this
@@ -205,14 +249,16 @@ def graph_get(url, params, max_retries=6):
     raise RuntimeError("Exceeded retries calling Meta Graph API")
 
 
-def parse_insights_rows(rows, daily, warnings, action_types_seen):
-    """Fold Graph API insights rows (one per day, level=account) into `daily`."""
+def parse_insights_rows(rows, daily, warnings, action_types_seen, rebucket=None):
+    """Fold Graph API insights rows (one per day - or per hour when re-bucketing - level=account) into `daily`."""
     currency = None
+    rebucket = rebucket or (lambda day, hour: day)
     for row in rows:
         day = row.get("date_start")
         if not day:
             warnings.add("insights row without date_start")
             continue
+        day = rebucket(day, row.get(HOURLY_BREAKDOWN))
         d = daily.setdefault(day, new_daily_bucket())
         d["spend"] += to_float(row.get("spend"))
         d["impressions"] += to_int(row.get("impressions"))
@@ -252,15 +298,17 @@ def sum_range(daily, start_key, end_key):
     return out
 
 
-def fetch_insights(token, account_id, since, until, daily, warnings, action_types_seen):
+def fetch_insights(token, account_id, since, until, daily, warnings, action_types_seen, rebucket=None, converted=False):
     params = {
         "access_token": token,
         "level": "account",
         "time_increment": 1,
         "time_range": json.dumps({"since": since, "until": until}),
         "fields": "date_start,date_stop,account_currency,spend,impressions,clicks,actions,action_values",
-        "limit": 100,
+        "limit": 500 if converted else 100,
     }
+    if converted:
+        params["breakdowns"] = HOURLY_BREAKDOWN
     if ATTRIBUTION:
         params["action_attribution_windows"] = json.dumps([w.strip() for w in ATTRIBUTION.split(",") if w.strip()])
     url = f"{GRAPH_HOST}/{API_VERSION}/{account_id}/insights"
@@ -272,7 +320,7 @@ def fetch_insights(token, account_id, since, until, daily, warnings, action_type
         resp = graph_get(url, params) if params else graph_get(url, None)
         rows = resp.get("data", []) or []
         rows_total += len(rows)
-        currency = parse_insights_rows(rows, daily, warnings, action_types_seen) or currency
+        currency = parse_insights_rows(rows, daily, warnings, action_types_seen, rebucket) or currency
         nxt = (resp.get("paging") or {}).get("next")
         log(f"page {page}: {len(rows)} rows, next={'yes' if nxt else 'no'}")
         if not nxt:
@@ -322,16 +370,45 @@ def fetch_campaign_meta(token, account_id):
     return out
 
 
-def fetch_campaign_insights(token, account_id, since, until, campaigns, warnings):
+def fetch_campaign_reach(token, account_id, since, until):
+    """reach is a unique-user metric Meta only reports per whole account-tz day (not per hour);
+    fetched separately when re-bucketing and attached to the same date key (approximation)."""
+    out = {}
+    url = f"{GRAPH_HOST}/{API_VERSION}/{account_id}/insights"
+    params = {"access_token": token, "level": "campaign", "time_increment": 1,
+              "time_range": json.dumps({"since": since, "until": until}),
+              "fields": "campaign_id,date_start,reach", "limit": 500}
+    while True:
+        resp = graph_get(url, params) if params else graph_get(url, None)
+        for row in resp.get("data", []) or []:
+            out.setdefault(row.get("campaign_id"), {})[row.get("date_start")] = to_int(row.get("reach"))
+        nxt = (resp.get("paging") or {}).get("next")
+        if not nxt:
+            break
+        url, params = nxt, None
+    return out
+
+
+def fetch_campaign_insights(token, account_id, since, until, campaigns, warnings, rebucket=None, converted=False):
     """Daily rows per campaign -> campaigns[id]['daily'][date] buckets."""
+    rebucket = rebucket or (lambda day, hour: day)
+    fields = "campaign_id,campaign_name,date_start,spend,impressions,clicks,inline_link_clicks,actions,action_values"
+    reach_by_day = {}
+    if converted:
+        reach_by_day = fetch_campaign_reach(token, account_id, since, until)
+        warnings.add("Meta reach/frequency per campaign are by account-timezone day (Meta has no hourly reach) - spend/purchases are re-bucketed to " + REPORT_TIMEZONE)
+    else:
+        fields = fields.replace("impressions,clicks", "impressions,reach,clicks")
     params = {
         "access_token": token,
         "level": "campaign",
         "time_increment": 1,
         "time_range": json.dumps({"since": since, "until": until}),
-        "fields": "campaign_id,campaign_name,date_start,spend,impressions,reach,clicks,inline_link_clicks,actions,action_values",
+        "fields": fields,
         "limit": 500,
     }
+    if converted:
+        params["breakdowns"] = HOURLY_BREAKDOWN
     if ATTRIBUTION:
         params["action_attribution_windows"] = json.dumps([w.strip() for w in ATTRIBUTION.split(",") if w.strip()])
     url = f"{GRAPH_HOST}/{API_VERSION}/{account_id}/insights"
@@ -340,15 +417,22 @@ def fetch_campaign_insights(token, account_id, since, until, campaigns, warnings
         resp = graph_get(url, params) if params else graph_get(url, None)
         for row in resp.get("data", []) or []:
             cid = row.get("campaign_id")
-            day = row.get("date_start")
-            if not cid or not day:
+            src_day = row.get("date_start")
+            if not cid or not src_day:
                 continue
+            day = rebucket(src_day, row.get(HOURLY_BREAKDOWN))
             c = campaigns.setdefault(cid, {"name": row.get("campaign_name"), "daily": {}})
             c["name"] = c.get("name") or row.get("campaign_name")
             d = c["daily"].setdefault(day, new_campaign_bucket())
             d["spend"] += to_float(row.get("spend"))
             d["impressions"] += to_int(row.get("impressions"))
-            d["reach"] += to_int(row.get("reach"))
+            if converted:
+                r = reach_by_day.get(cid, {}).get(day)
+                if r is not None and not d.get("_reach_set"):
+                    d["reach"] = r
+                    d["_reach_set"] = True
+            else:
+                d["reach"] += to_int(row.get("reach"))
             d["clicks"] += to_int(row.get("clicks"))
             d["link_clicks"] += to_int(row.get("inline_link_clicks"))
             _, atc = pick_action(row.get("actions"), ATC_PRIORITY)
@@ -409,16 +493,26 @@ def main():
         sys.exit(1)
 
     now = datetime.now(timezone.utc)
-    since = (now - timedelta(days=WINDOW_DAYS)).strftime("%Y-%m-%d")
-    until = now.strftime("%Y-%m-%d")
+    now_local = now.astimezone(ZoneInfo(REPORT_TIMEZONE)) if ZoneInfo else now
+    # one day wider on each side (account calendar) so re-bucketed edge days are complete; trimmed below
+    since = (now - timedelta(days=WINDOW_DAYS + 1)).strftime("%Y-%m-%d")
+    until = (now + timedelta(days=1)).strftime("%Y-%m-%d")
+    keep_from = (now_local - timedelta(days=WINDOW_DAYS)).strftime("%Y-%m-%d")
+    keep_to = now_local.strftime("%Y-%m-%d")
 
     daily, warnings, action_types_seen = {}, set(), set()
     rows_total, currency = 0, None
-    per_account = {}
+    per_account, rebuckets = {}, {}
     for account_id in account_ids:
-        log(f"Fetching {account_id} insights {since}..{until} via {API_VERSION}...")
+        info = fetch_account_info(token, account_id)
+        rebucket, converted = make_rebucket(info.get("timezone_name"))
+        rebuckets[account_id] = (rebucket, converted)
+        log(f"Fetching {account_id} insights {since}..{until} via {API_VERSION} (account tz {info.get('timezone_name')}, "
+            f"{'re-bucketing hourly to ' + REPORT_TIMEZONE if converted else 'no tz conversion needed'})...")
         acct_daily = {}
-        n_rows, acct_currency = fetch_insights(token, account_id, since, until, acct_daily, warnings, action_types_seen)
+        n_rows, acct_currency = fetch_insights(token, account_id, since, until, acct_daily, warnings, action_types_seen, rebucket, converted)
+        for day in [k for k in acct_daily if k < keep_from or k > keep_to]:
+            acct_daily.pop(day)
         rows_total += n_rows
         if currency and acct_currency and acct_currency != currency:
             warnings.add(f"currency mismatch: {account_id} is {acct_currency}, earlier account(s) {currency} - daily sums mix currencies")
@@ -431,30 +525,39 @@ def main():
         finalise(acct_daily)
         per_account[account_id] = {
             "currency": acct_currency,
+            "time_zone": info.get("timezone_name"),
+            "rebucketed_to": REPORT_TIMEZONE if converted else None,
             "days": len(acct_daily),
-            "last_30d": sum_range(acct_daily, (now - timedelta(days=30)).strftime("%Y-%m-%d"), until),
+            "last_30d": sum_range(acct_daily, (now_local - timedelta(days=30)).strftime("%Y-%m-%d"), keep_to),
         }
     finalise(daily)
 
     campaigns, products, campaign_rows = {}, {}, 0
     if CAMPAIGNS_ENABLED:
-        last30 = (now - timedelta(days=30)).strftime("%Y-%m-%d")
+        last30 = (now_local - timedelta(days=30)).strftime("%Y-%m-%d")
         meta_by_id = {}
         for account_id in account_ids:
             try:
                 meta_by_id.update(fetch_campaign_meta(token, account_id))
                 log(f"Fetching {account_id} campaign-level insights...")
-                campaign_rows += fetch_campaign_insights(token, account_id, since, until, campaigns, warnings)
+                rb, cv = rebuckets.get(account_id, (None, False))
+                campaign_rows += fetch_campaign_insights(token, account_id, since, until, campaigns, warnings, rb, cv)
             except SystemExit:
                 raise
             except Exception as e:  # noqa: BLE001 - campaign detail must never break the account-level file
                 warnings.add(f"campaign-level fetch failed for {account_id}: {str(e)[:200]}")
-        products = finalise_campaigns(campaigns, meta_by_id, since, until, last30)
+        for c in campaigns.values():
+            for day in [k for k in c["daily"] if k < keep_from or k > keep_to]:
+                c["daily"].pop(day)
+            for d in c["daily"].values():
+                d.pop("_reach_set", None)
+        products = finalise_campaigns(campaigns, meta_by_id, keep_from, keep_to, last30)
         log(f"Campaigns: {len(campaigns)} ({campaign_rows} daily rows), products: {sorted(products)}")
 
+    since, until = keep_from, keep_to
     today_key = until
-    mtd_start = now.strftime("%Y-%m-01")
-    last30_start = (now - timedelta(days=30)).strftime("%Y-%m-%d")
+    mtd_start = now_local.strftime("%Y-%m-01")
+    last30_start = (now_local - timedelta(days=30)).strftime("%Y-%m-%d")
 
     out = {
         "source": "meta_marketing_api",
@@ -464,6 +567,7 @@ def main():
         "api_version": API_VERSION,
         "currency": currency or "USD",
         "attribution": ATTRIBUTION or "account default",
+        "timezone": REPORT_TIMEZONE,
         "window_days": WINDOW_DAYS,
         "daily": daily,
         "totals": {
@@ -475,7 +579,7 @@ def main():
         "products": products,
         "meta": {
             "schema": 2 if CAMPAIGNS_ENABLED else 1,
-            "script_version": "2.0",
+            "script_version": "2.1",
             "campaign_rows": campaign_rows,
             "rows_processed": rows_total,
             "accounts": per_account,
