@@ -28,6 +28,8 @@ jobs:
 
       - name: Fetch Shopify orders + Snowball commissions
         env:
+          # One calendar for the whole P&L: every source buckets its days in this timezone.
+          REPORT_TIMEZONE: America/Los_Angeles
           SHOPIFY_SHOP: ${{ secrets.SHOPIFY_SHOP }}
           SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_CLIENT_ID }}
           SHOPIFY_CLIENT_SECRET: ${{ secrets.SHOPIFY_CLIENT_SECRET }}
