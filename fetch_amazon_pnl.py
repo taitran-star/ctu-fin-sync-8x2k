@@ -703,6 +703,33 @@ def ingest_orders_report(tsv_text, daily, warnings, stats):
     return rows
 
 
+def probe_token_roles(access_token, refresh_token):
+    """One cheap call per role family so the log says exactly which role the token carries.
+    Finances = the original role; Orders API and Reports list = the 'Inventory and Order
+    Tracking' role added on 19/09. Never fatal."""
+    import hashlib
+    fp = hashlib.sha256((refresh_token or "").encode()).hexdigest()[:10]
+    log(f"token fingerprint sha256[:10]={fp} len={len(refresh_token or '')} (compare across runs: same fingerprint = same secret)")
+    probes = [
+        ("finances  (Finance and Accounting role)", "/finances/v0/financialEventGroups", {"MaxResultsPerPage": 1}),
+        ("orders API (Inventory and Order Tracking role)", "/orders/v0/orders",
+         {"MarketplaceIds": ",".join(MARKETPLACE_IDS), "CreatedAfter": iso(datetime.now(timezone.utc) - timedelta(days=2)), "MaxResultsPerPage": 1}),
+        ("reports list (Inventory and Order Tracking role)", "/reports/2021-06-30/reports",
+         {"reportTypes": ORDERS_REPORT_TYPE, "pageSize": 1}),
+    ]
+    result = {}
+    for label, path, params in probes:
+        try:
+            sp_api_get(path, access_token, params)
+            result[label] = "OK"
+        except urllib.error.HTTPError as e:
+            result[label] = f"HTTP {e.code}"
+        except Exception as e:  # noqa: BLE001
+            result[label] = f"error {str(e)[:80]}"
+        log(f"role probe: {label} -> {result[label]}")
+    return result
+
+
 def fetch_orders_by_order_date(access_token, window_start, window_end, daily, warnings):
     """Ask Amazon for the All Orders report in <= ORDERS_REPORT_CHUNK_DAYS chunks and ingest it.
     Any failure is a warning, never fatal: the Finances numbers still publish."""
@@ -787,8 +814,18 @@ def main():
         # views cover exactly the same calendar days.
         first_day = min(daily) if daily else window_start.astimezone(REPORT_TZ).strftime("%Y-%m-%d")
         od_start = datetime.strptime(first_day, "%Y-%m-%d").replace(tzinfo=REPORT_TZ).astimezone(timezone.utc)
+        probes = probe_token_roles(access_token, refresh_token)
         orders_stats = fetch_orders_by_order_date(access_token, od_start, now - timedelta(minutes=2), daily, warnings)
         orders_stats["enabled"] = True
+        orders_stats["role_probes"] = probes
+        if not orders_stats.get("complete"):
+            if any(v.startswith("HTTP 403") for k, v in probes.items() if "Inventory" in k):
+                log("DIAGNOSIS: the refresh token in AMAZON_SP_API_REFRESH_TOKEN does NOT carry the 'Inventory and Order Tracking' role. "
+                    "Either the GitHub secret still holds the old token, or the token was generated before the app roles were saved. "
+                    "Fix: Developer Console > app > Authorize > 'Authorize app' (after roles are saved) > copy the NEW refresh token > update the secret.")
+            else:
+                log("DIAGNOSIS: token has the Orders/Reports roles but createReport for this report type is refused - "
+                    "report type itself is blocked for this account/app; will need a different report or Amazon support.")
         log(f"orders report: {orders_stats}")
     compute_net_sales(daily)
 
@@ -813,7 +850,7 @@ def main():
             "events_processed": total_events,
             "warnings": sorted(warnings),
             "schema": 3,   # 2 = other_fees + giftwrap_credits + diagnostics; 3 = ordered_* fields by order date (dashboard handles 1-3)
-            "script_version": "2.4",   # 2.3 = days in REPORT_TIMEZONE; 2.4 = All Orders report (sales by order date, MCF split) next to Finances
+            "script_version": "2.4.1",   # 2.3 = days in REPORT_TIMEZONE; 2.4 = All Orders report (sales by order date, MCF split) next to Finances
             "orders_report": orders_stats,
             "sales_basis": {
                 "ordered": "ordered_* = All Orders report by purchase date (Seller Central / Sellerboard basis), Amazon.com channel, cancelled excluded",
