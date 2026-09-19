@@ -31,6 +31,8 @@ jobs:
 
       - name: Fetch Google Ads spend
         env:
+          # One calendar for the whole P&L: every source buckets its days in this timezone.
+          REPORT_TIMEZONE: America/Los_Angeles
           # Auth route (a): service-account key (blocked by the cattasaurus.com org policy
           # at the moment - leave empty), or route (b): OAuth client + refresh token.
           GOOGLE_ADS_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_ADS_SERVICE_ACCOUNT_JSON }}
@@ -43,7 +45,7 @@ jobs:
           GOOGLE_ADS_LOGIN_CUSTOMER_ID: ${{ secrets.GOOGLE_ADS_LOGIN_CUSTOMER_ID }}
           # Product label per campaign = first " - " segment of the campaign name;
           # aliases fix campaigns that don't follow the naming grammar.
-          GOOGLE_PRODUCT_ALIASES: '{"litter": "Litter Box", "peekaboo": "Peekaboo", "fountain": "Water Fountain"}'
+          GOOGLE_PRODUCT_ALIASES: '{"litter": "Litter Box", "peekaboo": "Peekaboo", "pkc": "Peekaboo", "fountain": "Water Fountain"}'
           # Optional overrides:
           # GOOGLE_ADS_API_VERSION: v25
           # WINDOW_DAYS: 45
