@@ -3,8 +3,10 @@
 Cattasaurus - Amazon SP-API P&L fetcher.
 
 Runs on a schedule (GitHub Actions) completely independently of Claude.
-Pulls real Finances API data from Amazon Selling Partner API, aggregates it
-into a P&L-friendly JSON structure, and writes it to data/amazon_pnl.json.
+Pulls real Finances API data (fees, refunds, adjustments - by the day Amazon POSTS the
+money, i.e. ship date) AND the "All Orders by order date" report (sales by the day the
+customer ORDERED - the number Seller Central / Sellerboard show) from the Selling Partner
+API, aggregates both into one P&L-friendly JSON and writes it to data/amazon_pnl.json.
 
 Credentials are read ONLY from environment variables (populated from GitHub
 Actions Secrets at run time) - never hardcoded, never logged.
@@ -18,8 +20,14 @@ Optional env vars:
   SP_API_REGION_HOST   default: https://sellingpartnerapi-na.amazon.com
   MARKETPLACE_IDS       comma separated, default: ATVPDKIKX0DER (US)
   WINDOW_DAYS            how many trailing days to (re)fetch, default 45
+  ORDERS_REPORT          1 (default) = also pull GET_FLAT_FILE_ALL_ORDERS_DATA_BY_ORDER_DATE_GENERAL
+                         (Reports API, role "Inventory and Order Tracking"); 0 = Finances only
+  ORDERS_REPORT_CHUNK_DAYS  days per report request (default 30 -> 2 reports for 45 days)
 """
 import base64
+import csv
+import gzip
+import io
 import json
 import os
 import sys
@@ -44,6 +52,11 @@ SP_API_HOST = os.environ.get("SP_API_REGION_HOST", "https://sellingpartnerapi-na
 MARKETPLACE_IDS = [m.strip() for m in os.environ.get("MARKETPLACE_IDS", "ATVPDKIKX0DER").split(",") if m.strip()]
 WINDOW_DAYS = int(os.environ.get("WINDOW_DAYS", "45"))
 OUTPUT_PATH = os.environ.get("OUTPUT_PATH", "data/amazon_pnl.json")
+ORDERS_REPORT = os.environ.get("ORDERS_REPORT", "1").strip() not in ("0", "false", "no")
+ORDERS_REPORT_TYPE = "GET_FLAT_FILE_ALL_ORDERS_DATA_BY_ORDER_DATE_GENERAL"
+ORDERS_REPORT_CHUNK_DAYS = int(os.environ.get("ORDERS_REPORT_CHUNK_DAYS", "30"))
+ORDERS_REPORT_POLL_SECONDS = int(os.environ.get("ORDERS_REPORT_POLL_SECONDS", "20"))
+ORDERS_REPORT_MAX_WAIT = int(os.environ.get("ORDERS_REPORT_MAX_WAIT", "900"))   # per report
 
 # SP-API Finances v0 rate limit for listFinancialEvents is 0.5 req/sec (burst 30).
 MIN_REQUEST_INTERVAL = 2.1  # seconds, a little slower than the limit to be safe
@@ -122,6 +135,21 @@ DAILY_FIELDS = [
     "service_fees", "inbound_freight", "other_fees", "ad_spend", "promotions", "shipping_credits",
     "giftwrap_credits", "adjustments", "unclassified_other", "orders", "units",
 ]
+# Order-date fields (schema 3) filled from the All Orders report: what the customer ordered on
+# that calendar day (REPORT_TZ), the way Seller Central's "Sales" and Sellerboard count it.
+# Amazon.com channel only - Multi-Channel Fulfillment ("Non-Amazon") orders are counted apart
+# because their revenue is already in Shopify.
+ORDERED_FIELDS = [
+    "ordered_sales",          # item-price sum (tax excluded, before promotions), Amazon.com orders
+    "ordered_shipping",       # shipping-price + gift-wrap-price charged to the customer
+    "ordered_promotions",     # item + ship promotion discounts (positive number = discount given)
+    "ordered_units",          # quantity ordered (cancelled lines excluded)
+    "ordered_orders",         # distinct Amazon order ids
+    "ordered_pending_units",  # units on orders still Pending (Amazon leaves their price blank)
+    "mcf_units",              # Multi-Channel Fulfillment (Non-Amazon sales channel) units
+    "mcf_orders",
+]
+DAILY_FIELDS += ORDERED_FIELDS
 
 
 def log(msg):
@@ -542,6 +570,166 @@ def _fetch_window(access_token, posted_after, posted_before, daily, warnings):
     return events_count
 
 
+# ---------------------------------------------------------------------------------------
+# Reports API: "All Orders by order date" (sales the way Seller Central / Sellerboard count)
+# ---------------------------------------------------------------------------------------
+def sp_api_post(path, access_token, body, max_retries=5):
+    url = f"{SP_API_HOST}{path}"
+    data = json.dumps(body).encode()
+    for attempt in range(1, max_retries + 1):
+        rl.wait()
+        req = urllib.request.Request(url, data=data, method="POST")
+        req.add_header("x-amz-access-token", access_token)
+        req.add_header("Content-Type", "application/json")
+        req.add_header("Accept", "application/json")
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                return json.loads(resp.read().decode())
+        except urllib.error.HTTPError as e:
+            err = e.read().decode(errors="replace")
+            if e.code == 429 or e.code >= 500:
+                backoff = min(60, 5 * attempt)
+                log(f"HTTP {e.code} on POST {path}, retry {attempt}/{max_retries} in {backoff}s: {err[:300]}")
+                time.sleep(backoff)
+                continue
+            log(f"HTTP {e.code} on POST {path}: {err[:500]}")
+            raise
+    raise RuntimeError(f"Exceeded retries calling POST {path}")
+
+
+def download_report_document(access_token, document_id):
+    doc = sp_api_get(f"/reports/2021-06-30/documents/{document_id}", access_token)
+    url = doc.get("url")
+    if not url:
+        raise RuntimeError("report document has no download url")
+    req = urllib.request.Request(url, method="GET")
+    with urllib.request.urlopen(req, timeout=120) as resp:
+        raw = resp.read()
+    if (doc.get("compressionAlgorithm") or "").upper() == "GZIP":
+        raw = gzip.decompress(raw)
+    for enc in ("utf-8", "cp1252", "latin-1"):
+        try:
+            return raw.decode(enc)
+        except UnicodeDecodeError:
+            continue
+    return raw.decode("utf-8", errors="replace")
+
+
+def request_orders_report(access_token, start, end):
+    """Create the report, wait for DONE, return the TSV text (or None on FATAL/CANCELLED/timeout)."""
+    body = {
+        "reportType": ORDERS_REPORT_TYPE,
+        "marketplaceIds": MARKETPLACE_IDS,
+        "dataStartTime": iso(start),
+        "dataEndTime": iso(end),
+    }
+    created = sp_api_post("/reports/2021-06-30/reports", access_token, body)
+    report_id = created.get("reportId")
+    if not report_id:
+        raise RuntimeError(f"createReport returned no reportId: {json.dumps(created)[:300]}")
+    log(f"orders report {report_id} requested for {body['dataStartTime']}..{body['dataEndTime']}")
+    waited = 0
+    while waited <= ORDERS_REPORT_MAX_WAIT:
+        time.sleep(ORDERS_REPORT_POLL_SECONDS)
+        waited += ORDERS_REPORT_POLL_SECONDS
+        status = sp_api_get(f"/reports/2021-06-30/reports/{report_id}", access_token)
+        state = status.get("processingStatus")
+        if state == "DONE":
+            log(f"orders report {report_id} DONE after ~{waited}s")
+            return download_report_document(access_token, status["reportDocumentId"])
+        if state in ("CANCELLED", "FATAL"):
+            log(f"orders report {report_id} ended {state} - Amazon returns CANCELLED when the range has no orders, FATAL on errors")
+            return "" if state == "CANCELLED" else None
+    log(f"orders report {report_id} still not DONE after {ORDERS_REPORT_MAX_WAIT}s - giving up on this chunk")
+    return None
+
+
+def _num(v):
+    try:
+        return float((v or "").replace(",", "").strip() or 0)
+    except (TypeError, ValueError, AttributeError):
+        return 0.0
+
+
+def ingest_orders_report(tsv_text, daily, warnings, stats):
+    """Fold report rows (one per order line) into daily[order_day].ordered_*."""
+    if not tsv_text or not tsv_text.strip():
+        return 0
+    reader = csv.DictReader(io.StringIO(tsv_text), delimiter="\t")
+    headers = [h.strip().lower() for h in (reader.fieldnames or [])]
+    reader.fieldnames = headers
+    need = {"amazon-order-id", "purchase-date", "order-status", "quantity", "item-price"}
+    missing = need - set(headers)
+    if missing:
+        warnings.add(f"orders report missing columns: {sorted(missing)}")
+        return 0
+    rows = 0
+    seen_orders = stats.setdefault("_order_days", {})   # order id -> (day, channel) for distinct counting
+    for row in reader:
+        rows += 1
+        status = (row.get("order-status") or "").strip()
+        item_status = (row.get("item-status") or "").strip()
+        if status.lower() == "cancelled" or item_status.lower() == "cancelled":
+            stats["cancelled_lines"] = stats.get("cancelled_lines", 0) + 1
+            continue
+        day = day_key((row.get("purchase-date") or "").strip())
+        if not day or len(day) != 10:
+            warnings.add("orders report row without purchase-date")
+            continue
+        d = daily.setdefault(day, new_daily_bucket())
+        qty = int(_num(row.get("quantity")))
+        channel = (row.get("sales-channel") or "").strip()
+        order_id = (row.get("amazon-order-id") or "").strip()
+        mcf = channel.lower() == "non-amazon"
+        if mcf:
+            add(d, "mcf_units", qty)
+            if order_id and seen_orders.get(order_id) != (day, "mcf"):
+                seen_orders[order_id] = (day, "mcf")
+                add(d, "mcf_orders", 1)
+            continue
+        price_raw = (row.get("item-price") or "").strip()
+        if status.lower() == "pending" and price_raw == "":
+            add(d, "ordered_pending_units", qty)   # price not released by Amazon yet - counted as units only
+            stats["pending_no_price_lines"] = stats.get("pending_no_price_lines", 0) + 1
+        add(d, "ordered_sales", _num(price_raw))
+        add(d, "ordered_shipping", _num(row.get("shipping-price")) + _num(row.get("gift-wrap-price")))
+        add(d, "ordered_promotions", _num(row.get("item-promotion-discount")) + _num(row.get("ship-promotion-discount")))
+        add(d, "ordered_units", qty)
+        if order_id and seen_orders.get(order_id) != (day, "amz"):
+            seen_orders[order_id] = (day, "amz")
+            add(d, "ordered_orders", 1)
+        if (row.get("currency") or "").strip() not in ("", "USD"):
+            warnings.add(f"orders report currency {row.get('currency')}")
+    return rows
+
+
+def fetch_orders_by_order_date(access_token, window_start, window_end, daily, warnings):
+    """Ask Amazon for the All Orders report in <= ORDERS_REPORT_CHUNK_DAYS chunks and ingest it.
+    Any failure is a warning, never fatal: the Finances numbers still publish."""
+    stats = {"reports": 0, "rows": 0}
+    chunk_start = window_start
+    ok = True
+    while chunk_start < window_end:
+        chunk_end = min(chunk_start + timedelta(days=ORDERS_REPORT_CHUNK_DAYS), window_end)
+        try:
+            text = request_orders_report(access_token, chunk_start, chunk_end)
+        except Exception as e:  # noqa: BLE001 - keep the Finances sync alive whatever the report does
+            log(f"orders report failed for {iso(chunk_start)}..{iso(chunk_end)}: {str(e)[:300]}")
+            warnings.add("orders report request failed (see log) - ordered_* fields incomplete")
+            ok = False
+            break
+        if text is None:
+            warnings.add("orders report FATAL/timeout - ordered_* fields incomplete")
+            ok = False
+            break
+        stats["reports"] += 1
+        stats["rows"] += ingest_orders_report(text, daily, warnings, stats)
+        chunk_start = chunk_end
+    stats.pop("_order_days", None)
+    stats["complete"] = ok
+    return stats
+
+
 def compute_net_sales(daily):
     for d in daily.values():
         d["net_sales"] = round(
@@ -593,6 +781,15 @@ def main():
     first_key = window_start.astimezone(REPORT_TZ).strftime("%Y-%m-%d")
     if first_key in daily and window_start.astimezone(REPORT_TZ).strftime("%H:%M") != "00:00":
         daily.pop(first_key, None)
+    orders_stats = {"enabled": False}
+    if ORDERS_REPORT:
+        # Order-date window: from local midnight of the first COMPLETE finances day, so both
+        # views cover exactly the same calendar days.
+        first_day = min(daily) if daily else window_start.astimezone(REPORT_TZ).strftime("%Y-%m-%d")
+        od_start = datetime.strptime(first_day, "%Y-%m-%d").replace(tzinfo=REPORT_TZ).astimezone(timezone.utc)
+        orders_stats = fetch_orders_by_order_date(access_token, od_start, now - timedelta(minutes=2), daily, warnings)
+        orders_stats["enabled"] = True
+        log(f"orders report: {orders_stats}")
     compute_net_sales(daily)
 
     today_key = now_local.strftime("%Y-%m-%d")
@@ -615,8 +812,13 @@ def main():
         "meta": {
             "events_processed": total_events,
             "warnings": sorted(warnings),
-            "schema": 2,   # 2 = adds other_fees + giftwrap_credits + diagnostics (dashboard handles 1 and 2)
-            "script_version": "2.3",   # 2.1 = per-day windows; 2.2 = inbound_freight split out; 2.3 = days bucketed in REPORT_TIMEZONE (default America/Los_Angeles) instead of UTC
+            "schema": 3,   # 2 = other_fees + giftwrap_credits + diagnostics; 3 = ordered_* fields by order date (dashboard handles 1-3)
+            "script_version": "2.4",   # 2.3 = days in REPORT_TIMEZONE; 2.4 = All Orders report (sales by order date, MCF split) next to Finances
+            "orders_report": orders_stats,
+            "sales_basis": {
+                "ordered": "ordered_* = All Orders report by purchase date (Seller Central / Sellerboard basis), Amazon.com channel, cancelled excluded",
+                "posted": "gross_sales / fees / refunds = Finances API by posted (ship) date",
+            },
             "diagnostics": diag.as_dict(),
         },
     }
