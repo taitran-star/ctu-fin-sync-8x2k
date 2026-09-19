@@ -1,0 +1,528 @@
+#!/usr/bin/env python3
+"""
+Cattasaurus - ShipMonk (3PL) fulfillment cost fetcher.
+
+Runs on a schedule (GitHub Actions) completely independently of Claude. Pulls every
+order ShipMonk received inside a trailing window from the ShipMonk public API
+(https://api.shipmonk.com, header Api-Key) and books each order's fulfillment charges
+on the day the order was PLACED (ordered_at, in REPORT_TIMEZONE - the same calendar
+every other P&L source uses). That matches the dashboard's revenue, which is recognised
+on the order date, so an order's revenue and its fulfillment cost always land on the same
+day - including orders that are still waiting to ship (ShipMonk already estimates their
+charges from its rate card; the figure is refreshed every run as they ship). A second
+series keyed by ship date is kept for reconciling ShipMonk's weekly invoices, and a
+per-order CSV is written so any single Shopify / Amazon FBM order can be checked.
+
+What ShipMonk gives per order (order_costs, all "estimated" by ShipMonk's own rate
+cards - the weekly invoice can differ by small adjustments):
+  estimated_shipping_related_charges   -> shipping_cost  (postage / carrier charges)
+  estimated_pick_and_pack_charges      -> pick_pack_cost (fulfillment labour)
+  estimated_packaging_material_charges -> packaging_cost (boxes, mailers, dunnage)
+Not in the API (only on invoices): storage, receiving, returns processing, special
+projects, account minimums. Those stay $0 here until invoice exports are wired in.
+
+Credentials come ONLY from environment variables (GitHub Actions Secrets).
+Nothing is ever logged or written to the repo except the aggregated JSON - no customer
+names, addresses or emails are read from the response beyond what is aggregated.
+
+Required env vars:
+  SHIPMONK_API_KEY         Account Settings > General Settings > Integration API Keys
+
+Optional env vars:
+  SHIPMONK_BASE_URL        default https://api.shipmonk.com (sandbox: https://sandbox.shipmonk.dev)
+  REPORT_TIMEZONE          default America/Los_Angeles
+  WINDOW_DAYS              trailing days to (re)fetch, default 45
+  OUTPUT_PATH              default data/shipmonk.json
+  PAGE_SIZE                orders per request, default 100 (API max)
+  CHUNK_DAYS               shipped_at window per query, default 7 (the API caps filtered
+                           queries at 10,000 orders, so the window is walked in chunks)
+  SHIPMONK_STORE_IDS       comma-separated ShipMonk store ids to INCLUDE (default: all)
+  SHIPMONK_ORDER_TYPES     comma-separated order types to count as fulfillment cost,
+                           default "direct_to_consumer,amazon,retail" (transfers, disposals,
+                           work orders etc. are listed in meta but not costed)
+  SHIPMONK_COST_BASIS      "ordered" (default: book on the order date, shipped or not)
+                           or "shipped" (only shipped orders, on the ship date)
+  ORDERS_CSV_PATH          per-order detail CSV, default data/shipmonk_orders.csv
+                           (set to "" to skip; it lands in the repo like the JSON)
+
+Output (per day, shop-calendar days, positive numbers = cost):
+  daily          keyed by the basis day (order date by default):
+                 orders, orders_shipped, orders_unshipped, units, packages, shipping_cost,
+                 packaging_cost, pick_pack_cost, total_cost, cost_missing_orders (orders
+                 ShipMonk had no estimate for yet),
+                 by_store{name:{orders,units,shipping_cost,packaging_cost,pick_pack_cost,total_cost}},
+                 by_type{order_type:{...}}, by_carrier{carrier:{orders,shipping_cost}}
+  daily_shipped  same fields keyed by SHIP date, shipped orders only (invoice reconciliation)
+"""
+import email.utils
+import json
+import os
+import sys
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+from datetime import datetime, timedelta, timezone
+
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:  # pragma: no cover
+    ZoneInfo = None
+
+SCRIPT_VERSION = "1.1"
+SCHEMA = 1
+
+API_KEY = os.environ.get("SHIPMONK_API_KEY", "").strip()
+BASE_URL = os.environ.get("SHIPMONK_BASE_URL", "https://api.shipmonk.com").strip().rstrip("/")
+TZ_NAME = os.environ.get("REPORT_TIMEZONE", "America/Los_Angeles").strip() or "America/Los_Angeles"
+WINDOW_DAYS = int(os.environ.get("WINDOW_DAYS", "45"))
+OUTPUT_PATH = os.environ.get("OUTPUT_PATH", "data/shipmonk.json")
+PAGE_SIZE = max(1, min(100, int(os.environ.get("PAGE_SIZE", "100"))))
+CHUNK_DAYS = max(1, int(os.environ.get("CHUNK_DAYS", "7")))
+STORE_IDS = {s.strip() for s in os.environ.get("SHIPMONK_STORE_IDS", "").split(",") if s.strip()}
+COSTED_TYPES = {s.strip() for s in os.environ.get("SHIPMONK_ORDER_TYPES", "direct_to_consumer,amazon,retail").split(",") if s.strip()}
+COST_BASIS = os.environ.get("SHIPMONK_COST_BASIS", "ordered").strip().lower() or "ordered"
+ORDERS_CSV_PATH = os.environ.get("ORDERS_CSV_PATH", "data/shipmonk_orders.csv").strip()
+FILTER_CAP = 10000   # ShipMonk: "If filters are used, this endpoint will return a maximum of 10,000 orders."
+STOP_AFTER_OLD_PAGES = 3   # unfiltered listing is newest-first; stop after this many whole pages older than the window
+
+DAILY_FIELDS = ["orders", "orders_shipped", "orders_unshipped", "units", "packages", "shipping_cost", "packaging_cost", "pick_pack_cost", "total_cost", "cost_missing_orders"]
+MONEY_FIELDS = ["shipping_cost", "packaging_cost", "pick_pack_cost", "total_cost"]
+GROUP_FIELDS = ["orders", "units", "shipping_cost", "packaging_cost", "pick_pack_cost", "total_cost"]
+
+
+def log(msg):
+    print(f"[shipmonk] {msg}", file=sys.stderr, flush=True)
+
+
+def new_bucket():
+    d = {f: 0 for f in DAILY_FIELDS}
+    d["by_store"] = {}
+    d["by_type"] = {}
+    d["by_carrier"] = {}
+    return d
+
+
+def money(node):
+    """MoneyOutput {amount, currency} -> (float amount, currency) ; None -> (None, None)."""
+    if node is None:
+        return None, None
+    if isinstance(node, (int, float)):
+        return float(node), None
+    try:
+        return float(node.get("amount")), node.get("currency")
+    except (AttributeError, TypeError, ValueError):
+        return None, None
+
+
+def local_day(iso_ts, tz):
+    if not iso_ts:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(iso_ts).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(tz).strftime("%Y-%m-%d")
+
+
+# ---------------------------------------------------------------- HTTP layer
+class Client:
+    def __init__(self, api_key):
+        self.api_key = api_key
+        self.requests = 0
+        self.retries = 0
+
+    def get(self, path, params, max_retries=6):
+        url = f"{BASE_URL}{path}?{urllib.parse.urlencode(params, doseq=True)}"
+        for attempt in range(1, max_retries + 1):
+            req = urllib.request.Request(url, headers={
+                "Api-Key": self.api_key,
+                "Accept": "application/json",
+                "User-Agent": "cattasaurus-shipmonk-sync/" + SCRIPT_VERSION,
+            })
+            try:
+                with urllib.request.urlopen(req, timeout=90) as resp:
+                    self.requests += 1
+                    return json.loads(resp.read().decode())
+            except urllib.error.HTTPError as e:
+                self.requests += 1
+                text = e.read().decode(errors="replace")
+                if e.code in (401, 403):
+                    log(f"ShipMonk rejected the API key (HTTP {e.code}): {text[:300]}")
+                    log("Check the SHIPMONK_API_KEY secret (Account Settings > General Settings > Integration API Keys) - a revoked key must be regenerated.")
+                    raise SystemExit(2)
+                if e.code == 429 or e.code >= 500:
+                    backoff = min(180, 10 * (2 ** (attempt - 1)))
+                    ra = e.headers.get("Retry-After")
+                    if ra:
+                        try:
+                            backoff = max(backoff, float(ra))
+                        except ValueError:
+                            try:   # RFC 1123 date, as the ShipMonk docs describe
+                                until = email.utils.parsedate_to_datetime(ra)
+                                backoff = max(backoff, (until - datetime.now(timezone.utc)).total_seconds() + 1)
+                            except (TypeError, ValueError):
+                                pass
+                    backoff = max(1.0, min(backoff, 900))
+                    self.retries += 1
+                    log(f"HTTP {e.code} - retry {attempt}/{max_retries} in {backoff:.0f}s: {text[:160]}")
+                    time.sleep(backoff)
+                    continue
+                log(f"HTTP {e.code} on {path}: {text[:500]}")
+                raise
+            except urllib.error.URLError as e:
+                self.retries += 1
+                backoff = min(60, 5 * attempt)
+                log(f"Network error ({e.reason}) - retry {attempt}/{max_retries} in {backoff}s")
+                time.sleep(backoff)
+        raise RuntimeError("Exceeded retries calling ShipMonk")
+
+
+# ---------------------------------------------------------------- aggregation
+class Aggregator:
+    def __init__(self, tz, window_start, window_end):
+        self.tz = tz
+        self.window_start = window_start
+        self.window_end = window_end
+        self.daily = {}          # keyed by the basis day (order date by default)
+        self.daily_shipped = {}  # keyed by ship date, shipped orders only
+        self.rows = []           # per-order detail for the CSV
+        self.seen = set()
+        self.stores = {}
+        self.warehouses = {}
+        self.currencies = {}
+        self.order_types = {}
+        self.warnings = set()
+        self.counts = {
+            "orders_seen": 0, "orders_counted": 0, "orders_duplicate": 0,
+            "orders_skipped_cancelled": 0, "orders_skipped_unshipped": 0,
+            "orders_skipped_store": 0, "orders_skipped_type": 0, "orders_outside_window": 0,
+            "orders_unshipped_counted": 0, "orders_shipped_series_only": 0,
+            "cost_missing_orders": 0, "shipping_from_shipment_estimate": 0,
+        }
+        self.oldest_seen = None   # ordered_at day of the oldest order seen (paging stop condition)
+
+    def in_window(self, day):
+        return day is not None and self.window_start <= day <= self.window_end
+
+    def bucket(self, day, shipped_series=False):
+        return (self.daily_shipped if shipped_series else self.daily).setdefault(day, new_bucket())
+
+    @staticmethod
+    def _grp(container, key):
+        return container.setdefault(key or "unknown", {f: 0 for f in GROUP_FIELDS})
+
+    def add_order(self, o):
+        store = o.get("store") or {}
+        store_id = str(store.get("id") or "")
+        store_name = store.get("name") or (f"store {store_id}" if store_id else "unknown")
+        key = (store_id, o.get("order_key") or o.get("order_number") or "")
+        self.counts["orders_seen"] += 1
+        if key in self.seen:
+            self.counts["orders_duplicate"] += 1
+            return
+        self.seen.add(key)
+        if store_id:
+            self.stores[store_id] = store_name
+        wh = o.get("warehouse") or {}
+        if wh.get("identifier") or wh.get("name"):
+            self.warehouses[str(wh.get("identifier") or wh.get("id"))] = wh.get("name") or ""
+        otype = o.get("order_type") or "unknown"
+        self.order_types[otype] = self.order_types.get(otype, 0) + 1
+
+        ordered_day = local_day(o.get("ordered_at"), self.tz)
+        shipped_day = local_day(o.get("shipped_at"), self.tz)
+        if ordered_day and (self.oldest_seen is None or ordered_day < self.oldest_seen):
+            self.oldest_seen = ordered_day
+        status = (o.get("order_status") or "").lower()
+        if status == "cancelled" and shipped_day is None:
+            self.counts["orders_skipped_cancelled"] += 1   # cancelled before shipping: no cost incurred
+            return
+        if STORE_IDS and store_id not in STORE_IDS:
+            self.counts["orders_skipped_store"] += 1
+            return
+        if COSTED_TYPES and otype not in COSTED_TYPES:
+            self.counts["orders_skipped_type"] += 1
+            return
+        if COST_BASIS == "shipped":
+            day = shipped_day
+            if day is None:
+                self.counts["orders_skipped_unshipped"] += 1
+                return
+        else:
+            day = ordered_day
+        in_pnl = self.in_window(day)
+        # the ship-date series also wants orders placed BEFORE the window that shipped inside it
+        in_shipped_series = shipped_day is not None and self.in_window(shipped_day)
+        if not in_pnl and not in_shipped_series:
+            self.counts["orders_outside_window"] += 1
+            return
+
+        costs = o.get("order_costs") or {}
+        ship, cur1 = money(costs.get("estimated_shipping_related_charges"))
+        pack, cur2 = money(costs.get("estimated_packaging_material_charges"))
+        pick, cur3 = money(costs.get("estimated_pick_and_pack_charges"))
+        for c in (cur1, cur2, cur3, o.get("currency_code")):
+            if c:
+                self.currencies[c] = self.currencies.get(c, 0) + 1
+        missing = ship is None and pack is None and pick is None   # ShipMonk has not costed the order yet
+        if ship is None:
+            est = (o.get("shipment_data") or {}).get("estimated_shipping_cost")
+            if est is not None:
+                ship = float(est)
+                self.counts["shipping_from_shipment_estimate"] += 1
+        ship = ship or 0.0
+        pack = pack or 0.0
+        pick = pick or 0.0
+        units = 0
+        for it in (o.get("items") or []):
+            if (it.get("source") or "") == "packaging":
+                continue   # packaging material lines are not product units
+            q = it.get("fulfilled_quantity") if shipped_day is not None else None   # unshipped: nothing fulfilled yet
+            if q is None:
+                q = it.get("quantity") or 0
+            units += int(q or 0)
+        packages = len(o.get("packages") or [])
+        sd = o.get("shipment_data") or {}
+        carrier = sd.get("carrier")
+        if isinstance(carrier, dict):
+            carrier = carrier.get("name")
+        if not carrier:
+            carrier = ((o.get("shipping_method") or {}).get("carrier") or {}).get("name")
+        carrier = (carrier or "unknown").strip()
+
+        targets = []
+        if in_pnl:
+            targets.append(self.bucket(day))
+        if in_shipped_series:
+            targets.append(self.bucket(shipped_day, shipped_series=True))
+        for d in targets:
+            d["orders"] += 1
+            d["orders_shipped" if shipped_day is not None else "orders_unshipped"] += 1
+            d["units"] += units
+            d["packages"] += packages
+            d["shipping_cost"] += ship
+            d["packaging_cost"] += pack
+            d["pick_pack_cost"] += pick
+            d["total_cost"] += ship + pack + pick
+            if missing:
+                d["cost_missing_orders"] += 1
+            for container, k in ((d["by_store"], store_name), (d["by_type"], otype)):
+                g = self._grp(container, k)
+                g["orders"] += 1
+                g["units"] += units
+                g["shipping_cost"] += ship
+                g["packaging_cost"] += pack
+                g["pick_pack_cost"] += pick
+                g["total_cost"] += ship + pack + pick
+            c = d["by_carrier"].setdefault(carrier, {"orders": 0, "shipping_cost": 0.0})
+            c["orders"] += 1
+            c["shipping_cost"] += ship
+        if not in_pnl:
+            self.counts["orders_shipped_series_only"] += 1   # placed before the window, shipped inside it
+        else:
+            if missing:
+                self.counts["cost_missing_orders"] += 1
+            if shipped_day is None:
+                self.counts["orders_unshipped_counted"] += 1
+            self.counts["orders_counted"] += 1
+        self.rows.append({
+            "order_number": o.get("order_number") or "", "order_key": o.get("order_key") or "",
+            "store": store_name, "order_type": otype, "status": status,
+            "ordered_day": ordered_day or "", "shipped_day": shipped_day or "",
+            "pnl_day": day if in_pnl else "",
+            "warehouse": (wh.get("identifier") or wh.get("name") or ""), "carrier": carrier,
+            "units": units, "packages": packages,
+            "shipping_cost": round(ship, 2), "pick_pack_cost": round(pick, 2), "packaging_cost": round(pack, 2),
+            "total_cost": round(ship + pick + pack, 2), "cost_status": "missing" if missing else "shipmonk_estimate",
+        })
+
+    def finalise(self):
+        for series in (self.daily, self.daily_shipped):
+            for d in series.values():
+                for f in MONEY_FIELDS:
+                    d[f] = round(d[f], 2)
+                for container in (d["by_store"], d["by_type"], d["by_carrier"]):
+                    for g in container.values():
+                        for f in list(g):
+                            if isinstance(g[f], float):
+                                g[f] = round(g[f], 2)
+        self.rows.sort(key=lambda r: (r["ordered_day"], r["order_number"]))
+        if self.currencies and set(self.currencies) - {"USD"}:
+            self.warnings.add(f"orders priced in currencies other than USD were summed as-is: {self.currencies}")
+        if self.counts["cost_missing_orders"]:
+            self.warnings.add(f"{self.counts['cost_missing_orders']} orders had no cost estimate from ShipMonk yet - their cost is $0 until ShipMonk fills it in (re-fetched every run)")
+
+
+def sum_range(daily, start_key, end_key):
+    out = {f: 0 for f in DAILY_FIELDS}
+    for k, d in daily.items():
+        if start_key <= k <= end_key:
+            for f in DAILY_FIELDS:
+                out[f] += d.get(f, 0)
+    for f in MONEY_FIELDS:
+        out[f] = round(out[f], 2)
+    return out
+
+
+# ---------------------------------------------------------------- fetching
+def iso_z(dt):
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def fetch_orders_by_order_date(client, agg, window_start):
+    """Basis 'ordered': the API has no ordered_at filter, so read the unfiltered listing
+    newest-first (sorted by ShipMonk's internal id) and stop once whole pages are older than
+    the window. Every order in the window is returned, shipped or not."""
+    page = 1
+    old_pages = 0
+    while True:
+        data = client.get("/v1/integrations/orders-list", {"page": page, "pageSize": PAGE_SIZE, "sortOrder": "DESC"})
+        orders = ((data.get("data") or {}).get("orders") or [])
+        if not orders:
+            break
+        newest_in_page = None
+        for o in orders:
+            agg.add_order(o)
+            od = local_day(o.get("ordered_at"), agg.tz)
+            if od and (newest_in_page is None or od > newest_in_page):
+                newest_in_page = od
+        if page % 20 == 0:
+            log(f"  page {page}: oldest order day so far {agg.oldest_seen}")
+        if newest_in_page is not None and newest_in_page < window_start:
+            old_pages += 1          # a whole page before the window; a few more in case of late imports
+            if old_pages >= STOP_AFTER_OLD_PAGES:
+                break
+        else:
+            old_pages = 0
+        if len(orders) < PAGE_SIZE:
+            break
+        page += 1
+        if page > 2000:
+            agg.warnings.add("stopped after 2000 pages - window too large for the unfiltered listing")
+            break
+    return 1, page
+
+
+def fetch_shipped_orders(client, agg, start_utc, end_utc):
+    """Basis 'shipped': walk [start_utc, end_utc] in CHUNK_DAYS slices of shipped_at, paging
+    each slice until a short page."""
+    chunks = pages = 0
+    cur = start_utc
+    while cur < end_utc:
+        nxt = min(cur + timedelta(days=CHUNK_DAYS), end_utc)
+        chunk_orders = 0
+        page = 1
+        while True:
+            data = client.get("/v1/integrations/orders-list", {
+                "shippedAtStart": iso_z(cur), "shippedAtEnd": iso_z(nxt),
+                "page": page, "pageSize": PAGE_SIZE, "sortOrder": "ASC",
+            })
+            orders = ((data.get("data") or {}).get("orders") or [])
+            pages += 1
+            for o in orders:
+                agg.add_order(o)
+            chunk_orders += len(orders)
+            if len(orders) < PAGE_SIZE:
+                break
+            page += 1
+            if page > 400:   # 40,000 orders in one chunk cannot happen with the 10k cap - guard anyway
+                agg.warnings.add(f"stopped paging chunk {iso_z(cur)}..{iso_z(nxt)} after 400 pages")
+                break
+        chunks += 1
+        if chunk_orders >= FILTER_CAP:
+            agg.warnings.add(f"chunk {iso_z(cur)}..{iso_z(nxt)} hit ShipMonk's 10,000-order cap - lower CHUNK_DAYS")
+        log(f"  {iso_z(cur)} .. {iso_z(nxt)}: {chunk_orders} shipped orders ({page} page(s))")
+        cur = nxt
+    return chunks, pages
+
+
+def main():
+    if not API_KEY:
+        log("SHIPMONK_API_KEY is not set")
+        sys.exit(1)
+    tz = timezone.utc
+    if ZoneInfo is not None:
+        try:
+            tz = ZoneInfo(TZ_NAME)
+        except Exception:  # noqa: BLE001
+            log(f"unknown timezone {TZ_NAME!r} - falling back to UTC")
+    now_utc = datetime.now(timezone.utc)
+    now_local = now_utc.astimezone(tz)
+    window_end = now_local.strftime("%Y-%m-%d")
+    window_start = (now_local - timedelta(days=WINDOW_DAYS)).strftime("%Y-%m-%d")
+    # shipped_at filter in UTC, starting at local midnight of the first window day
+    start_local = datetime.strptime(window_start, "%Y-%m-%d").replace(tzinfo=tz)
+    start_utc = start_local.astimezone(timezone.utc)
+
+    client = Client(API_KEY)
+    agg = Aggregator(tz, window_start, window_end)
+    log(f"ShipMonk {BASE_URL}, tz {TZ_NAME}, window {window_start}..{window_end}, basis {COST_BASIS}, page {PAGE_SIZE}")
+    if COST_BASIS == "shipped":
+        chunks, pages = fetch_shipped_orders(client, agg, start_utc, now_utc)
+    else:
+        chunks, pages = fetch_orders_by_order_date(client, agg, window_start)
+    agg.finalise()
+    if ORDERS_CSV_PATH:
+        import csv
+        os.makedirs(os.path.dirname(ORDERS_CSV_PATH) or ".", exist_ok=True)
+        cols = ["order_number", "order_key", "store", "order_type", "status", "ordered_day", "shipped_day", "pnl_day", "warehouse",
+                "carrier", "units", "packages", "shipping_cost", "pick_pack_cost", "packaging_cost", "total_cost", "cost_status"]
+        with open(ORDERS_CSV_PATH, "w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=cols)
+            w.writeheader()
+            for r in agg.rows:
+                w.writerow(r)
+        log(f"Wrote {ORDERS_CSV_PATH}: {len(agg.rows)} orders")
+
+    today_key = window_end
+    mtd_start = now_local.strftime("%Y-%m-01")
+    last30_start = (now_local - timedelta(days=30)).strftime("%Y-%m-%d")
+    out = {
+        "source": "shipmonk_public_api",
+        "generated_at": now_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "timezone": TZ_NAME,
+        "currency": "USD",
+        "window_days": WINDOW_DAYS,
+        "window": {"start": window_start, "end": window_end},
+        "daily": agg.daily,
+        "daily_shipped": agg.daily_shipped,
+        "totals": {
+            "today": sum_range(agg.daily, today_key, today_key),
+            "mtd": sum_range(agg.daily, mtd_start, today_key),
+            "last_30d": sum_range(agg.daily, last30_start, today_key),
+        },
+        "meta": {
+            "script_version": SCRIPT_VERSION,
+            "schema": SCHEMA,
+            "cost_basis": ("shipmonk_estimated_order_costs_by_ordered_at" if COST_BASIS != "shipped" else "shipmonk_estimated_order_costs_by_shipped_at"),
+            "orders_csv": ORDERS_CSV_PATH or None,
+            "oldest_order_day_seen": agg.oldest_seen,
+            "costed_order_types": sorted(COSTED_TYPES),
+            "store_filter": sorted(STORE_IDS),
+            "stores": agg.stores,
+            "warehouses": agg.warehouses,
+            "order_types_seen": agg.order_types,
+            "currencies_seen": agg.currencies,
+            "chunks": chunks,
+            "pages": pages,
+            "api_requests": client.requests,
+            "api_retries": client.retries,
+            "counts": agg.counts,
+            "warnings": sorted(agg.warnings),
+            "not_in_api": ["storage fees", "receiving fees", "returns processing", "special projects", "account minimums - only on ShipMonk invoices"],
+        },
+    }
+    os.makedirs(os.path.dirname(OUTPUT_PATH) or ".", exist_ok=True)
+    with open(OUTPUT_PATH, "w") as f:
+        json.dump(out, f, indent=2, sort_keys=True)
+    t = out["totals"]["last_30d"]
+    log(f"Wrote {OUTPUT_PATH}: {agg.counts['orders_counted']} orders ({agg.counts['orders_unshipped_counted']} not shipped yet) over {len(agg.daily)} days; "
+        f"last 30d cost {t['total_cost']:.2f} (postage {t['shipping_cost']:.2f}, pick/pack {t['pick_pack_cost']:.2f}, packaging {t['packaging_cost']:.2f}); "
+        f"{client.requests} API calls, {len(agg.warnings)} warning types.")
+
+
+if __name__ == "__main__":
+    main()
