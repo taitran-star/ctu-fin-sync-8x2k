@@ -27,6 +27,8 @@ jobs:
 
       - name: Fetch Amazon SP-API financial data
         env:
+          # One calendar for the whole P&L: every source buckets its days in this timezone.
+          REPORT_TIMEZONE: America/Los_Angeles
           AMAZON_SP_API_CLIENT_ID: ${{ secrets.AMAZON_SP_API_CLIENT_ID }}
           AMAZON_SP_API_CLIENT_SECRET: ${{ secrets.AMAZON_SP_API_CLIENT_SECRET }}
           AMAZON_SP_API_REFRESH_TOKEN: ${{ secrets.AMAZON_SP_API_REFRESH_TOKEN }}
