@@ -29,6 +29,16 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:  # pragma: no cover
+    ZoneInfo = None
+
+# Every day bucket, window boundary and "today" is computed in this timezone so the
+# whole P&L (Shopify, Meta, Google, Amazon Ads) lines up on the same calendar days.
+REPORT_TIMEZONE = os.environ.get("REPORT_TIMEZONE", "America/Los_Angeles").strip() or "UTC"
+REPORT_TZ = ZoneInfo(REPORT_TIMEZONE) if ZoneInfo else timezone.utc
+
 LWA_TOKEN_URL = "https://api.amazon.com/auth/o2/token"
 SP_API_HOST = os.environ.get("SP_API_REGION_HOST", "https://sellingpartnerapi-na.amazon.com")
 MARKETPLACE_IDS = [m.strip() for m in os.environ.get("MARKETPLACE_IDS", "ATVPDKIKX0DER").split(",") if m.strip()]
@@ -222,8 +232,20 @@ def iso(dt):
 
 
 def day_key(iso_str):
-    # Amazon PostedDate looks like 2026-09-17T13:45:22.123Z
-    return iso_str[:10]
+    """Amazon PostedDate looks like 2026-09-17T13:45:22.123Z (UTC) -> calendar day in REPORT_TZ."""
+    try:
+        s = iso_str.replace("Z", "+00:00")
+        if "." in s:  # trim sub-second digits beyond 6 (fromisoformat is strict)
+            head, tail = s.split(".", 1)
+            frac = "".join(ch for ch in tail if ch.isdigit())[:6]
+            tz_part = tail[len("".join(ch for ch in tail if ch.isdigit())):]
+            s = f"{head}.{frac.ljust(6, '0')}{tz_part}"
+        dt = datetime.fromisoformat(s)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(REPORT_TZ).strftime("%Y-%m-%d")
+    except ValueError:
+        return iso_str[:10]
 
 
 def amt(money_obj):
@@ -447,12 +469,14 @@ def fetch_all_financial_events(access_token, window_start, window_end, daily, wa
     paging is per 100 events either way, plus one call per day."""
     global _current_day
     events_count = 0
-    day_start = window_start.replace(hour=0, minute=0, second=0, microsecond=0)
-    while day_start < window_end:
-        day_end = min(day_start + timedelta(days=1), window_end)
+    # Calendar days in REPORT_TZ: local midnight -> UTC for the PostedAfter/PostedBefore filter.
+    day_start = window_start.astimezone(REPORT_TZ).replace(hour=0, minute=0, second=0, microsecond=0)
+    while day_start.astimezone(timezone.utc) < window_end:
+        day_end = min(day_start + timedelta(days=1), window_end.astimezone(REPORT_TZ))
         _current_day = day_start.strftime("%Y-%m-%d")
         daily.setdefault(_current_day, new_daily_bucket())   # a day with no events still exists
-        events_count += _fetch_window(access_token, iso(day_start), iso(day_end), daily, warnings)
+        events_count += _fetch_window(access_token, iso(day_start.astimezone(timezone.utc)),
+                                      iso(day_end.astimezone(timezone.utc)), daily, warnings)
         day_start += timedelta(days=1)
     _current_day = None
     return events_count
@@ -554,30 +578,33 @@ def main():
     log("Got access token.")
 
     now = datetime.now(timezone.utc)
+    now_local = now.astimezone(REPORT_TZ)
     window_start = now - timedelta(days=WINDOW_DAYS)
     # Amazon rejects a PostedBefore too close to "now" (clock-skew tolerance is only ~2 min);
     # back off by 5 minutes for safety margin.
     window_end = now - timedelta(minutes=5)
+    log(f"Report timezone {REPORT_TIMEZONE}; local now {now_local.strftime('%Y-%m-%d %H:%M')}")
 
     daily = {}
     warnings = set()
     total_events = fetch_all_financial_events(access_token, window_start, window_end, daily, warnings)
     # The first day of the window is partial (it starts at now-45d, not at midnight) - drop it
     # so every published day is a complete day.
-    first_key = window_start.strftime("%Y-%m-%d")
-    if first_key in daily and window_start.strftime("%H:%M") != "00:00":
+    first_key = window_start.astimezone(REPORT_TZ).strftime("%Y-%m-%d")
+    if first_key in daily and window_start.astimezone(REPORT_TZ).strftime("%H:%M") != "00:00":
         daily.pop(first_key, None)
     compute_net_sales(daily)
 
-    today_key = now.strftime("%Y-%m-%d")
-    month_key_prefix = now.strftime("%Y-%m")
+    today_key = now_local.strftime("%Y-%m-%d")
+    month_key_prefix = now_local.strftime("%Y-%m")
     mtd_start = f"{month_key_prefix}-01"
-    last30_start = (now - timedelta(days=30)).strftime("%Y-%m-%d")
+    last30_start = (now_local - timedelta(days=30)).strftime("%Y-%m-%d")
 
     out = {
         "source": "amazon_sp_api",
         "generated_at": iso(now),
         "marketplaces": MARKETPLACE_IDS,
+        "timezone": REPORT_TIMEZONE,
         "window_days": WINDOW_DAYS,
         "daily": daily,
         "totals": {
@@ -589,7 +616,7 @@ def main():
             "events_processed": total_events,
             "warnings": sorted(warnings),
             "schema": 2,   # 2 = adds other_fees + giftwrap_credits + diagnostics (dashboard handles 1 and 2)
-            "script_version": "2.2",   # 2.1 = per-day windows (undated ServiceFee events captured); 2.2 = inbound_freight split out
+            "script_version": "2.3",   # 2.1 = per-day windows; 2.2 = inbound_freight split out; 2.3 = days bucketed in REPORT_TIMEZONE (default America/Los_Angeles) instead of UTC
             "diagnostics": diag.as_dict(),
         },
     }
