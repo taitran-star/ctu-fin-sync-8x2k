@@ -85,6 +85,11 @@ be checked against it to the cent:
   back by refunds that day), snowball_commission_net.
 Top-level "snowball" block: per-program and per-affiliate totals for the window.
 
+Shipping discounts (free-shipping codes, 100%-off replacement orders): Order.totalDiscountsSet
+includes them and totalShippingPriceSet is the pre-discount price; Shopify Analytics excludes
+them from gross sales / discounts and reports shipping charges net of them, so the script nets
+them out using Order.shippingLines original vs discounted price.
+
 Order edits: Shopify Analytics books an item ADDED by an order edit on the edit date (and
 the removed item as a return on that date). Order.subtotalPriceSet already contains the
 added items, so for edited orders the script reads Shopify's sales ledger
@@ -111,7 +116,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "1.5"
+SCRIPT_VERSION = "1.5.1"
 SCHEMA = 2
 
 SHOP = os.environ.get("SHOPIFY_SHOP", "").strip().lower().replace("https://", "").rstrip("/")
@@ -162,6 +167,9 @@ query Orders($first: Int!, $after: String, $q: String, $refundsFirst: Int!) {
       totalShippingPriceSet { shopMoney { amount } }
       totalTaxSet { shopMoney { amount } }
       totalPriceSet { shopMoney { amount } }
+      shippingLines(first: 5) {
+        nodes { originalPriceSet { shopMoney { amount } } discountedPriceSet { shopMoney { amount } } }
+      }
       refunds {
         id createdAt processedAt
         totalRefundedSet { shopMoney { amount } }
@@ -611,6 +619,7 @@ class Aggregator:
             "refunds_with_adjustments": 0, "refunds_edit_removals": 0,
             "refund_lists_truncated": 0, "refund_tip_lines": 0,
             "orders_edited": 0, "edit_additions_moved": 0, "edit_lists_truncated": 0,
+            "orders_with_shipping_discount": 0,
             "snowball_tagged": 0, "snowball_attr_without_tag": 0,
             "snowball_exact": 0, "snowball_export_without_tag": 0,
             "late_orders_scanned": 0, "late_refund_orders": 0,
@@ -642,6 +651,18 @@ class Aggregator:
         shipping = money(o.get("totalShippingPriceSet"))
         tax = money(o.get("totalTaxSet"))
         total = money(o.get("totalPriceSet"))
+        # A shipping discount (free-shipping code, 100%-off replacement order) sits inside
+        # totalDiscountsSet and totalShippingPriceSet is the price BEFORE it. Shopify Analytics
+        # keeps shipping discounts out of gross sales / discounts and reports "Shipping charges"
+        # net of them, so net them out here the same way.
+        ship_disc = 0.0
+        for sl in ((o.get("shippingLines") or {}).get("nodes") or []):
+            ship_disc += max(0.0, money(sl.get("originalPriceSet")) - money(sl.get("discountedPriceSet")))
+        if ship_disc > 0.004:
+            ship_disc = min(ship_disc, discounts, shipping)
+            discounts -= ship_disc
+            shipping -= ship_disc
+            self.counts["orders_with_shipping_discount"] += 1
         program = snowball_program(o.get("tags"))
         code = affiliate_code(o.get("customAttributes"))
         rate = rate_for_program(program, self.warnings, self.rate_sources) if program else 0.0
@@ -804,7 +825,7 @@ class Aggregator:
                     disc_add += disc
                     tax_add += tax
                 elif lt == "SHIPPING":
-                    ship_add += total - tax + disc
+                    ship_add += total - tax      # shipping charges are net of shipping discounts
                     tax_add += tax
                 # TIP / DUTY / FEE / GIFT_CARD lines are not sales in Shopify Analytics either
             if not any(abs(v) > 0.004 for v in (gross_add, disc_add, tax_add, ship_add)):
