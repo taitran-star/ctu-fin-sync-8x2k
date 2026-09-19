@@ -1,0 +1,68 @@
+name: Cattasaurus ShipMonk sync
+
+on:
+  schedule:
+    # Every 30 minutes at :10 and :40 UTC - offset from Amazon (:00/:30), Shopify (:05/:35),
+    # Meta (:15/:45), Google (:20/:50) and Amazon Ads (:25) so no two workflows push at once.
+    - cron: "10,40 * * * *"
+  workflow_dispatch: {}   # lets you click "Run workflow" manually to test
+
+permissions:
+  contents: write
+
+concurrency:
+  group: shipmonk-sync
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch ShipMonk fulfillment costs (per order, booked on the order date)
+        env:
+          # One calendar for the whole P&L: every source buckets its days in this timezone.
+          REPORT_TIMEZONE: America/Los_Angeles
+          SHIPMONK_API_KEY: ${{ secrets.SHIPMONK_API_KEY }}
+          # Optional overrides:
+          # SHIPMONK_BASE_URL: https://api.shipmonk.com
+          # SHIPMONK_STORE_IDS: "123,456"          # only these ShipMonk stores (default: all)
+          # SHIPMONK_ORDER_TYPES: direct_to_consumer,amazon,retail
+          # WINDOW_DAYS: 45
+          # SHIPMONK_COST_BASIS: ordered          # "ordered" (default, matches revenue) or "shipped"
+          # ORDERS_CSV_PATH: data/shipmonk_orders.csv   # per-order detail ("" to skip)
+        run: |
+          if [ -z "$SHIPMONK_API_KEY" ]; then
+            echo "::notice::SHIPMONK_API_KEY secret not set yet - create it from ShipMonk > Account Settings > General Settings > Integration API Keys. Skipping."
+            exit 0
+          fi
+          python fetch_shipmonk.py
+
+      - name: Commit updated data files if changed
+        run: |
+          git config user.name "cattasaurus-shipmonk-bot"
+          git config user.email "actions@users.noreply.github.com"
+          for f in data/shipmonk.json data/shipmonk_orders.csv; do
+            [ -f "$f" ] && git add "$f"
+          done
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Update ShipMonk data ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          # Other workflows commit to the same repo; rebase-then-push with a few retries
+          # so a concurrent push from them never fails this job.
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            echo "Push attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "Could not push after 5 attempts." && exit 1
