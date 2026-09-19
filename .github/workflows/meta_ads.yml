@@ -28,6 +28,8 @@ jobs:
 
       - name: Fetch Meta Ads insights
         env:
+          # One calendar for the whole P&L: every source buckets its days in this timezone.
+          REPORT_TIMEZONE: America/Los_Angeles
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
           META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID }}
           # Campaign-level detail (script v2): product = first " - " segment of the
