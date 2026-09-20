@@ -154,6 +154,21 @@ ORDERED_FIELDS = [
     "mcf_orders",
 ]
 DAILY_FIELDS += ORDERED_FIELDS
+# Order-date FEES (schema 4): every ItemFeeList fee of a ShipmentEvent is booked a second time on
+# the day the order was PLACED (order id -> purchase day from the All Orders report), so the
+# management P&L shows each order's revenue and its fees on the same day. `refund_fee_adjustments`
+# (fees Amazon gives back when it refunds) stays on the refund's posted day. `fba_storage_posted`
+# is the monthly FBA inventory storage fee on the day Amazon posts it (the 7th-15th of the NEXT
+# month); the same amount goes to top-level monthly_storage_fees[<month stored>].
+ORDERED_FEE_FIELDS = ["ordered_referral_fees", "ordered_fba_fulfillment_fees", "ordered_other_fees",
+                      "refund_fee_adjustments", "fba_storage_posted"]
+DAILY_FIELDS += ORDERED_FEE_FIELDS
+ORDER_MAP_LOOKBACK_DAYS = int(os.environ.get("ORDER_MAP_LOOKBACK_DAYS", "14"))   # orders placed before the window but shipped inside it
+FEE_LAG_DAYS = int(os.environ.get("FEE_LAG_DAYS", "14"))                         # backfill: shipments posted after the range for orders inside it
+ORDER_DAYS = {}          # amazon-order-id -> purchase day (REPORT_TZ), from the All Orders report
+MONTHLY_STORAGE = {}     # "YYYY-MM" (month the inventory was stored) -> FBAStorageFee posted the month after
+KEEP_RANGE = [None, None]
+FEE_MAP = {"mapped_orders": set(), "unmapped_orders": set(), "unmapped_amount": 0.0}
 
 
 # ---------------------------------------------------------------- history (shared block)
@@ -420,6 +435,18 @@ def process_shipment_event(ev, daily, warnings):
             bucket = FEE_BUCKET_MAP.get(ftype)
             if bucket:
                 add(d, bucket, v)
+                # order-date copy of the same fee (falls back to the posted day when the order
+                # id is not in the report map, so no dollar is dropped)
+                od = ORDER_DAYS.get(order_id) if order_id else None
+                if od:
+                    FEE_MAP["mapped_orders"].add(order_id)
+                    target = daily.setdefault(od, new_daily_bucket())
+                else:
+                    if order_id:
+                        FEE_MAP["unmapped_orders"].add(order_id)
+                    FEE_MAP["unmapped_amount"] += v
+                    target = d
+                add(target, "ordered_" + bucket, v)
             else:
                 add(d, "unclassified_other", v)
                 warnings.add(f"unclassified ItemFeeList type: {ftype}")
@@ -453,6 +480,7 @@ def process_refund_event(ev, daily, warnings):
             bucket = FEE_BUCKET_MAP.get(ftype)
             if bucket:
                 add(d, bucket, v)   # signed: a refunded fee comes back positive and reduces the bucket
+                add(d, "refund_fee_adjustments", v)   # order-date view: shown with the refund, on the refund day
             else:
                 add(d, "unclassified_other", v)
                 warnings.add(f"unclassified refund fee type: {ftype}")
@@ -472,6 +500,13 @@ def process_service_fee_event(ev, daily, warnings):
         bucket = SERVICE_FEE_BUCKET_MAP.get(ftype)
         if bucket:
             add(d, bucket, v)
+            if ftype == "FBAStorageFee":
+                # Monthly inventory storage fee: Amazon posts it between the 7th and 15th for the
+                # PREVIOUS month. Keep it on the posted day (cash view) and allocate it to the month stored.
+                add(d, "fba_storage_posted", v)
+                y, m = int(dk[:4]), int(dk[5:7])
+                stored = f"{y - 1}-12" if m == 1 else f"{y}-{m - 1:02d}"
+                MONTHLY_STORAGE[stored] = round(MONTHLY_STORAGE.get(stored, 0.0) + v, 2)
         else:
             # Unknown service fee: it is still a service-type charge, so keep it in
             # service_fees (not "other") and flag it so the mapping can be extended.
@@ -756,17 +791,22 @@ def ingest_orders_report(tsv_text, daily, warnings, stats):
         rows += 1
         status = (row.get("order-status") or "").strip()
         item_status = (row.get("item-status") or "").strip()
-        if status.lower() == "cancelled" or item_status.lower() == "cancelled":
-            stats["cancelled_lines"] = stats.get("cancelled_lines", 0) + 1
-            continue
+        cancelled = status.lower() == "cancelled" or item_status.lower() == "cancelled"
         day = day_key((row.get("purchase-date") or "").strip())
         if not day or len(day) != 10:
             warnings.add("orders report row without purchase-date")
             continue
+        order_id = (row.get("amazon-order-id") or "").strip()
+        if order_id:
+            ORDER_DAYS[order_id] = day        # fees of this order (whenever it ships) are booked on this day
+        if cancelled:
+            stats["cancelled_lines"] = stats.get("cancelled_lines", 0) + 1
+            continue
+        if KEEP_RANGE[0] and (day < KEEP_RANGE[0] or day > KEEP_RANGE[1]):
+            continue                          # look-back / look-ahead rows: only needed for the order map
         d = daily.setdefault(day, new_daily_bucket())
         qty = int(_num(row.get("quantity")))
         channel = (row.get("sales-channel") or "").strip()
-        order_id = (row.get("amazon-order-id") or "").strip()
         mcf = channel.lower() == "non-amazon"
         if mcf:
             add(d, "mcf_units", qty)
@@ -891,34 +931,37 @@ def main():
     # Amazon rejects a PostedBefore too close to "now" (clock-skew tolerance is only ~2 min);
     # back off by 5 minutes for safety margin.
     bf = backfill_range(today_key)
+    local_midnight = lambda key: datetime.strptime(key, "%Y-%m-%d").replace(tzinfo=REPORT_TZ)
     if bf:
         mode = "backfill"
-        window_start = datetime.strptime(bf[0], "%Y-%m-%d").replace(tzinfo=REPORT_TZ).astimezone(timezone.utc)
+        keep_start, keep_end = bf[0], bf[1]
+        window_start = local_midnight(keep_start).astimezone(timezone.utc)
+        # Finances: FEE_LAG_DAYS beyond the range, so fees of orders placed inside the range but
+        # shipped just after it can be booked on their order day. Those extra days are not published.
         window_end = min(now - timedelta(minutes=5),
-                         (datetime.strptime(bf[1], "%Y-%m-%d").replace(tzinfo=REPORT_TZ) + timedelta(days=1)).astimezone(timezone.utc))
+                         (local_midnight(keep_end) + timedelta(days=1 + FEE_LAG_DAYS)).astimezone(timezone.utc))
     else:
         mode = "rolling"
         window_start = now - timedelta(days=WINDOW_DAYS)
         window_end = now - timedelta(minutes=5)
-    log(f"Report timezone {REPORT_TIMEZONE}; local now {now_local.strftime('%Y-%m-%d %H:%M')}; {mode} "
-        f"{window_start.astimezone(REPORT_TZ).strftime('%Y-%m-%d')}..{window_end.astimezone(REPORT_TZ).strftime('%Y-%m-%d')}; history from {HISTORY_START}")
+        ws_local = window_start.astimezone(REPORT_TZ)
+        # the first day of the window is partial (now-45d is not midnight) -> publish from the next day
+        keep_start = (ws_local + timedelta(days=1)).strftime("%Y-%m-%d") if ws_local.strftime("%H:%M") != "00:00" else ws_local.strftime("%Y-%m-%d")
+        keep_end = today_key
+    KEEP_RANGE[0], KEEP_RANGE[1] = keep_start, keep_end
+    log(f"Report timezone {REPORT_TIMEZONE}; local now {now_local.strftime('%Y-%m-%d %H:%M')}; {mode} {keep_start}..{keep_end} "
+        f"(finances fetched {window_start.astimezone(REPORT_TZ).strftime('%Y-%m-%d')}..{window_end.astimezone(REPORT_TZ).strftime('%Y-%m-%d')}); history from {HISTORY_START}")
 
     daily = {}
     warnings = set()
-    total_events = fetch_all_financial_events(access_token, window_start, window_end, daily, warnings)
-    # The first day of the window is partial (it starts at now-45d, not at midnight) - drop it
-    # so every published day is a complete day.
-    first_key = window_start.astimezone(REPORT_TZ).strftime("%Y-%m-%d")
-    if first_key in daily and window_start.astimezone(REPORT_TZ).strftime("%H:%M") != "00:00":
-        daily.pop(first_key, None)
     orders_stats = {"enabled": False}
     if ORDERS_REPORT:
-        # Order-date window: from local midnight of the first COMPLETE finances day, so both
-        # views cover exactly the same calendar days.
-        first_day = min(daily) if daily else window_start.astimezone(REPORT_TZ).strftime("%Y-%m-%d")
-        od_start = datetime.strptime(first_day, "%Y-%m-%d").replace(tzinfo=REPORT_TZ).astimezone(timezone.utc)
+        # The All Orders report FIRST: it gives the order id -> purchase day map that books each
+        # shipment's fees on the order day. Look back ORDER_MAP_LOOKBACK_DAYS before the range for
+        # orders placed earlier but shipped inside it; look ahead as far as the finances window.
+        od_start = (local_midnight(keep_start) - timedelta(days=ORDER_MAP_LOOKBACK_DAYS)).astimezone(timezone.utc)
         probes = probe_token_roles(access_token, refresh_token)
-        od_end = (now - timedelta(minutes=2)) if mode == "rolling" else window_end
+        od_end = (now - timedelta(minutes=2)) if mode == "rolling" else min(now - timedelta(minutes=2), window_end)
         orders_stats = fetch_orders_by_order_date(access_token, od_start, od_end, daily, warnings)
         orders_stats["enabled"] = True
         orders_stats["role_probes"] = probes
@@ -938,12 +981,26 @@ def main():
                     "and authorize again.")
             else:
                 log("DIAGNOSIS: probes pass but createReport still failed - see the HTTP error above (parameter or report-type issue).")
+    total_events = fetch_all_financial_events(access_token, window_start, window_end, daily, warnings)
+    # Only the complete days of the requested range are published: the partial first day of a
+    # rolling window, the look-back/look-ahead days and any order day outside the range (fees of
+    # orders placed before the range belong to the run that covered those days) are dropped.
+    for k in [k for k in daily if k < keep_start or k > keep_end]:
+        daily.pop(k, None)
+    for k in (keep_start, keep_end):
+        if k <= today_key:
+            daily.setdefault(k, new_daily_bucket())
     compute_net_sales(daily)
+    log(f"Order-date fees: {len(FEE_MAP['mapped_orders'])} orders mapped to their purchase day, "
+        f"{len(FEE_MAP['unmapped_orders'])} not in the report map (kept on the posted day, {FEE_MAP['unmapped_amount']:.2f}); "
+        f"FBA storage fee months seen: {sorted(MONTHLY_STORAGE)}")
 
     # merge with the copy already in the repo: days outside the fetched range are kept
-    fetched_start = min(daily) if daily else window_start.astimezone(REPORT_TZ).strftime("%Y-%m-%d")
-    fetched_end = (window_end - timedelta(seconds=1)).astimezone(REPORT_TZ).strftime("%Y-%m-%d") if mode == "backfill" else today_key
+    fetched_start, fetched_end = keep_start, keep_end
     previous = history_previous(OUTPUT_PATH)
+    monthly_storage = dict((previous or {}).get("monthly_storage_fees") or {})
+    monthly_storage.update({k: v for k, v in MONTHLY_STORAGE.items() if k >= HISTORY_START[:7]})
+    monthly_storage = dict(sorted(monthly_storage.items()))
     daily = history_merge(previous, daily, fetched_start, fetched_end)
     hist = history_meta(previous, mode, fetched_start, fetched_end, daily, today_key)
     log(f"History: {hist['first_day']}..{hist['last_day']} ({hist['days']} days, {hist['missing_count']} missing since {HISTORY_START})")
@@ -959,6 +1016,9 @@ def main():
         "timezone": REPORT_TIMEZONE,
         "window_days": WINDOW_DAYS,
         "daily": daily,
+        # FBA monthly inventory storage fee by the month the inventory was stored (Amazon posts it the
+        # 7th-15th of the following month; the posted-day amount is also in daily[].fba_storage_posted).
+        "monthly_storage_fees": monthly_storage,
         "totals": {
             "today": sum_range(daily, today_key, today_key),
             "mtd": sum_range(daily, mtd_start, today_key),
@@ -967,13 +1027,20 @@ def main():
         "meta": {
             "events_processed": total_events,
             "warnings": sorted(warnings),
-            "schema": 3,   # 2 = other_fees + giftwrap_credits + diagnostics; 3 = ordered_* fields by order date (dashboard handles 1-3)
-            "script_version": "2.5",   # 2.3 = days in REPORT_TIMEZONE; 2.4 = All Orders report; 2.5 = history kept across runs + backfill mode
+            "schema": 4,   # 2 = other_fees + giftwrap_credits + diagnostics; 3 = ordered_* fields by order date; 4 = ordered_* fees + monthly storage
+            "script_version": "2.6",   # 2.4 = All Orders report; 2.5 = history + backfill; 2.6 = fees by order date, FBA storage by month stored
             "history": hist,
             "orders_report": orders_stats,
             "sales_basis": {
                 "ordered": "ordered_* = All Orders report by purchase date (Seller Central / Sellerboard basis), Amazon.com channel, cancelled excluded",
                 "posted": "gross_sales / fees / refunds = Finances API by posted (ship) date",
+            },
+            "fee_basis": {
+                "ordered_fees": "ordered_referral_fees / ordered_fba_fulfillment_fees / ordered_other_fees = the same ItemFeeList fees booked on the order's purchase day (order id -> day from the All Orders report; unmapped orders stay on the posted day)",
+                "refund_fee_adjustments": "fees Amazon returns on refunds, on the refund's posted day",
+                "fba_storage": "monthly_storage_fees[YYYY-MM] = FBAStorageFee posted the following month, allocated to the month stored; daily fba_storage_posted keeps the cash-day amount",
+                "mapping": {"mapped_orders": len(FEE_MAP["mapped_orders"]), "unmapped_orders": len(FEE_MAP["unmapped_orders"]),
+                            "unmapped_amount": round(FEE_MAP["unmapped_amount"], 2), "lookback_days": ORDER_MAP_LOOKBACK_DAYS, "fee_lag_days": FEE_LAG_DAYS},
             },
             "diagnostics": diag.as_dict(),
         },
