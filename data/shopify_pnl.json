@@ -18486,7 +18486,7 @@
       "total_sales": 18052.82
     },
     "2026-09-20": {
-      "discounts": 813.0,
+      "discounts": 933.86,
       "fees_missing_orders": 1,
       "gateways": {
         "paypal": {
@@ -18498,90 +18498,92 @@
           "orders": 1
         },
         "shopify_payments": {
-          "amount": 2065.45,
-          "orders": 25
+          "amount": 2203.47,
+          "orders": 26
         }
       },
-      "gross_sales": 2779.99,
-      "net_sales": 1966.99,
-      "orders": 26,
+      "gross_sales": 3032.44,
+      "net_sales": 2098.58,
+      "orders": 27,
       "payment_fee_types": {
         "domestic_card_not_present": 52.27,
+        "foreign_exchange_fee": 2.85,
+        "international_card_not_present": 6.69,
         "premium_domestic_card_not_present": 2.13
       },
-      "payment_fees": 54.4,
-      "payment_fees_orders": 25,
+      "payment_fees": 63.94,
+      "payment_fees_orders": 26,
       "refunded_shipping": 9.99,
       "refunded_tax": 7.7,
       "refunded_total": 298.47,
       "returns": 280.78,
-      "shipping": 123.88,
+      "shipping": 130.32,
       "snowball_commission": 38.89,
       "snowball_commission_net": 38.89,
       "snowball_orders": 1,
       "snowball_revenue": 129.62,
       "snowball_reversals": 0,
       "tax": 145.75,
-      "total_sales": 1938.15
+      "total_sales": 2076.18
     }
   },
-  "generated_at": "2026-09-20T12:31:46Z",
+  "generated_at": "2026-09-20T12:48:11Z",
   "meta": {
-    "api_cost_actual": 89511,
+    "api_cost_actual": 24189,
     "api_cost_requested_max": 290,
-    "api_requests": 1242,
+    "api_requests": 372,
     "auth_mode": "client_credentials",
     "counts": {
-      "edit_additions_moved": 2755,
+      "edit_additions_moved": 1172,
       "edit_lists_truncated": 0,
-      "fee_transactions": 41944,
-      "fees_missing_orders": 7206,
-      "late_orders_scanned": 3176,
-      "late_refund_orders": 294,
-      "orders_counted": 45016,
-      "orders_edited": 2618,
-      "orders_outside_window": 374,
-      "orders_seen": 48566,
+      "fee_transactions": 8087,
+      "fees_missing_orders": 1321,
+      "late_orders_scanned": 3086,
+      "late_refund_orders": 232,
+      "orders_counted": 8827,
+      "orders_edited": 1032,
+      "orders_outside_window": 635,
+      "orders_seen": 12548,
       "orders_skipped_test": 0,
       "orders_skipped_voided": 0,
-      "orders_with_shipping_discount": 31,
+      "orders_with_shipping_discount": 16,
       "refund_lists_truncated": 0,
-      "refund_tip_lines": 20,
-      "refunds_counted": 2701,
-      "refunds_edit_removals": 516,
-      "refunds_outside_window": 70,
-      "refunds_with_adjustments": 2021,
-      "snowball_attr_without_tag": 108,
+      "refund_tip_lines": 4,
+      "refunds_counted": 653,
+      "refunds_edit_removals": 119,
+      "refunds_outside_window": 101,
+      "refunds_with_adjustments": 413,
+      "snowball_attr_without_tag": 46,
       "snowball_exact": 166,
       "snowball_export_without_tag": 0,
-      "snowball_tagged": 1686,
-      "transactions_truncated": 27
+      "snowball_tagged": 266,
+      "transactions_truncated": 12
     },
     "gateways": {
       "afterpay (new)": {
-        "amount": 23783.07,
+        "amount": 4281.77,
         "fees": 0.0,
-        "orders": 182
+        "orders": 33
       },
       "gift_card": {
-        "amount": 1316.03,
+        "amount": 496.25,
         "fees": 0.0,
-        "orders": 26
+        "orders": 9
       },
       "paypal": {
-        "amount": 557357.46,
+        "amount": 111589.05,
         "fees": 0.0,
-        "orders": 4460
+        "orders": 883
       },
       "shop_cash": {
-        "amount": 9109.3,
+        "amount": 1983.23,
         "fees": 0.0,
-        "orders": 351
+        "orders": 75
       },
       "shopify_payments": {
-        "amount": 5089777.9,
-        "fees": 132545.51,
-        "orders": 40339
+        "amount": 957495.49,
+        "fees": 24197.73,
+        "orders": 7886
       }
     },
     "granted_scope": "read_all_orders,read_orders",
@@ -18606,7 +18608,7 @@
       "days": 444,
       "fetched": {
         "end": "2026-09-20",
-        "start": "2026-01-01"
+        "start": "2026-08-06"
       },
       "first_day": "2025-01-01",
       "last_day": "2026-09-20",
@@ -18673,28 +18675,23 @@
         "2025-08-28",
         "2025-08-29"
       ],
-      "mode": "backfill",
+      "mode": "rolling",
       "start": "2025-01-01"
     },
     "late_orders_mode": "all",
     "order_edits": "booked_on_edit_date",
     "orders_visibility": "all",
-    "pages": 1240,
+    "pages": 370,
     "payment_fees_basis": "shopify_payments_transaction_fees_on_order_day",
     "returns_basis": "shopify_sales_reversals",
     "schema": 2,
     "script_version": "1.7",
     "throttled_waits": 0,
     "warnings": [
-      "108 orders carry the __snowball attribute but no 'Referral - SS - *' tag (Snowball rejected/untracked them) - not counted as referrals",
+      "46 orders carry the __snowball attribute but no 'Referral - SS - *' tag (Snowball rejected/untracked them) - not counted as referrals",
       "no rate known for Snowball program 'Default program' - using SNOWBALL_DEFAULT_RATE=0",
-      "no rate known for Snowball program 'Halloween Affiliate 15 \ud83d\udc7b' - using SNOWBALL_DEFAULT_RATE=0",
       "no rate known for Snowball program 'asher_fitfeline_partner' - using SNOWBALL_DEFAULT_RATE=0",
-      "no rate known for Snowball program 'odieandrye_partnership' - using SNOWBALL_DEFAULT_RATE=0",
-      "no rate known for Snowball program 'rocket_partnership' - using SNOWBALL_DEFAULT_RATE=0",
-      "rate for Snowball program '10 % Commision + 20% Dis' inferred from its name (10%) - set SNOWBALL_PROGRAM_RATES to pin it",
       "rate for Snowball program '20 % Commision No Discou' inferred from its name (20%) - set SNOWBALL_PROGRAM_RATES to pin it",
-      "rate for Snowball program 'purrfectinfluencer10' inferred from its name (10%) - set SNOWBALL_PROGRAM_RATES to pin it",
       "rate for Snowball program 'rachelandkittiess 10' inferred from its name (10%) - set SNOWBALL_PROGRAM_RATES to pin it"
     ]
   },
@@ -18702,117 +18699,69 @@
   "shop_name": "Cattasaurus",
   "snowball": {
     "affiliates": {
-      "(link / no code) \u00b7 10 % Commision + 20% Dis": {
-        "commission": 196.19,
-        "commission_net": 82.87,
-        "orders": 18,
-        "program": "10 % Commision + 20% Dis",
-        "revenue": 1961.93,
-        "reversals": 113.32
-      },
-      "(link / no code) \u00b7 15% CODE + 10% commission": {
-        "commission": 0.0,
-        "commission_net": 0.0,
-        "orders": 150,
-        "program": "15% CODE + 10% commission",
-        "revenue": 15912.37,
-        "reversals": 0.0
-      },
-      "(link / no code) \u00b7 20 % Commision No Discou": {
-        "commission": 931.18,
-        "commission_net": 911.38,
-        "orders": 40,
-        "program": "20 % Commision No Discou",
-        "revenue": 4655.9,
-        "reversals": 19.8
-      },
       "(link / no code) \u00b7 30% Commision": {
-        "commission": 70.6,
-        "commission_net": 70.6,
-        "orders": 2,
+        "commission": 35.89,
+        "commission_net": 35.89,
+        "orders": 1,
         "program": "30% Commision",
-        "revenue": 235.33,
+        "revenue": 119.63,
         "reversals": 0.0
       },
       "(link / no code) \u00b7 B1G2F_WEEKEND": {
-        "commission": 435.4,
-        "commission_net": 435.4,
-        "orders": 11,
+        "commission": 102.48,
+        "commission_net": 102.48,
+        "orders": 3,
         "program": "B1G2F_WEEKEND",
-        "revenue": 1451.32,
+        "revenue": 341.59,
         "reversals": 0.0
       },
       "(link / no code) \u00b7 Default program": {
         "commission": 0.0,
         "commission_net": 0.0,
-        "orders": 21,
-        "program": "Default program",
-        "revenue": 2349.35,
-        "reversals": 0.0
-      },
-      "(link / no code) \u00b7 Halloween Affiliate 15 \ud83d\udc7b": {
-        "commission": 0.0,
-        "commission_net": 0.0,
         "orders": 1,
-        "program": "Halloween Affiliate 15 \ud83d\udc7b",
-        "revenue": 136.01,
+        "program": "Default program",
+        "revenue": 96.53,
         "reversals": 0.0
       },
       "(link / no code) \u00b7 Organic short content": {
         "commission": 0.0,
         "commission_net": 0.0,
-        "orders": 10,
+        "orders": 3,
         "program": "Organic short content",
-        "revenue": 1219.13,
+        "revenue": 466.82,
         "reversals": 0.0
       },
       "(link / no code) \u00b7 Peekaboo Affiliate 15": {
-        "commission": 1155.2,
-        "commission_net": 926.32,
-        "orders": 47,
+        "commission": 219.1,
+        "commission_net": 167.75,
+        "orders": 9,
         "program": "Peekaboo Affiliate 15",
-        "revenue": 5775.98,
-        "reversals": 228.88
+        "revenue": 1095.49,
+        "reversals": 51.35
       },
       "(link / no code) \u00b7 THANKYOU20_CAMP": {
         "commission": 0.0,
         "commission_net": 0.0,
-        "orders": 2,
+        "orders": 1,
         "program": "THANKYOU20_CAMP",
-        "revenue": 209.29,
-        "reversals": 0.0
-      },
-      "(link / no code) \u00b7 asher_fitfeline_partner": {
-        "commission": 0.0,
-        "commission_net": 0.0,
-        "orders": 93,
-        "program": "asher_fitfeline_partner",
-        "revenue": 11881.92,
+        "revenue": 97.43,
         "reversals": 0.0
       },
       "(link / no code) \u00b7 homebodycatclub_partner": {
-        "commission": 665.31,
-        "commission_net": 656.61,
-        "orders": 35,
+        "commission": 142.81,
+        "commission_net": 142.81,
+        "orders": 8,
         "program": "homebodycatclub_partner",
-        "revenue": 4435.38,
-        "reversals": 8.7
-      },
-      "(link / no code) \u00b7 purrfectinfluencer10": {
-        "commission": 35.28,
-        "commission_net": 29.19,
-        "orders": 3,
-        "program": "purrfectinfluencer10",
-        "revenue": 352.77,
-        "reversals": 6.09
+        "revenue": 952.07,
+        "reversals": 0.0
       },
       "(link / no code) \u00b7 rachelandkittiess 10": {
-        "commission": 142.56,
-        "commission_net": 121.3,
-        "orders": 12,
+        "commission": 0.0,
+        "commission_net": -17.4,
+        "orders": 0,
         "program": "rachelandkittiess 10",
-        "revenue": 1425.56,
-        "reversals": 21.26
+        "revenue": 0.0,
+        "reversals": 17.4
       },
       "3BlackCats": {
         "commission": 83.71,
@@ -18820,14 +18769,6 @@
         "orders": 1,
         "program": "B1G2F_WEEKEND",
         "revenue": 279.04,
-        "reversals": 0.0
-      },
-      "ABIGAIL15": {
-        "commission": 260.76,
-        "commission_net": 260.76,
-        "orders": 7,
-        "program": "B1G2F_WEEKEND",
-        "revenue": 869.2,
         "reversals": 0.0
       },
       "ANDREA05057": {
@@ -18838,14 +18779,6 @@
         "revenue": 1141.19,
         "reversals": 0.0
       },
-      "ASH93326": {
-        "commission": 25.76,
-        "commission_net": 25.76,
-        "orders": 1,
-        "program": "Peekaboo Affiliate 15",
-        "revenue": 128.82,
-        "reversals": 0.0
-      },
       "Albertmimi": {
         "commission": 31.79,
         "commission_net": 31.79,
@@ -18854,60 +18787,20 @@
         "revenue": 105.95,
         "reversals": 0.0
       },
-      "BLACKKITTYCREW": {
-        "commission": 437.53,
-        "commission_net": 437.53,
-        "orders": 13,
-        "program": "B1G2F_WEEKEND",
-        "revenue": 1458.42,
-        "reversals": 0.0
-      },
-      "BOB93642": {
-        "commission": 755.09,
-        "commission_net": 744.1,
-        "orders": 23,
-        "program": "Peekaboo Affiliate 15",
-        "revenue": 2707.62,
-        "reversals": 10.99
-      },
-      "Beecouponx": {
-        "commission": 40.65,
-        "commission_net": 40.65,
-        "orders": 2,
-        "program": "Peekaboo Affiliate 15",
-        "revenue": 203.24,
-        "reversals": 0.0
-      },
       "CHARLOTTE": {
-        "commission": 3447.13,
-        "commission_net": 3266.46,
-        "orders": 94,
-        "program": "20 % Commision No Discou",
-        "revenue": 11677.92,
-        "reversals": 180.67
-      },
-      "COSMO": {
-        "commission": 0.0,
-        "commission_net": 0.0,
-        "orders": 1,
-        "program": "asher_fitfeline_partner",
-        "revenue": 92.5,
-        "reversals": 0.0
+        "commission": 411.61,
+        "commission_net": 364.31,
+        "orders": 11,
+        "program": "B1G2F_WEEKEND",
+        "revenue": 1372.02,
+        "reversals": 47.3
       },
       "DAILYCXT703408": {
         "commission": 0.0,
         "commission_net": 0.0,
-        "orders": 434,
+        "orders": 133,
         "program": "Organic short content",
-        "revenue": 53626.48,
-        "reversals": 0.0
-      },
-      "EDWARD43672": {
-        "commission": 302.61,
-        "commission_net": 302.61,
-        "orders": 10,
-        "program": "20 % Commision No Discou",
-        "revenue": 1437.47,
+        "revenue": 17239.83,
         "reversals": 0.0
       },
       "EmmaBridges": {
@@ -18918,45 +18811,13 @@
         "revenue": 312.94,
         "reversals": 0.0
       },
-      "Evie20": {
-        "commission": 17.43,
-        "commission_net": 17.43,
-        "orders": 1,
-        "program": "homebodycatclub_partner",
-        "revenue": 116.23,
-        "reversals": 0.0
-      },
-      "Fowler": {
-        "commission": 256.3,
-        "commission_net": 256.3,
-        "orders": 10,
-        "program": "Peekaboo Affiliate 15",
-        "revenue": 1281.51,
-        "reversals": 0.0
-      },
       "Gingiandluna": {
-        "commission": 1138.32,
-        "commission_net": 1121.36,
-        "orders": 30,
-        "program": "B1G2F_WEEKEND",
-        "revenue": 4086.69,
-        "reversals": 16.96
-      },
-      "HAMZA11052": {
-        "commission": 0.0,
-        "commission_net": 0.0,
-        "orders": 5,
-        "program": "rocket_partnership",
-        "revenue": 570.74,
-        "reversals": 0.0
-      },
-      "JERKCATS": {
-        "commission": 465.25,
-        "commission_net": 465.25,
+        "commission": 743.2,
+        "commission_net": 726.24,
         "orders": 19,
-        "program": "Peekaboo Affiliate 15",
-        "revenue": 2120.9,
-        "reversals": 0.0
+        "program": "B1G2F_WEEKEND",
+        "revenue": 2590.3,
+        "reversals": 16.96
       },
       "JOY23391": {
         "commission": 34.66,
@@ -18966,84 +18827,28 @@
         "revenue": 115.54,
         "reversals": 0.0
       },
-      "James1020": {
-        "commission": 29.56,
-        "commission_net": 29.56,
-        "orders": 2,
-        "program": "10 % Commision + 20% Dis",
-        "revenue": 207.04,
-        "reversals": 0.0
-      },
       "Joseph15": {
-        "commission": 414.24,
-        "commission_net": 362.1,
-        "orders": 22,
+        "commission": 20.06,
+        "commission_net": 20.06,
+        "orders": 3,
         "program": "homebodycatclub_partner",
-        "revenue": 2844.66,
-        "reversals": 52.14
-      },
-      "Katie20": {
-        "commission": 130.46,
-        "commission_net": 117.86,
-        "orders": 7,
-        "program": "10 % Commision + 20% Dis",
-        "revenue": 737.5,
-        "reversals": 12.6
-      },
-      "LISA33633": {
-        "commission": 43.73,
-        "commission_net": 43.73,
-        "orders": 1,
-        "program": "B1G2F_WEEKEND",
-        "revenue": 145.76,
+        "revenue": 216.81,
         "reversals": 0.0
-      },
-      "LUCAS93865": {
-        "commission": 38.3,
-        "commission_net": 18.86,
-        "orders": 2,
-        "program": "20 % Commision No Discou",
-        "revenue": 191.52,
-        "reversals": 19.44
       },
       "ManicPixie": {
-        "commission": 1809.45,
-        "commission_net": 1809.45,
-        "orders": 46,
+        "commission": 314.89,
+        "commission_net": 314.89,
+        "orders": 9,
         "program": "B1G2F_WEEKEND",
-        "revenue": 6139.06,
-        "reversals": 0.0
-      },
-      "ManyZanyCreations": {
-        "commission": 60.13,
-        "commission_net": 60.13,
-        "orders": 3,
-        "program": "Peekaboo Affiliate 15",
-        "revenue": 300.65,
+        "revenue": 1049.63,
         "reversals": 0.0
       },
       "MoeGrey3": {
-        "commission": 77.7,
-        "commission_net": 77.7,
-        "orders": 2,
-        "program": "20 % Commision No Discou",
-        "revenue": 315.84,
-        "reversals": 0.0
-      },
-      "NolaCats": {
-        "commission": 19.58,
-        "commission_net": 19.58,
+        "commission": 43.59,
+        "commission_net": 43.59,
         "orders": 1,
-        "program": "Peekaboo Affiliate 15",
-        "revenue": 97.9,
-        "reversals": 0.0
-      },
-      "Noodybums": {
-        "commission": 286.52,
-        "commission_net": 286.52,
-        "orders": 6,
-        "program": "30% Commision",
-        "revenue": 955.06,
+        "program": "B1G2F_WEEKEND",
+        "revenue": 145.31,
         "reversals": 0.0
       },
       "OFF10": {
@@ -19054,68 +18859,12 @@
         "revenue": 198.46,
         "reversals": 0.0
       },
-      "POVINME": {
-        "commission": 25.44,
-        "commission_net": 25.44,
-        "orders": 1,
-        "program": "Peekaboo Affiliate 15",
-        "revenue": 127.21,
-        "reversals": 0.0
-      },
-      "Pishi": {
-        "commission": 68.56,
-        "commission_net": 68.56,
-        "orders": 1,
-        "program": "B1G2F_WEEKEND",
-        "revenue": 228.55,
-        "reversals": 0.0
-      },
-      "Queso": {
-        "commission": 25.79,
-        "commission_net": 25.79,
-        "orders": 1,
-        "program": "Peekaboo Affiliate 15",
-        "revenue": 128.97,
-        "reversals": 0.0
-      },
-      "RICK82693": {
-        "commission": 39.25,
-        "commission_net": 39.25,
-        "orders": 1,
-        "program": "homebodycatclub_partner",
-        "revenue": 261.65,
-        "reversals": 0.0
-      },
-      "SILVANA05943": {
-        "commission": 0.0,
-        "commission_net": 0.0,
-        "orders": 1,
-        "program": "Halloween Affiliate 15 \ud83d\udc7b",
-        "revenue": 90.49,
-        "reversals": 0.0
-      },
       "SYEDJAWAD98004": {
-        "commission": 251.02,
-        "commission_net": 199.2,
-        "orders": 9,
-        "program": "asher_fitfeline_partner",
-        "revenue": 1366.86,
-        "reversals": 51.82
-      },
-      "SpookySP": {
-        "commission": 19.76,
-        "commission_net": 19.76,
+        "commission": 19.67,
+        "commission_net": 19.67,
         "orders": 1,
         "program": "Peekaboo Affiliate 15",
-        "revenue": 98.79,
-        "reversals": 0.0
-      },
-      "TOMY96315": {
-        "commission": 39.6,
-        "commission_net": 39.6,
-        "orders": 1,
-        "program": "20 % Commision No Discou",
-        "revenue": 198.0,
+        "revenue": 98.35,
         "reversals": 0.0
       },
       "TRANG78502": {
@@ -19126,14 +18875,6 @@
         "revenue": 88.76,
         "reversals": 0.0
       },
-      "TRUSTYFINDS": {
-        "commission": 19.45,
-        "commission_net": 19.45,
-        "orders": 1,
-        "program": "Peekaboo Affiliate 15",
-        "revenue": 97.23,
-        "reversals": 0.0
-      },
       "WELCOME": {
         "commission": 231.39,
         "commission_net": 231.39,
@@ -19142,77 +18883,21 @@
         "revenue": 1156.92,
         "reversals": 0.0
       },
-      "WELCOME25": {
-        "commission": 18.98,
-        "commission_net": 18.98,
-        "orders": 1,
-        "program": "Peekaboo Affiliate 15",
-        "revenue": 94.9,
-        "reversals": 0.0
-      },
       "WONKY": {
-        "commission": 13560.35,
-        "commission_net": 13345.55,
-        "orders": 373,
+        "commission": 782.74,
+        "commission_net": 691.11,
+        "orders": 22,
         "program": "B1G2F_WEEKEND",
-        "revenue": 46113.07,
-        "reversals": 214.8
-      },
-      "Yes": {
-        "commission": 95.71,
-        "commission_net": 95.71,
-        "orders": 3,
-        "program": "Peekaboo Affiliate 15",
-        "revenue": 478.56,
-        "reversals": 0.0
+        "revenue": 2609.14,
+        "reversals": 91.63
       },
       "catluminati": {
-        "commission": 1643.47,
-        "commission_net": 1568.81,
-        "orders": 48,
-        "program": "Peekaboo Affiliate 15",
-        "revenue": 6144.43,
-        "reversals": 74.66
-      },
-      "codif34": {
-        "commission": 307.3,
-        "commission_net": 307.3,
+        "commission": 410.58,
+        "commission_net": 391.22,
         "orders": 12,
-        "program": "20 % Commision No Discou",
-        "revenue": 1631.29,
-        "reversals": 0.0
-      },
-      "elsiewants": {
-        "commission": 403.71,
-        "commission_net": 403.71,
-        "orders": 10,
         "program": "B1G2F_WEEKEND",
-        "revenue": 1345.71,
-        "reversals": 0.0
-      },
-      "milo24": {
-        "commission": 28.68,
-        "commission_net": 28.68,
-        "orders": 1,
-        "program": "B1G2F_WEEKEND",
-        "revenue": 95.59,
-        "reversals": 0.0
-      },
-      "minnie": {
-        "commission": 80.82,
-        "commission_net": 80.82,
-        "orders": 3,
-        "program": "20 % Commision No Discou",
-        "revenue": 404.1,
-        "reversals": 0.0
-      },
-      "oddpaws": {
-        "commission": 38.34,
-        "commission_net": 38.34,
-        "orders": 1,
-        "program": "B1G2F_WEEKEND",
-        "revenue": 127.81,
-        "reversals": 0.0
+        "revenue": 1778.71,
+        "reversals": 19.36
       },
       "oreoandpumpkin": {
         "commission": 34.16,
@@ -19220,14 +18905,6 @@
         "orders": 1,
         "program": "B1G2F_WEEKEND",
         "revenue": 113.86,
-        "reversals": 0.0
-      },
-      "thickrick": {
-        "commission": 27.35,
-        "commission_net": 27.35,
-        "orders": 1,
-        "program": "Peekaboo Affiliate 15",
-        "revenue": 136.74,
         "reversals": 0.0
       }
     },
@@ -19245,144 +18922,91 @@
     ],
     "conversions_loaded": 167,
     "programs": {
-      "10 % Commision + 20% Dis": {
-        "commission": 225.08,
-        "commission_net": 111.76,
-        "orders": 21,
-        "rate": 0.1,
-        "revenue": 2250.82,
-        "reversals": 113.32
-      },
       "15% CODE + 10% commission": {
         "commission": 0.0,
         "commission_net": 0.0,
-        "orders": 153,
+        "orders": 1,
         "rate": 0.0,
-        "revenue": 16177.45,
+        "revenue": 83.09,
         "reversals": 0.0
       },
-      "20 % Commision No Discou": {
-        "commission": 1863.66,
-        "commission_net": 1811.82,
-        "orders": 75,
-        "rate": 0.2,
-        "revenue": 9318.28,
-        "reversals": 51.84
-      },
       "30% Commision": {
-        "commission": 765.92,
-        "commission_net": 765.92,
-        "orders": 21,
+        "commission": 444.7,
+        "commission_net": 444.7,
+        "orders": 14,
         "rate": 0.3,
-        "revenue": 2553.07,
+        "revenue": 1482.31,
         "reversals": 0.0
       },
       "B1G2F_WEEKEND": {
-        "commission": 24189.49,
-        "commission_net": 23691.41,
-        "orders": 645,
+        "commission": 2926.95,
+        "commission_net": 2751.71,
+        "orders": 78,
         "rate": 0.3,
-        "revenue": 80870.75,
-        "reversals": 498.08
+        "revenue": 9995.63,
+        "reversals": 175.24
       },
       "Default program": {
         "commission": 0.0,
         "commission_net": 0.0,
-        "orders": 22,
+        "orders": 1,
         "rate": 0.0,
-        "revenue": 2463.55,
-        "reversals": 0.0
-      },
-      "Halloween Affiliate 15 \ud83d\udc7b": {
-        "commission": 0.0,
-        "commission_net": 0.0,
-        "orders": 2,
-        "rate": 0.0,
-        "revenue": 226.5,
+        "revenue": 96.53,
         "reversals": 0.0
       },
       "Organic short content": {
         "commission": 0.0,
         "commission_net": 0.0,
-        "orders": 447,
+        "orders": 137,
         "rate": 0.0,
-        "revenue": 55334.71,
+        "revenue": 17990.62,
         "reversals": 0.0
       },
       "Peekaboo Affiliate 15": {
-        "commission": 2861.06,
-        "commission_net": 2580.35,
-        "orders": 115,
+        "commission": 590.19,
+        "commission_net": 538.84,
+        "orders": 24,
         "rate": 0.2,
-        "revenue": 14305.3,
-        "reversals": 280.71
+        "revenue": 2950.92,
+        "reversals": 51.35
       },
       "THANKYOU20_CAMP": {
         "commission": 0.0,
         "commission_net": 0.0,
-        "orders": 2,
+        "orders": 1,
         "rate": 0.0,
-        "revenue": 209.29,
-        "reversals": 0.0
-      },
-      "asher_fitfeline_partner": {
-        "commission": 0.0,
-        "commission_net": 0.0,
-        "orders": 102,
-        "rate": 0.0,
-        "revenue": 13061.69,
+        "revenue": 97.43,
         "reversals": 0.0
       },
       "homebodycatclub_partner": {
-        "commission": 1167.44,
-        "commission_net": 1106.6,
-        "orders": 60,
+        "commission": 162.87,
+        "commission_net": 162.87,
+        "orders": 10,
         "rate": 0.15,
-        "revenue": 7782.9,
-        "reversals": 60.84
-      },
-      "purrfectinfluencer10": {
-        "commission": 35.28,
-        "commission_net": 29.19,
-        "orders": 3,
-        "rate": 0.1,
-        "revenue": 352.77,
-        "reversals": 6.09
+        "revenue": 1085.79,
+        "reversals": 0.0
       },
       "rachelandkittiess 10": {
-        "commission": 151.98,
-        "commission_net": 130.72,
-        "orders": 13,
-        "rate": 0.1,
-        "revenue": 1519.76,
-        "reversals": 21.26
-      },
-      "rocket_partnership": {
         "commission": 0.0,
-        "commission_net": 0.0,
-        "orders": 5,
-        "rate": 0.0,
-        "revenue": 570.74,
-        "reversals": 0.0
+        "commission_net": -17.4,
+        "orders": 0,
+        "rate": 0.1,
+        "revenue": 0.0,
+        "reversals": 17.4
       }
     },
     "rate_sources": {
-      "10 % Commision + 20% Dis": "inferred_from_name",
       "15% CODE + 10% commission": "learned_from_export",
       "20 % Commision No Discou": "inferred_from_name",
       "30% Commision": "learned_from_export",
       "B1G2F_WEEKEND": "learned_from_export",
       "Default program": "default",
-      "Halloween Affiliate 15 \ud83d\udc7b": "default",
       "Organic short content": "learned_from_export",
       "Peekaboo Affiliate 15": "learned_from_export",
       "THANKYOU20_CAMP": "learned_from_export",
       "asher_fitfeline_partner": "default",
       "homebodycatclub_partner": "learned_from_export",
-      "odieandrye_partnership": "default",
-      "purrfectinfluencer10": "inferred_from_name",
-      "rachelandkittiess 10": "inferred_from_name",
-      "rocket_partnership": "default"
+      "rachelandkittiess 10": "inferred_from_name"
     },
     "rates_learned": {
       "15% CODE + 10% commission": {
@@ -19423,89 +19047,89 @@
     },
     "tag_prefix": "Referral - SS - ",
     "window_totals": {
-      "commission": 31259.91,
-      "commission_net": 30227.77,
-      "orders": 1686,
-      "revenue": 206997.58,
-      "reversals": 1032.14
+      "commission": 4124.71,
+      "commission_net": 3880.72,
+      "orders": 266,
+      "revenue": 33782.32,
+      "reversals": 243.99
     }
   },
   "source": "shopify_admin_graphql",
   "timezone": "America/Los_Angeles",
   "totals": {
     "last_30d": {
-      "discounts": 510683.49,
+      "discounts": 510804.35,
       "fees_missing_orders": 829,
       "gateways": {},
-      "gross_sales": 1133123.86,
-      "net_sales": 622440.37,
-      "orders": 5228,
+      "gross_sales": 1133376.31,
+      "net_sales": 622571.96,
+      "orders": 5229,
       "payment_fee_types": {},
-      "payment_fees": 14758.95,
-      "payment_fees_orders": 4375,
+      "payment_fees": 14768.49,
+      "payment_fees_orders": 4376,
       "refunded_shipping": 72.88,
       "refunded_tax": 1208.23,
       "refunded_total": 30304.41,
       "returns": 30695.78,
-      "shipping": 3695.65,
+      "shipping": 3702.09,
       "snowball_commission": 2747.26,
       "snowball_commission_net": 2540.92,
       "snowball_orders": 157,
       "snowball_revenue": 20329.22,
       "snowball_reversals": 206.33,
       "tax": 41202.18,
-      "total_sales": 635361.31
+      "total_sales": 635499.34
     },
     "mtd": {
-      "discounts": 300528.13,
+      "discounts": 300648.99,
       "fees_missing_orders": 475,
       "gateways": {},
-      "gross_sales": 664429.79,
-      "net_sales": 363901.66,
-      "orders": 3009,
+      "gross_sales": 664682.24,
+      "net_sales": 364033.25,
+      "orders": 3010,
       "payment_fee_types": {},
-      "payment_fees": 8634.38,
-      "payment_fees_orders": 2529,
+      "payment_fees": 8643.92,
+      "payment_fees_orders": 2530,
       "refunded_shipping": 57.88,
       "refunded_tax": 880.92,
       "refunded_total": 20092.52,
       "returns": 20507.97,
-      "shipping": 3138.34,
+      "shipping": 3144.78,
       "snowball_commission": 1482.52,
       "snowball_commission_net": 1321.35,
       "snowball_orders": 78,
       "snowball_revenue": 10176.7,
       "snowball_reversals": 161.17,
       "tax": 24169.1,
-      "total_sales": 369762.33
+      "total_sales": 369900.36
     },
     "today": {
-      "discounts": 813.0,
+      "discounts": 933.86,
       "fees_missing_orders": 1,
       "gateways": {},
-      "gross_sales": 2779.99,
-      "net_sales": 1966.99,
-      "orders": 26,
+      "gross_sales": 3032.44,
+      "net_sales": 2098.58,
+      "orders": 27,
       "payment_fee_types": {},
-      "payment_fees": 54.4,
-      "payment_fees_orders": 25,
+      "payment_fees": 63.94,
+      "payment_fees_orders": 26,
       "refunded_shipping": 9.99,
       "refunded_tax": 7.7,
       "refunded_total": 298.47,
       "returns": 280.78,
-      "shipping": 123.88,
+      "shipping": 130.32,
       "snowball_commission": 38.89,
       "snowball_commission_net": 38.89,
       "snowball_orders": 1,
       "snowball_revenue": 129.62,
       "snowball_reversals": 0,
       "tax": 145.75,
-      "total_sales": 1938.15
+      "total_sales": 2076.18
     }
   },
   "window": {
     "end": "2026-09-20",
-    "start": "2026-01-01"
+    "start": "2026-08-06"
   },
   "window_days": 45
 }
