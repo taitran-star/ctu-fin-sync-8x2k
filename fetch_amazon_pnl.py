@@ -20,6 +20,10 @@ Optional env vars:
   SP_API_REGION_HOST   default: https://sellingpartnerapi-na.amazon.com
   MARKETPLACE_IDS       comma separated, default: ATVPDKIKX0DER (US)
   WINDOW_DAYS            how many trailing days to (re)fetch, default 45
+  HISTORY_START          days from this date on are kept in the file across runs (default
+                         2025-01-01): a run refetches only its window and keeps the rest
+  BACKFILL_START/_END    one-off run over a past range (YYYY-MM-DD, END defaults to today),
+                         merged into the same file - run it in chunks of a few months
   ORDERS_REPORT          1 (default) = also pull GET_FLAT_FILE_ALL_ORDERS_DATA_BY_ORDER_DATE_GENERAL
                          (Reports API, role "Inventory and Order Tracking"); 0 = Finances only
   ORDERS_REPORT_CHUNK_DAYS  days per report request (default 30 -> 2 reports for 45 days)
@@ -150,6 +154,89 @@ ORDERED_FIELDS = [
     "mcf_orders",
 ]
 DAILY_FIELDS += ORDERED_FIELDS
+
+
+# ---------------------------------------------------------------- history (shared block)
+# Every fetcher keeps ONE file per source in the repo. A normal run refetches only the
+# trailing WINDOW_DAYS and keeps every older day from the previous copy of the file, so
+# data/<source>.json grows into a full history (HISTORY_START -> today). A one-off
+# BACKFILL_START/BACKFILL_END run (workflow_dispatch inputs) fetches an arbitrary past
+# range and merges it the same way - run it in a few chunks to build 2025 -> now.
+HISTORY_START = os.environ.get("HISTORY_START", "2025-01-01").strip() or "2025-01-01"
+BACKFILL_START = os.environ.get("BACKFILL_START", "").strip()
+BACKFILL_END = os.environ.get("BACKFILL_END", "").strip()
+
+
+def history_previous(path):
+    """The copy of the output file already in the repo checkout (None on first run / bad JSON)."""
+    try:
+        with open(path) as f:
+            prev = json.load(f)
+        return prev if isinstance(prev, dict) and isinstance(prev.get("daily"), dict) else None
+    except (OSError, ValueError):
+        return None
+
+
+def history_merge(previous, fetched_daily, fetched_start, fetched_end, key="daily"):
+    """Days from the previous file that lie outside [fetched_start, fetched_end] (and on/after
+    HISTORY_START) survive; the freshly fetched days replace everything inside the range."""
+    merged = {}
+    for day, row in ((previous or {}).get(key) or {}).items():
+        if day >= HISTORY_START and (day < fetched_start or day > fetched_end):
+            merged[day] = row
+    merged.update(fetched_daily)
+    return dict(sorted(merged.items()))
+
+
+def history_meta(previous, mode, fetched_start, fetched_end, merged_daily, today_key):
+    """Coverage report for the dashboard/sync logs: which days between HISTORY_START and today
+    are still missing, and which backfill ranges have been run so far."""
+    from datetime import date as _date
+    backfills = list(((previous or {}).get("meta") or {}).get("history", {}).get("backfills") or [])
+    if mode == "backfill":
+        backfills.append({"start": fetched_start, "end": fetched_end, "run_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")})
+        backfills = backfills[-60:]
+    missing = []
+    try:
+        y, m, d = (int(x) for x in HISTORY_START.split("-"))
+        cur = _date(y, m, d)
+        y, m, d = (int(x) for x in today_key.split("-"))
+        end = _date(y, m, d)
+        while cur <= end:
+            k = cur.isoformat()
+            if k not in merged_daily:
+                missing.append(k)
+            cur += timedelta(days=1)
+    except ValueError:
+        pass
+    return {
+        "start": HISTORY_START,
+        "mode": mode,
+        "fetched": {"start": fetched_start, "end": fetched_end},
+        "first_day": min(merged_daily) if merged_daily else None,
+        "last_day": max(merged_daily) if merged_daily else None,
+        "days": len(merged_daily),
+        "missing_count": len(missing),
+        "missing_days": missing[:60],
+        "backfills": backfills,
+    }
+
+
+def backfill_range(today_key):
+    """(start, end) 'YYYY-MM-DD' when this run is a backfill, else None. END defaults to today;
+    both are validated so a typo in the workflow input cannot wipe the file."""
+    if not BACKFILL_START:
+        return None
+    try:
+        s = datetime.strptime(BACKFILL_START, "%Y-%m-%d")
+        e = datetime.strptime(BACKFILL_END or today_key, "%Y-%m-%d")
+    except ValueError:
+        log(f"BACKFILL_START/BACKFILL_END must be YYYY-MM-DD (got {BACKFILL_START!r} / {BACKFILL_END!r})")
+        sys.exit(1)
+    if e < s:
+        log("BACKFILL_END is before BACKFILL_START")
+        sys.exit(1)
+    return s.strftime("%Y-%m-%d"), e.strftime("%Y-%m-%d")
 
 
 def log(msg):
@@ -800,11 +887,21 @@ def main():
 
     now = datetime.now(timezone.utc)
     now_local = now.astimezone(REPORT_TZ)
-    window_start = now - timedelta(days=WINDOW_DAYS)
+    today_key = now_local.strftime("%Y-%m-%d")
     # Amazon rejects a PostedBefore too close to "now" (clock-skew tolerance is only ~2 min);
     # back off by 5 minutes for safety margin.
-    window_end = now - timedelta(minutes=5)
-    log(f"Report timezone {REPORT_TIMEZONE}; local now {now_local.strftime('%Y-%m-%d %H:%M')}")
+    bf = backfill_range(today_key)
+    if bf:
+        mode = "backfill"
+        window_start = datetime.strptime(bf[0], "%Y-%m-%d").replace(tzinfo=REPORT_TZ).astimezone(timezone.utc)
+        window_end = min(now - timedelta(minutes=5),
+                         (datetime.strptime(bf[1], "%Y-%m-%d").replace(tzinfo=REPORT_TZ) + timedelta(days=1)).astimezone(timezone.utc))
+    else:
+        mode = "rolling"
+        window_start = now - timedelta(days=WINDOW_DAYS)
+        window_end = now - timedelta(minutes=5)
+    log(f"Report timezone {REPORT_TIMEZONE}; local now {now_local.strftime('%Y-%m-%d %H:%M')}; {mode} "
+        f"{window_start.astimezone(REPORT_TZ).strftime('%Y-%m-%d')}..{window_end.astimezone(REPORT_TZ).strftime('%Y-%m-%d')}; history from {HISTORY_START}")
 
     daily = {}
     warnings = set()
@@ -821,7 +918,8 @@ def main():
         first_day = min(daily) if daily else window_start.astimezone(REPORT_TZ).strftime("%Y-%m-%d")
         od_start = datetime.strptime(first_day, "%Y-%m-%d").replace(tzinfo=REPORT_TZ).astimezone(timezone.utc)
         probes = probe_token_roles(access_token, refresh_token)
-        orders_stats = fetch_orders_by_order_date(access_token, od_start, now - timedelta(minutes=2), daily, warnings)
+        od_end = (now - timedelta(minutes=2)) if mode == "rolling" else window_end
+        orders_stats = fetch_orders_by_order_date(access_token, od_start, od_end, daily, warnings)
         orders_stats["enabled"] = True
         orders_stats["role_probes"] = probes
         if not orders_stats.get("complete"):
@@ -842,7 +940,14 @@ def main():
                 log("DIAGNOSIS: probes pass but createReport still failed - see the HTTP error above (parameter or report-type issue).")
     compute_net_sales(daily)
 
-    today_key = now_local.strftime("%Y-%m-%d")
+    # merge with the copy already in the repo: days outside the fetched range are kept
+    fetched_start = min(daily) if daily else window_start.astimezone(REPORT_TZ).strftime("%Y-%m-%d")
+    fetched_end = (window_end - timedelta(seconds=1)).astimezone(REPORT_TZ).strftime("%Y-%m-%d") if mode == "backfill" else today_key
+    previous = history_previous(OUTPUT_PATH)
+    daily = history_merge(previous, daily, fetched_start, fetched_end)
+    hist = history_meta(previous, mode, fetched_start, fetched_end, daily, today_key)
+    log(f"History: {hist['first_day']}..{hist['last_day']} ({hist['days']} days, {hist['missing_count']} missing since {HISTORY_START})")
+
     month_key_prefix = now_local.strftime("%Y-%m")
     mtd_start = f"{month_key_prefix}-01"
     last30_start = (now_local - timedelta(days=30)).strftime("%Y-%m-%d")
@@ -863,7 +968,8 @@ def main():
             "events_processed": total_events,
             "warnings": sorted(warnings),
             "schema": 3,   # 2 = other_fees + giftwrap_credits + diagnostics; 3 = ordered_* fields by order date (dashboard handles 1-3)
-            "script_version": "2.4.2",   # 2.3 = days in REPORT_TIMEZONE; 2.4 = All Orders report (sales by order date, MCF split) next to Finances
+            "script_version": "2.5",   # 2.3 = days in REPORT_TIMEZONE; 2.4 = All Orders report; 2.5 = history kept across runs + backfill mode
+            "history": hist,
             "orders_report": orders_stats,
             "sales_basis": {
                 "ordered": "ordered_* = All Orders report by purchase date (Seller Central / Sellerboard basis), Amazon.com channel, cancelled excluded",
@@ -876,7 +982,7 @@ def main():
     os.makedirs(os.path.dirname(OUTPUT_PATH) or ".", exist_ok=True)
     with open(OUTPUT_PATH, "w") as f:
         json.dump(out, f, indent=2, sort_keys=True)
-    log(f"Wrote {OUTPUT_PATH} ({total_events} events, {len(daily)} days, {len(warnings)} warning types).")
+    log(f"Wrote {OUTPUT_PATH} ({total_events} events, {len(daily)} days in file, {len(warnings)} warning types).")
 
 
 if __name__ == "__main__":

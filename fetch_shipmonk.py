@@ -44,8 +44,12 @@ Optional env vars:
                            are listed in meta but not costed)
   SHIPMONK_COST_BASIS      "ordered" (default: book on the order date, shipped or not)
                            or "shipped" (only shipped orders, on the ship date)
-  ORDERS_CSV_PATH          per-order detail CSV, default data/shipmonk_orders.csv
-                           (set to "" to skip; it lands in the repo like the JSON)
+  ORDERS_CSV_DIR           per-order detail CSVs, one file per month (data/shipmonk_orders/
+                           YYYY-MM.csv, by P&L day); set to "" to skip
+  HISTORY_START            keep days from this date on (default 2025-01-01); older days in the
+                           previous file are dropped
+  BACKFILL_START/_END      one-off run over a past range (YYYY-MM-DD, END defaults to today):
+                           the range is fetched and merged into the same file/CSVs
 
 Output (per day, shop-calendar days, positive numbers = cost):
   daily          keyed by the basis day (order date by default):
@@ -72,7 +76,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "1.2"
+SCRIPT_VERSION = "1.3"
 SCHEMA = 1
 
 API_KEY = os.environ.get("SHIPMONK_API_KEY", "").strip()
@@ -85,7 +89,7 @@ CHUNK_DAYS = max(1, int(os.environ.get("CHUNK_DAYS", "7")))
 STORE_IDS = {s.strip() for s in os.environ.get("SHIPMONK_STORE_IDS", "").split(",") if s.strip()}
 COSTED_TYPES = {s.strip() for s in os.environ.get("SHIPMONK_ORDER_TYPES", "direct_to_consumer,amazon,retail,unknown").split(",") if s.strip()}
 COST_BASIS = os.environ.get("SHIPMONK_COST_BASIS", "ordered").strip().lower() or "ordered"
-ORDERS_CSV_PATH = os.environ.get("ORDERS_CSV_PATH", "data/shipmonk_orders.csv").strip()
+ORDERS_CSV_DIR = os.environ.get("ORDERS_CSV_DIR", "data/shipmonk_orders").strip().rstrip("/")
 FILTER_CAP = 10000   # ShipMonk: "If filters are used, this endpoint will return a maximum of 10,000 orders."
 STOP_AFTER_OLD_PAGES = 3   # unfiltered listing is newest-first; stop after this many whole pages older than the window
 
@@ -128,6 +132,89 @@ def local_day(iso_ts, tz):
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
     return dt.astimezone(tz).strftime("%Y-%m-%d")
+
+
+# ---------------------------------------------------------------- history (shared block)
+# Every fetcher keeps ONE file per source in the repo. A normal run refetches only the
+# trailing WINDOW_DAYS and keeps every older day from the previous copy of the file, so
+# data/<source>.json grows into a full history (HISTORY_START -> today). A one-off
+# BACKFILL_START/BACKFILL_END run (workflow_dispatch inputs) fetches an arbitrary past
+# range and merges it the same way - run it in a few chunks to build 2025 -> now.
+HISTORY_START = os.environ.get("HISTORY_START", "2025-01-01").strip() or "2025-01-01"
+BACKFILL_START = os.environ.get("BACKFILL_START", "").strip()
+BACKFILL_END = os.environ.get("BACKFILL_END", "").strip()
+
+
+def history_previous(path):
+    """The copy of the output file already in the repo checkout (None on first run / bad JSON)."""
+    try:
+        with open(path) as f:
+            prev = json.load(f)
+        return prev if isinstance(prev, dict) and isinstance(prev.get("daily"), dict) else None
+    except (OSError, ValueError):
+        return None
+
+
+def history_merge(previous, fetched_daily, fetched_start, fetched_end, key="daily"):
+    """Days from the previous file that lie outside [fetched_start, fetched_end] (and on/after
+    HISTORY_START) survive; the freshly fetched days replace everything inside the range."""
+    merged = {}
+    for day, row in ((previous or {}).get(key) or {}).items():
+        if day >= HISTORY_START and (day < fetched_start or day > fetched_end):
+            merged[day] = row
+    merged.update(fetched_daily)
+    return dict(sorted(merged.items()))
+
+
+def history_meta(previous, mode, fetched_start, fetched_end, merged_daily, today_key):
+    """Coverage report for the dashboard/sync logs: which days between HISTORY_START and today
+    are still missing, and which backfill ranges have been run so far."""
+    from datetime import date as _date
+    backfills = list(((previous or {}).get("meta") or {}).get("history", {}).get("backfills") or [])
+    if mode == "backfill":
+        backfills.append({"start": fetched_start, "end": fetched_end, "run_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")})
+        backfills = backfills[-60:]
+    missing = []
+    try:
+        y, m, d = (int(x) for x in HISTORY_START.split("-"))
+        cur = _date(y, m, d)
+        y, m, d = (int(x) for x in today_key.split("-"))
+        end = _date(y, m, d)
+        while cur <= end:
+            k = cur.isoformat()
+            if k not in merged_daily:
+                missing.append(k)
+            cur += timedelta(days=1)
+    except ValueError:
+        pass
+    return {
+        "start": HISTORY_START,
+        "mode": mode,
+        "fetched": {"start": fetched_start, "end": fetched_end},
+        "first_day": min(merged_daily) if merged_daily else None,
+        "last_day": max(merged_daily) if merged_daily else None,
+        "days": len(merged_daily),
+        "missing_count": len(missing),
+        "missing_days": missing[:60],
+        "backfills": backfills,
+    }
+
+
+def backfill_range(today_key):
+    """(start, end) 'YYYY-MM-DD' when this run is a backfill, else None. END defaults to today;
+    both are validated so a typo in the workflow input cannot wipe the file."""
+    if not BACKFILL_START:
+        return None
+    try:
+        s = datetime.strptime(BACKFILL_START, "%Y-%m-%d")
+        e = datetime.strptime(BACKFILL_END or today_key, "%Y-%m-%d")
+    except ValueError:
+        log(f"BACKFILL_START/BACKFILL_END must be YYYY-MM-DD (got {BACKFILL_START!r} / {BACKFILL_END!r})")
+        sys.exit(1)
+    if e < s:
+        log("BACKFILL_END is before BACKFILL_START")
+        sys.exit(1)
+    return s.strftime("%Y-%m-%d"), e.strftime("%Y-%m-%d")
 
 
 # ---------------------------------------------------------------- HTTP layer
@@ -461,6 +548,51 @@ def fetch_shipped_orders(client, agg, start_utc, end_utc):
     return chunks, pages
 
 
+CSV_COLS = ["order_number", "order_key", "store", "order_type", "status", "ordered_day", "shipped_day", "pnl_day", "warehouse",
+            "carrier", "units", "packages", "shipping_cost", "pick_pack_cost", "packaging_cost", "total_cost", "cost_status"]
+
+
+def write_order_csvs(rows, fetched_start, fetched_end):
+    """One CSV per month (by P&L day; ship-series-only rows go under their ship month). Each
+    month file touched by this run is rebuilt: previous rows whose order day lies inside the
+    fetched range are dropped (they were re-fetched - or cancelled), the rest are kept."""
+    import csv
+    os.makedirs(ORDERS_CSV_DIR, exist_ok=True)
+    by_month = {}
+    for r in rows:
+        month = (r["pnl_day"] or r["shipped_day"] or r["ordered_day"])[:7]
+        by_month.setdefault(month, []).append(r)
+    # months that had rows inside the fetched range but have none now must still be rebuilt
+    for name in os.listdir(ORDERS_CSV_DIR):
+        if name.endswith(".csv") and fetched_start[:7] <= name[:7] <= fetched_end[:7]:
+            by_month.setdefault(name[:7], [])
+    written = []
+    for month, new_rows in sorted(by_month.items()):
+        path = os.path.join(ORDERS_CSV_DIR, month + ".csv")
+        keep = []
+        try:
+            with open(path, newline="") as f:
+                for old in csv.DictReader(f):
+                    od = old.get("ordered_day") or ""
+                    if od and (od < fetched_start or od > fetched_end) and od >= HISTORY_START:
+                        keep.append(old)
+        except OSError:
+            pass
+        new_keys = {(r["store"], r["order_key"]) for r in new_rows}
+        merged = [o for o in keep if (o.get("store"), o.get("order_key")) not in new_keys] + new_rows
+        merged.sort(key=lambda r: (r.get("pnl_day") or r.get("shipped_day") or "", r.get("ordered_day") or "", r.get("order_number") or ""))
+        if not merged:
+            continue
+        with open(path, "w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=CSV_COLS, extrasaction="ignore")
+            w.writeheader()
+            for r in merged:
+                w.writerow(r)
+        written.append(month + ".csv")
+    log(f"Wrote {len(written)} monthly order CSV(s) in {ORDERS_CSV_DIR}: {', '.join(written[-6:])}")
+    return written
+
+
 def main():
     if not API_KEY:
         log("SHIPMONK_API_KEY is not set")
@@ -473,33 +605,36 @@ def main():
             log(f"unknown timezone {TZ_NAME!r} - falling back to UTC")
     now_utc = datetime.now(timezone.utc)
     now_local = now_utc.astimezone(tz)
-    window_end = now_local.strftime("%Y-%m-%d")
-    window_start = (now_local - timedelta(days=WINDOW_DAYS)).strftime("%Y-%m-%d")
-    # shipped_at filter in UTC, starting at local midnight of the first window day
-    start_local = datetime.strptime(window_start, "%Y-%m-%d").replace(tzinfo=tz)
-    start_utc = start_local.astimezone(timezone.utc)
+    today_key = now_local.strftime("%Y-%m-%d")
+    bf = backfill_range(today_key)
+    if bf:
+        window_start, window_end = bf
+        mode = "backfill"
+    else:
+        window_end = today_key
+        window_start = (now_local - timedelta(days=WINDOW_DAYS)).strftime("%Y-%m-%d")
+        mode = "rolling"
+    # shipped_at filter in UTC: local midnight of the first window day .. end of the last one
+    start_utc = datetime.strptime(window_start, "%Y-%m-%d").replace(tzinfo=tz).astimezone(timezone.utc)
+    end_utc = min(now_utc, (datetime.strptime(window_end, "%Y-%m-%d").replace(tzinfo=tz) + timedelta(days=1)).astimezone(timezone.utc))
 
     client = Client(API_KEY)
     agg = Aggregator(tz, window_start, window_end)
-    log(f"ShipMonk {BASE_URL}, tz {TZ_NAME}, window {window_start}..{window_end}, basis {COST_BASIS}, page {PAGE_SIZE}")
+    log(f"ShipMonk {BASE_URL}, tz {TZ_NAME}, {mode} {window_start}..{window_end}, basis {COST_BASIS}, page {PAGE_SIZE}, history from {HISTORY_START}")
     if COST_BASIS == "shipped":
-        chunks, pages = fetch_shipped_orders(client, agg, start_utc, now_utc)
+        chunks, pages = fetch_shipped_orders(client, agg, start_utc, end_utc)
     else:
         chunks, pages = fetch_orders_by_order_date(client, agg, window_start)
     agg.finalise()
-    if ORDERS_CSV_PATH:
-        import csv
-        os.makedirs(os.path.dirname(ORDERS_CSV_PATH) or ".", exist_ok=True)
-        cols = ["order_number", "order_key", "store", "order_type", "status", "ordered_day", "shipped_day", "pnl_day", "warehouse",
-                "carrier", "units", "packages", "shipping_cost", "pick_pack_cost", "packaging_cost", "total_cost", "cost_status"]
-        with open(ORDERS_CSV_PATH, "w", newline="") as f:
-            w = csv.DictWriter(f, fieldnames=cols)
-            w.writeheader()
-            for r in agg.rows:
-                w.writerow(r)
-        log(f"Wrote {ORDERS_CSV_PATH}: {len(agg.rows)} orders")
 
-    today_key = window_end
+    # merge with the copy already in the repo: days outside the fetched range are kept
+    previous = history_previous(OUTPUT_PATH)
+    daily = history_merge(previous, agg.daily, window_start, window_end)
+    daily_shipped = history_merge(previous, agg.daily_shipped, window_start, window_end, key="daily_shipped")
+    hist = history_meta(previous, mode, window_start, window_end, daily, today_key)
+    log(f"History: {hist['first_day']}..{hist['last_day']} ({hist['days']} days, {hist['missing_count']} missing since {HISTORY_START})")
+    csv_files = write_order_csvs(agg.rows, window_start, window_end) if ORDERS_CSV_DIR else []
+
     mtd_start = now_local.strftime("%Y-%m-01")
     last30_start = (now_local - timedelta(days=30)).strftime("%Y-%m-%d")
     out = {
@@ -509,18 +644,20 @@ def main():
         "currency": "USD",
         "window_days": WINDOW_DAYS,
         "window": {"start": window_start, "end": window_end},
-        "daily": agg.daily,
-        "daily_shipped": agg.daily_shipped,
+        "daily": daily,
+        "daily_shipped": daily_shipped,
         "totals": {
-            "today": sum_range(agg.daily, today_key, today_key),
-            "mtd": sum_range(agg.daily, mtd_start, today_key),
-            "last_30d": sum_range(agg.daily, last30_start, today_key),
+            "today": sum_range(daily, today_key, today_key),
+            "mtd": sum_range(daily, mtd_start, today_key),
+            "last_30d": sum_range(daily, last30_start, today_key),
         },
         "meta": {
             "script_version": SCRIPT_VERSION,
             "schema": SCHEMA,
+            "history": hist,
             "cost_basis": ("shipmonk_estimated_order_costs_by_ordered_at" if COST_BASIS != "shipped" else "shipmonk_estimated_order_costs_by_shipped_at"),
-            "orders_csv": ORDERS_CSV_PATH or None,
+            "orders_csv": (ORDERS_CSV_DIR + "/") if ORDERS_CSV_DIR else None,
+            "orders_csv_files": csv_files,
             "oldest_order_day_seen": agg.oldest_seen,
             "costed_order_types": sorted(COSTED_TYPES),
             "store_filter": sorted(STORE_IDS),
@@ -542,7 +679,7 @@ def main():
     with open(OUTPUT_PATH, "w") as f:
         json.dump(out, f, indent=2, sort_keys=True)
     t = out["totals"]["last_30d"]
-    log(f"Wrote {OUTPUT_PATH}: {agg.counts['orders_counted']} orders ({agg.counts['orders_unshipped_counted']} not shipped yet) over {len(agg.daily)} days; "
+    log(f"Wrote {OUTPUT_PATH}: {agg.counts['orders_counted']} orders ({agg.counts['orders_unshipped_counted']} not shipped yet) over {len(agg.daily)} fetched days, {len(daily)} days in file; "
         f"last 30d cost {t['total_cost']:.2f} (postage {t['shipping_cost']:.2f}, pick/pack {t['pick_pack_cost']:.2f}, packaging {t['packaging_cost']:.2f}); "
         f"{client.requests} API calls, {len(agg.warnings)} warning types.")
 

@@ -31,6 +31,10 @@ Optional env vars:
   SHOPIFY_API_VERSION      default 2026-07
   WINDOW_DAYS              trailing days to (re)fetch, default 45
   OUTPUT_PATH              default data/shopify_pnl.json
+  HISTORY_START            days from this date on are kept in the file across runs (default
+                           2025-01-01): a run refetches only its window and keeps the rest
+  BACKFILL_START/_END      one-off run over a past range (YYYY-MM-DD, END defaults to today),
+                           merged into the same file - run it in 2-3 month chunks
   PAGE_SIZE                orders per request, default 60 (auto-halves if the
                            API says the query cost is too high)
   LATE_ORDERS_MODE         which orders created BEFORE the window are scanned for
@@ -116,7 +120,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "1.5.1"
+SCRIPT_VERSION = "1.6"
 SCHEMA = 2
 
 SHOP = os.environ.get("SHOPIFY_SHOP", "").strip().lower().replace("https://", "").rstrip("/")
@@ -235,6 +239,89 @@ query Probe($q: String) {
 """
 
 SHOP_QUERY = "query { shop { name myshopifyDomain ianaTimezone currencyCode taxesIncluded } }"
+
+
+# ---------------------------------------------------------------- history (shared block)
+# Every fetcher keeps ONE file per source in the repo. A normal run refetches only the
+# trailing WINDOW_DAYS and keeps every older day from the previous copy of the file, so
+# data/<source>.json grows into a full history (HISTORY_START -> today). A one-off
+# BACKFILL_START/BACKFILL_END run (workflow_dispatch inputs) fetches an arbitrary past
+# range and merges it the same way - run it in a few chunks to build 2025 -> now.
+HISTORY_START = os.environ.get("HISTORY_START", "2025-01-01").strip() or "2025-01-01"
+BACKFILL_START = os.environ.get("BACKFILL_START", "").strip()
+BACKFILL_END = os.environ.get("BACKFILL_END", "").strip()
+
+
+def history_previous(path):
+    """The copy of the output file already in the repo checkout (None on first run / bad JSON)."""
+    try:
+        with open(path) as f:
+            prev = json.load(f)
+        return prev if isinstance(prev, dict) and isinstance(prev.get("daily"), dict) else None
+    except (OSError, ValueError):
+        return None
+
+
+def history_merge(previous, fetched_daily, fetched_start, fetched_end, key="daily"):
+    """Days from the previous file that lie outside [fetched_start, fetched_end] (and on/after
+    HISTORY_START) survive; the freshly fetched days replace everything inside the range."""
+    merged = {}
+    for day, row in ((previous or {}).get(key) or {}).items():
+        if day >= HISTORY_START and (day < fetched_start or day > fetched_end):
+            merged[day] = row
+    merged.update(fetched_daily)
+    return dict(sorted(merged.items()))
+
+
+def history_meta(previous, mode, fetched_start, fetched_end, merged_daily, today_key):
+    """Coverage report for the dashboard/sync logs: which days between HISTORY_START and today
+    are still missing, and which backfill ranges have been run so far."""
+    from datetime import date as _date
+    backfills = list(((previous or {}).get("meta") or {}).get("history", {}).get("backfills") or [])
+    if mode == "backfill":
+        backfills.append({"start": fetched_start, "end": fetched_end, "run_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")})
+        backfills = backfills[-60:]
+    missing = []
+    try:
+        y, m, d = (int(x) for x in HISTORY_START.split("-"))
+        cur = _date(y, m, d)
+        y, m, d = (int(x) for x in today_key.split("-"))
+        end = _date(y, m, d)
+        while cur <= end:
+            k = cur.isoformat()
+            if k not in merged_daily:
+                missing.append(k)
+            cur += timedelta(days=1)
+    except ValueError:
+        pass
+    return {
+        "start": HISTORY_START,
+        "mode": mode,
+        "fetched": {"start": fetched_start, "end": fetched_end},
+        "first_day": min(merged_daily) if merged_daily else None,
+        "last_day": max(merged_daily) if merged_daily else None,
+        "days": len(merged_daily),
+        "missing_count": len(missing),
+        "missing_days": missing[:60],
+        "backfills": backfills,
+    }
+
+
+def backfill_range(today_key):
+    """(start, end) 'YYYY-MM-DD' when this run is a backfill, else None. END defaults to today;
+    both are validated so a typo in the workflow input cannot wipe the file."""
+    if not BACKFILL_START:
+        return None
+    try:
+        s = datetime.strptime(BACKFILL_START, "%Y-%m-%d")
+        e = datetime.strptime(BACKFILL_END or today_key, "%Y-%m-%d")
+    except ValueError:
+        log(f"BACKFILL_START/BACKFILL_END must be YYYY-MM-DD (got {BACKFILL_START!r} / {BACKFILL_END!r})")
+        sys.exit(1)
+    if e < s:
+        log("BACKFILL_END is before BACKFILL_START")
+        sys.exit(1)
+    return s.strftime("%Y-%m-%d"), e.strftime("%Y-%m-%d")
 
 
 def log(msg):
@@ -971,8 +1058,15 @@ def main():
 
     now_utc = datetime.now(timezone.utc)
     now_local = now_utc.astimezone(tz)
-    window_end = now_local.strftime("%Y-%m-%d")
-    window_start = (now_local - timedelta(days=WINDOW_DAYS)).strftime("%Y-%m-%d")
+    today_key = now_local.strftime("%Y-%m-%d")
+    bf = backfill_range(today_key)
+    if bf:
+        window_start, window_end = bf
+        mode = "backfill"
+    else:
+        window_end = today_key
+        window_start = (now_local - timedelta(days=WINDOW_DAYS)).strftime("%Y-%m-%d")
+        mode = "rolling"
     agg = Aggregator(tz, window_start, window_end)
     load_conversions(agg.warnings)
     if CONVERSION_FILES:
@@ -984,9 +1078,12 @@ def main():
 
     # Orders created in the window (query in UTC with a day of slack on each side;
     # the aggregator re-buckets by shop-local day and drops anything outside).
-    q_start = (now_utc - timedelta(days=WINDOW_DAYS + 2)).strftime("%Y-%m-%dT00:00:00Z")
+    q_start = (datetime.strptime(window_start, "%Y-%m-%d") - timedelta(days=2)).strftime("%Y-%m-%dT00:00:00Z")
     q = f"created_at:>={q_start}"
-    log(f"Shop {shop.get('name')} ({shop.get('myshopifyDomain')}), tz {tzname}, window {window_start}..{window_end}, auth {auth_mode}, API {API_VERSION}")
+    if mode == "backfill":
+        q_end = (datetime.strptime(window_end, "%Y-%m-%d") + timedelta(days=2)).strftime("%Y-%m-%dT00:00:00Z")
+        q += f" AND created_at:<{q_end}"
+    log(f"Shop {shop.get('name')} ({shop.get('myshopifyDomain')}), tz {tzname}, {mode} {window_start}..{window_end}, auth {auth_mode}, API {API_VERSION}, history from {HISTORY_START}")
     visibility = probe_order_visibility(client, now_utc)
     if visibility == "all":
         log("order visibility: all orders (read_all_orders OK)")
@@ -1016,12 +1113,16 @@ def main():
     pages += fetch_edit_agreements(client, agg)
 
     agg.finalise()
+    # merge with the copy already in the repo: days outside the fetched range are kept
+    previous = history_previous(OUTPUT_PATH)
+    daily = history_merge(previous, agg.daily, window_start, window_end)
+    hist = history_meta(previous, mode, window_start, window_end, daily, today_key)
+    log(f"History: {hist['first_day']}..{hist['last_day']} ({hist['days']} days, {hist['missing_count']} missing since {HISTORY_START})")
     if agg.counts["snowball_attr_without_tag"]:
         agg.warnings.add(f"{agg.counts['snowball_attr_without_tag']} orders carry the {ATTR_KEY} attribute but no '{TAG_PREFIX}*' tag (Snowball rejected/untracked them) - not counted as referrals")
     if not agg.programs:
         agg.warnings.add(f"no orders tagged '{TAG_PREFIX}*' in the window - check that 'Tag referral orders in Shopify' is ON for every Snowball program")
 
-    today_key = window_end
     mtd_start = now_local.strftime("%Y-%m-01")
     last30_start = (now_local - timedelta(days=30)).strftime("%Y-%m-%d")
 
@@ -1035,11 +1136,11 @@ def main():
         "api_version": API_VERSION,
         "window_days": WINDOW_DAYS,
         "window": {"start": window_start, "end": window_end},
-        "daily": agg.daily,
+        "daily": daily,
         "totals": {
-            "today": sum_range(agg.daily, today_key, today_key),
-            "mtd": sum_range(agg.daily, mtd_start, today_key),
-            "last_30d": sum_range(agg.daily, last30_start, today_key),
+            "today": sum_range(daily, today_key, today_key),
+            "mtd": sum_range(daily, mtd_start, today_key),
+            "last_30d": sum_range(daily, last30_start, today_key),
         },
         "snowball": {
             "tag_prefix": TAG_PREFIX,
@@ -1062,6 +1163,7 @@ def main():
         "meta": {
             "script_version": SCRIPT_VERSION,
             "schema": SCHEMA,
+            "history": hist,
             "auth_mode": auth_mode,
             "granted_scope": scope,
             "orders_visibility": visibility,
@@ -1081,7 +1183,7 @@ def main():
     os.makedirs(os.path.dirname(OUTPUT_PATH) or ".", exist_ok=True)
     with open(OUTPUT_PATH, "w") as f:
         json.dump(out, f, indent=2, sort_keys=True)
-    log(f"Wrote {OUTPUT_PATH}: {agg.counts['orders_counted']} orders over {len(agg.daily)} days, "
+    log(f"Wrote {OUTPUT_PATH}: {agg.counts['orders_counted']} orders over {len(agg.daily)} fetched days ({len(daily)} days in file), "
         f"{agg.counts['snowball_tagged']} Snowball referrals (commission net "
         f"{out['snowball']['window_totals']['commission_net']:.2f} {out['currency']}), "
         f"{client.requests} API calls, {len(agg.warnings)} warning types.")

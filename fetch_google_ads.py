@@ -30,6 +30,10 @@ Optional:
   GOOGLE_ADS_API_VERSION            default v25
   WINDOW_DAYS                       default 45
   OUTPUT_PATH                       default data/google_ads.json
+  HISTORY_START                     days from this date on are kept in the file across runs
+                                    (default 2025-01-01): a run refetches only its window
+  BACKFILL_START/_END               one-off run over a past range (YYYY-MM-DD, END defaults to
+                                    today), fetched in <= 92-day slices, merged into the same file
   GOOGLE_PRODUCT_ALIASES            JSON {"fountain": "Water Fountain"} substring ->
                                     product label (same idea as META_PRODUCT_ALIASES)
 
@@ -54,7 +58,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "1.1"
+SCRIPT_VERSION = "1.2"
 SCHEMA = 1
 
 API_VERSION = os.environ.get("GOOGLE_ADS_API_VERSION", "v25").strip()
@@ -81,6 +85,89 @@ STAGE_TOKENS = {"testing": "Testing", "test": "Testing", "scaling": "Scaling", "
 CHANNEL_LABELS = {"SEARCH": "Search", "SHOPPING": "Shopping", "PERFORMANCE_MAX": "Performance Max",
                   "DISPLAY": "Display", "VIDEO": "Video", "DEMAND_GEN": "Demand Gen",
                   "MULTI_CHANNEL": "App", "LOCAL": "Local", "SMART": "Smart"}
+
+
+# ---------------------------------------------------------------- history (shared block)
+# Every fetcher keeps ONE file per source in the repo. A normal run refetches only the
+# trailing WINDOW_DAYS and keeps every older day from the previous copy of the file, so
+# data/<source>.json grows into a full history (HISTORY_START -> today). A one-off
+# BACKFILL_START/BACKFILL_END run (workflow_dispatch inputs) fetches an arbitrary past
+# range and merges it the same way - run it in a few chunks to build 2025 -> now.
+HISTORY_START = os.environ.get("HISTORY_START", "2025-01-01").strip() or "2025-01-01"
+BACKFILL_START = os.environ.get("BACKFILL_START", "").strip()
+BACKFILL_END = os.environ.get("BACKFILL_END", "").strip()
+
+
+def history_previous(path):
+    """The copy of the output file already in the repo checkout (None on first run / bad JSON)."""
+    try:
+        with open(path) as f:
+            prev = json.load(f)
+        return prev if isinstance(prev, dict) and isinstance(prev.get("daily"), dict) else None
+    except (OSError, ValueError):
+        return None
+
+
+def history_merge(previous, fetched_daily, fetched_start, fetched_end, key="daily"):
+    """Days from the previous file that lie outside [fetched_start, fetched_end] (and on/after
+    HISTORY_START) survive; the freshly fetched days replace everything inside the range."""
+    merged = {}
+    for day, row in ((previous or {}).get(key) or {}).items():
+        if day >= HISTORY_START and (day < fetched_start or day > fetched_end):
+            merged[day] = row
+    merged.update(fetched_daily)
+    return dict(sorted(merged.items()))
+
+
+def history_meta(previous, mode, fetched_start, fetched_end, merged_daily, today_key):
+    """Coverage report for the dashboard/sync logs: which days between HISTORY_START and today
+    are still missing, and which backfill ranges have been run so far."""
+    from datetime import date as _date
+    backfills = list(((previous or {}).get("meta") or {}).get("history", {}).get("backfills") or [])
+    if mode == "backfill":
+        backfills.append({"start": fetched_start, "end": fetched_end, "run_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")})
+        backfills = backfills[-60:]
+    missing = []
+    try:
+        y, m, d = (int(x) for x in HISTORY_START.split("-"))
+        cur = _date(y, m, d)
+        y, m, d = (int(x) for x in today_key.split("-"))
+        end = _date(y, m, d)
+        while cur <= end:
+            k = cur.isoformat()
+            if k not in merged_daily:
+                missing.append(k)
+            cur += timedelta(days=1)
+    except ValueError:
+        pass
+    return {
+        "start": HISTORY_START,
+        "mode": mode,
+        "fetched": {"start": fetched_start, "end": fetched_end},
+        "first_day": min(merged_daily) if merged_daily else None,
+        "last_day": max(merged_daily) if merged_daily else None,
+        "days": len(merged_daily),
+        "missing_count": len(missing),
+        "missing_days": missing[:60],
+        "backfills": backfills,
+    }
+
+
+def backfill_range(today_key):
+    """(start, end) 'YYYY-MM-DD' when this run is a backfill, else None. END defaults to today;
+    both are validated so a typo in the workflow input cannot wipe the file."""
+    if not BACKFILL_START:
+        return None
+    try:
+        s = datetime.strptime(BACKFILL_START, "%Y-%m-%d")
+        e = datetime.strptime(BACKFILL_END or today_key, "%Y-%m-%d")
+    except ValueError:
+        log(f"BACKFILL_START/BACKFILL_END must be YYYY-MM-DD (got {BACKFILL_START!r} / {BACKFILL_END!r})")
+        sys.exit(1)
+    if e < s:
+        log("BACKFILL_END is before BACKFILL_START")
+        sys.exit(1)
+    return s.strftime("%Y-%m-%d"), e.strftime("%Y-%m-%d")
 
 
 def log(msg):
@@ -367,13 +454,46 @@ def fetch_campaigns(client, cid, since, until, campaigns, rebucket=None, convert
     return len(rows)
 
 
+DERIVED_FIELDS = ("cpc", "ctr", "cpa", "roas", "cpm", "aov")
+
+
+def date_chunks(since, until, max_days=92):
+    """[(since, until), ...] slices of at most max_days per searchStream query."""
+    out = []
+    cur = datetime.strptime(since, "%Y-%m-%d")
+    end = datetime.strptime(until, "%Y-%m-%d")
+    while cur <= end:
+        nxt = min(cur + timedelta(days=max_days - 1), end)
+        out.append((cur.strftime("%Y-%m-%d"), nxt.strftime("%Y-%m-%d")))
+        cur = nxt + timedelta(days=1)
+    return out
+
+
+def merge_campaign_history(previous, campaigns, fetched_start, fetched_end):
+    """Campaign day rows from the previous file outside [fetched_start, fetched_end] survive
+    (slimmed to raw fields); the fetched ones replace."""
+    for cid_, pc in ((previous or {}).get("campaigns") or {}).items():
+        keep = {day: {k: v for k, v in row.items() if k not in DERIVED_FIELDS}
+                for day, row in (pc.get("daily") or {}).items()
+                if day >= HISTORY_START and (day < fetched_start or day > fetched_end)}
+        if not keep:
+            continue
+        c = campaigns.setdefault(cid_, {k: v for k, v in pc.items() if k != "daily"} | {"daily": {}})
+        for day, row in keep.items():
+            c["daily"].setdefault(day, row)
+    for c in campaigns.values():
+        c["daily"] = dict(sorted(c["daily"].items()))
+    return campaigns
+
+
 def finalise_campaigns(campaigns, since, until, last30):
     products = {}
     for cid_, c in campaigns.items():
         cls = classify_campaign(c["name"])
         c.update(cls)
-        for d in c["daily"].values():
-            derive(d)
+        for day, d in c["daily"].items():
+            if since <= day <= until:
+                derive(d)   # history rows stay slim
         c["last_30d"] = sum_range(c["daily"], last30, until)
         c["window"] = sum_range(c["daily"], since, until)
         p = products.setdefault(c["product"], {"campaigns": 0, **new_bucket(["spend", "impressions", "clicks", "conversions", "conversion_value"])})
@@ -397,20 +517,37 @@ def main():
 
     now = datetime.now(timezone.utc)
     now_local = now.astimezone(ZoneInfo(REPORT_TIMEZONE)) if ZoneInfo else now
-    # Query one day wider on both sides in the account's own calendar so every report-tz
-    # day inside the window is complete after re-bucketing; trimmed below.
-    since = (now - timedelta(days=WINDOW_DAYS + 1)).strftime("%Y-%m-%d")
-    until = (now + timedelta(days=1)).strftime("%Y-%m-%d")
-    keep_from = (now_local - timedelta(days=WINDOW_DAYS)).strftime("%Y-%m-%d")
-    keep_to = now_local.strftime("%Y-%m-%d")
+    today_key = now_local.strftime("%Y-%m-%d")
+    bf = backfill_range(today_key)
+    if bf:
+        mode = "backfill"
+        keep_from, keep_to = bf
+        since = (datetime.strptime(keep_from, "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
+        until = (datetime.strptime(keep_to, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+    else:
+        mode = "rolling"
+        # Query one day wider on both sides in the account's own calendar so every report-tz
+        # day inside the window is complete after re-bucketing; trimmed below.
+        since = (now - timedelta(days=WINDOW_DAYS + 1)).strftime("%Y-%m-%d")
+        until = (now + timedelta(days=1)).strftime("%Y-%m-%d")
+        keep_from = (now_local - timedelta(days=WINDOW_DAYS)).strftime("%Y-%m-%d")
+        keep_to = today_key
     last30 = (now_local - timedelta(days=30)).strftime("%Y-%m-%d")
+    chunks = date_chunks(since, until)
+    log(f"{mode} {keep_from}..{keep_to} in {len(chunks)} slice(s); history from {HISTORY_START}")
 
     daily, campaigns, warnings, per_account = {}, {}, set(), {}
     currency, rows_total, campaign_rows = None, 0, 0
     for cid in account_ids:
         log(f"Fetching account {cid} {since}..{until} via {API_VERSION}...")
-        info, acct_daily, n = fetch_account(client, cid, since, until)
-        rows_total += n
+        acct_daily = {}
+        for c_since, c_until in chunks:
+            info, part, n = fetch_account(client, cid, c_since, c_until)
+            rows_total += n
+            for day, d in part.items():
+                tgt = acct_daily.setdefault(day, new_bucket(["spend", "impressions", "clicks", "conversions", "conversion_value"]))
+                for f in tgt:
+                    tgt[f] += d[f]
         acct_currency = info.get("currencyCode")
         if info.get("manager"):
             warnings.add(f"{cid} is a manager account - list the client account ids in GOOGLE_ADS_CUSTOMER_ID and put the manager id in GOOGLE_ADS_LOGIN_CUSTOMER_ID")
@@ -424,7 +561,8 @@ def main():
         for d in acct_daily.values():
             derive(d)
         try:
-            campaign_rows += fetch_campaigns(client, cid, since, until, campaigns, info.get("_rebucket"), info.get("_converted"))
+            for c_since, c_until in chunks:
+                campaign_rows += fetch_campaigns(client, cid, c_since, c_until, campaigns, info.get("_rebucket"), info.get("_converted"))
         except SystemExit:
             raise
         except Exception as e:  # noqa: BLE001 - campaign detail must never break the account-level file
@@ -443,6 +581,12 @@ def main():
         derive(d)
     if not daily:
         warnings.add("no daily rows returned - account has no spend in the window, or the service account cannot see it")
+    # merge with the copy already in the repo: days outside the fetched range are kept
+    previous = history_previous(OUTPUT_PATH)
+    daily = history_merge(previous, daily, keep_from, keep_to)
+    hist = history_meta(previous, mode, keep_from, keep_to, daily, today_key)
+    log(f"History: {hist['first_day']}..{hist['last_day']} ({hist['days']} days, {hist['missing_count']} missing since {HISTORY_START})")
+    merge_campaign_history(previous, campaigns, keep_from, keep_to)
     products = finalise_campaigns(campaigns, since, until, last30)
     log(f"Campaigns: {len(campaigns)} ({campaign_rows} daily rows), products: {sorted(products)}")
 
@@ -456,15 +600,16 @@ def main():
         "window_days": WINDOW_DAYS,
         "daily": daily,
         "totals": {
-            "today": sum_range(daily, until, until),
-            "mtd": sum_range(daily, now.strftime("%Y-%m-01"), until),
-            "last_30d": sum_range(daily, last30, until),
+            "today": sum_range(daily, today_key, today_key),
+            "mtd": sum_range(daily, now_local.strftime("%Y-%m-01"), today_key),
+            "last_30d": sum_range(daily, last30, today_key),
         },
         "campaigns": campaigns,
         "products": products,
         "meta": {
             "schema": SCHEMA,
             "script_version": SCRIPT_VERSION,
+            "history": hist,
             "auth": "service_account" if os.environ.get("GOOGLE_ADS_SERVICE_ACCOUNT_JSON", "").strip() else "oauth_refresh_token",
             "api_requests": client.requests,
             "rows_processed": rows_total,
