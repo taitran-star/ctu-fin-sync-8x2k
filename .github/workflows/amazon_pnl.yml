@@ -4,7 +4,16 @@ on:
   schedule:
     # Every 30 minutes (UTC). GitHub may delay a few minutes under load - that's fine.
     - cron: "*/30 * * * *"
-  workflow_dispatch: {}   # lets you click "Run workflow" manually to test
+  workflow_dispatch:   # "Run workflow" by hand; fill the two dates to backfill history in chunks
+    inputs:
+      backfill_start:
+        description: "Backfill from (YYYY-MM-DD). Leave empty for the normal rolling run."
+        required: false
+        default: ""
+      backfill_end:
+        description: "Backfill to (YYYY-MM-DD, inclusive). Empty = today."
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -16,6 +25,7 @@ concurrency:
 jobs:
   fetch:
     runs-on: ubuntu-latest
+    timeout-minutes: 350   # a backfill chunk can take hours; rolling runs finish in minutes
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -29,6 +39,11 @@ jobs:
         env:
           # One calendar for the whole P&L: every source buckets its days in this timezone.
           REPORT_TIMEZONE: America/Los_Angeles
+          # History: every run keeps the days it did not refetch, so the file grows into
+          # 2025-01-01 -> today. A manual run with the two dates below backfills a past range.
+          HISTORY_START: "2025-01-01"
+          BACKFILL_START: ${{ github.event.inputs.backfill_start }}
+          BACKFILL_END: ${{ github.event.inputs.backfill_end }}
           AMAZON_SP_API_CLIENT_ID: ${{ secrets.AMAZON_SP_API_CLIENT_ID }}
           AMAZON_SP_API_CLIENT_SECRET: ${{ secrets.AMAZON_SP_API_CLIENT_SECRET }}
           AMAZON_SP_API_REFRESH_TOKEN: ${{ secrets.AMAZON_SP_API_REFRESH_TOKEN }}

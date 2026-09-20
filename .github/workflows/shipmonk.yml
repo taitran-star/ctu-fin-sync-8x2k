@@ -5,7 +5,16 @@ on:
     # Every 30 minutes at :10 and :40 UTC - offset from Amazon (:00/:30), Shopify (:05/:35),
     # Meta (:15/:45), Google (:20/:50) and Amazon Ads (:25) so no two workflows push at once.
     - cron: "10,40 * * * *"
-  workflow_dispatch: {}   # lets you click "Run workflow" manually to test
+  workflow_dispatch:   # "Run workflow" by hand; fill the two dates to backfill history in chunks
+    inputs:
+      backfill_start:
+        description: "Backfill from (YYYY-MM-DD). Leave empty for the normal rolling run."
+        required: false
+        default: ""
+      backfill_end:
+        description: "Backfill to (YYYY-MM-DD, inclusive). Empty = today."
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -17,7 +26,7 @@ concurrency:
 jobs:
   fetch:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 350   # a backfill chunk can take hours; rolling runs finish in minutes
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -31,6 +40,11 @@ jobs:
         env:
           # One calendar for the whole P&L: every source buckets its days in this timezone.
           REPORT_TIMEZONE: America/Los_Angeles
+          # History: every run keeps the days it did not refetch, so the file grows into
+          # 2025-01-01 -> today. A manual run with the two dates below backfills a past range.
+          HISTORY_START: "2025-01-01"
+          BACKFILL_START: ${{ github.event.inputs.backfill_start }}
+          BACKFILL_END: ${{ github.event.inputs.backfill_end }}
           SHIPMONK_API_KEY: ${{ secrets.SHIPMONK_API_KEY }}
           # Optional overrides:
           # SHIPMONK_BASE_URL: https://api.shipmonk.com
@@ -38,7 +52,7 @@ jobs:
           # SHIPMONK_ORDER_TYPES: direct_to_consumer,amazon,retail
           # WINDOW_DAYS: 45
           # SHIPMONK_COST_BASIS: ordered          # "ordered" (default, matches revenue) or "shipped"
-          # ORDERS_CSV_PATH: data/shipmonk_orders.csv   # per-order detail ("" to skip)
+          # ORDERS_CSV_DIR: data/shipmonk_orders        # per-order detail, one CSV per month ("" to skip)
         run: |
           if [ -z "$SHIPMONK_API_KEY" ]; then
             echo "::notice::SHIPMONK_API_KEY secret not set yet - create it from ShipMonk > Account Settings > General Settings > Integration API Keys. Skipping."
@@ -50,9 +64,9 @@ jobs:
         run: |
           git config user.name "cattasaurus-shipmonk-bot"
           git config user.email "actions@users.noreply.github.com"
-          for f in data/shipmonk.json data/shipmonk_orders.csv; do
-            [ -f "$f" ] && git add "$f"
-          done
+          [ -f data/shipmonk.json ] && git add data/shipmonk.json
+          [ -d data/shipmonk_orders ] && git add data/shipmonk_orders
+          [ -f data/shipmonk_orders.csv ] && git rm -q --cached data/shipmonk_orders.csv 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
