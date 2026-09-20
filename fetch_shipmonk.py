@@ -42,6 +42,10 @@ Optional env vars:
                            orders ShipMonk returns with no order_type - legacy/manual D2C orders
                            that it still charges for; transfers, disposals, work orders etc.
                            are listed in meta but not costed)
+  SHIPMONK_FX_TO_USD       JSON map of rates for charges ShipMonk states in another currency
+                           (Toronto warehouse bills in CAD), default {"CAD": 0.73}; native amounts
+                           are kept per day in foreign_cost{CUR: amount} so the invoice rate can be
+                           checked, and every order's cost_currency is in the CSV
   SHIPMONK_COST_BASIS      "ordered" (default: book on the order date, shipped or not)
                            or "shipped" (only shipped orders, on the ship date)
   ORDERS_CSV_DIR           per-order detail CSVs, one file per month (data/shipmonk_orders/
@@ -76,7 +80,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "1.3"
+SCRIPT_VERSION = "1.3.1"
 SCHEMA = 1
 
 API_KEY = os.environ.get("SHIPMONK_API_KEY", "").strip()
@@ -91,6 +95,10 @@ COSTED_TYPES = {s.strip() for s in os.environ.get("SHIPMONK_ORDER_TYPES", "direc
 COST_BASIS = os.environ.get("SHIPMONK_COST_BASIS", "ordered").strip().lower() or "ordered"
 ORDERS_CSV_DIR = os.environ.get("ORDERS_CSV_DIR", "data/shipmonk_orders").strip().rstrip("/")
 FILTER_CAP = 10000   # ShipMonk: "If filters are used, this endpoint will return a maximum of 10,000 orders."
+try:
+    FX_TO_USD = {str(k).upper(): float(v) for k, v in json.loads(os.environ.get("SHIPMONK_FX_TO_USD", "") or '{"CAD": 0.73}').items()}
+except (ValueError, TypeError, AttributeError):
+    FX_TO_USD = {"CAD": 0.73}
 STOP_AFTER_OLD_PAGES = 3   # unfiltered listing is newest-first; stop after this many whole pages older than the window
 
 DAILY_FIELDS = ["orders", "orders_shipped", "orders_unshipped", "orders_onhold", "units", "packages", "shipping_cost", "packaging_cost", "pick_pack_cost", "total_cost", "cost_missing_orders"]
@@ -107,6 +115,7 @@ def new_bucket():
     d["by_store"] = {}
     d["by_type"] = {}
     d["by_carrier"] = {}
+    d["foreign_cost"] = {}   # native amounts of charges stated in another currency, before FX
     return d
 
 
@@ -294,7 +303,9 @@ class Aggregator:
             "orders_unshipped_counted": 0, "orders_onhold_counted": 0, "orders_shipped_series_only": 0,
             "orders_fulfilled_outside": 0,
             "cost_missing_orders": 0, "shipping_from_shipment_estimate": 0,
+            "fx_converted_charges": 0, "fx_unknown_currency_charges": 0,
         }
+        self.fx_native = {}   # currency -> native total converted this run
         self.oldest_seen = None   # ordered_at day of the oldest order seen (paging stop condition)
 
     def in_window(self, day):
@@ -370,6 +381,25 @@ class Aggregator:
                 self.currencies[c] = self.currencies.get(c, 0) + 1
         if o.get("currency_code"):
             self.order_currencies[o["currency_code"]] = self.order_currencies.get(o["currency_code"], 0) + 1
+        # charges stated in another currency (Toronto warehouse: CAD) -> USD at the configured rate
+        cost_currency = "+".join(sorted({c for c in (cur1, cur2, cur3) if c})) or ""
+        native = {}
+        converted = []
+        for amount, cur in ((ship, cur1), (pack, cur2), (pick, cur3)):
+            if amount is None or not cur or cur == "USD":
+                converted.append(amount)
+                continue
+            native[cur] = native.get(cur, 0.0) + amount
+            rate = FX_TO_USD.get(cur)
+            if rate is None:
+                self.counts["fx_unknown_currency_charges"] += 1
+                converted.append(amount)   # no rate: summed as-is (warned in meta)
+            else:
+                self.counts["fx_converted_charges"] += 1
+                converted.append(amount * rate)
+        ship, pack, pick = converted
+        for cur, amt in native.items():
+            self.fx_native[cur] = self.fx_native.get(cur, 0.0) + amt
         if ship is None:
             est = (o.get("shipment_data") or {}).get("estimated_shipping_cost")
             if est is not None:
@@ -425,6 +455,8 @@ class Aggregator:
             c = d["by_carrier"].setdefault(carrier, {"orders": 0, "shipping_cost": 0.0})
             c["orders"] += 1
             c["shipping_cost"] += ship
+            for cur, amt in native.items():
+                d["foreign_cost"][cur] = d["foreign_cost"].get(cur, 0.0) + amt
         if not in_pnl:
             self.counts["orders_shipped_series_only"] += 1   # placed before the window, shipped inside it
         else:
@@ -444,6 +476,7 @@ class Aggregator:
             "units": units, "packages": packages,
             "shipping_cost": round(ship, 2), "pick_pack_cost": round(pick, 2), "packaging_cost": round(pack, 2),
             "total_cost": round(ship + pick + pack, 2), "cost_status": "missing" if missing else "shipmonk_estimate",
+            "cost_currency": cost_currency,
         })
 
     def finalise(self):
@@ -456,9 +489,14 @@ class Aggregator:
                         for f in list(g):
                             if isinstance(g[f], float):
                                 g[f] = round(g[f], 2)
+                for cur in list(d["foreign_cost"]):
+                    d["foreign_cost"][cur] = round(d["foreign_cost"][cur], 2)
         self.rows.sort(key=lambda r: (r["ordered_day"], r["order_number"]))
-        if self.currencies and set(self.currencies) - {"USD"}:
-            self.warnings.add(f"ShipMonk charges in currencies other than USD were summed as-is: {self.currencies}")
+        for cur, amt in self.fx_native.items():
+            if cur in FX_TO_USD:
+                self.warnings.add(f"charges stated in {cur} ({amt:,.2f} {cur} this run) converted to USD at {FX_TO_USD[cur]} - set SHIPMONK_FX_TO_USD to the rate on ShipMonk's invoice if it differs")
+            else:
+                self.warnings.add(f"charges stated in {cur} ({amt:,.2f} {cur}) have no rate in SHIPMONK_FX_TO_USD and were summed as-is")
         if self.unknown_type_samples:
             self.warnings.add(f"{self.order_types.get('unknown', 0)} orders came back with no order_type (counted as D2C); samples: {self.unknown_type_samples}")
         if self.counts["cost_missing_orders"]:
@@ -549,7 +587,7 @@ def fetch_shipped_orders(client, agg, start_utc, end_utc):
 
 
 CSV_COLS = ["order_number", "order_key", "store", "order_type", "status", "ordered_day", "shipped_day", "pnl_day", "warehouse",
-            "carrier", "units", "packages", "shipping_cost", "pick_pack_cost", "packaging_cost", "total_cost", "cost_status"]
+            "carrier", "units", "packages", "shipping_cost", "pick_pack_cost", "packaging_cost", "total_cost", "cost_status", "cost_currency"]
 
 
 def write_order_csvs(rows, fetched_start, fetched_end):
@@ -666,6 +704,8 @@ def main():
             "order_types_seen": agg.order_types,
             "currencies_seen": agg.currencies,
             "order_currencies_seen": agg.order_currencies,
+            "fx": {"rates_to_usd": FX_TO_USD, "native_converted_this_run": {k: round(v, 2) for k, v in agg.fx_native.items()},
+                   "note": "costs in daily/by_* are USD; foreign_cost per day holds the native amounts before conversion"},
             "chunks": chunks,
             "pages": pages,
             "api_requests": client.requests,
