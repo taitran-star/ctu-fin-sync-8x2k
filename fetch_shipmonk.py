@@ -38,8 +38,10 @@ Optional env vars:
                            queries at 10,000 orders, so the window is walked in chunks)
   SHIPMONK_STORE_IDS       comma-separated ShipMonk store ids to INCLUDE (default: all)
   SHIPMONK_ORDER_TYPES     comma-separated order types to count as fulfillment cost,
-                           default "direct_to_consumer,amazon,retail" (transfers, disposals,
-                           work orders etc. are listed in meta but not costed)
+                           default "direct_to_consumer,amazon,retail,unknown" ("unknown" =
+                           orders ShipMonk returns with no order_type - legacy/manual D2C orders
+                           that it still charges for; transfers, disposals, work orders etc.
+                           are listed in meta but not costed)
   SHIPMONK_COST_BASIS      "ordered" (default: book on the order date, shipped or not)
                            or "shipped" (only shipped orders, on the ship date)
   ORDERS_CSV_PATH          per-order detail CSV, default data/shipmonk_orders.csv
@@ -47,9 +49,10 @@ Optional env vars:
 
 Output (per day, shop-calendar days, positive numbers = cost):
   daily          keyed by the basis day (order date by default):
-                 orders, orders_shipped, orders_unshipped, units, packages, shipping_cost,
-                 packaging_cost, pick_pack_cost, total_cost, cost_missing_orders (orders
-                 ShipMonk had no estimate for yet),
+                 orders, orders_shipped, orders_unshipped, orders_onhold (subset of unshipped:
+                 order_status onHold - stock-outs, address problems...), units, packages,
+                 shipping_cost, packaging_cost, pick_pack_cost, total_cost, cost_missing_orders
+                 (orders ShipMonk had no estimate for yet),
                  by_store{name:{orders,units,shipping_cost,packaging_cost,pick_pack_cost,total_cost}},
                  by_type{order_type:{...}}, by_carrier{carrier:{orders,shipping_cost}}
   daily_shipped  same fields keyed by SHIP date, shipped orders only (invoice reconciliation)
@@ -69,7 +72,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "1.1"
+SCRIPT_VERSION = "1.2"
 SCHEMA = 1
 
 API_KEY = os.environ.get("SHIPMONK_API_KEY", "").strip()
@@ -80,13 +83,13 @@ OUTPUT_PATH = os.environ.get("OUTPUT_PATH", "data/shipmonk.json")
 PAGE_SIZE = max(1, min(100, int(os.environ.get("PAGE_SIZE", "100"))))
 CHUNK_DAYS = max(1, int(os.environ.get("CHUNK_DAYS", "7")))
 STORE_IDS = {s.strip() for s in os.environ.get("SHIPMONK_STORE_IDS", "").split(",") if s.strip()}
-COSTED_TYPES = {s.strip() for s in os.environ.get("SHIPMONK_ORDER_TYPES", "direct_to_consumer,amazon,retail").split(",") if s.strip()}
+COSTED_TYPES = {s.strip() for s in os.environ.get("SHIPMONK_ORDER_TYPES", "direct_to_consumer,amazon,retail,unknown").split(",") if s.strip()}
 COST_BASIS = os.environ.get("SHIPMONK_COST_BASIS", "ordered").strip().lower() or "ordered"
 ORDERS_CSV_PATH = os.environ.get("ORDERS_CSV_PATH", "data/shipmonk_orders.csv").strip()
 FILTER_CAP = 10000   # ShipMonk: "If filters are used, this endpoint will return a maximum of 10,000 orders."
 STOP_AFTER_OLD_PAGES = 3   # unfiltered listing is newest-first; stop after this many whole pages older than the window
 
-DAILY_FIELDS = ["orders", "orders_shipped", "orders_unshipped", "units", "packages", "shipping_cost", "packaging_cost", "pick_pack_cost", "total_cost", "cost_missing_orders"]
+DAILY_FIELDS = ["orders", "orders_shipped", "orders_unshipped", "orders_onhold", "units", "packages", "shipping_cost", "packaging_cost", "pick_pack_cost", "total_cost", "cost_missing_orders"]
 MONEY_FIELDS = ["shipping_cost", "packaging_cost", "pick_pack_cost", "total_cost"]
 GROUP_FIELDS = ["orders", "units", "shipping_cost", "packaging_cost", "pick_pack_cost", "total_cost"]
 
@@ -192,14 +195,17 @@ class Aggregator:
         self.seen = set()
         self.stores = {}
         self.warehouses = {}
-        self.currencies = {}
+        self.currencies = {}        # currency of the ShipMonk charges (what the P&L sums)
+        self.order_currencies = {}  # currency the customer paid in (informational only)
         self.order_types = {}
+        self.unknown_type_samples = []
         self.warnings = set()
         self.counts = {
             "orders_seen": 0, "orders_counted": 0, "orders_duplicate": 0,
             "orders_skipped_cancelled": 0, "orders_skipped_unshipped": 0,
             "orders_skipped_store": 0, "orders_skipped_type": 0, "orders_outside_window": 0,
-            "orders_unshipped_counted": 0, "orders_shipped_series_only": 0,
+            "orders_unshipped_counted": 0, "orders_onhold_counted": 0, "orders_shipped_series_only": 0,
+            "orders_fulfilled_outside": 0,
             "cost_missing_orders": 0, "shipping_from_shipment_estimate": 0,
         }
         self.oldest_seen = None   # ordered_at day of the oldest order seen (paging stop condition)
@@ -231,6 +237,8 @@ class Aggregator:
             self.warehouses[str(wh.get("identifier") or wh.get("id"))] = wh.get("name") or ""
         otype = o.get("order_type") or "unknown"
         self.order_types[otype] = self.order_types.get(otype, 0) + 1
+        if otype == "unknown" and len(self.unknown_type_samples) < 5:
+            self.unknown_type_samples.append({"order_number": o.get("order_number"), "store": store_name, "status": o.get("order_status"), "shipped": bool(o.get("shipped_at"))})
 
         ordered_day = local_day(o.get("ordered_at"), self.tz)
         shipped_day = local_day(o.get("shipped_at"), self.tz)
@@ -264,10 +272,17 @@ class Aggregator:
         ship, cur1 = money(costs.get("estimated_shipping_related_charges"))
         pack, cur2 = money(costs.get("estimated_packaging_material_charges"))
         pick, cur3 = money(costs.get("estimated_pick_and_pack_charges"))
-        for c in (cur1, cur2, cur3, o.get("currency_code")):
+        missing = ship is None and pack is None and pick is None   # ShipMonk has not costed the order yet
+        if missing and shipped_day is None and status == "fulfilled":
+            # marked fulfilled without a ShipMonk shipment or any charge: fulfilled somewhere else
+            # (other location, merged/replaced order) - ShipMonk never billed it, so it is not a ShipMonk order
+            self.counts["orders_fulfilled_outside"] += 1
+            return
+        for c in (cur1, cur2, cur3):
             if c:
                 self.currencies[c] = self.currencies.get(c, 0) + 1
-        missing = ship is None and pack is None and pick is None   # ShipMonk has not costed the order yet
+        if o.get("currency_code"):
+            self.order_currencies[o["currency_code"]] = self.order_currencies.get(o["currency_code"], 0) + 1
         if ship is None:
             est = (o.get("shipment_data") or {}).get("estimated_shipping_cost")
             if est is not None:
@@ -298,9 +313,12 @@ class Aggregator:
             targets.append(self.bucket(day))
         if in_shipped_series:
             targets.append(self.bucket(shipped_day, shipped_series=True))
+        onhold = shipped_day is None and status == "onhold"
         for d in targets:
             d["orders"] += 1
             d["orders_shipped" if shipped_day is not None else "orders_unshipped"] += 1
+            if onhold:
+                d["orders_onhold"] += 1
             d["units"] += units
             d["packages"] += packages
             d["shipping_cost"] += ship
@@ -327,6 +345,8 @@ class Aggregator:
                 self.counts["cost_missing_orders"] += 1
             if shipped_day is None:
                 self.counts["orders_unshipped_counted"] += 1
+                if onhold:
+                    self.counts["orders_onhold_counted"] += 1
             self.counts["orders_counted"] += 1
         self.rows.append({
             "order_number": o.get("order_number") or "", "order_key": o.get("order_key") or "",
@@ -351,7 +371,9 @@ class Aggregator:
                                 g[f] = round(g[f], 2)
         self.rows.sort(key=lambda r: (r["ordered_day"], r["order_number"]))
         if self.currencies and set(self.currencies) - {"USD"}:
-            self.warnings.add(f"orders priced in currencies other than USD were summed as-is: {self.currencies}")
+            self.warnings.add(f"ShipMonk charges in currencies other than USD were summed as-is: {self.currencies}")
+        if self.unknown_type_samples:
+            self.warnings.add(f"{self.order_types.get('unknown', 0)} orders came back with no order_type (counted as D2C); samples: {self.unknown_type_samples}")
         if self.counts["cost_missing_orders"]:
             self.warnings.add(f"{self.counts['cost_missing_orders']} orders had no cost estimate from ShipMonk yet - their cost is $0 until ShipMonk fills it in (re-fetched every run)")
 
@@ -506,6 +528,7 @@ def main():
             "warehouses": agg.warehouses,
             "order_types_seen": agg.order_types,
             "currencies_seen": agg.currencies,
+            "order_currencies_seen": agg.order_currencies,
             "chunks": chunks,
             "pages": pages,
             "api_requests": client.requests,
