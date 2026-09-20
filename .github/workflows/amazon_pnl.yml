@@ -30,6 +30,14 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Sync to the latest main
+        # A run queued behind another run (a backfill, or the 30-minute cron) is checked out at the
+        # commit it was QUEUED on, so its copy of data/*.json can be older than what that run just
+        # pushed. Fast-forward first so the history merge starts from the newest file.
+        run: |
+          git fetch --depth=1 origin main
+          git reset --hard origin/main
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -63,6 +71,15 @@ jobs:
           # with a few retries so a concurrent push from them never fails this job.
           for i in 1 2 3 4 5; do
             git pull --rebase origin main && git push && exit 0
+            if git status --porcelain | grep -q '^UU\|^AA'; then
+              # Same-file conflict: another run pushed this source's data while we ran (should not
+              # happen - runs of one source are serialized and we synced before fetching). Keep
+              # what is already on main; this run's window is simply refetched next cycle.
+              echo "::warning::data conflict with a newer commit on main - keeping main's version, this run's fetch will be redone next cycle"
+              git diff --name-only --diff-filter=U | xargs -r git checkout --ours -- && git diff --name-only --diff-filter=U | xargs -r git add -- && GIT_EDITOR=true git rebase --continue || git rebase --abort
+              git push && exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
             echo "Push attempt $i failed, retrying in 10s..."
             sleep 10
           done
