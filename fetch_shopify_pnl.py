@@ -87,6 +87,14 @@ be checked against it to the cent:
   snowball_orders, snowball_revenue (commission base of referred orders),
   snowball_commission (earned that day), snowball_reversals (commission clawed
   back by refunds that day), snowball_commission_net.
+  payment_fees = Shopify Payments processing fees (OrderTransaction.fees on the SALE /
+  CAPTURE transactions: rate x amount + flat fee, e.g. 2.25% + $0.30 domestic card,
+  2.95% premium/Amex, 3.25% + $0.42 + 1.5% FX international) booked on the ORDER day like
+  the revenue. Shopify does not return the fee when an order is refunded, so refunds add
+  nothing. payment_fees_orders = orders whose fee came from Shopify; gateways{name:{orders,
+  amount}} = what each gateway (shopify_payments, paypal, shop_cash, gift_card...) captured -
+  PayPal's own fee is NOT in Shopify (needs the PayPal API), so paypal orders carry $0 here
+  and are counted in fees_missing_orders.
 Top-level "snowball" block: per-program and per-affiliate totals for the window.
 
 Shipping discounts (free-shipping codes, 100%-off replacement orders): Order.totalDiscountsSet
@@ -120,7 +128,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "1.6"
+SCRIPT_VERSION = "1.7"
 SCHEMA = 2
 
 SHOP = os.environ.get("SHOPIFY_SHOP", "").strip().lower().replace("https://", "").rstrip("/")
@@ -153,8 +161,10 @@ DAILY_FIELDS = [
     "shipping", "tax", "total_sales",
     "snowball_orders", "snowball_revenue", "snowball_commission", "snowball_reversals",
     "snowball_commission_net",
+    "payment_fees", "payment_fees_orders", "fees_missing_orders",
 ]
-MONEY_FIELDS = [f for f in DAILY_FIELDS if f not in ("orders", "snowball_orders")]
+MONEY_FIELDS = [f for f in DAILY_FIELDS if f not in ("orders", "snowball_orders", "payment_fees_orders", "fees_missing_orders")]
+FEE_KINDS = {"SALE", "CAPTURE"}   # transaction kinds that carry Shopify Payments processing fees
 
 # processedAt + orderAdjustments are what make "returns" equal Shopify Analytics'
 # sales_reversals (see Aggregator.add_order). The small pageInfo blocks only tell us
@@ -173,6 +183,11 @@ query Orders($first: Int!, $after: String, $q: String, $refundsFirst: Int!) {
       totalPriceSet { shopMoney { amount } }
       shippingLines(first: 5) {
         nodes { originalPriceSet { shopMoney { amount } } discountedPriceSet { shopMoney { amount } } }
+      }
+      transactions(first: 8) {
+        kind status gateway processedAt
+        amountSet { shopMoney { amount } }
+        fees { type rateName rate amount { amount } flatFee { amount } }
       }
       refunds {
         id createdAt processedAt
@@ -337,7 +352,10 @@ def money(node):
 
 
 def new_daily_bucket():
-    return {f: 0 for f in DAILY_FIELDS}
+    d = {f: 0 for f in DAILY_FIELDS}
+    d["gateways"] = {}        # gateway -> {orders, amount}: what each payment gateway captured
+    d["payment_fee_types"] = {}   # Shopify Payments rateName -> fee amount (domestic 2.25%, amex, international, fx...)
+    return d
 
 
 def parse_rates(raw):
@@ -710,7 +728,9 @@ class Aggregator:
             "snowball_tagged": 0, "snowball_attr_without_tag": 0,
             "snowball_exact": 0, "snowball_export_without_tag": 0,
             "late_orders_scanned": 0, "late_refund_orders": 0,
+            "fee_transactions": 0, "fees_missing_orders": 0, "transactions_truncated": 0,
         }
+        self.gateways = {}
 
     def in_window(self, day):
         return day is not None and self.window_start <= day <= self.window_end
@@ -785,6 +805,7 @@ class Aggregator:
             d["shipping"] += shipping
             d["tax"] += tax
             self.counts["orders_counted"] += 1
+            self.add_payment_fees(o, d)
             if program:
                 self.counts["snowball_tagged"] += 1
                 d["snowball_orders"] += 1
@@ -931,6 +952,44 @@ class Aggregator:
             self.counts["edit_additions_moved"] += 1
         return complete
 
+    def add_payment_fees(self, o, d):
+        """Shopify Payments processing fees of the order's SALE/CAPTURE transactions -> the order
+        day (same basis as the revenue). Other gateways expose no fee (PayPal charges its own)."""
+        txs = o.get("transactions") or []
+        if len(txs) >= 8:
+            self.counts["transactions_truncated"] += 1
+        fee_total, fee_found, paid_by = 0.0, False, {}
+        for t in txs:
+            if (t.get("status") or "").upper() != "SUCCESS" or (t.get("kind") or "").upper() not in FEE_KINDS:
+                continue
+            gw = (t.get("gateway") or "unknown").lower()
+            amt = money(t.get("amountSet"))
+            g = paid_by.setdefault(gw, 0.0)
+            paid_by[gw] = g + amt
+            for fee in (t.get("fees") or []):
+                a = float(((fee.get("amount") or {}).get("amount")) or 0)
+                fee_total += a
+                fee_found = True
+                self.counts["fee_transactions"] += 1
+                name = fee.get("rateName") or fee.get("type") or "fee"
+                d["payment_fee_types"][name] = d["payment_fee_types"].get(name, 0.0) + a
+        for gw, amt in paid_by.items():
+            g = d["gateways"].setdefault(gw, {"orders": 0, "amount": 0.0})
+            g["orders"] += 1
+            g["amount"] += amt
+            gg = self.gateways.setdefault(gw, {"orders": 0, "amount": 0.0, "fees": 0.0})
+            gg["orders"] += 1
+            gg["amount"] += amt
+        d["payment_fees"] += fee_total
+        if fee_found:
+            d["payment_fees_orders"] += 1
+            self.gateways.setdefault("shopify_payments", {"orders": 0, "amount": 0.0, "fees": 0.0})["fees"] += fee_total
+        elif paid_by:
+            # money was captured but no fee is exposed (PayPal, gift card, manual...) - the P&L
+            # shows $0 for it until that gateway's own fee source is connected
+            d["fees_missing_orders"] += 1
+            self.counts["fees_missing_orders"] += 1
+
     def finalise(self):
         for d in self.daily.values():
             # = Shopify Analytics "Total sales" (net sales + shipping charges + taxes,
@@ -941,6 +1000,13 @@ class Aggregator:
             d["snowball_commission_net"] = d["snowball_commission"] - d["snowball_reversals"]
             for f in MONEY_FIELDS:
                 d[f] = round(d[f], 2)
+            for g in d["gateways"].values():
+                g["amount"] = round(g["amount"], 2)
+            for k in list(d["payment_fee_types"]):
+                d["payment_fee_types"][k] = round(d["payment_fee_types"][k], 2)
+        for g in self.gateways.values():
+            for f in ("amount", "fees"):
+                g[f] = round(g[f], 2)
         for coll in (self.programs, self.affiliates):
             for v in coll.values():
                 for f in ("revenue", "commission", "reversals"):
@@ -1169,6 +1235,8 @@ def main():
             "orders_visibility": visibility,
             "late_orders_mode": LATE_ORDERS_MODE,
             "returns_basis": "shopify_sales_reversals",   # returns = SUM(refund line items) - SUM(order adjustments), by processed date
+            "payment_fees_basis": "shopify_payments_transaction_fees_on_order_day",   # OrderTransaction.fees (SALE/CAPTURE), not refunded on refunds
+            "gateways": agg.gateways,
             "order_edits": "booked_on_edit_date",         # items added by an order edit count on the edit date (Order.agreements ledger)
             "pages": pages,
             "api_requests": client.requests,
