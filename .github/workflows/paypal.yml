@@ -1,0 +1,94 @@
+name: Cattasaurus PayPal fees sync
+
+on:
+  schedule:
+    # Every 30 minutes at :28 and :58 UTC - offset from Amazon (:00/:30), Shopify (:05/:35),
+    # ShipMonk (:10/:40), Meta (:15/:45), Google (:20/:50) and Amazon Ads (:25).
+    - cron: "28,58 * * * *"
+  workflow_dispatch:   # "Run workflow" by hand; fill the two dates to backfill history in chunks
+    inputs:
+      backfill_start:
+        description: "Backfill from (YYYY-MM-DD). Leave empty for the normal rolling run."
+        required: false
+        default: ""
+      backfill_end:
+        description: "Backfill to (YYYY-MM-DD, inclusive). Empty = today."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: paypal-sync
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350   # a backfill chunk can take hours; rolling runs finish in minutes
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Sync to the latest main
+        # A run queued behind another run (a backfill, or the 30-minute cron) is checked out at the
+        # commit it was QUEUED on, so its copy of data/*.json can be older than what that run just
+        # pushed. Fast-forward first so the history merge starts from the newest file.
+        run: |
+          git fetch --depth=1 origin main
+          git reset --hard origin/main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch PayPal transactions and fees
+        env:
+          # One calendar for the whole P&L: every source buckets its days in this timezone.
+          REPORT_TIMEZONE: America/Los_Angeles
+          # History: every run keeps the days it did not refetch, so the file grows into
+          # 2025-01-01 -> today. A manual run with the two dates below backfills a past range.
+          HISTORY_START: "2025-01-01"
+          BACKFILL_START: ${{ github.event.inputs.backfill_start }}
+          BACKFILL_END: ${{ github.event.inputs.backfill_end }}
+          PAYPAL_CLIENT_ID: ${{ secrets.PAYPAL_CLIENT_ID }}
+          PAYPAL_CLIENT_SECRET: ${{ secrets.PAYPAL_CLIENT_SECRET }}
+          # Optional overrides:
+          # PAYPAL_BASE_URL: https://api-m.paypal.com   # sandbox: https://api-m.sandbox.paypal.com
+          # WINDOW_DAYS: 45
+        run: |
+          if [ -z "$PAYPAL_CLIENT_ID" ] || [ -z "$PAYPAL_CLIENT_SECRET" ]; then
+            echo "::notice::PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET secrets not set yet - create a LIVE REST app at developer.paypal.com (Apps & Credentials) with the Transaction Search feature. Skipping."
+            exit 0
+          fi
+          python fetch_paypal.py
+
+      - name: Commit updated data file if changed
+        run: |
+          git config user.name "cattasaurus-paypal-bot"
+          git config user.email "actions@users.noreply.github.com"
+          [ -f data/paypal.json ] && git add data/paypal.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Update PayPal data ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          # Other workflows commit to the same repo; rebase-then-push with a few retries
+          # so a concurrent push from them never fails this job.
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            if git status --porcelain | grep -q '^UU\|^AA'; then
+              # Same-file conflict: another run pushed this source's data while we ran (should not
+              # happen - runs of one source are serialized and we synced before fetching). Keep
+              # what is already on main; this run's window is simply refetched next cycle.
+              echo "::warning::data conflict with a newer commit on main - keeping main's version, this run's fetch will be redone next cycle"
+              git diff --name-only --diff-filter=U | xargs -r git checkout --ours -- && git diff --name-only --diff-filter=U | xargs -r git add -- && GIT_EDITOR=true git rebase --continue || git rebase --abort
+              git push && exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "Push attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "Could not push after 5 attempts." && exit 1
