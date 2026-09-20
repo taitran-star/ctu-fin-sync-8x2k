@@ -31,6 +31,14 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Sync to the latest main
+        # A run queued behind another run (a backfill, or the 30-minute cron) is checked out at the
+        # commit it was QUEUED on, so its copy of data/*.json can be older than what that run just
+        # pushed. Fast-forward first so the history merge starts from the newest file.
+        run: |
+          git fetch --depth=1 origin main
+          git reset --hard origin/main
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -60,13 +68,29 @@ jobs:
           fi
           python fetch_shipmonk.py
 
+      - name: Keep a copy of the fetched data as a run artifact (safety net if the push below fails)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shipmonk-data-run-${{ github.run_number }}
+          path: |
+            data/shipmonk.json
+            data/shipmonk_orders/
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Commit updated data files if changed
         run: |
           git config user.name "cattasaurus-shipmonk-bot"
           git config user.email "actions@users.noreply.github.com"
           [ -f data/shipmonk.json ] && git add data/shipmonk.json
           [ -d data/shipmonk_orders ] && git add data/shipmonk_orders
-          [ -f data/shipmonk_orders.csv ] && git rm -q --cached data/shipmonk_orders.csv 2>/dev/null || true
+          # v1.3+ writes one CSV per month under data/shipmonk_orders/; retire the old single
+          # file from BOTH the index and the working tree. (Leaving it on disk untracked made
+          # "git pull --rebase" refuse to check out main - "untracked working tree files would
+          # be overwritten" - and the whole 2025 backfill was lost at the push.)
+          git rm -qf --ignore-unmatch data/shipmonk_orders.csv
+          rm -f data/shipmonk_orders.csv
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
@@ -76,6 +100,18 @@ jobs:
           # so a concurrent push from them never fails this job.
           for i in 1 2 3 4 5; do
             git pull --rebase origin main && git push && exit 0
+            if git status --porcelain | grep -q '^UU\|^AA\|^DU\|^UD'; then
+              # Same-file conflict: another run pushed this source's data while we ran (should not
+              # happen - runs of one source are serialized and we synced before fetching). Keep
+              # what is already on main; this run's window is simply refetched next cycle.
+              echo "::warning::data conflict with a newer commit on main - keeping main's version, this run's fetch will be redone next cycle"
+              git diff --name-only --diff-filter=U | while read -r f; do
+                if git checkout --ours -- "$f" 2>/dev/null; then git add -- "$f"; else git rm -q --cached -- "$f"; fi
+              done
+              GIT_EDITOR=true git rebase --continue || git rebase --skip || git rebase --abort
+              git push && exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
             echo "Push attempt $i failed, retrying in 10s..."
             sleep 10
           done
