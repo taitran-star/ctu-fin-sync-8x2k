@@ -16336,43 +16336,38 @@
       "withdrawals": 719.53
     }
   },
-  "generated_at": "2026-09-20T11:44:13Z",
+  "generated_at": "2026-09-20T12:15:38Z",
   "meta": {
-    "api_requests": 47,
+    "api_requests": 4,
     "api_retries": 0,
     "counts": {
-      "transactions_counted": 17451,
+      "transactions_counted": 998,
       "transactions_duplicate": 0,
-      "transactions_not_success": 159,
-      "transactions_outside_window": 31,
-      "transactions_seen": 17641,
+      "transactions_not_success": 19,
+      "transactions_outside_window": 45,
+      "transactions_seen": 1062,
       "transactions_without_date": 0
     },
     "currencies_seen": {
-      "CAD": 630,
-      "USD": 33274
+      "CAD": 45,
+      "USD": 1885
     },
     "event_codes_seen": {
-      "T0000": 16,
-      "T0001": 3,
-      "T0003": 155,
-      "T0006": 15769,
-      "T0114": 22,
-      "T0200": 424,
-      "T0300": 39,
-      "T0400": 470,
-      "T0403": 4,
-      "T1000": 1,
-      "T1101": 1,
-      "T1106": 15,
-      "T1107": 571,
-      "T1108": 2,
-      "T1110": 66,
-      "T1111": 71,
-      "T1201": 7,
-      "T1202": 2,
-      "T1900": 2,
-      "T2102": 1
+      "T0000": 1,
+      "T0001": 2,
+      "T0003": 148,
+      "T0006": 792,
+      "T0114": 5,
+      "T0200": 34,
+      "T0300": 2,
+      "T0400": 21,
+      "T0403": 1,
+      "T1106": 2,
+      "T1107": 32,
+      "T1110": 9,
+      "T1111": 9,
+      "T1201": 3,
+      "T1900": 1
     },
     "fee_basis": "paypal_fee_amount_by_transaction_initiation_day",
     "history": {
@@ -16386,22 +16381,22 @@
       "days": 628,
       "fetched": {
         "end": "2026-09-20",
-        "start": "2025-01-01"
+        "start": "2026-08-06"
       },
       "first_day": "2025-01-01",
       "last_day": "2026-09-20",
       "missing_count": 0,
       "missing_days": [],
-      "mode": "backfill",
+      "mode": "rolling",
       "start": "2025-01-01"
     },
     "note": "PayPal lists a transaction up to 3 hours after it happens; the trailing window is refetched every run so late rows are picked up",
-    "pages": 46,
+    "pages": 3,
     "schema": 1,
     "script_version": "1.0",
-    "slices": 21,
+    "slices": 2,
     "warnings": [
-      "transactions in currencies other than USD were summed as-is: {'USD': 33274, 'CAD': 630}"
+      "transactions in currencies other than USD were summed as-is: {'USD': 1885, 'CAD': 45}"
     ]
   },
   "source": "paypal_transaction_search",
@@ -16443,7 +16438,7 @@
   },
   "window": {
     "end": "2026-09-20",
-    "start": "2025-01-01"
+    "start": "2026-08-06"
   },
   "window_days": 45
 }
