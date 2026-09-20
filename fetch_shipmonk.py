@@ -80,7 +80,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "1.3.1"
+SCRIPT_VERSION = "1.3.2"
 SCHEMA = 1
 
 API_KEY = os.environ.get("SHIPMONK_API_KEY", "").strip()
@@ -100,6 +100,7 @@ try:
 except (ValueError, TypeError, AttributeError):
     FX_TO_USD = {"CAD": 0.73}
 STOP_AFTER_OLD_PAGES = 3   # unfiltered listing is newest-first; stop after this many whole pages older than the window
+MAX_PAGES = max(100, int(os.environ.get("MAX_PAGES", "20000")))   # runaway guard only: 20,000 pages = 2M orders (a 2025-> backfill needs ~1,500-3,000)
 
 DAILY_FIELDS = ["orders", "orders_shipped", "orders_unshipped", "orders_onhold", "units", "packages", "shipping_cost", "packaging_cost", "pick_pack_cost", "total_cost", "cost_missing_orders"]
 MONEY_FIELDS = ["shipping_cost", "packaging_cost", "pick_pack_cost", "total_cost"]
@@ -547,8 +548,8 @@ def fetch_orders_by_order_date(client, agg, window_start):
         if len(orders) < PAGE_SIZE:
             break
         page += 1
-        if page > 2000:
-            agg.warnings.add("stopped after 2000 pages - window too large for the unfiltered listing")
+        if page > MAX_PAGES:
+            agg.warnings.add(f"stopped after {MAX_PAGES} pages - raise MAX_PAGES if the history really is that long")
             break
     return 1, page
 
