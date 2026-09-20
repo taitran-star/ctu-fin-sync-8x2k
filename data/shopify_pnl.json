@@ -2,24 +2,6 @@
   "api_version": "2026-07",
   "currency": "USD",
   "daily": {
-    "2026-08-05": {
-      "discounts": 30017.3,
-      "gross_sales": 68625.19,
-      "net_sales": 38607.89,
-      "orders": 339,
-      "refunded_shipping": 0,
-      "refunded_tax": 179.25,
-      "refunded_total": 3342.57,
-      "returns": 3214.72,
-      "shipping": 44.22,
-      "snowball_commission": 248.48,
-      "snowball_commission_net": 203.86,
-      "snowball_orders": 14,
-      "snowball_revenue": 1792.79,
-      "snowball_reversals": 44.62,
-      "tax": 2545.09,
-      "total_sales": 37803.23
-    },
     "2026-08-06": {
       "discounts": 29072.35,
       "gross_sales": 66211.47,
@@ -829,11 +811,29 @@
       "snowball_reversals": 0,
       "tax": 1028.65,
       "total_sales": 18052.82
+    },
+    "2026-09-20": {
+      "discounts": 129.0,
+      "gross_sales": 258.0,
+      "net_sales": 129.0,
+      "orders": 1,
+      "refunded_shipping": 0,
+      "refunded_tax": 0,
+      "refunded_total": 0,
+      "returns": 0,
+      "shipping": 9.99,
+      "snowball_commission": 0,
+      "snowball_commission_net": 0,
+      "snowball_orders": 0,
+      "snowball_revenue": 0,
+      "snowball_reversals": 0,
+      "tax": 9.68,
+      "total_sales": 148.67
     }
   },
-  "generated_at": "2026-09-20T06:48:38Z",
+  "generated_at": "2026-09-20T07:19:16Z",
   "meta": {
-    "api_cost_actual": 20230,
+    "api_cost_actual": 20231,
     "api_cost_requested_max": 274,
     "api_requests": 372,
     "auth_mode": "client_credentials",
@@ -841,24 +841,24 @@
       "edit_additions_moved": 1172,
       "edit_lists_truncated": 0,
       "late_orders_scanned": 3085,
-      "late_refund_orders": 253,
-      "orders_counted": 9139,
+      "late_refund_orders": 231,
+      "orders_counted": 8801,
       "orders_edited": 1032,
-      "orders_outside_window": 296,
-      "orders_seen": 12520,
+      "orders_outside_window": 635,
+      "orders_seen": 12521,
       "orders_skipped_test": 0,
       "orders_skipped_voided": 0,
       "orders_with_shipping_discount": 16,
       "refund_lists_truncated": 0,
       "refund_tip_lines": 4,
-      "refunds_counted": 689,
-      "refunds_edit_removals": 131,
-      "refunds_outside_window": 62,
-      "refunds_with_adjustments": 437,
-      "snowball_attr_without_tag": 47,
+      "refunds_counted": 650,
+      "refunds_edit_removals": 119,
+      "refunds_outside_window": 101,
+      "refunds_with_adjustments": 411,
+      "snowball_attr_without_tag": 45,
       "snowball_exact": 165,
       "snowball_export_without_tag": 0,
-      "snowball_tagged": 279
+      "snowball_tagged": 265
     },
     "granted_scope": "read_all_orders,read_orders",
     "late_orders_mode": "all",
@@ -870,7 +870,7 @@
     "script_version": "1.5.1",
     "throttled_waits": 0,
     "warnings": [
-      "47 orders carry the __snowball attribute but no 'Referral - SS - *' tag (Snowball rejected/untracked them) - not counted as referrals",
+      "45 orders carry the __snowball attribute but no 'Referral - SS - *' tag (Snowball rejected/untracked them) - not counted as referrals",
       "no rate known for Snowball program 'Default program' - using SNOWBALL_DEFAULT_RATE=0",
       "no rate known for Snowball program 'asher_fitfeline_partner' - using SNOWBALL_DEFAULT_RATE=0",
       "rate for Snowball program '20 % Commision No Discou' inferred from its name (20%) - set SNOWBALL_PROGRAM_RATES to pin it",
@@ -930,11 +930,11 @@
         "reversals": 0.0
       },
       "(link / no code) \u00b7 homebodycatclub_partner": {
-        "commission": 157.37,
-        "commission_net": 157.37,
-        "orders": 9,
+        "commission": 142.81,
+        "commission_net": 142.81,
+        "orders": 8,
         "program": "homebodycatclub_partner",
-        "revenue": 1049.16,
+        "revenue": 952.07,
         "reversals": 0.0
       },
       "(link / no code) \u00b7 rachelandkittiess 10": {
@@ -969,28 +969,20 @@
         "revenue": 105.95,
         "reversals": 0.0
       },
-      "Beecouponx": {
-        "commission": 40.65,
-        "commission_net": 40.65,
-        "orders": 2,
-        "program": "Peekaboo Affiliate 15",
-        "revenue": 203.24,
-        "reversals": 0.0
-      },
       "CHARLOTTE": {
-        "commission": 486.94,
-        "commission_net": 439.64,
-        "orders": 12,
+        "commission": 411.61,
+        "commission_net": 364.31,
+        "orders": 11,
         "program": "B1G2F_WEEKEND",
-        "revenue": 1623.12,
+        "revenue": 1372.02,
         "reversals": 47.3
       },
       "DAILYCXT703408": {
         "commission": 0.0,
         "commission_net": 0.0,
-        "orders": 140,
+        "orders": 133,
         "program": "Organic short content",
-        "revenue": 18088.05,
+        "revenue": 17239.83,
         "reversals": 0.0
       },
       "EmmaBridges": {
@@ -1074,19 +1066,19 @@
         "reversals": 0.0
       },
       "WONKY": {
-        "commission": 820.58,
-        "commission_net": 684.33,
-        "orders": 23,
+        "commission": 782.74,
+        "commission_net": 691.11,
+        "orders": 22,
         "program": "B1G2F_WEEKEND",
-        "revenue": 2735.28,
-        "reversals": 136.25
+        "revenue": 2609.14,
+        "reversals": 91.63
       },
       "catluminati": {
-        "commission": 490.68,
-        "commission_net": 471.32,
-        "orders": 14,
+        "commission": 410.58,
+        "commission_net": 391.22,
+        "orders": 12,
         "program": "B1G2F_WEEKEND",
-        "revenue": 2045.71,
+        "revenue": 1778.71,
         "reversals": 19.36
       },
       "oreoandpumpkin": {
@@ -1129,12 +1121,12 @@
         "reversals": 0.0
       },
       "B1G2F_WEEKEND": {
-        "commission": 3120.22,
-        "commission_net": 2900.36,
-        "orders": 82,
+        "commission": 2926.95,
+        "commission_net": 2751.71,
+        "orders": 78,
         "rate": 0.3,
-        "revenue": 10639.87,
-        "reversals": 219.86
+        "revenue": 9995.63,
+        "reversals": 175.24
       },
       "Default program": {
         "commission": 0.0,
@@ -1147,17 +1139,17 @@
       "Organic short content": {
         "commission": 0.0,
         "commission_net": 0.0,
-        "orders": 144,
+        "orders": 137,
         "rate": 0.0,
-        "revenue": 18838.84,
+        "revenue": 17990.62,
         "reversals": 0.0
       },
       "Peekaboo Affiliate 15": {
-        "commission": 630.84,
-        "commission_net": 579.49,
-        "orders": 26,
+        "commission": 590.19,
+        "commission_net": 538.84,
+        "orders": 24,
         "rate": 0.2,
-        "revenue": 3154.16,
+        "revenue": 2950.92,
         "reversals": 51.35
       },
       "THANKYOU20_CAMP": {
@@ -1169,11 +1161,11 @@
         "reversals": 0.0
       },
       "homebodycatclub_partner": {
-        "commission": 177.43,
-        "commission_net": 177.43,
-        "orders": 11,
+        "commission": 162.87,
+        "commission_net": 162.87,
+        "orders": 10,
         "rate": 0.15,
-        "revenue": 1182.88,
+        "revenue": 1085.79,
         "reversals": 0.0
       },
       "rachelandkittiess 10": {
@@ -1237,74 +1229,74 @@
     },
     "tag_prefix": "Referral - SS - ",
     "window_totals": {
-      "commission": 4334.3,
-      "commission_net": 4045.69,
-      "orders": 279,
-      "revenue": 35445.49,
-      "reversals": 288.61
+      "commission": 4085.82,
+      "commission_net": 3841.83,
+      "orders": 265,
+      "revenue": 33652.7,
+      "reversals": 243.99
     }
   },
   "source": "shopify_admin_graphql",
   "timezone": "America/Los_Angeles",
   "totals": {
     "last_30d": {
-      "discounts": 523804.09,
-      "gross_sales": 1192083.97,
-      "net_sales": 668279.88,
-      "orders": 5868,
+      "discounts": 509999.49,
+      "gross_sales": 1130601.87,
+      "net_sales": 620602.38,
+      "orders": 5203,
       "refunded_shipping": 62.89,
-      "refunded_tax": 1207.92,
-      "refunded_total": 30678.01,
-      "returns": 31076.69,
-      "shipping": 5183.06,
-      "snowball_commission": 2869.07,
-      "snowball_commission_net": 2662.73,
-      "snowball_orders": 164,
-      "snowball_revenue": 21221.25,
+      "refunded_tax": 1200.53,
+      "refunded_total": 30005.94,
+      "returns": 30415.0,
+      "shipping": 3581.76,
+      "snowball_commission": 2708.37,
+      "snowball_commission_net": 2502.03,
+      "snowball_orders": 156,
+      "snowball_revenue": 20199.6,
       "snowball_reversals": 206.33,
-      "tax": 44227.58,
-      "total_sales": 685343.02
+      "tax": 41066.11,
+      "total_sales": 633571.83
     },
     "mtd": {
-      "discounts": 299715.13,
-      "gross_sales": 661649.8,
-      "net_sales": 361934.67,
-      "orders": 2983,
+      "discounts": 299844.13,
+      "gross_sales": 661907.8,
+      "net_sales": 362063.67,
+      "orders": 2984,
       "refunded_shipping": 47.89,
       "refunded_tax": 873.22,
       "refunded_total": 19794.05,
       "returns": 20227.19,
-      "shipping": 3014.46,
+      "shipping": 3024.45,
       "snowball_commission": 1443.63,
       "snowball_commission_net": 1282.46,
       "snowball_orders": 77,
       "snowball_revenue": 10047.08,
       "snowball_reversals": 161.17,
-      "tax": 24023.35,
-      "total_sales": 367824.18
+      "tax": 24033.03,
+      "total_sales": 367972.85
     },
     "today": {
-      "discounts": 14545.66,
-      "gross_sales": 32157.8,
-      "net_sales": 17612.14,
-      "orders": 145,
-      "refunded_shipping": 2.99,
-      "refunded_tax": 24.11,
-      "refunded_total": 894.12,
-      "returns": 867.02,
-      "shipping": 306.15,
-      "snowball_commission": 144.02,
-      "snowball_commission_net": 144.02,
-      "snowball_orders": 7,
-      "snowball_revenue": 824.98,
+      "discounts": 129.0,
+      "gross_sales": 258.0,
+      "net_sales": 129.0,
+      "orders": 1,
+      "refunded_shipping": 0,
+      "refunded_tax": 0,
+      "refunded_total": 0,
+      "returns": 0,
+      "shipping": 9.99,
+      "snowball_commission": 0,
+      "snowball_commission_net": 0,
+      "snowball_orders": 0,
+      "snowball_revenue": 0,
       "snowball_reversals": 0,
-      "tax": 1028.65,
-      "total_sales": 18052.82
+      "tax": 9.68,
+      "total_sales": 148.67
     }
   },
   "window": {
-    "end": "2026-09-19",
-    "start": "2026-08-05"
+    "end": "2026-09-20",
+    "start": "2026-08-06"
   },
   "window_days": 45
 }
