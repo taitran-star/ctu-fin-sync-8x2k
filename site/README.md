@@ -12,12 +12,21 @@ site/
     pnl.html              -> bảng P&L (địa chỉ /pnl) + bộ tải số liệu (fetch /data/*.json rồi mới chạy pnl.js)
     pnl.js                -> toàn bộ logic P&L (sinh từ template bằng build_site.py, không sửa tay)
     shipmonk_invoices.json, klaviyo_invoices.json -> hoá đơn (đọc từ trang billing, cập nhật tay hằng tháng)
-    apple-touch-icon.png, icon-192.png, icon-512.png, manifest.webmanifest -> icon "Thêm vào màn hình chính"
+    apple-touch-icon.png, icon-192.png, icon-512.png, favicon.png, manifest.webmanifest -> icon app / tab
+    img/                  -> logo (1 màu, nền trong: logo-h-pine / logo-h-pistachio / logo-v-pine) + mascot (mascot-*.png)
+    fonts/                -> font thương hiệu dạng woff2: Bureau Grot Cond Medium (số liệu lớn), Libre Franklin Regular/SemiBold
+                             (chữ, tiêu đề), Fuzzy Bubbles Bold (chữ "highlight")
   functions/
     [[path]].js           -> toàn bộ phần server trong 1 file: cổng mật khẩu (cookie 90 ngày, ký HMAC bằng
-                             chính mật khẩu) + /data/<file>.json (lấy từ raw.githubusercontent.com, cache 2 phút,
-                             hoặc file hoá đơn trong public/) + trả file tĩnh
+                             chính mật khẩu) + /data/<file>.json (lấy từ raw.githubusercontent.com, cache 5 phút,
+                             ETag/304, hoặc file hoá đơn trong public/) + trả file tĩnh
 ```
+
+Không cần mật khẩu (để trang đăng nhập hiện được logo/mascot): `/img/*`, `/fonts/LibreFranklin-*`, `/fonts/FuzzyBubbles-*`,
+các icon và `favicon.png`. Font **Bureau Grot** là font thương mại (Monotype) nên chỉ trả sau khi đăng nhập; nếu giấy phép
+font của công ty không cho dùng trên web thì xoá `fonts/BureauGrot-CondMedium.woff2` — số liệu sẽ hiện bằng font hệ thống.
+Bureau Grot không có dấu tiếng Việt, vì vậy nó chỉ dùng cho **số liệu lớn** (KPI, break-even, ROAS, MER, dòng lợi nhuận ròng);
+tiêu đề tiếng Việt dùng Libre Franklin SemiBold (font "sub-headline" theo brand book).
 
 ## Cài đặt lần đầu (Cloudflare)
 
@@ -41,6 +50,8 @@ thêm bản ghi CNAME theo hướng dẫn tại nơi quản lý DNS của tên m
 * **Đăng xuất một thiết bị**: mở `/logout`.
 * **Sửa bảng P&L**: sửa template `cattasaurus-pnl.html` → chạy `python3 build_site.py` → upload lại
   `pnl.html` và `pnl.js` vào `site/public` trên repo (2 file, ghi đè).
+* **Đổi logo / mascot / font**: thay file trong `site-build/assets` (tạo bằng `make_brand_assets.py` từ bộ brand kit) →
+  `python3 build_site.py` → upload lại thư mục `site`.
 * **Thêm bảng mới**: thêm `public/<tên>.html` (+ `<tên>.js`), thêm thẻ `<a class="card" href="/<tên>">` trong
   `public/index.html`; mật khẩu và `/data/*.json` dùng chung, không phải cài gì thêm.
 * **Hoá đơn ShipMonk / Klaviyo mới**: thay 2 file JSON hoá đơn trong `site/public/` → upload lên repo.

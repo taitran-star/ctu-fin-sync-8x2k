@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 7c4798ebfc).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 106ff7f95e).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
 (function(){
@@ -714,7 +714,8 @@
 
   // ---------- break-even ----------
   // ---------- trend: net revenue / total cost / net profit per week or month ----------
-  const trendCache = {};   // bucket key -> {rev, cost, profit, days, partial}
+  const trendCache = {};   // bucket key -> {rev, varc, fixc, cost, profit, days, partial}
+  const trendHidden = new Set();   // series ids switched off in the legend (click)
   function trendBucketsFor(){
     // which buckets to draw: week mode = 26 weeks ending at the selected week; month mode = every
     // month; range mode = the weeks (<=120 days) or months the range spans; day mode = none
@@ -732,7 +733,7 @@
     const a = aggregate(rows);
     const lastIso = rows[rows.length-1].iso, today = days[TOTAL_DAYS-1].iso;
     const full = unit==='week' ? rows.length===7 : rows.length===new Date(parseInt(key.slice(0,4),10), parseInt(key.slice(5,7),10), 0).getDate();
-    const v = {rev: a.netRevenue, cost: a.netRevenue - a.netProfit, profit: a.netProfit, days: rows.length, partial: !full || lastIso===today,
+    const v = {rev: a.netRevenue, varc: a.variableTotal, fixc: a.fixedTotal, cost: a.netRevenue - a.netProfit, profit: a.netProfit, days: rows.length, partial: !full || lastIso===today,
                label: unit==='week' ? WEEK_LABEL(key) : MONTH_LABEL(key), short: unit==='week' ? fmtDate(rows[0].date) : ('T'+parseInt(key.slice(5,7),10)+'/'+key.slice(2,4))};
     trendCache[ck] = v; return v;
   }
@@ -744,16 +745,29 @@
     const pts = spec.keys.map(k=>({key:k, ...trendValue(spec.unit, k)}));
     document.getElementById('trendTitle').textContent = spec.unit==='week' ? 'Xu hướng theo tuần' : 'Xu hướng theo tháng';
     document.getElementById('trendNote').textContent = (spec.unit==='week' ? pts.length+' tuần (Thứ Hai → Chủ Nhật)' : pts.length+' tháng') + ' · ' + pts[0].short + ' → ' + pts[pts.length-1].short + ' · cùng số với bảng P&L bên dưới';
-    const revC = resolveVar('var(--series-1)'), costC = resolveVar('var(--status-critical)'), profC = resolveVar('var(--series-3)');
+    const revC = resolveVar('var(--series-1)'), varC = resolveVar('var(--series-cost)'), fixC = resolveVar('var(--series-fixed)'), profC = resolveVar('var(--series-4)');
     const grid_ = resolveVar('var(--gridline)'), muted = resolveVar('var(--ink-muted)'), ink = resolveVar('var(--ink-primary)'), accent = resolveVar('var(--accent)'), surface = resolveVar('var(--surface-card)');
-    const series = [
+    // 4 lines on one $ scale: fixed cost is dashed (second cue besides colour), each line is labelled at its last point
+    const allSeries = [
       {id:'rev', name:'Doanh thu thuần', color: revC},
-      {id:'cost', name:'Tổng chi phí', color: costC},
+      {id:'varc', name:'Chi phí biến đổi', color: varC},
+      {id:'fixc', name:'Chi phí cố định', color: fixC, dash:'6,4'},
       {id:'profit', name:'Lợi nhuận ròng', color: profC},
     ];
-    document.getElementById('trendLegend').innerHTML = series.map(sr=>`<div class="li"><span class="sw" style="background:${sr.color}"></span>${sr.name}</div>`).join('');
+    const series = allSeries.filter(sr=>!trendHidden.has(sr.id));
+    const legend = document.getElementById('trendLegend');
+    legend.innerHTML = allSeries.map(sr=>{
+      const off = trendHidden.has(sr.id);
+      const sw = sr.dash ? `background:repeating-linear-gradient(90deg,${sr.color} 0 3px,transparent 3px 5px);height:3px;width:14px;border-radius:0` : `background:${sr.color}`;
+      return `<button type="button" class="li${off?' off':''}" data-series="${sr.id}" aria-pressed="${!off}" title="Bấm để ẩn/hiện đường này"><span class="sw" style="${sw}"></span>${sr.name}</button>`;
+    }).join('');
+    legend.querySelectorAll('button[data-series]').forEach(b=>b.addEventListener('click', ()=>{
+      const id = b.dataset.series;
+      if(trendHidden.has(id)) trendHidden.delete(id); else if(trendHidden.size < allSeries.length-1) trendHidden.add(id);
+      renderTrend();
+    }));
     const W=1120, H=300, padL=64, padR=110, padT=18, padB=34, plotW=W-padL-padR, plotH=H-padT-padB;
-    const vals = pts.flatMap(p=>[p.rev, p.cost, p.profit]);
+    const vals = pts.flatMap(p=>series.map(sr=>p[sr.id]));
     let yMin = Math.min(0, ...vals), yMax = Math.max(0, ...vals);
     if(yMax===yMin){ yMax = yMin+1; }
     // round the axis to a clean step
@@ -780,7 +794,7 @@
     // lines + markers
     series.forEach(sr=>{
       const d = pts.map((p,i)=>(i?'L':'M')+' '+x(i).toFixed(1)+' '+y(p[sr.id]).toFixed(1)).join(' ');
-      svg += `<path d="${d}" fill="none" stroke="${sr.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+      svg += `<path d="${d}" fill="none" stroke="${sr.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"${sr.dash?` stroke-dasharray="${sr.dash}"`:''}/>`;
       pts.forEach((p,i)=>{ svg += p.partial ? `<circle cx="${x(i)}" cy="${y(p[sr.id])}" r="3.2" fill="${surface}" stroke="${sr.color}" stroke-width="2"/>` : `<circle cx="${x(i)}" cy="${y(p[sr.id])}" r="2.6" fill="${sr.color}" stroke="${surface}" stroke-width="1"/>`; });
     });
     // direct labels at the last point (pushed apart if they collide)
@@ -800,10 +814,12 @@
       let i = Math.round((px-padL)/(n>1?plotW/(n-1):1)); i = Math.max(0, Math.min(n-1, i));
       const p = pts[i];
       cursor.setAttribute('x1', x(i)); cursor.setAttribute('x2', x(i)); cursor.setAttribute('opacity','1');
-      const margin = p.rev ? (p.profit/p.rev*100).toFixed(1)+'%' : '—';
-      tip.innerHTML = `<div class="t-title">${p.label}${p.partial?' · chưa kết thúc':''}</div>` + series.map(sr=>`<div class="t-row"><span style="color:${sr.color}">■ ${sr.name}</span><span>${money(p[sr.id])}</span></div>`).join('') + `<div class="t-row"><span>Biên LN ròng</span><span>${margin}</span></div>`;
+      const pctOf = v => p.rev ? (v/p.rev*100).toFixed(1)+'% DT' : '—';
+      tip.innerHTML = `<div class="t-title">${p.label}${p.partial?' · chưa kết thúc':''}</div>`
+        + allSeries.map(sr=>`<div class="t-row"><span style="color:${sr.color}">■ ${sr.name}</span><span>${money(p[sr.id])}${sr.id==='varc'||sr.id==='fixc'?' · '+pctOf(p[sr.id]):''}</span></div>`).join('')
+        + `<div class="t-row"><span>Tổng chi phí</span><span>${money(p.cost)}</span></div><div class="t-row"><span>Biên LN ròng</span><span>${p.rev ? (p.profit/p.rev*100).toFixed(1)+'%' : '—'}</span></div>`;
       const left = (ev.clientX-rect.left), top = (ev.clientY-rect.top);
-      tip.style.left = Math.min(left+14, wrap.clientWidth-190)+'px'; tip.style.top = Math.max(0, top-70)+'px'; tip.style.opacity = '1';
+      tip.style.left = Math.min(left+14, wrap.clientWidth-230)+'px'; tip.style.top = Math.max(0, top-70)+'px'; tip.style.opacity = '1';
     };
     hit.addEventListener('mousemove', onMove);
     hit.addEventListener('mouseleave', ()=>{ tip.style.opacity='0'; cursor.setAttribute('opacity','0'); });
@@ -834,7 +850,7 @@
     const yMax = Math.max(maxX, a.fixedTotal + a.variableRatio*maxX);
     const y = v=> padT + plotH - (v/yMax)*plotH;
     const grid_ = resolveVar('var(--gridline)'), muted = resolveVar('var(--ink-muted)');
-    const revColor = resolveVar('var(--series-1)'), costColor = resolveVar('var(--status-critical)'), curColor = resolveVar('var(--ink-primary)');
+    const revColor = resolveVar('var(--series-1)'), costColor = resolveVar('var(--series-cost)'), curColor = resolveVar('var(--ink-primary)');
 
     let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">`;
     for(let i=0;i<=4;i++){
