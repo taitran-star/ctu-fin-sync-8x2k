@@ -16344,33 +16344,45 @@
       "refunds_count": 1,
       "transactions": 31,
       "withdrawals": 719.53
+    },
+    "2026-09-21": {
+      "by_event_code": {},
+      "fees": 0,
+      "fees_credited": 0,
+      "other": 0,
+      "payments": 0,
+      "payments_count": 0,
+      "refunds": 0,
+      "refunds_count": 0,
+      "transactions": 0,
+      "withdrawals": 0
     }
   },
-  "generated_at": "2026-09-21T06:47:38Z",
+  "generated_at": "2026-09-21T07:13:59Z",
   "meta": {
     "api_requests": 4,
     "api_retries": 0,
     "counts": {
-      "transactions_counted": 1027,
+      "transactions_counted": 983,
       "transactions_duplicate": 0,
       "transactions_not_success": 19,
-      "transactions_outside_window": 45,
-      "transactions_seen": 1091,
+      "transactions_outside_window": 47,
+      "transactions_seen": 1049,
       "transactions_without_date": 0
     },
     "currencies_seen": {
       "CAD": 63,
-      "USD": 1912
+      "USD": 1825
     },
     "event_codes_seen": {
       "T0000": 2,
       "T0001": 2,
       "T0003": 164,
-      "T0006": 792,
+      "T0006": 753,
       "T0114": 5,
-      "T0200": 46,
+      "T0200": 44,
       "T0300": 2,
-      "T0400": 21,
+      "T0400": 20,
       "T0403": 1,
       "T1106": 2,
       "T1107": 32,
@@ -16388,13 +16400,13 @@
           "start": "2025-01-01"
         }
       ],
-      "days": 628,
+      "days": 629,
       "fetched": {
-        "end": "2026-09-20",
-        "start": "2026-08-06"
+        "end": "2026-09-21",
+        "start": "2026-08-07"
       },
       "first_day": "2025-01-01",
-      "last_day": "2026-09-20",
+      "last_day": "2026-09-21",
       "missing_count": 0,
       "missing_days": [],
       "mode": "rolling",
@@ -16406,21 +16418,21 @@
     "script_version": "1.0",
     "slices": 2,
     "warnings": [
-      "transactions in currencies other than USD were summed as-is: {'USD': 1912, 'CAD': 63}"
+      "transactions in currencies other than USD were summed as-is: {'USD': 1825, 'CAD': 63}"
     ]
   },
   "source": "paypal_transaction_search",
   "timezone": "America/Los_Angeles",
   "totals": {
     "last_30d": {
-      "fees": 2993.39,
+      "fees": 2926.13,
       "fees_credited": 68.26,
       "other": -1997.69,
-      "payments": 76869.75,
-      "payments_count": 585,
+      "payments": 75267.52,
+      "payments_count": 574,
       "refunds": 2160.18,
       "refunds_count": 21,
-      "transactions": 648,
+      "transactions": 637,
       "withdrawals": 67977.96
     },
     "mtd": {
@@ -16435,20 +16447,20 @@
       "withdrawals": 67977.96
     },
     "today": {
-      "fees": 126.37,
+      "fees": 0,
       "fees_credited": 0,
-      "other": -358.82,
-      "payments": 2836.36,
-      "payments_count": 17,
-      "refunds": 129.84,
-      "refunds_count": 1,
-      "transactions": 31,
-      "withdrawals": 719.53
+      "other": 0,
+      "payments": 0,
+      "payments_count": 0,
+      "refunds": 0,
+      "refunds_count": 0,
+      "transactions": 0,
+      "withdrawals": 0
     }
   },
   "window": {
-    "end": "2026-09-20",
-    "start": "2026-08-06"
+    "end": "2026-09-21",
+    "start": "2026-08-07"
   },
   "window_days": 45
 }
