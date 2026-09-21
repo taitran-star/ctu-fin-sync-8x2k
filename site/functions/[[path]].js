@@ -12,6 +12,7 @@
 //   3. everything else — the static pages/files in public/ (index.html hub, pnl.html + pnl.js, icons...).
 //      Brand images, icons and the open-licence fonts (/img/*, /fonts/LibreFranklin-*, /fonts/FuzzyBubbles-*) are public so the
 //      login page can show them; the licensed Bureau Grot font and everything else stay behind the password.
+//      /sw.js (service worker for the installed app: app shell + last data for offline) is public and never cached.
 
 const COOKIE = 'ctu_pnl_sess';
 const SESSION_DAYS = 90;
@@ -22,8 +23,8 @@ const REPO_FILES = new Set([
   'shipmonk.json', 'paypal.json', 'klaviyo.json', 'amazon_ads.json',
 ]);
 const STATIC_FILES = new Set(['shipmonk_invoices.json', 'klaviyo_invoices.json']);   // in public/
-const PUBLIC_ASSET = /^\/(img\/[\w.-]+\.(png|svg|webp)|fonts\/(LibreFranklin|FuzzyBubbles)[\w-]*\.woff2|favicon\.png|apple-touch-icon\.png|icon-\d+\.png)$/;
-const LONG_CACHE = /^\/(img|fonts)\/|^\/(favicon\.png|apple-touch-icon\.png|icon-\d+\.png)$/;   // immutable brand files
+const PUBLIC_ASSET = /^\/(img\/[\w.-]+\.(png|svg|webp)|fonts\/(LibreFranklin|FuzzyBubbles)[\w-]*\.woff2|favicon\.png|apple-touch-icon\.png|icon-[\w-]+\.png)$/;
+const LONG_CACHE = /^\/(img|fonts|splash)\/|^\/(favicon\.png|apple-touch-icon\.png|icon-[\w-]+\.png)$/;   // immutable brand files
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -31,6 +32,7 @@ export async function onRequest(context) {
   const path = url.pathname;
 
   if (path === '/robots.txt') return new Response('User-agent: *\nDisallow: /\n', { headers: { 'Content-Type': 'text/plain' } });
+  if (path === '/sw.js') return asset(await env.ASSETS.fetch(request), 'no-cache');   // service worker: public, always revalidated so updates land
   if (PUBLIC_ASSET.test(path)) return asset(await env.ASSETS.fetch(request), 'public, max-age=604800');
   if (!env.DASH_PASSWORD) return setupPage();
   if (path === '/login') return request.method === 'POST' ? handleLogin(request, env, url) : loginPage(url, null);

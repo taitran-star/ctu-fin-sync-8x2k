@@ -1,20 +1,67 @@
 {
+ "id": "/",
  "name": "Cattasaurus Dashboard",
- "short_name": "Dashboard",
+ "short_name": "Cattasaurus",
+ "description": "Số liệu nội bộ Cattasaurus — P&L chuẩn D2C, cập nhật từ API mỗi 30 phút.",
+ "lang": "vi",
  "start_url": "/",
+ "scope": "/",
  "display": "standalone",
+ "display_override": [
+  "standalone",
+  "minimal-ui"
+ ],
+ "orientation": "any",
  "background_color": "#C9E595",
  "theme_color": "#C9E595",
  "icons": [
   {
    "src": "/icon-192.png",
    "sizes": "192x192",
-   "type": "image/png"
+   "type": "image/png",
+   "purpose": "any"
   },
   {
    "src": "/icon-512.png",
    "sizes": "512x512",
-   "type": "image/png"
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "/icon-192-maskable.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "maskable"
+  },
+  {
+   "src": "/icon-512-maskable.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ],
+ "shortcuts": [
+  {
+   "name": "Bảng P&L",
+   "short_name": "P&L",
+   "url": "/pnl",
+   "icons": [
+    {
+     "src": "/icon-192.png",
+     "sizes": "192x192"
+    }
+   ]
+  },
+  {
+   "name": "Chọn bảng",
+   "short_name": "Bảng",
+   "url": "/?menu=1",
+   "icons": [
+    {
+     "src": "/icon-192.png",
+     "sizes": "192x192"
+    }
+   ]
   }
  ]
 }

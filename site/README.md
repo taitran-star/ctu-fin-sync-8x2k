@@ -12,7 +12,11 @@ site/
     pnl.html              -> bảng P&L (địa chỉ /pnl) + bộ tải số liệu (fetch /data/*.json rồi mới chạy pnl.js)
     pnl.js                -> toàn bộ logic P&L (sinh từ template bằng build_site.py, không sửa tay)
     shipmonk_invoices.json, klaviyo_invoices.json -> hoá đơn (đọc từ trang billing, cập nhật tay hằng tháng)
-    apple-touch-icon.png, icon-192.png, icon-512.png, favicon.png, manifest.webmanifest -> icon app / tab
+    apple-touch-icon.png, icon-192/512.png, icon-*-maskable.png, favicon.png, manifest.webmanifest -> icon app / tab
+    sw.js                 -> service worker cho app cài trên máy: nhớ giao diện + bản số liệu tải lần cuối, mất mạng vẫn mở
+                             được (pill ghi "ngoại tuyến · số liệu đã lưu lúc …"); đăng xuất thì xoá số liệu đã lưu
+    offline.html          -> trang hiện khi mất mạng mà máy chưa lưu số liệu lần nào
+    splash/               -> màn hình khởi động cho iPhone/iPad (23 cỡ, sinh từ logo dọc)
     img/                  -> logo (1 màu, nền trong: logo-h-pine / logo-h-pistachio / logo-v-pine) + mascot (mascot-*.png)
     fonts/                -> font thương hiệu dạng woff2: Bureau Grot Cond Medium (số liệu lớn), Libre Franklin Regular/SemiBold
                              (chữ, tiêu đề), Fuzzy Bubbles Bold (chữ "highlight")
@@ -39,10 +43,12 @@ tiêu đề tiếng Việt dùng Libre Franklin SemiBold (font "sub-headline" th
 5. **Settings → Build → Build watch paths → Include paths**: `site/*`
    (repo được GitHub Actions push ~16 lần/giờ; không đặt mục này thì Pages build mỗi lần push và hết hạn
    mức 500 build/tháng của gói miễn phí sau ~1 ngày).
-6. Mở `https://cattasaurus-dashboard.pages.dev` → nhập mật khẩu. Trên iPhone: Safari → Chia sẻ → *Thêm vào MH chính*.
+6. Mở `https://cattasaurus-dashboard.pages.dev` → nhập mật khẩu. Cài như app: trang chủ (`/?menu=1`) có thẻ hướng dẫn theo
+   từng loại máy — iPhone: Safari → Chia sẻ → *Thêm vào MH chính*; Android/Chrome: nút *Cài app*; Mac Safari: File → Add to Dock.
 
-Tên miền riêng (tuỳ chọn): **Custom domains → Set up a custom domain** → ví dụ `pnl.cattasaurus.com` →
-thêm bản ghi CNAME theo hướng dẫn tại nơi quản lý DNS của tên miền.
+Tên miền riêng: **Custom domains → Set up a custom domain** → `dashboard.cattasaurus.com` → thêm bản ghi
+CNAME `dashboard` → `cattasaurus-dashboard.pages.dev` tại nơi quản lý DNS của cattasaurus.com (Shopify: Settings → Domains →
+Manage DNS settings, hoặc nơi mua domain). Không sửa bản ghi `cattasaurus.com` / `www` (shop Shopify). Địa chỉ pages.dev vẫn chạy song song.
 
 ## Vận hành
 
