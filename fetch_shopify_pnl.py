@@ -112,6 +112,26 @@ Admin API silently hides orders created more than 60 days ago, INCLUDING their r
 A return processed today on a 3-month-old order is then invisible and Shopify
 Analytics' returns will be higher than ours. The script probes this every run and
 reports it in meta.orders_visibility ("all" | "last_60_days") plus a warning.
+
+Marketing attribution (v1.8, daily "attribution" block): every order carries Shopify's own
+customer journey (Order.customerJourneySummary - the sessions of the 30 days before the
+order, each with referrer, landing page and UTM parameters). The script classifies the LAST
+NON-DIRECT session of every counted order into one channel (Shopify Analytics' "last
+non-direct click" model) - email / sms (Klaviyo UTMs), meta_paid (utm_source facebook +
+paid medium, or fbclid), meta_organic (facebook/instagram referrer without UTM), google_ads
+(utm/gclid), organic_search (Google/Bing/DuckDuckGo referrer), tiktok_ads / tiktok_organic,
+applovin, snowball (utm_source snowball / affiliate), other_paid, social_other, ai_search,
+referral, other_utm, direct, unknown - and books the order's net sales on its order day
+under that channel, together with the FIRST session's channel (so "Meta opened, email
+closed" journeys can be counted), new vs returning customer, and the Klaviyo campaign /
+flow name for email and sms. When the last session is direct (or a Shop Pay / PayPal /
+Amazon Pay return-to-store hop) the earlier sessions are read in a second, cheap pass
+(moments, newest first). Orders whose journey Shopify has not attributed yet (ready=false,
+usually the first 1-3 hours) are counted as "pending" and pick up their channel on the next
+rolling run, which rebuilds every day of the window.
+  ATTRIBUTION=off           skip the journey fields entirely (falls back to v1.7 behaviour)
+  JOURNEY_BATCH             orders per moments request, default 15 (auto-halves on cost errors)
+  MOMENTS_FIRST             sessions read per order in that pass, default 25
 """
 import json
 import os
@@ -128,8 +148,8 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "1.7"
-SCHEMA = 2
+SCRIPT_VERSION = "1.8"
+SCHEMA = 3   # 3 = daily "attribution" block (customer-journey last-touch channels)
 
 SHOP = os.environ.get("SHOPIFY_SHOP", "").strip().lower().replace("https://", "").rstrip("/")
 API_VERSION = os.environ.get("SHOPIFY_API_VERSION", "2026-07").strip()
@@ -166,6 +186,24 @@ DAILY_FIELDS = [
 MONEY_FIELDS = [f for f in DAILY_FIELDS if f not in ("orders", "snowball_orders", "payment_fees_orders", "fees_missing_orders")]
 FEE_KINDS = {"SALE", "CAPTURE"}   # transaction kinds that carry Shopify Payments processing fees
 
+# ---------------------------------------------------------------- marketing attribution settings
+ATTRIBUTION = os.environ.get("ATTRIBUTION", "on").strip().lower() not in ("off", "0", "false", "no")
+JOURNEY_BATCH = int(os.environ.get("JOURNEY_BATCH", "15"))
+MOMENTS_FIRST = int(os.environ.get("MOMENTS_FIRST", "25"))
+CHANNELS = ["email", "sms", "email_other", "meta_paid", "meta_organic", "google_ads", "organic_search",
+            "tiktok_ads", "tiktok_organic", "applovin", "snowball", "other_paid", "social_other", "ai_search",
+            "referral", "other_utm", "direct", "unknown"]
+PAID_CHANNELS = {"meta_paid", "google_ads", "tiktok_ads", "applovin", "other_paid"}
+# sessions that say nothing about marketing: the classifier looks at the session before them
+PASSTHROUGH_CHANNELS = {"direct", "unknown"}
+JOURNEY_SUMMARY_FIELDS = """
+      customerJourneySummary {
+        ready customerOrderIndex
+        momentsCount { count }
+        firstVisit { source sourceType referrerUrl landingPage occurredAt referralCode utmParameters { source medium campaign content term } }
+        lastVisit { source sourceType referrerUrl landingPage occurredAt referralCode utmParameters { source medium campaign content term } }
+      }"""
+
 # processedAt + orderAdjustments are what make "returns" equal Shopify Analytics'
 # sales_reversals (see Aggregator.add_order). The small pageInfo blocks only tell us
 # when a refund has more line items / adjustments than we asked for.
@@ -175,7 +213,7 @@ query Orders($first: Int!, $after: String, $q: String, $refundsFirst: Int!) {
     pageInfo { hasNextPage endCursor }
     nodes {
       id name createdAt cancelledAt test displayFinancialStatus tags edited
-      customAttributes { key value }
+      customAttributes { key value }%JOURNEY%
       subtotalPriceSet { shopMoney { amount } }
       totalDiscountsSet { shopMoney { amount } }
       totalShippingPriceSet { shopMoney { amount } }
@@ -206,6 +244,29 @@ query Orders($first: Int!, $after: String, $q: String, $refundsFirst: Int!) {
         orderAdjustments(first: 20) {
           pageInfo { hasNextPage }
           nodes { reason amountSet { shopMoney { amount } } taxAmountSet { shopMoney { amount } } }
+        }
+      }
+    }
+  }
+}
+""".replace("%JOURNEY%", JOURNEY_SUMMARY_FIELDS if ATTRIBUTION else "")
+
+# Second pass, only for orders whose last session is direct (or a checkout hop): the earlier
+# sessions, newest first, so the last NON-direct one can be found (Shopify's own model).
+JOURNEY_MOMENTS_QUERY = """
+query JourneyMoments($ids: [ID!]!, $momentsFirst: Int!) {
+  nodes(ids: $ids) {
+    ... on Order {
+      id
+      customerJourneySummary {
+        ready
+        momentsCount { count }
+        moments(first: $momentsFirst, reverse: true) {
+          pageInfo { hasNextPage }
+          nodes {
+            occurredAt
+            ... on CustomerVisit { source sourceType referrerUrl landingPage referralCode utmParameters { source medium campaign content term } }
+          }
         }
       }
     }
@@ -355,6 +416,8 @@ def new_daily_bucket():
     d = {f: 0 for f in DAILY_FIELDS}
     d["gateways"] = {}        # gateway -> {orders, amount}: what each payment gateway captured
     d["payment_fee_types"] = {}   # Shopify Payments rateName -> fee amount (domestic 2.25%, amex, international, fx...)
+    if ATTRIBUTION:
+        d["attribution"] = new_attribution_bucket()   # customer-journey channels of the orders placed that day
     return d
 
 
@@ -705,6 +768,185 @@ def commission_base(subtotal, shipping, tax, total):
     return subtotal
 
 
+# ---------------------------------------------------------------- marketing attribution (customer journey)
+# One session (CustomerVisit) -> one channel. Precedence: UTM parameters (a tagged link is the
+# most explicit signal) > ad click ids on the landing page (fbclid, gclid, ttclid...) > the
+# referrer host > Shopify's own source label. Verified on live orders (Sep 2026): Klaviyo links
+# arrive as utm_source=Klaviyo utm_medium=email utm_campaign=<campaign or flow message name>;
+# Meta ads as utm_source=facebook utm_medium=paid utm_campaign=<numeric campaign id> (older
+# ones as utm_source=fb with a numeric utm_medium); Snowball creator links as
+# utm_source=snowball utm_medium=organic-short-content; AppLovin as utm_source=applovin
+# utm_medium=paid; Google organic as referrer google.com without UTMs (sourceType SEO).
+PAID_MEDIUMS = {"paid", "cpc", "ppc", "cpm", "cpv", "cpa", "ads", "ad", "paid_social", "paidsocial", "paid-social",
+                "social_paid", "social-paid", "paid social", "paid_search", "paidsearch", "paid-search", "display",
+                "retargeting", "remarketing", "sponsored", "banner", "pmax", "performance_max", "shopping", "paid_video",
+                "paidvideo", "video_ads", "ua", "app"}
+EMAIL_MEDIUMS = {"email", "e-mail", "mail", "newsletter", "edm", "email_marketing", "klaviyo"}
+SMS_MEDIUMS = {"sms", "text", "mms", "text_message"}
+ORGANIC_MEDIUMS = {"organic", "seo", "social", "organic_social", "organic-social", "post", "story", "stories", "bio",
+                   "link_in_bio", "linkinbio", "profile", "reel", "reels", "organic_video"}
+META_SOURCES = {"facebook", "fb", "instagram", "ig", "meta", "fbig", "fb_ig", "facebook_ads", "meta_ads", "facebookads",
+                "facebook.com", "instagram.com", "messenger"}
+GOOGLE_SOURCES = {"google", "google_ads", "googleads", "google-ads", "adwords", "gads", "youtube_ads"}
+TIKTOK_SOURCES = {"tiktok", "tt", "tiktok_ads", "tiktokads", "tiktok-ads"}
+APPLOVIN_SOURCES = {"applovin", "axon", "applovin_axon", "applovin-axon"}
+SNOWBALL_SOURCES = {"snowball", "socialsnowball", "social_snowball", "social-snowball", "ss", "affiliate", "affiliates",
+                    "creator", "creators", "influencer", "influencers", "ambassador", "referral"}
+SNOWBALL_MEDIUMS = {"affiliate", "affiliates", "creator", "influencer", "ambassador", "referral", "ugc",
+                    "organic-short-content", "organic_short_content", "short-content", "shortform"}
+SEARCH_SOURCES = {"bing", "microsoft", "msn", "bingads", "bing_ads", "duckduckgo", "yahoo", "ecosia", "yandex", "baidu", "brave"}
+SOCIAL_SOURCES = {"pinterest", "youtube", "reddit", "twitter", "x", "snapchat", "linkedin", "threads", "tumblr", "quora", "discord", "telegram", "whatsapp"}
+SHOP_HOSTS = ("cattasaurus.com", "myshopify.com", "shopify.com", "shop.app", "shopifypreview.com")
+# return-to-store hops of payment providers / checkout: carry no marketing information
+PASSTHROUGH_HOSTS = ("shop.app", "shopify.com", "myshopify.com", "amazon.com", "paypal.com", "paypalobjects.com",
+                     "afterpay.com", "clearpay.co.uk", "klarna.com", "sezzle.com", "affirm.com", "shoppay.com",
+                     "stripe.com", "apple.com", "google.com/pay", "cattasaurus.com")
+META_HOSTS = ("facebook.com", "instagram.com", "fb.com", "fb.me", "messenger.com", "facebook.net",
+              "android-app://com.facebook.katana", "android-app://com.instagram.android", "android-app://com.facebook.orca")
+SEARCH_HOSTS = ("google.com", "google.ca", "google.co.uk", "google.com.au", "google.de", "google.fr", "google.co.in",
+                "bing.com", "duckduckgo.com", "yahoo.com", "ecosia.org", "yandex.com", "yandex.ru", "baidu.com",
+                "search.brave.com", "startpage.com", "ask.com", "aol.com", "qwant.com", "searx.org", "presearch.com",
+                "android-app://com.google.android.googlequicksearchbox", "android-app://com.google.android.gms")
+TIKTOK_HOSTS = ("tiktok.com", "tiktokv.com", "android-app://com.zhiliaoapp.musically", "android-app://com.ss.android.ugc.trill")
+SOCIAL_HOSTS = ("pinterest.com", "pinterest.ca", "youtube.com", "youtu.be", "reddit.com", "twitter.com", "x.com", "t.co",
+                "snapchat.com", "linkedin.com", "threads.net", "threads.com", "tumblr.com", "quora.com", "discord.com",
+                "android-app://com.google.android.youtube", "android-app://com.pinterest", "android-app://com.reddit.frontpage",
+                "android-app://com.twitter.android", "android-app://com.snapchat.android", "android-app://org.telegram.messenger")
+EMAIL_CLIENT_HOSTS = ("mail.google.com", "outlook.live.com", "outlook.office.com", "outlook.office365.com", "mail.yahoo.com",
+                      "mail.aol.com", "mail.proton.me", "protonmail.com", "icloud.com", "mail.com", "gmx.com", "gmx.net",
+                      "android-app://com.google.android.gm", "android-app://com.samsung.android.email.provider",
+                      "android-app://com.microsoft.office.outlook", "android-app://com.yahoo.mobile.client.android.mail",
+                      "com.apple.mobilemail", "deref-gmx.com", "deref-web.de")
+AI_HOSTS = ("chatgpt.com", "chat.openai.com", "openai.com", "perplexity.ai", "copilot.microsoft.com", "gemini.google.com",
+            "claude.ai", "you.com", "bing.com/chat", "meta.ai", "character.ai")
+CLICK_IDS = {"fbclid": "meta_paid", "gclid": "google_ads", "gbraid": "google_ads", "wbraid": "google_ads", "dclid": "google_ads",
+             "ttclid": "tiktok_ads", "msclkid": "other_paid", "epik": "other_paid", "li_fat_id": "other_paid",
+             "sccid": "other_paid", "irclickid": "other_paid", "twclid": "other_paid", "rdt_cid": "other_paid"}
+
+
+def _host(url):
+    """'https://www.facebook.com/x' -> 'facebook.com'; 'android-app://com.google.android.gm/' -> 'android-app://com.google.android.gm'."""
+    if not url:
+        return ""
+    try:
+        p = urllib.parse.urlsplit(url.strip())
+    except ValueError:
+        return ""
+    if p.scheme == "android-app":
+        return "android-app://" + (p.netloc or p.path.strip("/")).lower()
+    h = (p.netloc or "").lower().rsplit("@", 1)[-1].split(":")[0]
+    if not h and not p.scheme:            # bare 'facebook.com/' style referrers
+        h = url.strip().lower().split("/")[0]
+    return h[4:] if h.startswith("www.") else h
+
+
+def _host_in(h, hosts):
+    return bool(h) and any(h == d or h.endswith("." + d) for d in hosts)
+
+
+def _landing_params(url):
+    """Lower-cased query parameter names of the landing page (fbclid, gclid, ref ...)."""
+    if not url:
+        return set()
+    try:
+        q = urllib.parse.urlsplit(url).query
+    except ValueError:
+        return set()
+    return {k.lower() for k, _ in urllib.parse.parse_qsl(q, keep_blank_values=True)}
+
+
+def classify_visit(v):
+    """One CustomerVisit -> (channel, detail). detail = the campaign / referrer that explains the
+    channel: Klaviyo campaign or flow message name for email/sms, utm campaign for ads, referrer
+    host for referral traffic."""
+    if not v:
+        return "unknown", ""
+    utm = v.get("utmParameters") or {}
+    us = (utm.get("source") or "").strip().lower()
+    um = (utm.get("medium") or "").strip().lower()
+    uc = (utm.get("campaign") or "").strip()
+    src = (v.get("source") or "").strip().lower()
+    stype = (v.get("sourceType") or "").upper()
+    ref = _host(v.get("referrerUrl"))
+    params = _landing_params(v.get("landingPage"))
+    paid = um in PAID_MEDIUMS or um.isdigit() or um.startswith("paid") or um.endswith("_paid") or um.endswith("-paid") or "cpc" in um
+    organic = um in ORGANIC_MEDIUMS or um.startswith("organic")
+    if not us and (um or uc):
+        # utm_source dropped from the link (seen on Meta ads): recover the platform from the referrer
+        if _host_in(ref, META_HOSTS) or src in ("facebook", "instagram"):
+            us = "facebook"
+        elif _host_in(ref, TIKTOK_HOSTS) or src == "tiktok":
+            us = "tiktok"
+        elif _host_in(ref, SEARCH_HOSTS) and "google" in ref:
+            us = "google"
+        elif "fbclid" in params:
+            us = "facebook"
+    if us or um:
+        # ---- tagged link
+        if um in SMS_MEDIUMS or ("sms" in um and "klaviyo" in us) or us == "sms":
+            return "sms", uc
+        if "klaviyo" in us or um in EMAIL_MEDIUMS or "email" in um or us == "email":
+            return ("email" if ("klaviyo" in us or us in ("", "email", "newsletter", "flow", "campaign")) else "email_other"), uc or (us if us not in ("", "email") else "")
+        if us in META_SOURCES or any(k in us for k in ("facebook", "instagram", "meta_", "metaads")):
+            if organic and not um.isdigit():
+                return "meta_organic", uc
+            # no medium at all: Meta's ad UTMs carry the numeric campaign id, organic posts a name
+            return ("meta_paid" if (paid or uc.isdigit() or "fbclid" in params) else "meta_organic"), uc
+        if us in GOOGLE_SOURCES or us.startswith("google"):
+            return ("organic_search" if organic else "google_ads"), uc
+        if us in TIKTOK_SOURCES or "tiktok" in us:
+            return ("tiktok_organic" if (organic and not um.isdigit()) else "tiktok_ads"), uc
+        if us in APPLOVIN_SOURCES or "applovin" in us:
+            return "applovin", uc
+        if us in SNOWBALL_SOURCES or "snowball" in us or um in SNOWBALL_MEDIUMS:
+            return "snowball", uc
+        if us in SEARCH_SOURCES or any(k in us for k in ("bing", "duckduckgo", "yahoo")):
+            return ("other_paid" if paid else "organic_search"), (us if paid else uc)
+        if us in SOCIAL_SOURCES or any(k in us for k in ("pinterest", "youtube", "reddit", "snapchat", "linkedin", "twitter")):
+            return ("other_paid" if paid else "social_other"), (us if paid else (uc or us))
+        if us in ("shopify", "shopify_email", "shopify-email", "shop", "shop_app"):
+            return ("email_other" if "email" in us or "email" in um else "referral"), us
+        if paid:
+            return "other_paid", (us + (" / " + uc if uc else ""))
+        return "other_utm", (us + (" / " + um if um else ""))
+    # ---- no UTM: ad click ids on the landing page
+    for pid, ch in CLICK_IDS.items():
+        if pid in params:
+            return ch, pid
+    if v.get("referralCode") and not _host_in(ref, PASSTHROUGH_HOSTS):
+        return "snowball", "ref=" + str(v.get("referralCode"))[:40]
+    # ---- referrer host
+    if ref:
+        if _host_in(ref, META_HOSTS):
+            return "meta_organic", ref
+        if _host_in(ref, EMAIL_CLIENT_HOSTS):
+            return "email_other", ref
+        if _host_in(ref, AI_HOSTS):
+            return "ai_search", ref
+        if _host_in(ref, SEARCH_HOSTS) or stype == "SEO":
+            return "organic_search", ref
+        if _host_in(ref, TIKTOK_HOSTS):
+            return "tiktok_organic", ref
+        if _host_in(ref, SOCIAL_HOSTS):
+            return "social_other", ref
+        if _host_in(ref, PASSTHROUGH_HOSTS):
+            return "direct", ""
+        return "referral", ref
+    if src == "email":
+        return "email_other", ""
+    if stype == "SEO" or src in ("google", "bing", "duckduckgo", "yahoo"):
+        return "organic_search", src
+    if src in ("facebook", "instagram"):
+        return "meta_organic", src
+    if src in ("", "direct"):
+        return "direct", ""
+    return "unknown", ""
+
+
+def new_attribution_bucket():
+    return {"orders": 0, "pending": 0, "no_journey": 0, "last_touch": {}, "first_touch": {}, "journeys": {}, "email_detail": {}}
+
+
 class Aggregator:
     def __init__(self, tz, window_start, window_end):
         self.tz = tz
@@ -729,8 +971,13 @@ class Aggregator:
             "snowball_exact": 0, "snowball_export_without_tag": 0,
             "late_orders_scanned": 0, "late_refund_orders": 0,
             "fee_transactions": 0, "fees_missing_orders": 0, "transactions_truncated": 0,
+            "journeys_ready": 0, "journeys_pending": 0, "journeys_missing": 0,
+            "journeys_deferred": 0, "journeys_resolved_by_moments": 0, "journeys_moments_truncated": 0,
+            "journeys_unresolved": 0,
         }
         self.gateways = {}
+        self.deferred = {}    # order gid -> booking info for orders whose last session is direct (moments pass)
+        self.channel_totals = {}   # last-touch channel -> {orders, sales} over the fetched window (log / quick check)
 
     def in_window(self, day):
         return day is not None and self.window_start <= day <= self.window_end
@@ -806,6 +1053,8 @@ class Aggregator:
             d["tax"] += tax
             self.counts["orders_counted"] += 1
             self.add_payment_fees(o, d)
+            if ATTRIBUTION:
+                self.add_attribution(o, day, subtotal)
             if program:
                 self.counts["snowball_tagged"] += 1
                 d["snowball_orders"] += 1
@@ -901,6 +1150,93 @@ class Aggregator:
             self.counts["late_orders_scanned"] += 1
             if touched_window:
                 self.counts["late_refund_orders"] += 1
+
+    # ------------------------------------------------------------ marketing attribution
+    def add_attribution(self, o, day, sales):
+        """Classify the order's customer journey (first + last session). Orders whose last session
+        is direct / a checkout hop (and that had earlier sessions) are deferred to the moments pass."""
+        cjs = o.get("customerJourneySummary")
+        a = self.bucket(day)["attribution"]
+        a["orders"] += 1
+        if not cjs:
+            a["no_journey"] += 1
+            self.counts["journeys_missing"] += 1
+            return
+        if not cjs.get("ready"):
+            a["pending"] += 1
+            self.counts["journeys_pending"] += 1
+            return
+        self.counts["journeys_ready"] += 1
+        idx = cjs.get("customerOrderIndex")
+        customer = "new" if idx == 1 else ("returning" if isinstance(idx, int) and idx > 1 else "unknown")
+        moments = ((cjs.get("momentsCount") or {}).get("count"))
+        first_ch, first_detail = classify_visit(cjs.get("firstVisit"))
+        last_ch, last_detail = classify_visit(cjs.get("lastVisit"))
+        info = {"day": day, "sales": sales, "customer": customer, "first": first_ch, "first_detail": first_detail,
+                "last": last_ch, "last_detail": last_detail}
+        if last_ch in PASSTHROUGH_CHANNELS and cjs.get("lastVisit") and isinstance(moments, int) and moments >= 2:
+            # the last session says nothing: read the earlier ones (newest first) in the moments pass
+            self.deferred[o.get("id")] = info
+            self.counts["journeys_deferred"] += 1
+            return
+        self.book_attribution(info)
+
+    def book_attribution(self, info):
+        a = self.bucket(info["day"])["attribution"]
+        last, first, sales = info["last"], info["first"], info["sales"]
+        lt = a["last_touch"].setdefault(last, {"orders": 0, "sales": 0.0, "new": 0, "returning": 0, "paid_first": 0})
+        lt["orders"] += 1
+        lt["sales"] += sales
+        if info["customer"] in ("new", "returning"):
+            lt[info["customer"]] += 1
+        if first in PAID_CHANNELS:
+            lt["paid_first"] += 1
+        ft = a["first_touch"].setdefault(first, {"orders": 0, "sales": 0.0})
+        ft["orders"] += 1
+        ft["sales"] += sales
+        jk = first + ">" + last
+        j = a["journeys"].setdefault(jk, {"orders": 0, "sales": 0.0})
+        j["orders"] += 1
+        j["sales"] += sales
+        if last in ("email", "sms"):
+            name = (info["last_detail"] or "(không có utm_campaign)")[:120]
+            e = a["email_detail"].setdefault(name, {"orders": 0, "sales": 0.0, "medium": last})
+            e["orders"] += 1
+            e["sales"] += sales
+        t = self.channel_totals.setdefault(last, {"orders": 0, "sales": 0.0})
+        t["orders"] += 1
+        t["sales"] += sales
+
+    def resolve_journey(self, oid, cjs):
+        """Moments pass result for one deferred order: walk the sessions newest-first and take the
+        first one that is not direct / a checkout hop. Returns True when the order is booked."""
+        info = self.deferred.pop(oid, None)
+        if info is None:
+            return True
+        conn = ((cjs or {}).get("moments") or {})
+        nodes = conn.get("nodes") or []
+        resolved = None
+        for m in nodes:
+            if not m or "source" not in m:
+                continue          # a non-visit moment (none exist today, but the interface allows them)
+            ch, detail = classify_visit(m)
+            if ch not in PASSTHROUGH_CHANNELS:
+                resolved = (ch, detail)
+                break
+        if resolved:
+            info["last"], info["last_detail"] = resolved
+            self.counts["journeys_resolved_by_moments"] += 1
+        elif (conn.get("pageInfo") or {}).get("hasNextPage"):
+            self.counts["journeys_moments_truncated"] += 1   # >MOMENTS_FIRST direct sessions in a row: stays direct
+        self.book_attribution(info)
+        return True
+
+    def flush_deferred(self):
+        """Book whatever the moments pass could not resolve (request failures) as its last session said."""
+        for oid in list(self.deferred):
+            info = self.deferred.pop(oid)
+            self.counts["journeys_unresolved"] += 1
+            self.book_attribution(info)
 
     def apply_edit_agreements(self, oid, agreements):
         """Move what an order edit ADDED from the order date to the edit date, the way Shopify
@@ -1004,6 +1340,14 @@ class Aggregator:
                 g["amount"] = round(g["amount"], 2)
             for k in list(d["payment_fee_types"]):
                 d["payment_fee_types"][k] = round(d["payment_fee_types"][k], 2)
+            a = d.get("attribution")
+            if a:
+                for key in ("last_touch", "first_touch", "journeys", "email_detail"):
+                    for v in a[key].values():
+                        v["sales"] = round(v["sales"], 2)
+                a["email_detail"] = dict(sorted(a["email_detail"].items(), key=lambda kv: -kv[1]["sales"]))
+        for t in self.channel_totals.values():
+            t["sales"] = round(t["sales"], 2)
         for g in self.gateways.values():
             for f in ("amount", "fees"):
                 g[f] = round(g[f], 2)
@@ -1097,6 +1441,53 @@ def fetch_edit_agreements(client, agg):
     return requests
 
 
+def fetch_journey_moments(client, agg):
+    """Second pass for orders whose last session was direct (or a checkout hop): read their
+    earlier sessions, newest first, and book the last non-direct one. Batches shrink on cost
+    errors; a batch that keeps failing is booked as 'direct' (never lost)."""
+    ids = list(agg.deferred)
+    if not ids:
+        return 0
+    requests = 0
+    batch = max(1, JOURNEY_BATCH)
+    pending = list(ids)
+    while pending:
+        chunk, pending = pending[:batch], pending[batch:]
+        try:
+            data = client.query(JOURNEY_MOMENTS_QUERY, {"ids": chunk, "momentsFirst": MOMENTS_FIRST})
+        except CostTooHigh as e:
+            if batch <= 1:
+                log(f"moments query too costly even for one order ({e}) - booking it as its last session said")
+                for oid in chunk:
+                    if oid in agg.deferred:
+                        agg.counts["journeys_unresolved"] += 1
+                        agg.book_attribution(agg.deferred.pop(oid))
+                continue
+            pending = chunk + pending
+            batch = max(1, batch // 2)
+            log(f"moments query too costly ({e}) - retrying with batches of {batch}")
+            continue
+        except RuntimeError as e:
+            log(f"moments pass failed for a batch of {len(chunk)} orders ({e}) - booking them as their last session said")
+            for oid in chunk:
+                if oid in agg.deferred:
+                    agg.counts["journeys_unresolved"] += 1
+                    agg.book_attribution(agg.deferred.pop(oid))
+            continue
+        requests += 1
+        for node in (data.get("nodes") or []):
+            if node:
+                agg.resolve_journey(node.get("id"), node.get("customerJourneySummary") or {})
+        if requests % 20 == 0:
+            log(f"  moments pass: {requests} requests, {len(pending)} orders left")
+    agg.flush_deferred()
+    log(f"  journeys: {agg.counts['journeys_ready']} ready, {agg.counts['journeys_pending']} pending (not attributed by Shopify yet), "
+        f"{agg.counts['journeys_missing']} without journey; {len(ids)} deferred to the moments pass, "
+        f"{agg.counts['journeys_resolved_by_moments']} resolved to an earlier non-direct session, "
+        f"{agg.counts['journeys_unresolved']} unresolved, {requests} requests")
+    return requests
+
+
 def main():
     if not SHOP:
         log("Missing SHOPIFY_SHOP (e.g. yourstore.myshopify.com)")
@@ -1178,6 +1569,15 @@ def main():
     log(f"Fetching sales ledger for {len(agg.edited)} edited orders ...")
     pages += fetch_edit_agreements(client, agg)
 
+    # Attribution: orders whose last session was direct need their earlier sessions.
+    if ATTRIBUTION:
+        log(f"Fetching earlier sessions for {len(agg.deferred)} orders whose last session was direct ...")
+        pages += fetch_journey_moments(client, agg)
+        if agg.counts["journeys_pending"]:
+            agg.warnings.add(f"{agg.counts['journeys_pending']} orders not attributed by Shopify yet (customerJourneySummary.ready=false, normal for the newest orders) - counted as pending, refetched next run")
+        if agg.counts["journeys_unresolved"]:
+            agg.warnings.add(f"{agg.counts['journeys_unresolved']} orders booked as their last session (direct) because the moments pass failed for them")
+
     agg.finalise()
     # merge with the copy already in the repo: days outside the fetched range are kept
     previous = history_previous(OUTPUT_PATH)
@@ -1226,6 +1626,17 @@ def main():
                 "commission_net": round(sum(p["commission_net"] for p in agg.programs.values()), 2),
             },
         },
+        "attribution": {
+            "enabled": ATTRIBUTION,
+            "model": "last_non_direct_session",
+            "basis": ("per order: Shopify customerJourneySummary (sessions of the 30 days before the order); channel of the last "
+                      "session that is not direct / a checkout hop; sales = order net sales (subtotal after discounts) on the "
+                      "ORDER day; first_touch = channel of the first session of the same journey; new = customer's first order"),
+            "channels": CHANNELS,
+            "paid_channels": sorted(PAID_CHANNELS),
+            "window_totals_last_touch": dict(sorted(agg.channel_totals.items(), key=lambda kv: -kv[1]["sales"])),
+            "moments_first": MOMENTS_FIRST,
+        },
         "meta": {
             "script_version": SCRIPT_VERSION,
             "schema": SCHEMA,
@@ -1255,6 +1666,11 @@ def main():
         f"{agg.counts['snowball_tagged']} Snowball referrals (commission net "
         f"{out['snowball']['window_totals']['commission_net']:.2f} {out['currency']}), "
         f"{client.requests} API calls, {len(agg.warnings)} warning types.")
+    if ATTRIBUTION and agg.channel_totals:
+        tot_sales = sum(t["sales"] for t in agg.channel_totals.values()) or 1.0
+        log("Last-touch channels in the fetched range: " + ", ".join(
+            f"{ch} {t['orders']} orders {t['sales']:,.0f} ({100 * t['sales'] / tot_sales:.0f}%)"
+            for ch, t in sorted(agg.channel_totals.items(), key=lambda kv: -kv[1]["sales"])))
 
 
 if __name__ == "__main__":
