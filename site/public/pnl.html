@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Dashboard">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials">
+<title>Cattasaurus P&L</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    color-scheme: light;
+    --surface-page:#f9f9f7; --surface-card:#fcfcfb; --surface-card-2:#f3f2ee; --surface-card-3:#eceae4;
+    --ink-primary:#0b0b0b; --ink-secondary:#52514e; --ink-muted:#898781;
+    --gridline:#e1e0d9; --baseline:#c3c2b7; --border:rgba(11,11,11,0.10);
+    --success-text:#006300;
+    --series-1:#2a78d6; --series-2:#eb6834; --series-3:#1baf7a; --series-4:#eda100; --series-5:#e87ba4; --series-6:#008300; --series-7:#4a3aa7;
+    --status-good:#0ca30c; --status-warning:#fab219; --status-serious:#ec835a; --status-critical:#d03b3b;
+    --accent:#2a78d6;
+    --tag-variable:#2a78d6; --tag-fixed:#4a3aa7;
+    --font-display:'Sora',system-ui,-apple-system,sans-serif;
+    --font-body:'IBM Plex Sans',system-ui,-apple-system,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,'SFMono-Regular',monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --surface-page:#0d0d0d; --surface-card:#1a1a19; --surface-card-2:#212120; --surface-card-3:#282826;
+      --ink-primary:#ffffff; --ink-secondary:#c3c2b7; --ink-muted:#898781;
+      --gridline:#2c2c2a; --baseline:#383835; --border:rgba(255,255,255,0.10);
+      --success-text:#0ca30c;
+      --series-1:#3987e5; --series-2:#d95926; --series-3:#199e70; --series-4:#c98500; --series-5:#d55181; --series-6:#008300; --series-7:#9085e9;
+      --accent:#3987e5; --tag-variable:#3987e5; --tag-fixed:#9085e9;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --surface-page:#0d0d0d; --surface-card:#1a1a19; --surface-card-2:#212120; --surface-card-3:#282826;
+    --ink-primary:#ffffff; --ink-secondary:#c3c2b7; --ink-muted:#898781;
+    --gridline:#2c2c2a; --baseline:#383835; --border:rgba(255,255,255,0.10);
+    --success-text:#0ca30c;
+    --series-1:#3987e5; --series-2:#d95926; --series-3:#199e70; --series-4:#c98500; --series-5:#d55181; --series-6:#008300; --series-7:#9085e9;
+    --accent:#3987e5; --tag-variable:#3987e5; --tag-fixed:#9085e9;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--surface-page);color:var(--ink-primary);font-family:var(--font-body);padding-inline:20px;padding-block:24px;}
+  .wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px;}
+  h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;}
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand-mark{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--series-1),var(--series-3));display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;color:#fff;font-size:18px;flex:none;}
+  h1{font-size:21px;font-weight:700;}
+  .sub{color:var(--ink-secondary);font-size:12.5px;margin-top:2px;}
+  a{color:var(--accent);}
+
+  /* view mode controls */
+  .modebar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface-card);border:1px solid var(--border);border-radius:14px;padding:10px 12px;}
+  .seg{display:flex;background:var(--surface-card-2);border-radius:10px;padding:3px;gap:2px;flex:none;}
+  .seg button{border:none;background:transparent;color:var(--ink-secondary);font-family:var(--font-body);font-size:13px;font-weight:600;padding:7px 14px;border-radius:7px;cursor:pointer;}
+  .seg button.active{background:var(--accent);color:#fff;}
+  .subctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex:1;}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;}
+  .chip{border:1px solid var(--border);background:var(--surface-card-2);color:var(--ink-secondary);font-family:var(--font-mono);font-size:12px;padding:7px 10px;border-radius:9px;cursor:pointer;text-align:center;line-height:1.25;}
+  .chip .dow{display:block;font-family:var(--font-body);font-size:10px;color:var(--ink-muted);text-transform:uppercase;}
+  .chip.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+  button.chip{font-family:var(--font-body);font-size:15px;line-height:1;padding:6px 11px;}
+  button.chip:disabled{opacity:.4;cursor:default;}
+  .chip.active .dow{color:rgba(255,255,255,.8);}
+  select, input[type=date]{font-family:var(--font-body);font-size:13px;color:var(--ink-primary);background:var(--surface-card-2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;}
+  .btn{font-family:var(--font-body);font-size:13px;font-weight:600;color:#fff;background:var(--accent);border:none;border-radius:8px;padding:7px 14px;cursor:pointer;}
+  .rangelbl{font-size:12.5px;color:var(--ink-muted);margin-left:auto;white-space:nowrap;}
+
+  .banner{display:flex;gap:10px;align-items:flex-start;background:color-mix(in srgb, var(--status-warning) 10%, var(--surface-card));border:1px solid color-mix(in srgb, var(--status-warning) 30%, var(--border));border-radius:12px;padding:10px 14px;font-size:12.5px;color:var(--ink-secondary);}
+  .banner b{color:var(--ink-primary);}
+
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+  @media (max-width:900px){.kpis{grid-template-columns:repeat(2,1fr);}}
+  .kpi{background:var(--surface-card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;}
+  .kpi .label{font-size:11.5px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.04em;}
+  .kpi .value{font-family:var(--font-display);font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-0.01em;white-space:nowrap;}
+  .kpi .delta{font-size:12px;font-family:var(--font-mono);display:flex;align-items:center;gap:4px;}
+  .kpi .delta.up{color:var(--success-text);} .kpi .delta.down{color:var(--status-critical);} .kpi .delta.flat{color:var(--ink-muted);}
+
+  .card{background:var(--surface-card);border:1px solid var(--border);border-radius:16px;padding:18px 20px;}
+  .card-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:12px;flex-wrap:wrap;}
+  .card-head h2{font-size:15px;font-weight:700;}
+  .card-head .note{font-size:12px;color:var(--ink-muted);}
+  .grid2{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;}
+  @media (max-width:900px){.grid2{grid-template-columns:1fr;}}
+
+  /* statement table */
+  .stmt-wrap{overflow-x:auto;}
+  table.stmt{width:100%;border-collapse:collapse;min-width:480px;}
+  table.stmt th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--ink-muted);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--gridline);}
+  table.stmt th.num{text-align:right;}
+  table.stmt td{padding:7px 8px;font-family:var(--font-mono);font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--ink-secondary);border-bottom:1px solid var(--gridline);}
+  table.stmt td.num{text-align:right;white-space:nowrap;}
+  table.stmt td.pct{text-align:right;white-space:nowrap;color:var(--ink-muted);width:64px;}
+  table.stmt tr.line td.label{font-family:var(--font-body);color:var(--ink-primary);padding-left:26px;}
+  table.stmt tr.section td{font-family:var(--font-body);font-weight:700;color:var(--ink-primary);background:var(--surface-card-2);cursor:pointer;user-select:none;}
+  table.stmt tr.section td.label{padding-left:8px;}
+  table.stmt tr.subtotal td{font-family:var(--font-body);font-weight:700;color:var(--ink-primary);border-top:1.5px solid var(--baseline);border-bottom:1.5px solid var(--baseline);}
+  table.stmt tr.final td{font-family:var(--font-display);font-weight:700;font-size:14px;background:var(--surface-card-3);}
+  table.stmt tr.neg td.num{color:var(--status-critical);}
+  table.stmt tr.hidden{display:none;}
+  table.stmt tr.detail td.label{padding-left:40px;color:var(--ink-muted);font-weight:400;}
+  table.stmt tr.detail td{font-size:11.5px;}
+  .caret{display:inline-block;width:10px;transition:transform .15s;}
+  .caret.open{transform:rotate(90deg);}
+  .tag{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-body);font-size:10px;font-weight:600;padding:1px 7px;border-radius:999px;margin-left:8px;white-space:nowrap;}
+  .tag .d{width:6px;height:6px;border-radius:50%;}
+  .tag.var{color:var(--tag-variable);background:color-mix(in srgb, var(--tag-variable) 14%, transparent);}
+  .tag.var .d{background:var(--tag-variable);}
+  .tag.fix{color:var(--tag-fixed);background:color-mix(in srgb, var(--tag-fixed) 16%, transparent);}
+  .tag.fix .d{background:var(--tag-fixed);}
+  .tag.gap{color:var(--status-warning);background:color-mix(in srgb, var(--status-warning) 18%, transparent);}
+  .tag.gap .d{background:var(--status-warning);}
+  .tag.info{color:var(--ink-muted);background:var(--surface-card-3);}
+  .tag.info .d{background:var(--ink-muted);}
+  .tag.live{color:var(--success-text);background:color-mix(in srgb, var(--status-good) 16%, transparent);}
+  .tag.live .d{background:var(--status-good);}
+  .caption{font-size:11px;color:var(--ink-muted);padding:2px 8px 8px 26px;}
+
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-secondary);}
+  .legend .li{display:flex;align-items:center;gap:6px;}
+  .legend .sw{width:9px;height:9px;border-radius:2px;flex:none;}
+
+  /* break-even */
+  .be-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+  @media (max-width:900px){.be-grid{grid-template-columns:repeat(2,1fr);}}
+  .be-stat{background:var(--surface-card-2);border-radius:10px;padding:10px 12px;}
+  .be-stat .l{font-size:11px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.03em;}
+  .be-stat .v{font-family:var(--font-display);font-size:16px;font-weight:700;margin-top:2px;white-space:nowrap;}
+  .be-stat .v.good{color:var(--success-text);} .be-stat .v.bad{color:var(--status-critical);}
+
+  /* roas */
+  .roas-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+  @media (max-width:900px){.roas-grid{grid-template-columns:repeat(2,1fr);}}
+  .roas-card{background:var(--surface-card-2);border-radius:12px;padding:12px 13px;display:flex;flex-direction:column;gap:5px;border-top:3px solid var(--c);}
+  .roas-card .p{font-size:12px;font-weight:600;color:var(--ink-primary);}
+  .roas-card .roas{font-family:var(--font-display);font-size:19px;font-weight:700;}
+  .roas-card .sub{font-size:11px;color:var(--ink-muted);font-family:var(--font-mono);}
+  .mer-band{display:flex;justify-content:space-between;align-items:center;gap:14px;background:var(--surface-card-3);border-radius:12px;padding:14px 16px;margin-top:12px;flex-wrap:wrap;}
+  .mer-band .m-label{font-size:12.5px;color:var(--ink-secondary);max-width:480px;}
+  .mer-band .m-value{font-family:var(--font-display);font-size:28px;font-weight:800;color:var(--accent);}
+
+  table.simple{width:100%;border-collapse:collapse;font-size:12.5px;}
+  table.simple th{text-align:left;color:var(--ink-muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.03em;padding:6px 10px;border-bottom:1px solid var(--gridline);}
+  table.simple td{padding:8px 10px;border-bottom:1px solid var(--gridline);font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--ink-secondary);}
+  table.simple td.name{font-family:var(--font-body);color:var(--ink-primary);font-weight:500;}
+  table.simple td.num{text-align:right;}
+  table.simple tr:last-child td{border-bottom:none;}
+  .pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-body);font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;}
+  .pill.ok{color:var(--status-good);background:color-mix(in srgb, var(--status-good) 15%, transparent);}
+  .pill.warn{color:var(--status-serious);background:color-mix(in srgb, var(--status-serious) 15%, transparent);}
+
+  .sources{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;}
+  .src{display:flex;align-items:center;gap:8px;padding:9px 11px;background:var(--surface-card-2);border-radius:10px;font-size:12px;}
+  .src .name{flex:1;color:var(--ink-primary);font-weight:500;}
+  .src .age{color:var(--ink-muted);font-family:var(--font-mono);font-size:11px;}
+  .dot{width:7px;height:7px;border-radius:50%;flex:none;}
+  .dot.g{background:var(--status-good);} .dot.w{background:var(--status-warning);} .dot.c{background:var(--status-critical);}
+
+  .tooltip{position:absolute;pointer-events:none;background:var(--surface-card);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12px;box-shadow:0 4px 16px rgba(0,0,0,.15);opacity:0;transition:opacity .1s;z-index:5;min-width:150px;}
+  .tooltip .t-title{font-weight:600;margin-bottom:4px;color:var(--ink-primary);}
+  .tooltip .t-row{display:flex;justify-content:space-between;gap:10px;font-family:var(--font-mono);color:var(--ink-secondary);}
+
+  .foot{font-size:11.5px;color:var(--ink-muted);text-align:center;padding:8px 0 2px;}
+
+  /* last-touch attribution */
+  .share-bar{display:flex;height:24px;border-radius:7px;overflow:hidden;background:var(--surface-card-3);margin:6px 0 8px;gap:2px;}
+  .share-bar .sg{height:100%;min-width:2px;position:relative;flex:none;}
+  .share-bar .sg span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:10.5px;white-space:nowrap;overflow:hidden;padding:0 3px;}
+  .sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:middle;flex:none;}
+  table.simple td.sub{font-family:var(--font-body);font-size:11px;color:var(--ink-muted);}
+  .subhead{font-size:12px;font-weight:700;color:var(--ink-primary);margin:12px 0 6px;font-family:var(--font-display);}
+
+  /* phones: everything that is not a table must fit the viewport (tables scroll inside their own wrapper) */
+  @media (max-width:520px){
+    body{padding-inline:14px;padding-block:16px;}
+    .wrap{gap:14px;}
+    h1{font-size:18px;}
+    .sub{font-size:12px;}
+    .seg{display:grid;grid-template-columns:repeat(4,1fr);width:100%;flex:1 1 100%;}
+    .seg button{padding:8px 0;font-size:11.5px;white-space:nowrap;}
+    .rangelbl{white-space:normal;margin-left:0;}
+    .card{padding:14px 14px;border-radius:14px;}
+    .kpi{padding:12px 12px;}
+    .pill{display:inline-block;max-width:100%;white-space:normal;line-height:1.35;}
+    .card,.kpi,.banner,.pill{overflow-wrap:anywhere;}   /* long fee codes like RemovalShipment:CUSTOMER_RETURN_… must break */
+  }
+</style>
+<style>
+  :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+  img{max-width:100%} [hidden]{display:none!important}
+  #siteLoad{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:var(--surface-page);color:var(--ink-secondary);font-family:var(--font-body);font-size:14px;}
+  #siteLoad .spin{width:30px;height:30px;border-radius:50%;border:3px solid var(--gridline);border-top-color:var(--accent);animation:siteSpin .9s linear infinite;}
+  @keyframes siteSpin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){#siteLoad .spin{animation:none}}
+  #siteRefresh{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:40;display:flex;align-items:center;gap:10px;background:var(--surface-card);border:1px solid var(--border);border-radius:999px;padding:6px 8px 6px 12px;font-family:var(--font-mono);font-size:12px;color:var(--ink-secondary);box-shadow:0 8px 28px rgba(0,0,0,.14);}
+  #siteRefresh button{font:inherit;font-weight:600;border:0;border-radius:999px;background:var(--accent);color:#fff;padding:6px 11px;cursor:pointer;}
+  #siteRefresh button:focus-visible,#siteRefresh a:focus-visible{outline:2px solid var(--ink-primary);outline-offset:2px;}
+  #siteRefresh a{color:var(--ink-muted);text-decoration:none;padding:0 4px;}
+  @media print{#siteRefresh{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">
+      <div class="brand-mark">🦖</div>
+      <div>
+        <h1>Cattasaurus — P&amp;L chuẩn D2C</h1>
+        <div class="sub">Contribution-margin P&amp;L: COGS gồm giá vốn + fulfillment, tách rõ chi phí cố định/biến đổi, điểm hoà vốn, ROAS &amp; MER · <b>ngày tính theo giờ Los Angeles (PT)</b> cho mọi nguồn · nguồn chưa kết nối hiển thị <b>$0</b>, không dùng số mẫu</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modebar">
+    <div class="seg" id="modeSeg">
+      <button data-mode="day" class="active">Theo ngày</button>
+      <button data-mode="week">Theo tuần</button>
+      <button data-mode="month">Theo tháng</button>
+      <button data-mode="range">Tuỳ chọn</button>
+    </div>
+    <div class="subctl" id="subCtl"></div>
+    <div class="rangelbl" id="rangeLbl"></div>
+  </div>
+
+  <div class="banner" id="liveBanner" style="border-color:color-mix(in srgb, var(--accent) 35%, var(--border));background:color-mix(in srgb, var(--accent) 8%, var(--surface-card));">🔌 <span>Đang kết nối dữ liệu thật…</span></div>
+
+  <div class="banner" id="syncBanner">⏳ <span><b>Lưu ý ngày gần nhất:</b> khoảng xem gồm ngày hôm nay (giờ LA) nên số ngày đó chưa chốt — Amazon ghi nhận phí/settlement muộn 24–48h, các nguồn khác cập nhật mỗi 30 phút.</span></div>
+
+  <div class="kpis" id="kpiRow"></div>
+
+  <div class="card" id="trendCard" style="display:none;">
+    <div class="card-head">
+      <h2 id="trendTitle">Xu hướng theo tuần</h2>
+      <div class="note" id="trendNote"></div>
+    </div>
+    <div class="legend" id="trendLegend" style="margin-bottom:8px;"></div>
+    <div id="trendWrap" style="position:relative;"><svg id="trendChart" style="width:100%;display:block;"></svg><div class="tooltip" id="trendTip"></div></div>
+    <div class="caption" id="trendCaption" style="padding-left:2px;margin-top:6px;">Doanh thu thuần, tổng chi phí (mọi khoản đã kết nối) và lợi nhuận ròng của từng kỳ, cùng định nghĩa với bảng P&amp;L. Kỳ đang xem được tô nền; kỳ chưa kết thúc vẽ điểm rỗng. Rê chuột để xem số.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h2>Báo cáo lãi lỗ (P&amp;L statement)</h2>
+      <div class="note">% tính trên Doanh thu thuần · bấm dòng nhóm để thu gọn/mở rộng</div>
+    </div>
+    <div class="stmt-wrap"><table class="stmt" id="stmtTable"></table></div>
+    <div class="caption" style="padding-left:2px;margin-top:8px;">Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa kết nối ($0)</span> chưa có nguồn dữ liệu nên để $0 (không ước tính). Vì vậy <b>Lợi nhuận gộp / đóng góp / ròng ở trên là lợi nhuận TRƯỚC</b> các khoản còn gắn nhãn đó (giá vốn sản phẩm, phí cổng thanh toán, G&amp;A…) — sẽ tự đúng dần khi từng nguồn được nối vào.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Điểm hoà vốn (break-even)</h2><div class="note">Dựa trên tỷ lệ chi phí biến đổi &amp; tổng chi phí cố định của kỳ đang xem</div></div>
+    <div class="be-grid" id="beGrid"></div>
+    <div style="position:relative;"><svg id="beChart" style="width:100%;display:block;"></svg></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>ROAS theo kênh &amp; MER toàn marketing</h2><div class="note">ROAS = doanh thu quy về kênh ÷ chi phí kênh đó (có thể trùng lặp do đa chạm)</div></div>
+    <div class="roas-grid" id="roasGrid"></div>
+    <div class="mer-band">
+      <div class="m-label"><b>MER (Marketing Efficiency Ratio)</b> = Doanh thu thuần toàn bộ ÷ Tổng chi tiêu quảng cáo. Khác ROAS ở chỗ dùng doanh thu thật (kể cả organic/halo), nên MER thường thấp hơn tổng ROAS cộng dồn từng kênh — dùng MER để đánh giá hiệu quả marketing tổng thể, dùng ROAS để tối ưu từng kênh.</div>
+      <div class="m-value" id="merValue"></div>
+    </div>
+    <div class="caption" style="padding-left:2px;">* Amazon Ads, TikTok Ads và AppLovin chưa kết nối → chi $0 và không tính vào MER. Amazon Ads sẽ lên khi Amazon duyệt quyền Advertising API (đang chờ).</div>
+  </div>
+
+  <div class="card" id="attrCard" style="display:none;">
+    <div class="card-head">
+      <h2>Kênh bán theo điểm chạm cuối — đơn Shopify</h2>
+      <div class="note" id="attrNote">Hành trình khách Shopify lưu cho từng đơn (các lượt ghé trong 30 ngày trước đơn) · kênh = lượt ghé cuối không kể direct · doanh thu thuần theo ngày đặt</div>
+    </div>
+    <div class="be-grid" id="attrKpis"></div>
+    <div class="share-bar" id="attrBar"></div>
+    <div class="legend" id="attrLegend" style="margin-bottom:10px;"></div>
+    <div style="overflow-x:auto;"><table class="simple" id="attrTable" style="min-width:980px;"></table></div>
+    <div id="attrJourneys" style="margin-top:10px;font-size:12.5px;color:var(--ink-secondary);line-height:1.5;"></div>
+    <div id="attrEmailWrap"></div>
+    <div class="caption" id="attrCaption" style="padding-left:2px;margin-top:8px;"></div>
+  </div>
+
+  <div class="card" id="klaviyoCard" style="display:none;">
+    <div class="card-head">
+      <h2>Email &amp; SMS marketing — Klaviyo</h2>
+      <div class="note" id="klaviyoNote"></div>
+    </div>
+    <div class="be-grid" id="klaviyoKpis"></div>
+    <div id="klaviyoCompare" style="margin:2px 0 6px;font-size:12.5px;color:var(--ink-secondary);line-height:1.5;"></div>
+    <div class="subhead" id="klaviyoCampaignHead">Campaign gửi trong kỳ</div>
+    <div style="overflow-x:auto;"><table class="simple" id="klaviyoCampaignTable" style="min-width:960px;"></table></div>
+    <div class="subhead" id="klaviyoFlowHead">Flow (tự động) — cửa sổ đồng bộ</div>
+    <div style="overflow-x:auto;"><table class="simple" id="klaviyoFlowTable" style="min-width:900px;"></table></div>
+    <div class="caption" id="klaviyoCaption" style="padding-left:2px;margin-top:8px;"></div>
+  </div>
+
+  <div class="card" id="metaCampaignCard" style="display:none;">
+    <div class="card-head">
+      <h2>Meta Ads theo sản phẩm &amp; chiến dịch</h2>
+      <div class="note" id="metaCampaignNote">Marketing API · attribution theo cài đặt ad account · sắp theo chi tiêu trong khoảng đang xem</div>
+    </div>
+    <div style="overflow-x:auto;"><table class="simple" id="metaCampaignTable" style="min-width:900px;"></table></div>
+    <div class="caption" style="padding-left:2px;margin-top:8px;">Sản phẩm / thị trường / giai đoạn tách từ tên campaign ("Peekaboo - Bidcap - Control - Low Bid - CA"). Frequency ≈ impressions ÷ tổng reach theo ngày (thấp hơn Ads Manager một chút khi xem nhiều ngày). CPA = chi ÷ đơn quy về; ROAS = doanh thu quy về ÷ chi. Ngưỡng cảnh báo: ROAS &lt; 1.5 hoặc CPA &gt; $90.</div>
+  </div>
+
+  <div class="card" id="googleCampaignCard" style="display:none;">
+    <div class="card-head">
+      <h2>Google Ads theo sản phẩm &amp; chiến dịch</h2>
+      <div class="note" id="googleCampaignNote">Google Ads API · sắp theo chi tiêu trong khoảng đang xem</div>
+    </div>
+    <div style="overflow-x:auto;"><table class="simple" id="googleCampaignTable" style="min-width:860px;"></table></div>
+    <div class="caption" style="padding-left:2px;margin-top:8px;">Loại campaign (Search / Shopping / Performance Max / Demand Gen) lấy từ Google; sản phẩm tách từ tên campaign hoặc bảng alias trong workflow ("PKC" = Peekaboo). "Conv." là conversions theo cài đặt tài khoản Google Ads (mặc định gồm mua hàng đã tính vào cột conversions), DT quy về = conversions_value. Cùng ngưỡng cảnh báo với Meta: ROAS &lt; 1.5 hoặc CPA &gt; $90.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h2>Sales tax thu hộ</h2>
+      <div class="note">Khoản thu hộ (pass-through liability) — không nằm trong P&amp;L ở trên · số thật từ Shopify; chưa tách theo bang (cần nối nguồn nộp thuế)</div>
+    </div>
+    <div style="overflow-x:auto;">
+    <table class="simple" style="min-width:520px;">
+      <thead><tr><th>Kênh</th><th style="text-align:right">Đã thu</th><th style="text-align:right">Đã nộp</th><th style="text-align:right">Còn nợ</th><th>Trạng thái</th></tr></thead>
+      <tbody id="taxBody"></tbody>
+    </table>
+    </div>
+  </div>
+
+  <div class="card" id="amazonGapsCard" style="display:none;">
+    <div class="card-head">
+      <h2>Amazon — chi phí chưa capture đầy đủ</h2>
+      <div class="note">Từ log lần đồng bộ SP-API gần nhất · không đổi số đã hiển thị ở trên ngoài phần được ghi rõ</div>
+    </div>
+    <div id="amazonGapsBody"></div>
+  </div>
+
+  <div class="card" id="shipmonkCard" style="display:none;">
+    <div class="card-head">
+      <h2>ShipMonk — chi phí fulfillment theo từng đơn</h2>
+      <div class="note">Ước tính của ShipMonk cho từng đơn (cước carrier + pick &amp; pack + vật liệu đóng gói) · ghi theo ngày đặt hàng (giờ LA), gồm cả đơn chưa ship — cùng ngày với doanh thu</div>
+    </div>
+    <div style="overflow-x:auto;"><table class="simple" id="shipmonkTable" style="min-width:520px;"></table></div>
+    <div id="shipmonkBreakdown" style="margin-top:10px;"></div>
+    <div class="caption" id="shipmonkCaption" style="padding-left:2px;margin-top:8px;">Số lấy từ ShipMonk API (<code>order_costs</code>: estimated shipping / pick &amp; pack / packaging) cho mọi đơn ShipMonk nhận — store Shopify lẫn Amazon FBM. Đơn chưa ship dùng ước tính của ShipMonk và được cập nhật lại mỗi 30 phút khi ship. Hoá đơn tuần của ShipMonk có thể lệch nhỏ (điều chỉnh cước, surcharge). <b>Chưa gồm</b> phí lưu kho, receiving, xử lý hàng trả và các khoản chỉ có trên hoá đơn — sẽ thêm khi có file hoá đơn.</div>
+  </div>
+
+  <div class="card" id="shopifyReconCard" style="display:none;">
+    <div class="card-head">
+      <h2>Shopify — đối chiếu với Shopify Analytics</h2>
+      <div class="note">Cùng định nghĩa với báo cáo "Sales over time" của Shopify · ngày theo giờ cửa hàng (LA)</div>
+    </div>
+    <div style="overflow-x:auto;"><table class="simple" id="shopifyReconTable" style="min-width:520px;"></table></div>
+    <div class="caption" style="padding-left:2px;margin-top:8px;">Dòng "Shopify" trong bảng P&amp;L ở trên là <b>Gross sales</b> (giá niêm yết × số lượng, trước giảm giá) — đúng như Shopify định nghĩa, nên lớn hơn nhiều so với "Total sales" trên trang Analytics vì cửa hàng giảm giá sâu (B1G2F, mã affiliate…). Doanh thu thuần của dashboard = Net sales = Gross − Discounts − Returns. Xem trong Shopify: Analytics → Reports → "Sales over time" (có đủ các cột này).</div>
+  </div>
+
+  <div class="card" id="snowballCard" style="display:none;">
+    <div class="card-head">
+      <h2>Snowball — hoa hồng influencer/affiliate</h2>
+      <div class="note">Tính từ đơn Shopify được Snowball gắn tag "Referral - SS - &lt;program&gt;" · cửa sổ đồng bộ 45 ngày · hoa hồng = giá trị đơn × % program, trừ lại khi hoàn tiền</div>
+    </div>
+    <div id="snowballBody"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Độ trễ dữ liệu theo nguồn</h2><div class="note">Tuổi của số liệu lúc tải trang (nguồn tự cập nhật mỗi 30 phút — bấm ↻ hoặc tải lại trang để lấy số mới nhất) · Xanh &lt; 4h · Vàng 4–48h · Đỏ quá 48h hoặc chưa kết nối</div></div>
+    <div class="sources" id="sourceGrid"></div>
+  </div>
+
+  <div class="foot">Mọi nguồn được đồng bộ về cùng một lịch ngày: múi giờ America/Los_Angeles (Shopify, Amazon, Amazon Ads báo cáo sẵn theo giờ này; Meta &amp; Google được quy đổi từ dữ liệu theo giờ) · Cattasaurus Finance</div>
+</div>
+<div id="siteLoad" role="status" aria-live="polite"><div class="spin" aria-hidden="true"></div><div id="siteLoadMsg">Đang tải số liệu…</div></div>
+<div id="siteRefresh" hidden><span id="siteLoadedAt" title="Giờ tải số liệu (giờ trên máy bạn)"></span><button type="button" id="siteReload" title="Tải lại số liệu mới nhất">↻ Cập nhật</button><a href="/?menu=1" title="Về trang chọn bảng">bảng khác</a><a href="/logout" title="Đăng xuất khỏi thiết bị này">thoát</a></div>
+<script>
+(function(){
+  var SOURCES = {"amazon": "amazon_pnl.json", "meta": "meta_ads.json", "shopify": "shopify_pnl.json", "google": "google_ads.json", "shipmonk": "shipmonk.json", "shipmonk_invoices": "shipmonk_invoices.json", "paypal": "paypal.json", "klaviyo": "klaviyo.json", "klaviyo_invoices": "klaviyo_invoices.json"};
+  var keys = Object.keys(SOURCES), done = 0;
+  window.__LIVE = {}; window.__LIVE_ERR = {}; window.__LOADED_AT = 0;
+  try{ localStorage.setItem('ctu_last_dash', '/pnl'); }catch(e){}
+  var msg = document.getElementById('siteLoadMsg');
+  function tick(){ done++; if(msg) msg.textContent = 'Đang tải số liệu… ' + done + '/' + keys.length; }
+  Promise.all(keys.map(function(k){
+    return fetch('/data/' + SOURCES[k], {credentials:'same-origin', cache:'no-store'}).then(function(r){
+      if(r.status === 401){ location.replace('/login'); throw new Error('login'); }
+      if(r.status === 404){ return null; }
+      if(!r.ok){ throw new Error('HTTP ' + r.status); }
+      return r.json();
+    }).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
+  })).then(function(){
+    window.__LOADED_AT = Date.now();
+    var s = document.createElement('script'); s.src = '/pnl.js?v=7c4798ebfc';
+    s.onload = function(){
+      var box = document.getElementById('siteLoad'); if(box) box.remove();
+      var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');
+      if(at){ var d = new Date(window.__LOADED_AT); at.textContent = 'số liệu lúc ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
+      if(pill) pill.hidden = false;
+      var errs = Object.keys(window.__LIVE_ERR);
+      if(errs.length && window.console) console.warn('sources not loaded:', window.__LIVE_ERR);
+    };
+    s.onerror = function(){ if(msg) msg.textContent = 'Không tải được app.js — tải lại trang.'; };
+    document.body.appendChild(s);
+  });
+  document.getElementById('siteReload').addEventListener('click', function(){ location.reload(); });
+  // Coming back to the tab / home-screen app after 15 minutes: fetch fresh numbers automatically.
+  document.addEventListener('visibilitychange', function(){
+    if(document.visibilityState === 'visible' && window.__LOADED_AT && Date.now() - window.__LOADED_AT > 15*60000) location.reload();
+  });
+})();
+</script>
+</body>
+</html>
