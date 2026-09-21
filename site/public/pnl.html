@@ -113,6 +113,10 @@
 
   .banner{display:flex;gap:10px;align-items:flex-start;background:color-mix(in srgb, var(--status-warning) 10%, var(--surface-card));border:1px solid color-mix(in srgb, var(--status-warning) 30%, var(--border));border-radius:12px;padding:10px 14px;font-size:12.5px;color:var(--ink-secondary);}
   .banner b{color:var(--ink-primary);}
+  .banner{--bi:var(--status-warning);} #liveBanner{--bi:var(--accent);}
+  .bi{width:18px;height:18px;flex:none;margin-top:1px;color:var(--bi,var(--accent));display:inline-block;vertical-align:middle;}
+  .bi .f{fill:currentColor;fill-opacity:.16;} .bi .dot{fill:currentColor;stroke:none;}
+  .bi-inline{width:13px;height:13px;vertical-align:-2px;margin:0 2px 0 0;color:var(--status-warning);}
 
   .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
   @media (max-width:900px){.kpis{grid-template-columns:repeat(2,1fr);}}
@@ -282,9 +286,9 @@
     <div class="rangelbl" id="rangeLbl"></div>
   </div>
 
-  <div class="banner" id="liveBanner" style="border-color:color-mix(in srgb, var(--accent) 35%, var(--border));background:color-mix(in srgb, var(--accent) 8%, var(--surface-card));">🔌 <span>Đang kết nối dữ liệu thật…</span></div>
+  <div class="banner" id="liveBanner" style="border-color:color-mix(in srgb, var(--accent) 35%, var(--border));background:color-mix(in srgb, var(--accent) 8%, var(--surface-card));"><i data-icon="plug"></i><span>Đang kết nối dữ liệu thật…</span></div>
 
-  <div class="banner" id="syncBanner">⏳ <span><b>Lưu ý ngày gần nhất:</b> khoảng xem gồm ngày hôm nay (giờ LA) nên số ngày đó chưa chốt — Amazon ghi nhận phí/settlement muộn 24–48h, các nguồn khác cập nhật mỗi 30 phút.</span></div>
+  <div class="banner" id="syncBanner"><i data-icon="clock"></i><span><b>Lưu ý ngày gần nhất:</b> khoảng xem gồm ngày hôm nay (giờ LA) nên số ngày đó chưa chốt — Amazon ghi nhận phí/settlement muộn 24–48h, các nguồn khác cập nhật mỗi 30 phút.</span></div>
 
   <div class="kpis" id="kpiRow"></div>
 
@@ -444,7 +448,7 @@
     }).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=106ff7f95e';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=c6f89c6c57';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');

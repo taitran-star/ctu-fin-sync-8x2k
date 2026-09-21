@@ -1,6 +1,18 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 106ff7f95e).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build c6f89c6c57).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
+  // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
+  const BRAND_ICONS = {
+    check: '<circle class="f" cx="12" cy="12" r="9.5"/><path d="M7.5 12.5l3 3 6-6.5"/>',
+    clock: '<circle class="f" cx="12" cy="12" r="9.5"/><path d="M12 7v5l3.5 2"/>',
+    plug:  '<path d="M9 3v4M15 3v4"/><path class="f" d="M6 7h12v3.5a6 6 0 0 1-12 0z"/><path d="M12 16.5V21"/>',
+    warn:  '<path class="f" d="M10.7 4.3a1.5 1.5 0 0 1 2.6 0l7.8 13.9a1.5 1.5 0 0 1-1.3 2.3H4.2a1.5 1.5 0 0 1-1.3-2.3z"/><path d="M12 9.5v4.5"/><circle class="dot" cx="12" cy="17" r="1.1"/>',
+    info:  '<circle class="f" cx="12" cy="12" r="9.5"/><path d="M12 11v5.5"/><circle class="dot" cx="12" cy="8" r="1.1"/>',
+  };
+  function bicon(name, cls){
+    return `<svg class="bi${cls?' '+cls:''}" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${BRAND_ICONS[name]||''}</g></svg>`;
+  }
+  document.querySelectorAll('i[data-icon]').forEach(el=>{ el.outerHTML = bicon(el.dataset.icon); });
 (function(){
   "use strict";
   function sum(arr){ return arr.reduce((a,b)=>a+b,0); }
@@ -1077,6 +1089,7 @@
     const toneColor = tone==='good' ? 'var(--status-good)' : tone==='bad' ? 'var(--status-critical)' : 'var(--accent)';
     el.style.borderColor = `color-mix(in srgb, ${toneColor} 35%, var(--border))`;
     el.style.background = `color-mix(in srgb, ${toneColor} 8%, var(--surface-card))`;
+    el.style.setProperty('--bi', tone==='warn' ? 'var(--status-warning)' : toneColor);
   }
   function applyShopifyRows(rows){
     let matched = 0, sumGross = 0;
@@ -1610,7 +1623,7 @@
     document.getElementById('shopifyReconTable').innerHTML = html;
     const note = document.querySelector('#shopifyReconCard .note');
     const vis = shopifyMeta && shopifyMeta.meta && shopifyMeta.meta.orders_visibility;
-    const visNote = vis && vis!=='all' ? ' · ⚠ app chưa có quyền read_all_orders: hoàn tiền trên đơn cũ hơn 60 ngày không nhìn thấy, Returns sẽ thấp hơn Shopify' : '';
+    const visNote = vis && vis!=='all' ? ' · '+bicon('warn','bi-inline')+'app chưa có quyền read_all_orders: hoàn tiền trên đơn cũ hơn 60 ngày không nhìn thấy, Returns sẽ thấp hơn Shopify' : '';
     if(note) note.textContent = 'Cùng định nghĩa với báo cáo "Sales over time" của Shopify · ngày theo giờ cửa hàng (LA)' + (missing ? ` · ${missing} ngày trong khoảng chưa có dữ liệu đồng bộ` : '') + visNote + ' · ' + fmtAmazonAge(SHOPIFY_LIVE_DATA.generated_at);
   }
 
@@ -1871,7 +1884,7 @@
     // Shopify baked in by the hourly sync = the source of truth; don't also pull the
     // connector's ShopifyQL numbers on top (slightly different definitions would flicker).
     if(shopifyMatched){
-      setLiveBanner('✅ <span><b>'+bakedLiveNames().join(' + ')+' đang LIVE</b>, nguồn tự cập nhật mỗi 30 phút — bấm ↻ để tải số mới. <b>Chưa kết nối = $0</b> (kh&ocirc;ng d&ugrave;ng số mẫu): '+stillMockNames().join(', ')+'.</span>', 'good');
+      setLiveBanner(bicon('check')+'<span><b>'+bakedLiveNames().join(' + ')+' đang LIVE</b>, nguồn tự cập nhật mỗi 30 phút — bấm ↻ để tải số mới. <b>Chưa kết nối = $0</b> (kh&ocirc;ng d&ugrave;ng số mẫu): '+stillMockNames().join(', ')+'.</span>', 'good');
       return;
     }
     let mcp;
@@ -1879,9 +1892,9 @@
     if(!mcp){
       const live = bakedLiveNames();
       if(live.length){
-        setLiveBanner('✅ <span><b>'+live.join(' + ')+' đang LIVE</b>, nguồn tự cập nhật mỗi 30 phút — bấm ↻ để tải số mới. <b>Chưa kết nối = $0</b> (kh&ocirc;ng d&ugrave;ng số mẫu): '+stillMockNames().join(', ')+'. Doanh thu Shopify chưa c&oacute; trong bản n&agrave;y — chờ lần sync kế tiếp.</span>', 'warn');
+        setLiveBanner(bicon('check')+'<span><b>'+live.join(' + ')+' đang LIVE</b>, nguồn tự cập nhật mỗi 30 phút — bấm ↻ để tải số mới. <b>Chưa kết nối = $0</b> (kh&ocirc;ng d&ugrave;ng số mẫu): '+stillMockNames().join(', ')+'. Doanh thu Shopify chưa c&oacute; trong bản n&agrave;y — chờ lần sync kế tiếp.</span>', 'warn');
       } else {
-        setLiveBanner('ℹ️ <span>Chưa c&oacute; nguồn n&agrave;o được đồng bộ v&agrave;o bản n&agrave;y — mọi số đang l&agrave; $0 (kh&ocirc;ng d&ugrave;ng số mẫu). Chờ lần sync kế tiếp.</span>', 'warn');
+        setLiveBanner(bicon('info')+'<span>Chưa c&oacute; nguồn n&agrave;o được đồng bộ v&agrave;o bản n&agrave;y — mọi số đang l&agrave; $0 (kh&ocirc;ng d&ugrave;ng số mẫu). Chờ lần sync kế tiếp.</span>', 'warn');
       }
       return;
     }
@@ -1898,20 +1911,20 @@
             const amazonNote = liveNames.length
               ? liveNames.join(' + ')+' cũng đang LIVE.'
               : 'C&aacute;c nguồn kh&aacute;c chưa kết nối hiển thị $0.';
-            setLiveBanner('✅ <span><b>Doanh thu Shopify đang LIVE</b> (' + domain + ') — ' + amazonNote + ' Kết nối th&ecirc;m nguồn ở tab "Hướng dẫn kết nối dữ liệu".</span>', 'good');
+            setLiveBanner(bicon('check')+'<span><b>Doanh thu Shopify đang LIVE</b> (' + domain + ') — ' + amazonNote + ' Kết nối th&ecirc;m nguồn ở tab "Hướng dẫn kết nối dữ liệu".</span>', 'good');
             renderAll();
           }
         } else {
           const err = ev.error || {};
           setSource('shopify','c','Lỗi kết nối');
           if(err.code==='needs_reauth' || err.code==='server_not_connected'){
-            setLiveBanner('⚠️ <span>Shopify chưa kết nối hoặc phi&ecirc;n đăng nhập đ&atilde; hết hạn — v&agrave;o claude.ai Settings &gt; Connectors để kết nối/đăng nhập lại Shopify.</span>', 'bad');
+            setLiveBanner(bicon('warn')+'<span>Shopify chưa kết nối hoặc phi&ecirc;n đăng nhập đ&atilde; hết hạn — v&agrave;o claude.ai Settings &gt; Connectors để kết nối/đăng nhập lại Shopify.</span>', 'bad');
           } else if(err.code==='server_unavailable' || err.retryable){
-            setLiveBanner('⏳ <span>Kh&ocirc;ng lấy được dữ liệu Shopify l&uacute;c n&agrave;y (tạm thời) — Shopify đang hiển thị $0, thử lại sau.</span>', 'warn');
+            setLiveBanner(bicon('clock')+'<span>Kh&ocirc;ng lấy được dữ liệu Shopify l&uacute;c n&agrave;y (tạm thời) — Shopify đang hiển thị $0, thử lại sau.</span>', 'warn');
           } else if(err.code==='not_in_manifest' || err.code==='consent_required'){
-            setLiveBanner('⚠️ <span>Bạn chưa cho ph&eacute;p trang n&agrave;y d&ugrave;ng kết nối Shopify của bạn. H&atilde;y đồng &yacute; khi được hỏi, hoặc bật lại trong c&agrave;i đặt của trang.</span>', 'bad');
+            setLiveBanner(bicon('warn')+'<span>Bạn chưa cho ph&eacute;p trang n&agrave;y d&ugrave;ng kết nối Shopify của bạn. H&atilde;y đồng &yacute; khi được hỏi, hoặc bật lại trong c&agrave;i đặt của trang.</span>', 'bad');
           } else {
-            setLiveBanner('⚠️ <span>Chưa lấy được dữ liệu Shopify thật (' + (err.code||'lỗi') + ') — Shopify đang hiển thị $0.</span>', 'warn');
+            setLiveBanner(bicon('warn')+'<span>Chưa lấy được dữ liệu Shopify thật (' + (err.code||'lỗi') + ') — Shopify đang hiển thị $0.</span>', 'warn');
           }
           renderSources();
         }
