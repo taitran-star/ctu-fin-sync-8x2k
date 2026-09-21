@@ -55,7 +55,7 @@ TZ_NAME = os.environ.get("REPORT_TIMEZONE", "America/Los_Angeles")
 WINDOW_DAYS = int(os.environ.get("WINDOW_DAYS", "45"))
 OUTPUT_PATH = os.environ.get("OUTPUT_PATH", "data/klaviyo.json")
 AGG_CHUNK_DAYS = int(os.environ.get("KLAVIYO_AGG_CHUNK_DAYS", "90"))   # metric aggregates: <= 1 year per query, keep it small
-SCRIPT_VERSION = "1.0"
+SCRIPT_VERSION = "1.1"
 SCHEMA = 1
 
 CHANNELS = ("email", "sms", "push")
@@ -250,30 +250,61 @@ def local_iso(day_key, tz):
     return f"{day_key}T00:00:00"
 
 
+def channel_key(raw):
+    """Klaviyo names the attributed channel '$email_channel' / '$sms_channel' / '$push_channel'
+    (older docs show plain 'email' / 'sms'); '' or None = the order is not attributed to Klaviyo."""
+    k = (raw or "").strip().lower().strip("$")
+    if k.endswith("_channel"):
+        k = k[:-len("_channel")]
+    return k
+
+
+def _aggregate_call(client, metric_id, cur, nxt, by=None):
+    attrs = {
+        "metric_id": metric_id,
+        "measurements": ["count", "sum_value"],
+        "interval": "day",
+        "timezone": TZ_NAME,
+        "filter": [f"greater-or-equal(datetime,{cur.strftime('%Y-%m-%dT%H:%M:%S')})",
+                   f"less-than(datetime,{nxt.strftime('%Y-%m-%dT%H:%M:%S')})"],
+        "page_size": 500,
+    }
+    if by:
+        attrs["by"] = by
+    res = client.call("POST", "/api/metric-aggregates/", body={"data": {"type": "metric-aggregate", "attributes": attrs}})
+    return ((res.get("data") or {}).get("attributes") or {})
+
+
 def metric_aggregates_daily(client, metric_id, start_key, end_key, tz, daily, warnings):
-    """Placed Order per day, grouped by attributed channel + attributed flow, in <= AGG_CHUNK_DAYS chunks.
-    Klaviyo returns one series per (channel, flow) pair; '' channel = not attributed to Klaviyo."""
+    """Placed Order per day in <= AGG_CHUNK_DAYS chunks - two queries per chunk:
+      1. ungrouped -> store_* (EVERY Placed Order Klaviyo received from Shopify, attributed or not)
+      2. grouped by $attributed_channel + $attributed_flow -> the attributed part per channel, split
+         campaign vs flow. Klaviyo only returns attributed events in the grouped query (verified Sep
+         2026: no '' channel row comes back), which is why the store total needs query 1."""
     cur = datetime.strptime(start_key, "%Y-%m-%d")
     end = datetime.strptime(end_key, "%Y-%m-%d") + timedelta(days=1)   # exclusive
     chunks = 0
     while cur < end:
         nxt = min(cur + timedelta(days=AGG_CHUNK_DAYS), end)
-        body = {"data": {"type": "metric-aggregate", "attributes": {
-            "metric_id": metric_id,
-            "measurements": ["count", "sum_value"],
-            "interval": "day",
-            "timezone": TZ_NAME,
-            "filter": [f"greater-or-equal(datetime,{cur.strftime('%Y-%m-%dT%H:%M:%S')})",
-                       f"less-than(datetime,{nxt.strftime('%Y-%m-%dT%H:%M:%S')})"],
-            "by": ["$attributed_channel", "$attributed_flow"],
-            "page_size": 500,
-        }}}
-        res = client.call("POST", "/api/metric-aggregates/", body=body)
-        attrs = (res.get("data") or {}).get("attributes") or {}
+        # 1. store totals
+        attrs = _aggregate_call(client, metric_id, cur, nxt)
+        dates = attrs.get("dates") or []
+        for series in attrs.get("data") or []:
+            counts = (series.get("measurements") or {}).get("count") or []
+            sums = (series.get("measurements") or {}).get("sum_value") or []
+            for i, dt in enumerate(dates):
+                day = dt[:10]
+                if day < start_key or day > end_key:
+                    continue
+                b = daily.setdefault(day, new_bucket())
+                b["store_revenue"] += float(sums[i] or 0) if i < len(sums) else 0.0
+                b["store_orders"] += float(counts[i] or 0) if i < len(counts) else 0.0
+        # 2. attributed, by channel + flow
+        attrs = _aggregate_call(client, metric_id, cur, nxt, by=["$attributed_channel", "$attributed_flow"])
         dates = attrs.get("dates") or []
         for series in attrs.get("data") or []:
             dims = series.get("dimensions") or []
-            channel = (dims[0] if len(dims) > 0 else "") or ""
+            channel = channel_key(dims[0] if len(dims) > 0 else "")
             flow = (dims[1] if len(dims) > 1 else "") or ""
             counts = (series.get("measurements") or {}).get("count") or []
             sums = (series.get("measurements") or {}).get("sum_value") or []
@@ -284,16 +315,13 @@ def metric_aggregates_daily(client, metric_id, start_key, end_key, tz, daily, wa
                 b = daily.setdefault(day, new_bucket())
                 c = float(counts[i] or 0) if i < len(counts) else 0.0
                 v = float(sums[i] or 0) if i < len(sums) else 0.0
-                b["store_revenue"] += v
-                b["store_orders"] += c
                 if not channel:
-                    continue
-                key = channel.lower()
-                if key not in CHANNELS:
-                    warnings.add(f"unknown attributed channel '{channel}' counted in attributed totals only")
+                    continue          # not attributed to Klaviyo (already inside store_*)
+                if channel not in CHANNELS:
+                    warnings.add(f"unknown attributed channel '{dims[0]}' counted in attributed totals only")
                 else:
-                    b[f"{key}_revenue"] += v
-                    b[f"{key}_orders"] += c
+                    b[f"{channel}_revenue"] += v
+                    b[f"{channel}_orders"] += c
                 b["attributed_revenue"] += v
                 b["attributed_orders"] += c
                 if flow:
