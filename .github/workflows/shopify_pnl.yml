@@ -15,6 +15,10 @@ on:
         description: "Backfill to (YYYY-MM-DD, inclusive). Empty = today."
         required: false
         default: ""
+      reclassify:
+        description: "true = only re-apply the channel rules to the stored journey records (no Shopify call, seconds)"
+        required: false
+        default: "false"
 
 permissions:
   contents: write
@@ -53,6 +57,12 @@ jobs:
           HISTORY_START: "2025-01-01"
           BACKFILL_START: ${{ github.event.inputs.backfill_start }}
           BACKFILL_END: ${{ github.event.inputs.backfill_end }}
+          # Attribution (v1.9): raw journey signals per order are kept in data/shopify_journeys/YYYY-MM.json;
+          # "reclassify" re-applies the channel rules to them without touching Shopify.
+          RECLASSIFY_ONLY: ${{ github.event.inputs.reclassify }}
+          # Landing pages only Google Ads use (Google auto-tagging is invisible in Shopify's journey data)
+          GOOGLE_ADS_LANDING_PATHS: "/pages/cats-love-it-2025"
+          GOOGLE_ADS_HANDLE_SUFFIX: "-gg"
           SHOPIFY_SHOP: ${{ secrets.SHOPIFY_SHOP }}
           SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_CLIENT_ID }}
           SHOPIFY_CLIENT_SECRET: ${{ secrets.SHOPIFY_CLIENT_SECRET }}
@@ -83,15 +93,18 @@ jobs:
         run: python fetch_shopify_pnl.py
 
       - name: Commit updated data file if changed
+        env:
+          RECLASSIFY_NOTE: ${{ github.event.inputs.reclassify == 'true' && ' [reclassify]' || '' }}
         run: |
           git config user.name "cattasaurus-shopify-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/shopify_pnl.json
+          git add -A data/shopify_journeys 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
           fi
-          git commit -m "Update Shopify + Snowball data ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          git commit -m "Update Shopify + Snowball data ($(date -u +%Y-%m-%dT%H:%M:%SZ))${RECLASSIFY_NOTE}"
           # The Amazon and Meta workflows commit to the same repo; rebase-then-push
           # with a few retries so a concurrent push from them never fails this job.
           for i in 1 2 3 4 5; do
