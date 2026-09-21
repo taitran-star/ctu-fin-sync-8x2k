@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build c6f89c6c57).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build a1f66dfaa4).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -102,6 +102,9 @@
   // API) and booked per billing cycle (19th -> 18th), spread per day - data/klaviyo_invoices.json.
   const KLAVIYO_INVOICES_LIVE_DATA = (window.__LIVE && window.__LIVE["klaviyo_invoices"]) || null; /*KLAVIYO_INVOICES_INJECT*/
   let klaviyoInvMeta = null;
+  // Amazon Ads spend per day (SP / SB / SD). Today: exported from Sellerboard (which pulls the Amazon Ads API);
+  // later: data/amazon_ads.json from the Amazon Ads API workflow once Amazon approves access. Same shape either way.
+  const AMAZON_ADS_LIVE_DATA = (window.__LIVE && window.__LIVE["amazon_ads"]) || null; /*AMAZON_ADS_DATA_INJECT*/
 
   // Last-touch channels (Shopify customer journey, sync v1.8+): fixed order, fixed colors.
   // Full-strength hues = one entity each; lighter mixes = the organic / untagged sibling of that hue.
@@ -182,7 +185,7 @@
   days[TOTAL_DAYS-1]._syncing = true;
   // Channels / ad platforms with no synced source at all (always $0 until connected).
   const CH_UNCONNECTED = {walmart:true, tiktok:true};
-  const AD_UNCONNECTED = {tiktokads:true, applovin:true, amazonads:true};
+  const AD_UNCONNECTED = {tiktokads:true, applovin:true, amazonads:true};   // amazonads flips to false when AMAZON_ADS_LIVE_DATA matches
 
   const SOURCES = [
     {key:'shopify', name:'Shopify (doanh thu)', age:'Chưa kết nối — $0', level:'c'},
@@ -194,7 +197,7 @@
     {key:'google', name:'Google Ads', age:'Chưa kết nối — $0', level:'c'},
     {key:'tiktokads', name:'TikTok Ads', age:'Chưa kết nối — $0', level:'c'},
     {key:'applovin', name:'AppLovin', age:'Chưa kết nối — $0', level:'c'},
-    {key:'amazonads', name:'Amazon Ads (attributed)', age:'Chờ Amazon duyệt Advertising API — $0', level:'c'},
+    {key:'amazonads', name:'Amazon Ads (SP / SB / SD)', age:'Chờ Amazon duyệt Advertising API — $0', level:'c'},
     {key:'amazonfin', name:'Amazon SP-API Finances', age:'Chưa kết nối — $0', level:'c'},
     {key:'shipmonk', name:'ShipMonk (phí fulfillment theo đơn)', age:'Chưa kết nối — $0', level:'c'},
     {key:'shipmonk_inv', name:'ShipMonk hoá đơn (lưu kho, receiving, hàng trả…)', age:'Chưa kết nối — $0', level:'c'},
@@ -376,6 +379,17 @@
     const metaAdsPurchases = sum(rows.map(r=> r.metaReal ? r.metaReal.purchases : 0));
     const googleAdsRealDays = rows.filter(r=>r.googleReal).length;
     const googleAdsPurchases = sum(rows.map(r=> r.googleReal ? r.googleReal.conversions : 0));
+    const amazonAdsRealDays = rows.filter(r=>r.amazonAdsReal).length;
+    const amazonAdsPurchases = sum(rows.map(r=> r.amazonAdsReal ? r.amazonAdsReal.purchases : 0));
+    const amazonAdsSplit = {sp:0, sb:0, sd:0, stv:0};
+    rows.forEach(r=>{ if(r.amazonAdsReal){ amazonAdsSplit.sp += r.amazonAdsReal.sp; amazonAdsSplit.sb += r.amazonAdsReal.sb; amazonAdsSplit.sd += r.amazonAdsReal.sd; amazonAdsSplit.stv += r.amazonAdsReal.stv; } });
+    const amazonAdsConsoleSpend = sum(rows.map(r=> r.amazonAdsReal ? r.amazonAdsReal.consoleSpend : 0));   // SP+SB+SD = console "Total cost"
+    const amazonAdsImpressions = sum(rows.map(r=> r.amazonAdsReal ? r.amazonAdsReal.impressions : 0));
+    const amazonAdsClicks = sum(rows.map(r=> r.amazonAdsReal ? r.amazonAdsReal.clicks : 0));
+    // Amazon-only ratios (definitions as in the Amazon Ads console / Sellerboard): ACOS = ad spend ÷ ad-attributed sales; TACOS = ALL Amazon ad spend ÷ Amazon gross sales of the period
+    const amazonAcos = adsAttr.amazonads>0 ? amazonAdsConsoleSpend/adsAttr.amazonads : 0;
+    const amazonTacos = gross.amazon>0 ? ads.amazonads/gross.amazon : 0;
+    const amazonRoas = amazonAdsConsoleSpend>0 ? adsAttr.amazonads/amazonAdsConsoleSpend : 0;
 
     // tax collected net of tax refunded to customers = Shopify Analytics "Taxes"
     const shopifyTax = sum(rows.map(r=> r.shopifyReal ? r.shopifyReal.tax - r.shopifyReal.refundedTax : 0));
@@ -392,7 +406,7 @@
       merValue, attrRevenueSum,
       amazonOrdersReal, amazonReferralFeesReal, amazonServiceFeesReal, amazonInboundFreightReal, amazonOtherFeesReal, amazonOtherUnclassifiedCost, amazonMarketplaceFeesEst, walmartFees, tiktokFees,
       amazonStorageAlloc, amazonStorageMissingDays, amazonStoragePosted, amazonRefundFeeAdj, amazonFeeOrderedDays,
-      metaAdsRealDays, metaAdsPurchases, googleAdsRealDays, googleAdsPurchases,
+      metaAdsRealDays, metaAdsPurchases, googleAdsRealDays, googleAdsPurchases, amazonAdsRealDays, amazonAdsPurchases, amazonAdsSplit, amazonAdsConsoleSpend, amazonAdsImpressions, amazonAdsClicks, amazonAcos, amazonTacos, amazonRoas,
       snowballRealDays, snowballOrders, snowballRevenue, snowballCommission};
   }
 
@@ -648,7 +662,12 @@
     AD_KEYS.forEach(k=>{
       let label = 'Quảng cáo — '+AD_LABEL[k];
       let live = false, gap = false;
-      if(k==='amazonads'){ label += ' (chờ Amazon duyệt Advertising API)'; gap = true; }
+      if(k==='amazonads'){
+        if(!amazonAdsMatched){ label += ' (chờ Amazon duyệt Advertising API)'; gap = true; }
+        else if(a.amazonAdsRealDays===a.n){ live = true; label += ' (SP '+money(a.amazonAdsSplit.sp)+' · SB '+money(a.amazonAdsSplit.sb)+' · SD '+money(a.amazonAdsSplit.sd)+(a.amazonAdsSplit.stv?' · khác '+money(a.amazonAdsSplit.stv):'')+')'; }
+        else if(a.amazonAdsRealDays>0){ live = true; label += ' ('+(a.n-a.amazonAdsRealDays)+' ngày chưa có số = $0)'; }
+        else { label += ' (khoảng này chưa có số)'; gap = true; }
+      }
       else if(AD_UNCONNECTED[k]){ label += ' — chưa kết nối'; gap = true; }
       if(k==='meta'){
         if(a.metaAdsRealDays===a.n){ live = true; }
@@ -778,7 +797,9 @@
       if(trendHidden.has(id)) trendHidden.delete(id); else if(trendHidden.size < allSeries.length-1) trendHidden.add(id);
       renderTrend();
     }));
-    const W=1120, H=300, padL=64, padR=110, padT=18, padB=34, plotW=W-padL-padR, plotH=H-padT-padB;
+    // draw at the container's own width: on a phone the SVG is then 1:1 with the screen, so 9.5px type stays 9.5px
+    const wrapEl = document.getElementById('trendWrap'), cw = Math.round(wrapEl.clientWidth || 1120), narrow = cw < 640;
+    const W = narrow ? Math.max(300, cw) : 1120, H = narrow ? 230 : 300, padL = narrow ? 50 : 64, padR = narrow ? 56 : 110, padT = 18, padB = narrow ? 28 : 34, plotW=W-padL-padR, plotH=H-padT-padB;
     const vals = pts.flatMap(p=>series.map(sr=>p[sr.id]));
     let yMin = Math.min(0, ...vals), yMax = Math.max(0, ...vals);
     if(yMax===yMin){ yMax = yMin+1; }
@@ -801,7 +822,7 @@
       svg += `<text x="${padL-8}" y="${yy+3}" text-anchor="end" font-size="9.5" fill="${muted}" font-family="var(--font-mono)">${money(v,{compact:true})}</text>`;
     }
     // x labels: at most ~13, always the first and the last
-    const every = Math.max(1, Math.ceil(n/13));
+    const every = Math.max(1, Math.ceil(n/(narrow ? 5 : 13)));
     pts.forEach((p,i)=>{ if(i%every===0 || i===n-1) svg += `<text x="${x(i)}" y="${H-padB+16}" text-anchor="middle" font-size="9.5" fill="${muted}" font-family="var(--font-mono)">${p.short}</text>`; });
     // lines + markers
     series.forEach(sr=>{
@@ -831,10 +852,16 @@
         + allSeries.map(sr=>`<div class="t-row"><span style="color:${sr.color}">■ ${sr.name}</span><span>${money(p[sr.id])}${sr.id==='varc'||sr.id==='fixc'?' · '+pctOf(p[sr.id]):''}</span></div>`).join('')
         + `<div class="t-row"><span>Tổng chi phí</span><span>${money(p.cost)}</span></div><div class="t-row"><span>Biên LN ròng</span><span>${p.rev ? (p.profit/p.rev*100).toFixed(1)+'%' : '—'}</span></div>`;
       const left = (ev.clientX-rect.left), top = (ev.clientY-rect.top);
-      tip.style.left = Math.min(left+14, wrap.clientWidth-230)+'px'; tip.style.top = Math.max(0, top-70)+'px'; tip.style.opacity = '1';
+      const tw = tip.offsetWidth || 230;
+      tip.style.left = Math.max(0, Math.min(left+14, wrap.clientWidth-tw))+'px'; tip.style.top = Math.max(0, top-70)+'px'; tip.style.opacity = '1';
     };
     hit.addEventListener('mousemove', onMove);
     hit.addEventListener('mouseleave', ()=>{ tip.style.opacity='0'; cursor.setAttribute('opacity','0'); });
+    // touch: a finger on the chart shows the same tooltip (tap or drag); it goes away on release
+    const touchPt = ev => (ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
+    hit.addEventListener('touchstart', ev=>onMove(touchPt(ev)), {passive:true});
+    hit.addEventListener('touchmove', ev=>onMove(touchPt(ev)), {passive:true});
+    hit.addEventListener('touchend', ()=>{ setTimeout(()=>{ tip.style.opacity='0'; cursor.setAttribute('opacity','0'); }, 1500); }, {passive:true});
     hit.addEventListener('click', (ev)=>{   // click a bucket to select it
       const rect = el.getBoundingClientRect(); const px = (ev.clientX-rect.left)/rect.width*W;
       let i = Math.round((px-padL)/(n>1?plotW/(n-1):1)); i = Math.max(0, Math.min(n-1, i));
@@ -855,7 +882,8 @@
       <div class="be-stat"><div class="l">${gap>=0?'Vượt hoà vốn':'Còn thiếu để hoà vốn'}</div><div class="v ${gap>=0?'good':'bad'}">${money(Math.abs(gap))}</div></div>
     `;
 
-    const W=1120,H=260,padL=56,padR=16,padT=16,padB=30;
+    const beWrap = document.getElementById('beChart').parentElement, bcw = Math.round(beWrap.clientWidth || 1120), bnarrow = bcw < 640;
+    const W = bnarrow ? Math.max(300, bcw) : 1120, H = bnarrow ? 220 : 260, padL = bnarrow ? 50 : 56, padR = 16, padT = 16, padB = 30;
     const plotW=W-padL-padR, plotH=H-padT-padB;
     const maxX = Math.max(a.breakEvenRevenue, a.netRevenue)*1.45;
     const x = v=> padL + (v/maxX)*plotW;
@@ -898,20 +926,22 @@
     const a = aggregate(rows);
     const colors = [resolveVar('var(--series-1)'),resolveVar('var(--series-2)'),resolveVar('var(--series-4)'),resolveVar('var(--series-3)'),resolveVar('var(--series-5)')];
     document.getElementById('roasGrid').innerHTML = AD_KEYS.map((k,i)=>{
-      const roas = a.ads[k]>0 ? a.adsAttr[k]/a.ads[k] : 0;
-      const noteStar = k==='amazonads' ? ' *' : '';
-      const realDays = k==='meta' ? a.metaAdsRealDays : k==='google' ? a.googleAdsRealDays : 0;
-      const realPurch = k==='meta' ? a.metaAdsPurchases : k==='google' ? a.googleAdsPurchases : 0;
-      const unconnected = !!AD_UNCONNECTED[k] || (k==='meta' && !metaMatched) || (k==='google' && !googleMatched);
+      const roas = k==='amazonads' && a.amazonAdsConsoleSpend>0 ? a.amazonRoas : (a.ads[k]>0 ? a.adsAttr[k]/a.ads[k] : 0);   // Amazon: same maths as the Ads console (Sales ÷ Total cost)
+      const noteStar = (k==='amazonads' && !amazonAdsMatched) ? ' *' : '';
+      const realDays = k==='meta' ? a.metaAdsRealDays : k==='google' ? a.googleAdsRealDays : k==='amazonads' ? a.amazonAdsRealDays : 0;
+      const realPurch = k==='meta' ? a.metaAdsPurchases : k==='google' ? a.googleAdsPurchases : k==='amazonads' ? a.amazonAdsPurchases : 0;
+      const unconnected = !!AD_UNCONNECTED[k] || (k==='meta' && !metaMatched) || (k==='google' && !googleMatched) || (k==='amazonads' && !amazonAdsMatched);
       const liveTag = unconnected
         ? `<span class="tag gap" style="margin-left:6px;"><span class="d"></span>Chưa kết nối</span>`
         : realDays>0 ? `<span class="tag live" style="margin-left:6px;"><span class="d"></span>${realDays===a.n?'Live':'Live một phần'}</span>`
         : `<span class="tag info" style="margin-left:6px;"><span class="d"></span>Ngoài cửa sổ</span>`;
-      const extra = realDays>0 ? ` · ${Math.round(realPurch).toLocaleString('en-US')} ${k==='google'?'conv.':'đơn'} quy về` : '';
+      const unit = k==='google' ? 'conv. quy về' : 'đơn quy về';
+      const extra = realDays>0 ? ` · ${Math.round(realPurch).toLocaleString('en-US')} ${unit}` : '';
       return `<div class="roas-card" style="--c:${colors[i]}">
         <div class="p">${AD_LABEL[k]}${noteStar}${liveTag}</div>
         <div class="roas">${a.ads[k]>0 ? roas.toFixed(2)+'x' : '—'}</div>
-        <div class="sub">Chi: ${money(a.ads[k])} · DT quy về: ${money(a.adsAttr[k])}${extra}</div>
+        <div class="sub">Chi: ${money(k==='amazonads' && a.amazonAdsConsoleSpend>0 ? a.amazonAdsConsoleSpend : a.ads[k])} · DT quy về: ${money(a.adsAttr[k])}${extra}</div>
+        ${k==='amazonads' && a.amazonAdsConsoleSpend>0 ? `<div class="kv"><span title="ACOS = chi SP+SB+SD ÷ doanh thu Amazon gán cho quảng cáo (cùng cách tính với Amazon Ads console)"><b>ACOS</b> ${a.adsAttr[k]>0 ? (a.amazonAcos*100).toFixed(1)+'%' : '—'}</span><span title="TACOS = toàn bộ chi quảng cáo Amazon (kể cả Sponsored TV) ÷ doanh thu gộp Amazon của kỳ"><b>TACOS</b> ${a.amazonTacos>0 ? (a.amazonTacos*100).toFixed(1)+'%' : '—'}</span>${a.amazonAdsImpressions>0 ? `<span title="CTR = clicks ÷ impressions">CTR ${(a.amazonAdsClicks/a.amazonAdsImpressions*100).toFixed(2)}%</span>` : ''}${a.ads[k]-a.amazonAdsConsoleSpend>0.005 ? `<span title="Sponsored TV / các dòng quảng cáo khác — có trong bảng P&L nhưng không nằm trong ACOS">+${money(a.ads[k]-a.amazonAdsConsoleSpend)} STV</span>` : ''}</div>` : ''}
       </div>`;
     }).join('');
     document.getElementById('merValue').textContent = a.adSpend>0 ? a.merValue.toFixed(2)+'x' : '—';
@@ -983,7 +1013,9 @@
     } else {
       html += `<div><span class="tag live"><span class="d"></span>Đã capture</span> <b>Phí dịch vụ Amazon</b> (subscription + lưu kho/removal FBA) — ${money(svcTotal)} trong cửa sổ đồng bộ hiện tại.</div>`;
     }
-    html += `<div><span class="tag gap"><span class="d"></span>Chưa kết nối ($0)</span> <b>Amazon Ads</b> (Sponsored Products/Brands/Display) — SP-API Finances không trả về ad spend; hiển thị $0 cho tới khi Amazon duyệt quyền Advertising API (đã nộp hồ sơ, đang chờ).</div>`;
+    if(amazonAdsMatched){
+      html += `<div><span class="tag live"><span class="d"></span>Đã có số</span> <b>Amazon Ads</b> (Sponsored Products/Brands/Display) — chi phí theo ngày ${AMAZON_ADS_LIVE_DATA.source==='sellerboard' ? 'lấy qua Sellerboard (Sellerboard kéo Amazon Ads API); sẽ chuyển sang Amazon Ads API trực tiếp khi Amazon duyệt quyền' : 'từ Amazon Ads API'}.</div>`;
+    } else html += `<div><span class="tag gap"><span class="d"></span>Chưa kết nối ($0)</span> <b>Amazon Ads</b> (Sponsored Products/Brands/Display) — SP-API Finances không trả về ad spend; hiển thị $0 cho tới khi Amazon duyệt quyền Advertising API (đã nộp hồ sơ, đang chờ).</div>`;
     if(schema2){
       html += `<div><span class="tag live"><span class="d"></span>Đã phân loại</span> Gift wrap (doanh thu), hoa hồng gift wrap (phí giới thiệu), phí thu hộ sales tax / shipping chargeback / holdback / phí xử lý hoàn tiền / postage nhãn trả hàng (dòng "Phí Amazon khác"), phí ship hàng trả & restocking (gộp vào hoàn tiền), removal/liquidation (phí dịch vụ + điều chỉnh), SAFE-T & bồi hoàn kho (điều chỉnh). <b>Cước &amp; thuế nhập hàng vào FBA</b> tách thành dòng riêng trong COGS (giá vốn tồn kho, Amazon xuất hoá đơn theo lô nên ngày có hoá đơn sẽ lõm sâu — đọc theo tháng). Bỏ qua có chủ đích vì không thuộc P&amp;L: debt recovery, retrocharge thuế, và Reserve credit/debit (tiền Amazon tạm giữ rồi trả).</div>`;
     }
@@ -1010,6 +1042,8 @@
   }
 
   // ---------- wire up ----------
+  let lastVw = window.innerWidth;
+  window.addEventListener('resize', ()=>{ clearTimeout(window.__rsz); window.__rsz = setTimeout(()=>{ if(window.innerWidth!==lastVw){ lastVw = window.innerWidth; renderTrend(); renderBreakeven(); } }, 150); });
   function renderAll(){
     renderSubCtl(); renderKpis(); renderTrend(); renderStatement(); renderBreakeven(); renderRoas(); renderAttribution(); renderKlaviyo(); renderTax(); renderSources(); renderAmazonGaps(); renderShipmonk(); renderShopifyRecon(); renderSnowball(); renderMetaCampaigns(); renderGoogleCampaigns();
   }
@@ -1035,6 +1069,15 @@
   const googleMatched = GOOGLE_ADS_LIVE_DATA ? applyGoogleAdsRows(GOOGLE_ADS_LIVE_DATA) : false;
   if(googleMatched){
     setSource('google',ageLevel(GOOGLE_ADS_LIVE_DATA.generated_at), fmtAmazonAge(GOOGLE_ADS_LIVE_DATA.generated_at)+fmtCoverage(GOOGLE_ADS_LIVE_DATA));
+  }
+  const amazonAdsMatched = AMAZON_ADS_LIVE_DATA ? applyAmazonAdsRows(AMAZON_ADS_LIVE_DATA) : false;
+  if(amazonAdsMatched){
+    AD_UNCONNECTED.amazonads = false;
+    const cov = AMAZON_ADS_LIVE_DATA.coverage || {};
+    const via = AMAZON_ADS_LIVE_DATA.source==='sellerboard' ? 'qua Sellerboard' : 'Amazon Ads API';
+    setSource('amazonads', ageLevel(AMAZON_ADS_LIVE_DATA.generated_at), fmtAmazonAge(AMAZON_ADS_LIVE_DATA.generated_at)+' · '+via+(cov.first_day ? ' · từ '+cov.first_day.slice(8,10)+'/'+cov.first_day.slice(5,7)+'/'+cov.first_day.slice(0,4) : ''));
+    const cap = document.getElementById('adsCaptionAmazon');
+    if(cap) cap.outerHTML = `<span id="adsCaptionAmazon">Amazon Ads: "Chi" và "DT quy về" trên thẻ = Total cost và Sales trong Amazon Ads console (SP+SB+SD, doanh thu Amazon gán cho quảng cáo trong cửa sổ 7/14 ngày, được cập nhật thêm vài ngày sau khi click) — ROAS = Sales ÷ Total cost, ACOS = Total cost ÷ Sales, TACOS = toàn bộ chi quảng cáo Amazon (kể cả Sponsored TV) ÷ doanh thu gộp Amazon của kỳ. Dòng P&amp;L tính đủ cả Sponsored TV. </span>`;
   }
   // ShipMonk fulfillment costs baked in by the same sync.
   const paypalMatched = PAYPAL_LIVE_DATA ? applyPaypalRows(PAYPAL_LIVE_DATA) : false;
@@ -1073,6 +1116,7 @@
     if(amazonMatched) names.push('Amazon (SP-API thật)');
     if(metaMatched) names.push('Meta Ads (Marketing API thật)');
     if(googleMatched) names.push('Google Ads (Google Ads API thật)');
+    if(amazonAdsMatched) names.push(AMAZON_ADS_LIVE_DATA.source==='sellerboard' ? 'Amazon Ads (chi phí SP/SB/SD qua Sellerboard)' : 'Amazon Ads (Ads API thật)');
     if(shipmonkMatched) names.push('ShipMonk (API thật — phí fulfillment theo đơn)');
     if(shipmonkInvMatched) names.push('ShipMonk hoá đơn (lưu kho, receiving, hàng trả, bao bì)');
     if(paypalMatched) names.push('PayPal (API thật — phí giao dịch)');
@@ -1786,6 +1830,28 @@
     return matched>0;
   }
 
+  // ---------- live data: Amazon Ads spend per day (Sellerboard export today, Amazon Ads API later) ----------
+  function applyAmazonAdsRows(data){
+    if(!data || !data.daily) return false;
+    let matched = 0;
+    Object.keys(data.daily).forEach(iso=>{
+      const idx = days.findIndex(d=>d.iso===iso);
+      if(idx<0) return;
+      const r = data.daily[iso] || {};
+      const spend = Math.max(0, parseFloat(r.spend)||0);
+      days[idx].ads.amazonads = spend;                                         // SP + SB + SD (+ STV) for the day
+      days[idx].adsAttr.amazonads = Math.max(0, parseFloat(r.purchase_value)||0);   // Amazon-attributed sales (not added to revenue)
+      days[idx].amazonAdsReal = {
+        sp: parseFloat(r.sp)||0, sb: parseFloat(r.sb)||0, sd: parseFloat(r.sd)||0, stv: parseFloat(r.stv)||0,
+        clicks: Math.round(parseFloat(r.clicks)||0), purchases: parseFloat(r.purchases)||0,   // purchases = ad-attributed orders (schema 2) or units (schema 1)
+        impressions: Math.round(parseFloat(r.impressions)||0),
+        consoleSpend: (r.ads_spend_console!=null) ? (parseFloat(r.ads_spend_console)||0) : ((parseFloat(r.sp)||0)+(parseFloat(r.sb)||0)+(parseFloat(r.sd)||0)),   // what the Amazon Ads console calls "Total cost" (SP+SB+SD, no Sponsored TV)
+      };
+      matched++;
+    });
+    return matched>0;
+  }
+
   // ---------- Google Ads: product / campaign breakdown for the selected period ----------
   function renderGoogleCampaigns(){
     const card = document.getElementById('googleCampaignCard');
@@ -1874,7 +1940,8 @@
     if(!googleMatched) m.push('Google Ads');
     if(!shipmonkMatched) m.push('ShipMonk');
     if(!shipmonkInvMatched) m.push('hoá đơn ShipMonk (lưu kho, receiving, hàng trả)');
-    m.push('Amazon Ads (chờ duyệt)', 'TikTok/AppLovin Ads', 'giá vốn theo SKU');
+    if(!amazonAdsMatched) m.push('Amazon Ads (chờ duyệt)');
+    m.push('TikTok/AppLovin Ads', 'giá vốn theo SKU');
     if(!(shopifyMeta && shopifyMeta.meta && shopifyMeta.meta.payment_fees_basis)) m.push('phí cổng thanh toán'); else if(!paypalMatched) m.push('phí PayPal (Shopify Payments đã có)');
     if(!klaviyoMatched) m.push('Klaviyo');
     m.push('G&A (trừ Snowball, Klaviyo)');

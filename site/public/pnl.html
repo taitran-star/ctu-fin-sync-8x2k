@@ -213,6 +213,8 @@
   .roas-card .p{font-size:12px;font-weight:600;color:var(--ink-primary);}
   .roas-card .roas{font-family:var(--font-display);font-size:28px;font-weight:500;}
   .roas-card .sub{font-size:11px;color:var(--ink-muted);font-family:var(--font-mono);}
+  .roas-card .kv{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:11px;font-family:var(--font-mono);color:var(--ink-secondary);padding-top:4px;border-top:1px dashed var(--gridline);}
+  .roas-card .kv b{font-family:var(--font-body);font-weight:600;color:var(--ink-primary);}
   .mer-band{display:flex;justify-content:space-between;align-items:center;gap:14px;background:var(--surface-card-3);border-radius:12px;padding:14px 16px;margin-top:12px;flex-wrap:wrap;}
   .mer-band .m-label{font-size:12.5px;color:var(--ink-secondary);max-width:480px;}
   .mer-band .m-value{font-family:var(--font-display);font-size:42px;font-weight:500;color:var(--accent);}
@@ -223,6 +225,7 @@
   table.simple td.name{font-family:var(--font-body);color:var(--ink-primary);font-weight:500;}
   table.simple td.num{text-align:right;}
   table.simple tr:last-child td{border-bottom:none;}
+  table.simple th:first-child,table.simple td:first-child{position:sticky;left:0;z-index:1;background:var(--surface-card);box-shadow:1px 0 0 var(--gridline);}
   .pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-body);font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;}
   .pill.ok{color:var(--status-good);background:color-mix(in srgb, var(--status-good) 15%, transparent);}
   .pill.warn{color:var(--status-serious);background:color-mix(in srgb, var(--status-serious) 15%, transparent);}
@@ -266,6 +269,28 @@
     .kpi{padding:12px 12px;}
     .pill{display:inline-block;max-width:100%;white-space:normal;line-height:1.35;}
     .card,.kpi,.banner,.pill{overflow-wrap:anywhere;}   /* long fee codes like RemovalShipment:CUSTOMER_RETURN_… must break */
+    /* P&L statement: no sideways scroll — each row is a grid (label wraps; amount and % stay at the right edge) */
+    .stmt-wrap{overflow:visible;}
+    table.stmt{min-width:0;display:block;}
+    table.stmt thead,table.stmt tbody{display:block;}
+    table.stmt tr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:start;border-bottom:1px solid var(--gridline);}
+    table.stmt tr.hidden{display:none;}
+    table.stmt th,table.stmt td{border-bottom:0;padding:8px 4px;}
+    table.stmt td.label{overflow-wrap:anywhere;line-height:1.35;}
+    table.stmt tr.section td.label{grid-column:1/-1;padding-left:4px;}
+    table.stmt tr.line td.label{padding-left:14px;}
+    table.stmt tr.detail td.label{padding-left:24px;}
+    table.stmt td.pct{width:auto;min-width:46px;}
+    table.stmt tr.subtotal{border-top:1.5px solid var(--baseline);border-bottom:1.5px solid var(--baseline);}
+    table.stmt tr.subtotal td,table.stmt tr.final td{border-top:0;}
+    table.stmt tr.final td.num,table.stmt tr.final td.pct{font-size:16px;}
+    .tag{margin-left:6px;}
+    /* data-source chips: name on the first line, age/detail on its own line under it (no 1-letter-per-line squeeze) */
+    .src{flex-wrap:wrap;row-gap:2px;}
+    .src .name{flex:1 1 60%;overflow-wrap:normal;}
+    .src .age{flex:1 1 100%;padding-left:15px;}
+    /* wide tables: keep the sticky first column narrow enough that a couple of number columns are visible beside it */
+    table.simple th:first-child,table.simple td:first-child{max-width:44vw;white-space:normal;overflow-wrap:anywhere;}
   }
 </style>
 <style>
@@ -284,6 +309,12 @@
   #siteRefresh button:focus-visible,#siteRefresh a:focus-visible{outline:2px solid var(--ink-primary);outline-offset:2px;}
   #siteRefresh a{color:var(--ink-muted);text-decoration:none;padding:0 4px;}
   @media print{#siteRefresh{display:none}}
+  /* phones: the bar spans the bottom, and the page gets room under it so the last P&L rows are not hidden behind it */
+  @media (max-width:520px){
+    body{padding-bottom:calc(76px + env(safe-area-inset-bottom,0px)) !important;}
+    #siteRefresh{left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));justify-content:space-between;gap:6px;padding:6px 6px 6px 10px;font-size:11.5px;}
+    #siteRefresh a{padding:0 2px;}
+  }
 </style>
 </head>
 <body>
@@ -348,7 +379,7 @@
       <div class="m-label"><b>MER (Marketing Efficiency Ratio)</b> = Doanh thu thuần toàn bộ ÷ Tổng chi tiêu quảng cáo. Khác ROAS ở chỗ dùng doanh thu thật (kể cả organic/halo), nên MER thường thấp hơn tổng ROAS cộng dồn từng kênh — dùng MER để đánh giá hiệu quả marketing tổng thể, dùng ROAS để tối ưu từng kênh.</div>
       <div class="m-value" id="merValue"></div>
     </div>
-    <div class="caption" style="padding-left:2px;">* Amazon Ads, TikTok Ads và AppLovin chưa kết nối → chi $0 và không tính vào MER. Amazon Ads sẽ lên khi Amazon duyệt quyền Advertising API (đang chờ).</div>
+    <div class="caption" style="padding-left:2px;"><span id="adsCaptionAmazon">* Amazon Ads chờ Amazon duyệt quyền Advertising API → chi $0 và không tính vào MER. </span>TikTok Ads và AppLovin chưa kết nối → chi $0 và không tính vào MER. Amazon Ads (khi có số): chi phí Sponsored Products / Brands / Display theo ngày, "DT quy về" là doanh thu Amazon gán cho quảng cáo (không cộng vào doanh thu).</div>
   </div>
 
   <div class="card" id="attrCard" style="display:none;">
@@ -456,7 +487,7 @@
 <div id="siteRefresh" hidden><span id="siteLoadedAt" title="Giờ tải số liệu (giờ trên máy bạn)"></span><button type="button" id="siteReload" title="Tải lại số liệu mới nhất">↻ Cập nhật</button><a href="/?menu=1" title="Về trang chọn bảng">bảng khác</a><a href="/?menu=1#app" id="siteInstall" title="Cài như app lên máy / điện thoại" hidden>cài app</a><a href="/logout" title="Đăng xuất khỏi thiết bị này">thoát</a></div>
 <script>
 (function(){
-  var SOURCES = {"amazon": "amazon_pnl.json", "meta": "meta_ads.json", "shopify": "shopify_pnl.json", "google": "google_ads.json", "shipmonk": "shipmonk.json", "shipmonk_invoices": "shipmonk_invoices.json", "paypal": "paypal.json", "klaviyo": "klaviyo.json", "klaviyo_invoices": "klaviyo_invoices.json"};
+  var SOURCES = {"amazon": "amazon_pnl.json", "meta": "meta_ads.json", "shopify": "shopify_pnl.json", "google": "google_ads.json", "shipmonk": "shipmonk.json", "shipmonk_invoices": "shipmonk_invoices.json", "paypal": "paypal.json", "klaviyo": "klaviyo.json", "klaviyo_invoices": "klaviyo_invoices.json", "amazon_ads": "amazon_ads.json"};
   var keys = Object.keys(SOURCES), done = 0;
   window.__LIVE = {}; window.__LIVE_ERR = {}; window.__LOADED_AT = 0; window.__SAVED_AT = 0;
   try{ localStorage.setItem('ctu_last_dash', '/pnl'); }catch(e){}
@@ -475,7 +506,7 @@
     }).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=c6f89c6c57';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=a1f66dfaa4';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');

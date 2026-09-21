@@ -22,7 +22,7 @@ const REPO_FILES = new Set([
   'amazon_pnl.json', 'meta_ads.json', 'shopify_pnl.json', 'google_ads.json',
   'shipmonk.json', 'paypal.json', 'klaviyo.json', 'amazon_ads.json',
 ]);
-const STATIC_FILES = new Set(['shipmonk_invoices.json', 'klaviyo_invoices.json']);   // in public/
+const STATIC_FILES = new Set(['shipmonk_invoices.json', 'klaviyo_invoices.json', 'amazon_ads.json']);   // in public/ (amazon_ads: Sellerboard export until the Ads API workflow exists; then it also lives in the repo)
 const PUBLIC_ASSET = /^\/(img\/[\w.-]+\.(png|svg|webp)|fonts\/(LibreFranklin|FuzzyBubbles)[\w-]*\.woff2|favicon\.png|apple-touch-icon\.png|icon-[\w-]+\.png)$/;
 const LONG_CACHE = /^\/(img|fonts|splash)\/|^\/(favicon\.png|apple-touch-icon\.png|icon-[\w-]+\.png)$/;   // immutable brand files
 
@@ -68,8 +68,8 @@ async function serveData(name, request, env) {
     const req = new Request(new URL('/' + name, request.url).toString(), { headers: inm ? { 'If-None-Match': inm } : {} });
     const res = await env.ASSETS.fetch(req);
     if (res.status === 304) return notModified(inm);
-    if (!res.ok) return json({ error: 'static file missing: ' + name }, 404);
-    return new Response(res.body, { status: 200, headers: jsonHeaders('static', res.headers.get('ETag')) });
+    if (res.ok) return new Response(res.body, { status: 200, headers: jsonHeaders('static', res.headers.get('ETag')) });
+    if (!REPO_FILES.has(name)) return json({ error: 'static file missing: ' + name }, 404);   // else fall through to the repo copy
   }
   if (!REPO_FILES.has(name)) return json({ error: 'unknown source' }, 404);
 
