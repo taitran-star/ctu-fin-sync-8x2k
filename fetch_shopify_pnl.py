@@ -130,6 +130,14 @@ Amazon Pay return-to-store hop) the earlier sessions are read in a second, cheap
 usually the first 1-3 hours) are counted as "pending" and pick up their channel on the next
 rolling run, which rebuilds every day of the window.
   ATTRIBUTION=off           skip the journey fields entirely (falls back to v1.7 behaviour)
+  JOURNEYS_DIR              where the raw journey records live (default data/shopify_journeys, one
+                            file per month) - the channel rules are applied to these on every run
+  RECLASSIFY_ONLY=true      no Shopify call: re-apply the (changed) channel rules to the stored records
+                            and rewrite the attribution blocks of data/shopify_pnl.json
+  GOOGLE_ADS_LANDING_PATHS  comma-separated landing-page path prefixes only Google Ads use (default
+                            /pages/cats-love-it-2025): Google auto-tagging (gclid) is not visible in the
+                            journey, so a Google session landing there counts as google_ads
+  GOOGLE_ADS_HANDLE_SUFFIX  product-handle suffix of the Google-Ads-only product pages (default -gg)
   JOURNEY_BATCH             orders per moments request, default 15 (auto-halves on cost errors)
   MOMENTS_FIRST             sessions read per order in that pass, default 25
 """
@@ -148,7 +156,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "1.8"
+SCRIPT_VERSION = "1.9"
 SCHEMA = 3   # 3 = daily "attribution" block (customer-journey last-touch channels)
 
 SHOP = os.environ.get("SHOPIFY_SHOP", "").strip().lower().replace("https://", "").rstrip("/")
@@ -188,15 +196,32 @@ FEE_KINDS = {"SALE", "CAPTURE"}   # transaction kinds that carry Shopify Payment
 
 # ---------------------------------------------------------------- marketing attribution settings
 ATTRIBUTION = os.environ.get("ATTRIBUTION", "on").strip().lower() not in ("off", "0", "false", "no")
+# Raw journey signals of every counted order (first + last session, untouched by any rule) are kept per
+# month in JOURNEYS_DIR so the channel rules can change WITHOUT refetching Shopify: run the script with
+# RECLASSIFY_ONLY=true and it rebuilds every day's attribution block from those files in seconds.
+JOURNEYS_DIR = os.environ.get("JOURNEYS_DIR", "data/shopify_journeys")
+RECLASSIFY_ONLY = os.environ.get("RECLASSIFY_ONLY", "").strip().lower() in ("1", "true", "yes", "on")
 JOURNEY_BATCH = int(os.environ.get("JOURNEY_BATCH", "15"))
 MOMENTS_FIRST = int(os.environ.get("MOMENTS_FIRST", "25"))
-CHANNELS = ["email", "sms", "email_other", "meta_paid", "meta_organic", "google_ads", "organic_search",
-            "tiktok_ads", "tiktok_organic", "applovin", "snowball", "other_paid", "social_other", "ai_search",
-            "referral", "other_utm", "direct", "unknown"]
+CHANNELS = ["email", "sms", "email_other", "meta_paid", "meta_organic", "meta_shop", "google_ads", "organic_search",
+            "tiktok_ads", "tiktok_organic", "tiktok_shop", "applovin", "snowball", "other_paid", "social_other", "ai_search",
+            "referral", "other_utm", "shop_app", "other_channel", "direct", "unknown"]
+# Google Ads auto-tagging (gclid) is invisible in Shopify's journey (the landing page comes back without its
+# query string and Shopify labels the session "Google / SEO"), so Google Ads clicks are recognised by the
+# landing pages only the ads use: comma-separated path prefixes + a product-handle suffix.
+GOOGLE_ADS_LANDING_PATHS = [p.strip() for p in os.environ.get("GOOGLE_ADS_LANDING_PATHS", "/pages/cats-love-it-2025").split(",") if p.strip()]
+GOOGLE_ADS_HANDLE_SUFFIX = os.environ.get("GOOGLE_ADS_HANDLE_SUFFIX", "-gg").strip()
+# Orders with no web session at all (customerJourneySummary.momentsCount = 0) are classified by the sales
+# channel they came through: the Facebook / Instagram shop, the Shop app, TikTok Shop...
+CHANNEL_HANDLE_MAP = {"facebook": "meta_shop", "instagram": "meta_shop", "meta": "meta_shop", "facebook_instagram": "meta_shop",
+                      "shop": "shop_app", "shop_app": "shop_app", "tiktok": "tiktok_shop", "tiktok_shop": "tiktok_shop",
+                      "web": "unknown", "online_store": "unknown", "": "unknown"}
 PAID_CHANNELS = {"meta_paid", "google_ads", "tiktok_ads", "applovin", "other_paid"}
 # sessions that say nothing about marketing: the classifier looks at the session before them
 PASSTHROUGH_CHANNELS = {"direct", "unknown"}
 JOURNEY_SUMMARY_FIELDS = """
+      sourceName
+      channelInformation { channelDefinition { handle channelName } }
       customerJourneySummary {
         ready customerOrderIndex
         momentsCount { count }
@@ -416,8 +441,6 @@ def new_daily_bucket():
     d = {f: 0 for f in DAILY_FIELDS}
     d["gateways"] = {}        # gateway -> {orders, amount}: what each payment gateway captured
     d["payment_fee_types"] = {}   # Shopify Payments rateName -> fee amount (domestic 2.25%, amex, international, fx...)
-    if ATTRIBUTION:
-        d["attribution"] = new_attribution_bucket()   # customer-journey channels of the orders placed that day
     return d
 
 
@@ -844,6 +867,38 @@ def _host_in(h, hosts):
     return bool(h) and any(h == d or h.endswith("." + d) for d in hosts)
 
 
+def _landing_path(url):
+    """'https://cattasaurus.com/pages/cats-love-it-2025?x=1' -> '/pages/cats-love-it-2025' (lower-cased)."""
+    if not url:
+        return ""
+    try:
+        return (urllib.parse.urlsplit(url).path or "/").lower()
+    except ValueError:
+        return ""
+
+
+def channel_sig(o):
+    """Raw sales-channel signal of an order (used when it has no web session at all)."""
+    ch = ((o.get("channelInformation") or {}).get("channelDefinition") or {})
+    sig = {"ch": (ch.get("handle") or "").strip().lower(), "chn": (ch.get("channelName") or "").strip(), "src": (o.get("sourceName") or "").strip().lower()}
+    return {k: v for k, v in sig.items() if v}
+
+
+def classify_channel_sig(sig):
+    """No web session at all: the sales channel the order came through (Facebook / Instagram shop, Shop app...)."""
+    handle, name, src = (sig or {}).get("ch", ""), (sig or {}).get("chn", ""), (sig or {}).get("src", "")
+    key = CHANNEL_HANDLE_MAP.get(handle)
+    if key is None:
+        key = CHANNEL_HANDLE_MAP.get(src, "other_channel")
+    if key == "unknown" and src and src not in ("web", "online_store", "") and not src.isdigit():
+        key = "other_channel"
+    return key, (name or handle or src)
+
+
+def classify_channel(o):
+    return classify_channel_sig(channel_sig(o))
+
+
 def _landing_params(url):
     """Lower-cased query parameter names of the landing page (fbclid, gclid, ref ...)."""
     if not url:
@@ -855,20 +910,43 @@ def _landing_params(url):
     return {k.lower() for k, _ in urllib.parse.parse_qsl(q, keep_blank_values=True)}
 
 
-def classify_visit(v):
-    """One CustomerVisit -> (channel, detail). detail = the campaign / referrer that explains the
-    channel: Klaviyo campaign or flow message name for email/sms, utm campaign for ads, referrer
-    host for referral traffic."""
+def visit_sig(v):
+    """The raw, rule-free signal of one CustomerVisit: source label, source type, referrer host, landing
+    path + query-parameter names, UTM source/medium/campaign, referral code. Small enough to keep for
+    every order; everything classify_sig() needs and nothing else."""
     if not v:
-        return "unknown", ""
+        return None
     utm = v.get("utmParameters") or {}
-    us = (utm.get("source") or "").strip().lower()
-    um = (utm.get("medium") or "").strip().lower()
-    uc = (utm.get("campaign") or "").strip()
-    src = (v.get("source") or "").strip().lower()
-    stype = (v.get("sourceType") or "").upper()
-    ref = _host(v.get("referrerUrl"))
-    params = _landing_params(v.get("landingPage"))
+    sig = {
+        "s": (v.get("source") or "").strip(),
+        "t": (v.get("sourceType") or "").strip(),
+        "r": _host(v.get("referrerUrl")),
+        "l": _landing_path(v.get("landingPage")),
+        "q": sorted(_landing_params(v.get("landingPage"))),
+        "us": (utm.get("source") or "").strip(),
+        "um": (utm.get("medium") or "").strip(),
+        "uc": (utm.get("campaign") or "").strip(),
+        "rc": (v.get("referralCode") or "").strip(),
+    }
+    return {k: val for k, val in sig.items() if val}
+
+
+def classify_sig(sig):
+    """One raw session signal -> (channel, detail). detail = the campaign / referrer that explains the
+    channel: Klaviyo campaign or flow message name for email/sms, utm campaign for ads, referrer
+    host for referral traffic, the ad landing page for untagged Google Ads."""
+    if not sig:
+        return "unknown", ""
+    if "ch" in sig or "src" in sig:
+        return classify_channel_sig(sig)
+    us = sig.get("us", "").lower()
+    um = sig.get("um", "").lower()
+    uc = sig.get("uc", "")
+    src = sig.get("s", "").lower()
+    stype = sig.get("t", "").upper()
+    ref = sig.get("r", "")
+    params = set(sig.get("q") or [])
+    path = sig.get("l", "")
     paid = um in PAID_MEDIUMS or um.isdigit() or um.startswith("paid") or um.endswith("_paid") or um.endswith("-paid") or "cpc" in um
     organic = um in ORGANIC_MEDIUMS or um.startswith("organic")
     if not us and (um or uc):
@@ -913,8 +991,12 @@ def classify_visit(v):
     for pid, ch in CLICK_IDS.items():
         if pid in params:
             return ch, pid
-    if v.get("referralCode") and not _host_in(ref, PASSTHROUGH_HOSTS):
-        return "snowball", "ref=" + str(v.get("referralCode"))[:40]
+    if sig.get("rc") and not _host_in(ref, PASSTHROUGH_HOSTS):
+        return "snowball", "ref=" + sig["rc"][:40]
+    # ---- Google Ads without UTMs: Google referrer + a landing page only the ads use
+    if (_host_in(ref, SEARCH_HOSTS) and "google" in ref) or src == "google":
+        if any(path.startswith(pfx) for pfx in GOOGLE_ADS_LANDING_PATHS) or (GOOGLE_ADS_HANDLE_SUFFIX and path.startswith("/products/") and path.rstrip("/").endswith(GOOGLE_ADS_HANDLE_SUFFIX)):
+            return "google_ads", "landing:" + path
     # ---- referrer host
     if ref:
         if _host_in(ref, META_HOSTS):
@@ -941,6 +1023,134 @@ def classify_visit(v):
     if src in ("", "direct"):
         return "direct", ""
     return "unknown", ""
+
+
+def classify_visit(v):
+    return classify_sig(visit_sig(v))
+
+
+# ---------------------------------------------------------------- journey records -> attribution blocks
+# One record per counted order, keyed by the numeric order id inside data/shopify_journeys/YYYY-MM.json:
+#   {"d": order day, "v": net sales, "i": customerOrderIndex, "f": first-session signal, "l": last-session
+#    signal (already resolved to the last NON-direct session when the moments pass ran), "fl": flags}
+# flags: "m" last session taken from the moments pass, "n" no web session (sales channel used),
+#        "t" more than MOMENTS_FIRST direct sessions in a row (stayed direct), "p" Shopify has not
+#        attributed the order yet, "x" no customerJourneySummary at all.
+def journey_month_path(day):
+    return os.path.join(JOURNEYS_DIR, day[:7] + ".json")
+
+
+def journeys_load_all():
+    """Every stored record, from every month file."""
+    records = {}
+    if not os.path.isdir(JOURNEYS_DIR):
+        return records
+    for name in sorted(os.listdir(JOURNEYS_DIR)):
+        if not (name.endswith(".json") and len(name) == 12):
+            continue
+        try:
+            with open(os.path.join(JOURNEYS_DIR, name)) as f:
+                obj = json.load(f)
+            records.update(obj.get("orders") or {})
+        except (OSError, ValueError) as e:
+            log(f"could not read {name}: {e}")
+    return records
+
+
+def journeys_save(fresh, fetched_start, fetched_end):
+    """Replace the records of the fetched day range inside the month files it touches (records of
+    other days in those files are kept). Files are written sorted so git diffs stay small."""
+    months = sorted({fetched_start[:7], fetched_end[:7]} | {r["d"][:7] for r in fresh.values()})
+    cur = datetime.strptime(fetched_start[:7] + "-01", "%Y-%m-%d")
+    end = datetime.strptime(fetched_end[:7] + "-01", "%Y-%m-%d")
+    while cur <= end:
+        months.append(cur.strftime("%Y-%m"))
+        cur = datetime(cur.year + (cur.month == 12), (cur.month % 12) + 1, 1)
+    os.makedirs(JOURNEYS_DIR, exist_ok=True)
+    written = 0
+    for month in sorted(set(months)):
+        path = os.path.join(JOURNEYS_DIR, month + ".json")
+        try:
+            with open(path) as f:
+                existing = (json.load(f).get("orders") or {})
+        except (OSError, ValueError):
+            existing = {}
+        kept = {k: v for k, v in existing.items() if not (fetched_start <= v.get("d", "") <= fetched_end)}
+        kept.update({k: v for k, v in fresh.items() if v["d"][:7] == month})
+        if not kept and not existing:
+            continue
+        with open(path, "w") as f:
+            json.dump({"month": month, "schema": 1, "orders": dict(sorted(kept.items(), key=lambda kv: int(kv[0]) if kv[0].isdigit() else kv[0]))}, f, separators=(",", ":"), sort_keys=False)
+        written += 1
+    return written
+
+
+def attribution_blocks(records):
+    """Classify every stored record with the CURRENT rules -> {day: attribution block}."""
+    blocks = {}
+    for rec in records.values():
+        day = rec.get("d")
+        if not day:
+            continue
+        a = blocks.setdefault(day, new_attribution_bucket())
+        a["orders"] += 1
+        fl = rec.get("fl", "")
+        if "x" in fl:
+            a["no_journey"] += 1
+            continue
+        if "p" in fl:
+            a["pending"] += 1
+            continue
+        first_ch, first_detail = classify_sig(rec.get("f"))
+        last_ch, last_detail = classify_sig(rec.get("l"))
+        idx = rec.get("i")
+        customer = "new" if idx == 1 else ("returning" if isinstance(idx, int) and idx > 1 else "unknown")
+        sales = float(rec.get("v") or 0)
+        lt = a["last_touch"].setdefault(last_ch, {"orders": 0, "sales": 0.0, "new": 0, "returning": 0, "paid_first": 0})
+        lt["orders"] += 1
+        lt["sales"] += sales
+        if customer in ("new", "returning"):
+            lt[customer] += 1
+        if first_ch in PAID_CHANNELS:
+            lt["paid_first"] += 1
+        ft = a["first_touch"].setdefault(first_ch, {"orders": 0, "sales": 0.0})
+        ft["orders"] += 1
+        ft["sales"] += sales
+        j = a["journeys"].setdefault(first_ch + ">" + last_ch, {"orders": 0, "sales": 0.0})
+        j["orders"] += 1
+        j["sales"] += sales
+        if last_ch in ("email", "sms"):
+            name = (last_detail or "(không có utm_campaign)")[:120]
+            e = a["email_detail"].setdefault(name, {"orders": 0, "sales": 0.0, "medium": last_ch})
+            e["orders"] += 1
+            e["sales"] += sales
+    for a in blocks.values():
+        for key in ("last_touch", "first_touch", "journeys", "email_detail"):
+            for v in a[key].values():
+                v["sales"] = round(v["sales"], 2)
+    return blocks
+
+
+def apply_attribution(daily, blocks):
+    """Attach the freshly classified blocks to the days that exist in the file. Days without a stored
+    record keep whatever block they had (data from before the journey files existed)."""
+    applied = 0
+    for day, block in blocks.items():
+        if day in daily:
+            daily[day]["attribution"] = block
+            applied += 1
+    return applied
+
+
+def channel_totals_of(blocks, start_key, end_key):
+    totals = {}
+    for day, a in blocks.items():
+        if start_key <= day <= end_key:
+            for ch, v in a["last_touch"].items():
+                t = totals.setdefault(ch, {"orders": 0, "sales": 0.0})
+                t["orders"] += v["orders"]
+                t["sales"] = round(t["sales"] + v["sales"], 2)
+    return dict(sorted(totals.items(), key=lambda kv: -kv[1]["sales"]))
 
 
 def new_attribution_bucket():
@@ -971,13 +1181,13 @@ class Aggregator:
             "snowball_exact": 0, "snowball_export_without_tag": 0,
             "late_orders_scanned": 0, "late_refund_orders": 0,
             "fee_transactions": 0, "fees_missing_orders": 0, "transactions_truncated": 0,
-            "journeys_ready": 0, "journeys_pending": 0, "journeys_missing": 0,
+            "journeys_ready": 0, "journeys_pending": 0, "journeys_missing": 0, "journeys_no_session": 0,
             "journeys_deferred": 0, "journeys_resolved_by_moments": 0, "journeys_moments_truncated": 0,
             "journeys_unresolved": 0,
         }
         self.gateways = {}
-        self.deferred = {}    # order gid -> booking info for orders whose last session is direct (moments pass)
-        self.channel_totals = {}   # last-touch channel -> {orders, sales} over the fetched window (log / quick check)
+        self.journeys = {}    # numeric order id -> raw journey record (see journey_month_path)
+        self.deferred = {}    # order gid -> numeric id of orders whose last session is direct (moments pass)
 
     def in_window(self, day):
         return day is not None and self.window_start <= day <= self.window_end
@@ -1153,90 +1363,74 @@ class Aggregator:
 
     # ------------------------------------------------------------ marketing attribution
     def add_attribution(self, o, day, sales):
-        """Classify the order's customer journey (first + last session). Orders whose last session
-        is direct / a checkout hop (and that had earlier sessions) are deferred to the moments pass."""
+        """Record the order's raw journey signals (first + last session). Orders whose last session
+        is direct / a checkout hop (and that had earlier sessions) are deferred to the moments pass,
+        which replaces the last signal with the last NON-direct session."""
+        oid = o.get("id") or ""
+        legacy_id = oid.rsplit("/", 1)[-1]
+        rec = {"d": day, "v": round(float(sales), 2), "i": None, "f": None, "l": None, "fl": ""}
+        self.journeys[legacy_id] = rec
         cjs = o.get("customerJourneySummary")
-        a = self.bucket(day)["attribution"]
-        a["orders"] += 1
         if not cjs:
-            a["no_journey"] += 1
+            rec["fl"] = "x"
             self.counts["journeys_missing"] += 1
             return
         if not cjs.get("ready"):
-            a["pending"] += 1
+            rec["fl"] = "p"
             self.counts["journeys_pending"] += 1
             return
         self.counts["journeys_ready"] += 1
         idx = cjs.get("customerOrderIndex")
-        customer = "new" if idx == 1 else ("returning" if isinstance(idx, int) and idx > 1 else "unknown")
+        rec["i"] = idx if isinstance(idx, int) else None
         moments = ((cjs.get("momentsCount") or {}).get("count"))
-        first_ch, first_detail = classify_visit(cjs.get("firstVisit"))
-        last_ch, last_detail = classify_visit(cjs.get("lastVisit"))
-        info = {"day": day, "sales": sales, "customer": customer, "first": first_ch, "first_detail": first_detail,
-                "last": last_ch, "last_detail": last_detail}
+        if not cjs.get("lastVisit") and not cjs.get("firstVisit"):
+            # no web session at all: an order placed inside the Facebook / Instagram shop, the Shop app,
+            # TikTok Shop... - the sales channel is the best attribution there is
+            rec["f"] = rec["l"] = channel_sig(o)
+            rec["fl"] = "n"
+            self.counts["journeys_no_session"] += 1
+            return
+        rec["f"] = visit_sig(cjs.get("firstVisit"))
+        rec["l"] = visit_sig(cjs.get("lastVisit"))
+        last_ch, _ = classify_sig(rec["l"])
         if last_ch in PASSTHROUGH_CHANNELS and cjs.get("lastVisit") and isinstance(moments, int) and moments >= 2:
             # the last session says nothing: read the earlier ones (newest first) in the moments pass
-            self.deferred[o.get("id")] = info
+            self.deferred[oid] = legacy_id
             self.counts["journeys_deferred"] += 1
-            return
-        self.book_attribution(info)
-
-    def book_attribution(self, info):
-        a = self.bucket(info["day"])["attribution"]
-        last, first, sales = info["last"], info["first"], info["sales"]
-        lt = a["last_touch"].setdefault(last, {"orders": 0, "sales": 0.0, "new": 0, "returning": 0, "paid_first": 0})
-        lt["orders"] += 1
-        lt["sales"] += sales
-        if info["customer"] in ("new", "returning"):
-            lt[info["customer"]] += 1
-        if first in PAID_CHANNELS:
-            lt["paid_first"] += 1
-        ft = a["first_touch"].setdefault(first, {"orders": 0, "sales": 0.0})
-        ft["orders"] += 1
-        ft["sales"] += sales
-        jk = first + ">" + last
-        j = a["journeys"].setdefault(jk, {"orders": 0, "sales": 0.0})
-        j["orders"] += 1
-        j["sales"] += sales
-        if last in ("email", "sms"):
-            name = (info["last_detail"] or "(không có utm_campaign)")[:120]
-            e = a["email_detail"].setdefault(name, {"orders": 0, "sales": 0.0, "medium": last})
-            e["orders"] += 1
-            e["sales"] += sales
-        t = self.channel_totals.setdefault(last, {"orders": 0, "sales": 0.0})
-        t["orders"] += 1
-        t["sales"] += sales
 
     def resolve_journey(self, oid, cjs):
-        """Moments pass result for one deferred order: walk the sessions newest-first and take the
-        first one that is not direct / a checkout hop. Returns True when the order is booked."""
-        info = self.deferred.pop(oid, None)
-        if info is None:
+        """Moments pass result for one deferred order: walk the sessions newest-first and keep the
+        first one that is not direct / a checkout hop as the order's last session."""
+        legacy_id = self.deferred.pop(oid, None)
+        if legacy_id is None:
+            return True
+        rec = self.journeys.get(legacy_id)
+        if rec is None:
             return True
         conn = ((cjs or {}).get("moments") or {})
-        nodes = conn.get("nodes") or []
         resolved = None
-        for m in nodes:
+        for m in (conn.get("nodes") or []):
             if not m or "source" not in m:
                 continue          # a non-visit moment (none exist today, but the interface allows them)
-            ch, detail = classify_visit(m)
+            sig = visit_sig(m)
+            ch, _ = classify_sig(sig)
             if ch not in PASSTHROUGH_CHANNELS:
-                resolved = (ch, detail)
+                resolved = sig
                 break
         if resolved:
-            info["last"], info["last_detail"] = resolved
+            rec["l"] = resolved
+            rec["fl"] += "m"
             self.counts["journeys_resolved_by_moments"] += 1
         elif (conn.get("pageInfo") or {}).get("hasNextPage"):
+            rec["fl"] += "t"
             self.counts["journeys_moments_truncated"] += 1   # >MOMENTS_FIRST direct sessions in a row: stays direct
-        self.book_attribution(info)
         return True
 
     def flush_deferred(self):
-        """Book whatever the moments pass could not resolve (request failures) as its last session said."""
+        """Whatever the moments pass could not resolve (request failures) keeps its last session as-is."""
         for oid in list(self.deferred):
-            info = self.deferred.pop(oid)
+            self.deferred.pop(oid)
             self.counts["journeys_unresolved"] += 1
-            self.book_attribution(info)
 
     def apply_edit_agreements(self, oid, agreements):
         """Move what an order edit ADDED from the order date to the edit date, the way Shopify
@@ -1340,14 +1534,6 @@ class Aggregator:
                 g["amount"] = round(g["amount"], 2)
             for k in list(d["payment_fee_types"]):
                 d["payment_fee_types"][k] = round(d["payment_fee_types"][k], 2)
-            a = d.get("attribution")
-            if a:
-                for key in ("last_touch", "first_touch", "journeys", "email_detail"):
-                    for v in a[key].values():
-                        v["sales"] = round(v["sales"], 2)
-                a["email_detail"] = dict(sorted(a["email_detail"].items(), key=lambda kv: -kv[1]["sales"]))
-        for t in self.channel_totals.values():
-            t["sales"] = round(t["sales"], 2)
         for g in self.gateways.values():
             for f in ("amount", "fees"):
                 g[f] = round(g[f], 2)
@@ -1457,22 +1643,22 @@ def fetch_journey_moments(client, agg):
             data = client.query(JOURNEY_MOMENTS_QUERY, {"ids": chunk, "momentsFirst": MOMENTS_FIRST})
         except CostTooHigh as e:
             if batch <= 1:
-                log(f"moments query too costly even for one order ({e}) - booking it as its last session said")
+                log(f"moments query too costly even for one order ({e}) - keeping its last session as-is")
                 for oid in chunk:
                     if oid in agg.deferred:
+                        agg.deferred.pop(oid)
                         agg.counts["journeys_unresolved"] += 1
-                        agg.book_attribution(agg.deferred.pop(oid))
                 continue
             pending = chunk + pending
             batch = max(1, batch // 2)
             log(f"moments query too costly ({e}) - retrying with batches of {batch}")
             continue
         except RuntimeError as e:
-            log(f"moments pass failed for a batch of {len(chunk)} orders ({e}) - booking them as their last session said")
+            log(f"moments pass failed for a batch of {len(chunk)} orders ({e}) - keeping their last session as-is")
             for oid in chunk:
                 if oid in agg.deferred:
+                    agg.deferred.pop(oid)
                     agg.counts["journeys_unresolved"] += 1
-                    agg.book_attribution(agg.deferred.pop(oid))
             continue
         requests += 1
         for node in (data.get("nodes") or []):
@@ -1488,7 +1674,60 @@ def fetch_journey_moments(client, agg):
     return requests
 
 
+def attribution_meta_block(channel_totals):
+    return {
+        "enabled": ATTRIBUTION,
+        "model": "last_non_direct_session",
+        "basis": ("per order: Shopify customerJourneySummary (sessions of the 30 days before the order); channel of the last "
+                  "session that is not direct / a checkout hop; sales = order net sales (subtotal after discounts) on the "
+                  "ORDER day; first_touch = channel of the first session of the same journey; new = customer's first order; "
+                  "raw signals kept per month in " + JOURNEYS_DIR + " so rules can be re-applied with RECLASSIFY_ONLY=true"),
+        "channels": CHANNELS,
+        "paid_channels": sorted(PAID_CHANNELS),
+        "google_ads_landing_paths": GOOGLE_ADS_LANDING_PATHS, "google_ads_handle_suffix": GOOGLE_ADS_HANDLE_SUFFIX,
+        "channel_handle_map": CHANNEL_HANDLE_MAP,
+        "window_totals_last_touch": channel_totals,
+        "moments_first": MOMENTS_FIRST,
+        "journeys_dir": JOURNEYS_DIR,
+    }
+
+
+def reclassify_only():
+    """No Shopify call at all: re-run the channel rules over the stored journey records and rewrite
+    every day's attribution block in the existing output file."""
+    previous = history_previous(OUTPUT_PATH)
+    if previous is None:
+        log(f"RECLASSIFY_ONLY: {OUTPUT_PATH} does not exist yet - run a normal fetch first")
+        sys.exit(1)
+    records = journeys_load_all()
+    if not records:
+        log(f"RECLASSIFY_ONLY: no journey records in {JOURNEYS_DIR} - run a fetch / backfill with v1.9+ first")
+        sys.exit(1)
+    blocks = attribution_blocks(records)
+    daily = previous["daily"]
+    applied = apply_attribution(daily, blocks)
+    days = sorted(blocks)
+    totals = channel_totals_of(blocks, days[0], days[-1])
+    previous["daily"] = daily
+    previous["attribution"] = attribution_meta_block(totals)
+    previous["generated_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    meta = previous.setdefault("meta", {})
+    meta["script_version"] = SCRIPT_VERSION
+    meta["schema"] = SCHEMA
+    meta["reclassified_at"] = previous["generated_at"]
+    meta["journey_records"] = len(records)
+    with open(OUTPUT_PATH, "w") as f:
+        json.dump(previous, f, indent=2, sort_keys=True)
+    tot_sales = sum(t["sales"] for t in totals.values()) or 1.0
+    log(f"RECLASSIFY_ONLY: {len(records)} journey records ({days[0]}..{days[-1]}) -> {applied} days re-attributed in {OUTPUT_PATH}; no API call made")
+    log("Last-touch channels over the whole history: " + ", ".join(
+        f"{ch} {t['orders']} orders {t['sales']:,.0f} ({100 * t['sales'] / tot_sales:.0f}%)" for ch, t in totals.items()))
+
+
 def main():
+    if RECLASSIFY_ONLY:
+        reclassify_only()
+        return
     if not SHOP:
         log("Missing SHOPIFY_SHOP (e.g. yourstore.myshopify.com)")
         sys.exit(1)
@@ -1583,6 +1822,16 @@ def main():
     previous = history_previous(OUTPUT_PATH)
     daily = history_merge(previous, agg.daily, window_start, window_end)
     hist = history_meta(previous, mode, window_start, window_end, daily, today_key)
+    # Attribution: store this run's raw journey records for its day range, then classify EVERY stored
+    # record with the current rules (cheap) so all days in the file follow the same rules.
+    channel_totals = {}
+    if ATTRIBUTION:
+        written = journeys_save(agg.journeys, window_start, window_end)
+        records = journeys_load_all()
+        blocks = attribution_blocks(records)
+        applied = apply_attribution(daily, blocks)
+        channel_totals = channel_totals_of(blocks, window_start, window_end)
+        log(f"Journeys: {len(agg.journeys)} records stored for {window_start}..{window_end} ({written} month files), {len(records)} records in total -> {applied} days attributed")
     log(f"History: {hist['first_day']}..{hist['last_day']} ({hist['days']} days, {hist['missing_count']} missing since {HISTORY_START})")
     if agg.counts["snowball_attr_without_tag"]:
         agg.warnings.add(f"{agg.counts['snowball_attr_without_tag']} orders carry the {ATTR_KEY} attribute but no '{TAG_PREFIX}*' tag (Snowball rejected/untracked them) - not counted as referrals")
@@ -1626,17 +1875,7 @@ def main():
                 "commission_net": round(sum(p["commission_net"] for p in agg.programs.values()), 2),
             },
         },
-        "attribution": {
-            "enabled": ATTRIBUTION,
-            "model": "last_non_direct_session",
-            "basis": ("per order: Shopify customerJourneySummary (sessions of the 30 days before the order); channel of the last "
-                      "session that is not direct / a checkout hop; sales = order net sales (subtotal after discounts) on the "
-                      "ORDER day; first_touch = channel of the first session of the same journey; new = customer's first order"),
-            "channels": CHANNELS,
-            "paid_channels": sorted(PAID_CHANNELS),
-            "window_totals_last_touch": dict(sorted(agg.channel_totals.items(), key=lambda kv: -kv[1]["sales"])),
-            "moments_first": MOMENTS_FIRST,
-        },
+        "attribution": attribution_meta_block(channel_totals),
         "meta": {
             "script_version": SCRIPT_VERSION,
             "schema": SCHEMA,
@@ -1666,11 +1905,10 @@ def main():
         f"{agg.counts['snowball_tagged']} Snowball referrals (commission net "
         f"{out['snowball']['window_totals']['commission_net']:.2f} {out['currency']}), "
         f"{client.requests} API calls, {len(agg.warnings)} warning types.")
-    if ATTRIBUTION and agg.channel_totals:
-        tot_sales = sum(t["sales"] for t in agg.channel_totals.values()) or 1.0
+    if ATTRIBUTION and channel_totals:
+        tot_sales = sum(t["sales"] for t in channel_totals.values()) or 1.0
         log("Last-touch channels in the fetched range: " + ", ".join(
-            f"{ch} {t['orders']} orders {t['sales']:,.0f} ({100 * t['sales'] / tot_sales:.0f}%)"
-            for ch, t in sorted(agg.channel_totals.items(), key=lambda kv: -kv[1]["sales"])))
+            f"{ch} {t['orders']} orders {t['sales']:,.0f} ({100 * t['sales'] / tot_sales:.0f}%)" for ch, t in channel_totals.items()))
 
 
 if __name__ == "__main__":
