@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 76699989be).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 26fd2cfec2).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -104,6 +104,13 @@
   // API) and booked per billing cycle (19th -> 18th), spread per day - data/klaviyo_invoices.json.
   const KLAVIYO_INVOICES_LIVE_DATA = (window.__LIVE && window.__LIVE["klaviyo_invoices"]) || null; /*KLAVIYO_INVOICES_INJECT*/
   let klaviyoInvMeta = null;
+  // Monthly OpEx entered by hand (no API): payroll, software, office, accounting, insurance, other (G&A, above EBITDA)
+  // and depreciation, interest, income tax (below EBITDA) - data/opex_monthly.json in the repo, USD per month,
+  // spread evenly over the days of the month. A month with no entry takes the latest earlier month ("carried").
+  const OPEX_MONTHLY_LIVE_DATA = (window.__LIVE && window.__LIVE["opex"]) || null; /*OPEX_MONTHLY_INJECT*/
+  let opexMeta = null;
+  const OPEX_GA_KEYS = ['salary','software','office','accounting','insurance','other'];
+  const OPEX_BELOW_KEYS = ['depreciation','interest','income_tax'];
   // Amazon Ads spend per day (SP / SB / SD). Today: exported from Sellerboard (which pulls the Amazon Ads API);
   // later: data/amazon_ads.json from the Amazon Ads API workflow once Amazon approves access. Same shape either way.
   const AMAZON_ADS_LIVE_DATA = (window.__LIVE && window.__LIVE["amazon_ads"]) || null; /*AMAZON_ADS_DATA_INJECT*/
@@ -363,7 +370,18 @@
     const cmBeforeMarketing = grossProfit - feesTotal;                 // CM2: what is left to pay for marketing
     const contributionProfit = cmBeforeMarketing - marketingTotal;     // CM3: after marketing
 
-    const gaItems = GA_ITEMS.map(it=>({...it, value: it.monthly/30*n}));
+    // Manual monthly OpEx (data/opex_monthly.json) spread per day: G&A keys join the G&A items, the rest sit below EBITDA.
+    const opexDays = rows.filter(r=>r.opex).length;
+    const opexCarriedDays = rows.filter(r=>r.opex && r.opex.carried).length;
+    const opexSum = k => sum(rows.map(r=> r.opex ? (r.opex.vals[k]||0) : 0));
+    const opexHas = k => rows.some(r=> r.opex && r.opex.has[k]);
+    const opexNote = (opexDays>0 && opexDays<n ? ` (${n-opexDays} ngày trước tháng đầu tiên đã nhập = $0)` : '') + (opexCarriedDays>0 ? ` (${opexCarriedDays} ngày lấy theo tháng gần nhất đã nhập)` : '');
+    const gaItems = GA_ITEMS.map(it=>{
+      const manualKey = OPEX_GA_KEYS.includes(it.key);
+      const entered = manualKey && opexHas(it.key);
+      return {...it, value: it.monthly/30*n + (manualKey ? opexSum(it.key) : 0), manual: entered, label: it.label + (entered ? ' — nhập tay theo tháng' + opexNote : '')};
+    });
+    const salaryEntered = !!gaItems.find(it=>it.key==='salary' && it.manual);
     // Klaviyo: real invoices booked per billing cycle (data/klaviyo_invoices.json), spread per day
     const klaviyoCostDays = rows.filter(r=>r.klaviyoCost).length;
     const klaviyoCost = sum(rows.map(r=> r.klaviyoCost ? r.klaviyoCost.cost : 0));
@@ -376,7 +394,18 @@
     const inventoryHolding = INVENTORY_MONTHLY/30*n;
     const logisticsTotal = shipmonkLogistics + amazonLogistics;        // warehousing, receiving, returns handling, FBA storage & service fees
     const fixedTotal = gaTotal + inventoryHolding + logisticsTotal;    // operating costs (OpEx) below the contribution line
-    const netProfit = contributionProfit - fixedTotal;                 // operating profit (EBITDA): before payroll not entered, depreciation, interest, income tax
+    const netProfit = contributionProfit - fixedTotal;                 // operating profit (EBITDA) - the name is historical; KPIs, trend and break-even use it
+    // Below EBITDA (manual monthly entries): D&A -> EBIT, interest -> EBT, income tax -> net income.
+    const depreciation = opexSum('depreciation'), interest = opexSum('interest');
+    const depreciationEntered = opexHas('depreciation'), interestEntered = opexHas('interest'), taxEntered = opexHas('income_tax');
+    const taxRate = opexMeta ? opexMeta.tax_rate : 0;
+    const ebit = netProfit - depreciation;
+    const ebt = ebit - interest;
+    const taxGiven = rows.some(r=> r.opex && r.opex.given.income_tax);   // 0 entered = no tax, not "estimate it"
+    const incomeTaxEstimated = !taxGiven && taxRate>0;
+    const incomeTax = taxEntered ? opexSum('income_tax') : (incomeTaxEstimated && ebt>0 ? ebt*taxRate : 0);
+    const netIncome = ebt - incomeTax;
+    const belowEbitdaEntered = depreciationEntered || interestEntered || taxEntered || incomeTaxEstimated;
 
     const variableTotal = cogs + otherVarTotal;
     const variableRatio = netRevenue>0 ? variableTotal/netRevenue : 0;
@@ -417,6 +446,7 @@
       smInvDays, smInv, smInvOther, smInvAdjCredits, smInvShipCmp, smApiShipCmp, smCmpDays, smCmpMissingDays, smTrueUp, shipmonkInvoiceExtras, shipmonkLogistics, amazonLogistics, logisticsTotal, feesTotal, marketingTotal, cmBeforeMarketing,
       paymentFees, paymentFeeDays, paymentFeeOrders, feesMissingOrders, gatewayMix, feeTypeMix, paypalDays, paypalFees, paypalPayments, paypalPaymentsCount, paypalCompare, paymentFeesAll, marketplaceFees, adSpend, otherVarTotal, contributionProfit,
       gaItems, gaTotal, inventoryHolding, fixedTotal, netProfit, klaviyoCost, klaviyoCostDays, klaviyoCostParts,
+      opexDays, opexCarriedDays, opexNote, salaryEntered, depreciation, interest, depreciationEntered, interestEntered, taxEntered, taxRate, ebit, ebt, incomeTax, incomeTaxEstimated, netIncome, belowEbitdaEntered,
       variableTotal, variableRatio, cmRatio, breakEvenRevenue, blendedAOV, breakEvenOrders,
       merValue, attrRevenueSum,
       amazonOrdersReal, amazonReferralFeesReal, amazonServiceFeesReal, amazonInboundFreightReal, amazonOtherFeesReal, amazonOtherUnclassifiedCost, amazonMarketplaceFeesEst, walmartFees, tiktokFees,
@@ -511,6 +541,8 @@
       {label:'LN hoạt động (EBITDA)', v:cur.netProfit, pv:prev&&prev.netProfit},
       {label:'Biên EBITDA', v: cur.netRevenue? cur.netProfit/cur.netRevenue*100:0, pv: prev&&prev.netRevenue? prev.netProfit/prev.netRevenue*100:null, pct:true},
     ];
+    if(cur.belowEbitdaEntered) items.push({label:'Lợi nhuận ròng (sau thuế)', v:cur.netIncome, pv:prev&&prev.netIncome});
+    document.getElementById('kpiRow').classList.toggle('six', items.length===6);
     document.getElementById('kpiRow').innerHTML = items.map(it=>{
       let deltaHtml = '<div class="delta flat">— kỳ trước không có dữ liệu</div>';
       if(it.pv!==null && it.pv!==undefined){
@@ -725,16 +757,28 @@
 
     rows.push(stSection('Chi phí hoạt động (OpEx) — G&A (phần mềm, lương, văn phòng…)','fixed'));
     a.gaItems.forEach(it=>{
-      rows.push({...stLine(it.label + (it.real ? '' : ' — chưa nhập'), -it.value, nr, 'fix', 'fixed'), neg:true, live: it.real ? 'real' : false, gap: !it.real});
+      const known = it.real || it.manual;
+      rows.push({...stLine(it.label + (known ? '' : ' — chưa nhập'), -it.value, nr, 'fix', 'fixed'), neg:true, live: it.real ? 'real' : (it.manual ? 'manual' : false), gap: known ? false : 'manual'});
     });
     rows.push(stSub('= Tổng G&A', -a.gaTotal, nr, 'fixed_sub'));
     rows.push(stSub('= Tổng chi phí hoạt động (OpEx)', -a.fixedTotal, nr, 'opex_sub'));
 
-    rows.push(stFinal('= Lợi nhuận hoạt động (EBITDA) — trước lương chưa nhập, khấu hao, lãi vay, thuế TNDN', a.netProfit, nr));
+    rows.push(stFinal('= Lợi nhuận hoạt động (EBITDA)' + (a.salaryEntered ? ' — trước khấu hao, lãi vay, thuế TNDN' : ' — trước lương chưa nhập, khấu hao, lãi vay, thuế TNDN'), a.netProfit, nr));
+
+    // Below EBITDA: D&A -> EBIT, interest -> EBT, income tax -> net income (manual monthly entries in data/opex_monthly.json)
+    rows.push(stSection('Dưới EBITDA — khấu hao, lãi vay, thuế TNDN (nhập tay theo tháng)','below'));
+    const manualNote = ' — nhập tay theo tháng' + a.opexNote;
+    rows.push({...stLine('Khấu hao & phân bổ (D&A) — khuôn, thiết bị, phần mềm mua đứt' + (a.depreciationEntered ? manualNote : ' — chưa nhập'), -a.depreciation, nr, 'fix', 'below'), neg:true, live: a.depreciationEntered ? 'manual' : false, gap: a.depreciationEntered ? false : 'manual'});
+    rows.push(stSub('= EBIT (lợi nhuận trước lãi vay & thuế)', a.ebit, nr, 'ebit_sub'));
+    rows.push({...stLine('Lãi vay & chi phí tài chính (± lãi tiền gửi, chênh lệch tỷ giá)' + (a.interestEntered ? manualNote : ' — chưa nhập'), -a.interest, nr, 'fix', 'below'), neg: a.interest>=0, live: a.interestEntered ? 'manual' : false, gap: a.interestEntered ? false : 'manual'});
+    rows.push(stSub('= Lợi nhuận trước thuế (EBT)', a.ebt, nr, 'ebt_sub'));
+    const taxLabel = 'Thuế thu nhập doanh nghiệp (TNDN)' + (a.taxEntered ? manualNote : a.incomeTaxEstimated ? ` — ước tính ${(a.taxRate*100).toFixed(a.taxRate*100%1 ? 1 : 0)}% × lợi nhuận trước thuế dương (tax_rate trong file; thay bằng số kế toán khi có)` : ' — chưa nhập');
+    rows.push({...stLine(taxLabel, -a.incomeTax, nr, 'fix', 'below'), neg:true, live: a.taxEntered ? 'manual' : false, gap: (a.taxEntered || a.incomeTaxEstimated) ? false : 'manual', est: a.incomeTaxEstimated, estTitle:'Ước tính theo thuế suất trong data/opex_monthly.json — nhập income_tax theo tháng để thay bằng số thật'});
+    rows.push(stFinal('= Lợi nhuận ròng (Net Profit, sau thuế)' + (a.belowEbitdaEntered ? '' : ' — hiện bằng EBITDA vì các khoản dưới EBITDA còn để $0'), a.netIncome, nr));
     return rows;
   }
 
-  const SECTION_DEFAULT_OPEN = {cogs:true, opvar:true, mkt:true, logi:true, fixed:true};
+  const SECTION_DEFAULT_OPEN = {cogs:true, opvar:true, mkt:true, logi:true, fixed:true, below:true};
 
   function renderStatement(){
     const rows = currentRows();
@@ -752,9 +796,9 @@
       const hiddenCls = (r.t==='line' && curSection && r.key===curSection && !sectionOpen) ? 'hidden' : '';
       if(r.t==='line'){
         const tagHtml = r.tag ? `<span class="tag ${r.tag}"><span class="d"></span>${r.tag==='var'?'Biến đổi':'Cố định'}</span>` : '';
-        const gapHtml = r.gap ? `<span class="tag gap"><span class="d"></span>Chưa kết nối ($0)</span>` : '';
-        const liveHtml = r.live ? `<span class="tag live"><span class="d"></span>${r.live==='real'?'Số thật':'Live'}</span>` : '';
-        const estHtml = r.est ? `<span class="tag info" title="Một phần là ước tính cho đơn Amazon chưa ghi phí — tự thay bằng số thật khi Amazon ghi"><span class="d"></span>Có ước tính</span>` : '';
+        const gapHtml = r.gap ? `<span class="tag gap"><span class="d"></span>${r.gap==='manual' ? 'Chưa nhập ($0)' : 'Chưa kết nối ($0)'}</span>` : '';
+        const liveHtml = r.live ? `<span class="tag live"><span class="d"></span>${r.live==='real'?'Số thật': r.live==='manual' ? 'Nhập tay' : 'Live'}</span>` : '';
+        const estHtml = r.est ? `<span class="tag info" title="${r.estTitle || 'Một phần là ước tính cho đơn Amazon chưa ghi phí — tự thay bằng số thật khi Amazon ghi'}"><span class="d"></span>Có ước tính</span>` : '';
         const detailCls = r.detail ? 'detail' : '';
         html += `<tr class="line ${r.neg?'neg':''} ${detailCls} ${hiddenCls}" data-sec="${curSection||''}"><td class="label">${r.label}${tagHtml}${gapHtml}${liveHtml}${estHtml}</td><td class="num">${money(r.value)}</td><td class="pct">${pctStr(r.pct)}</td></tr>`;
       } else if(r.t==='subtotal'){
@@ -1135,6 +1179,14 @@
     const fmtD = k => k ? k.slice(8,10)+'/'+k.slice(5,7)+'/'+k.slice(0,4) : '';
     setSource('klaviyo',(klaviyoMatched ? ageLevel(KLAVIYO_LIVE_DATA.generated_at) : 'w'), (klaviyoMatched ? fmtAmazonAge(KLAVIYO_LIVE_DATA.generated_at)+fmtCoverage(KLAVIYO_LIVE_DATA) : 'API chưa có') + (klaviyoInvMatched ? ' · hoá đơn đến '+fmtD(km.last_day) : ' · chưa có hoá đơn'));
   }
+  // Monthly OpEx entered by hand in the repo (data/opex_monthly.json).
+  const opexMatched = OPEX_MONTHLY_LIVE_DATA ? applyOpexRows(OPEX_MONTHLY_LIVE_DATA) : false;
+  if(opexMatched){
+    const e = opexMeta.entered;
+    const fmtM = m => m.slice(5,7)+'/'+m.slice(0,4);
+    const anyNum = e.some(m => OPEX_GA_KEYS.concat(OPEX_BELOW_KEYS).some(k => parseFloat(OPEX_MONTHLY_LIVE_DATA.months[m][k])>0));
+    setSource('ga', anyNum ? 'g' : 'w', 'nhập tay data/opex_monthly.json · ' + (e.length===1 ? 'tháng '+fmtM(e[0]) : fmtM(e[0])+' → '+fmtM(e[e.length-1])) + (anyNum ? '' : ' (toàn $0 — chưa điền số)'));
+  }
   // Shopify + Snowball baked in by the same hourly sync.
   const shopifyMatched = SHOPIFY_LIVE_DATA ? applyShopifyLive(SHOPIFY_LIVE_DATA) : false;
   if(shopifyMatched){
@@ -1365,6 +1417,29 @@
       const r = data.daily[iso] || {};
       days[idx].klaviyoCost = {cost: parseFloat(r.cost)||0, platform: parseFloat(r.platform)||0, sms: parseFloat(r.sms)||0, upgrades: parseFloat(r.upgrades)||0, flex: parseFloat(r.flex)||0, cycle: r.cycle||null};
       matched++;
+    });
+    return matched>0;
+  }
+
+  function applyOpexRows(data){
+    if(!data || !data.months) return false;
+    const months = {};
+    Object.keys(data.months).forEach(m=>{ if(/^\d{4}-\d{2}$/.test(m) && data.months[m] && typeof data.months[m]==='object') months[m] = data.months[m]; });
+    const entered = Object.keys(months).sort();
+    if(!entered.length) return false;
+    opexMeta = {entered, tax_rate: parseFloat(data.tax_rate)||0, note: data.note||'', updated_at: data.updated_at||null};
+    const num = v => (v===null || v===undefined || v==='') ? null : (isFinite(parseFloat(v)) ? parseFloat(v) : null);
+    let matched = 0;
+    days.forEach(d=>{
+      const m = d.iso.slice(0,7);
+      let src = months[m] ? m : null;
+      if(!src){ for(let i=entered.length-1;i>=0;i--){ if(entered[i]<m){ src = entered[i]; break; } } }
+      if(!src) return;
+      const dim = new Date(Date.UTC(+m.slice(0,4), +m.slice(5,7), 0)).getUTCDate();   // days in that month
+      const o = {month:m, from:src, carried: src!==m, vals:{}, has:{}, given:{}};
+      // has = a non-zero number was entered (drives the "Nhập tay" tag); given = any number incl. 0 (0 = "no such cost", null/absent = unknown)
+      OPEX_GA_KEYS.concat(OPEX_BELOW_KEYS).forEach(k=>{ const v = num(months[src][k]); o.given[k] = v!==null; o.has[k] = v!==null && v!==0; o.vals[k] = (v||0)/dim; });
+      d.opex = o; matched++;
     });
     return matched>0;
   }

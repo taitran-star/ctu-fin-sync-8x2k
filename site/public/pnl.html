@@ -143,7 +143,9 @@
   .bi-inline{width:13px;height:13px;vertical-align:-2px;margin:0 2px 0 0;color:var(--status-warning);}
 
   .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
-  @media (max-width:900px){.kpis{grid-template-columns:repeat(2,1fr);}}
+  .kpis.six{grid-template-columns:repeat(6,1fr);}
+  @media (max-width:1100px){.kpis.six{grid-template-columns:repeat(3,1fr);}}
+  @media (max-width:900px){.kpis,.kpis.six{grid-template-columns:repeat(2,1fr);}}
   .kpi{background:var(--surface-card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;}
   .kpi .label{font-size:11.5px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.04em;}
   .kpi .value{font-family:var(--font-display);font-size:30px;font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:0;white-space:nowrap;line-height:1;}
@@ -189,6 +191,7 @@
   .tag.info .d{background:var(--ink-muted);}
   .tag.live{color:var(--success-text);background:color-mix(in srgb, var(--status-good) 16%, transparent);}
   .tag.live .d{background:var(--status-good);}
+  .caption code{font-family:var(--font-mono);font-size:11px;background:var(--surface-card-3);padding:1px 4px;border-radius:4px;}
   .caption{font-size:11px;color:var(--ink-muted);padding:2px 8px 8px 26px;}
 
   .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-secondary);}
@@ -363,7 +366,7 @@
       <div class="note">% tính trên Doanh thu thuần · bấm dòng nhóm để thu gọn/mở rộng</div>
     </div>
     <div class="stmt-wrap"><table class="stmt" id="stmtTable"></table></div>
-    <div class="caption" style="padding-left:2px;margin-top:8px;">Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa kết nối ($0)</span> chưa có nguồn dữ liệu nên để $0 (không ước tính). Vì vậy <b>Lợi nhuận gộp / đóng góp / EBITDA ở trên là lợi nhuận TRƯỚC</b> các khoản còn gắn nhãn đó (giá vốn sản phẩm, phí cổng thanh toán, G&amp;A…) — sẽ tự đúng dần khi từng nguồn được nối vào.</div>
+    <div class="caption" style="padding-left:2px;margin-top:8px;">Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa kết nối ($0)</span> chưa có nguồn dữ liệu nên để $0 (không ước tính). Vì vậy <b>Lợi nhuận gộp / đóng góp / EBITDA ở trên là lợi nhuận TRƯỚC</b> các khoản còn gắn nhãn đó (giá vốn sản phẩm, phí cổng thanh toán, G&amp;A…) — sẽ tự đúng dần khi từng nguồn được nối vào. Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa nhập ($0)</span> là chi phí không có API (lương, văn phòng, khấu hao, lãi vay, thuế TNDN): điền theo tháng vào file <code>data/opex_monthly.json</code> trên GitHub, bảng tự đọc và rải đều theo ngày; tháng chưa điền lấy theo tháng gần nhất đã điền.</div>
   </div>
 
   <div class="card">
@@ -487,7 +490,7 @@
 <div id="siteRefresh" hidden><span id="siteLoadedAt" title="Giờ tải số liệu (giờ trên máy bạn)"></span><button type="button" id="siteReload" title="Tải lại số liệu mới nhất">↻ Cập nhật</button><a href="/?menu=1" title="Về trang chọn bảng">bảng khác</a><a href="/?menu=1#app" id="siteInstall" title="Cài như app lên máy / điện thoại" hidden>cài app</a><a href="/logout" title="Đăng xuất khỏi thiết bị này">thoát</a></div>
 <script>
 (function(){
-  var SOURCES = {"amazon": "amazon_pnl.json", "meta": "meta_ads.json", "shopify": "shopify_pnl.json", "google": "google_ads.json", "shipmonk": "shipmonk.json", "shipmonk_invoices": "shipmonk_invoices.json", "paypal": "paypal.json", "klaviyo": "klaviyo.json", "klaviyo_invoices": "klaviyo_invoices.json", "amazon_ads": "amazon_ads.json"};
+  var SOURCES = {"amazon": "amazon_pnl.json", "meta": "meta_ads.json", "shopify": "shopify_pnl.json", "google": "google_ads.json", "shipmonk": "shipmonk.json", "shipmonk_invoices": "shipmonk_invoices.json", "paypal": "paypal.json", "klaviyo": "klaviyo.json", "klaviyo_invoices": "klaviyo_invoices.json", "amazon_ads": "amazon_ads.json", "opex": "opex_monthly.json"};
   var keys = Object.keys(SOURCES), done = 0;
   window.__LIVE = {}; window.__LIVE_ERR = {}; window.__LOADED_AT = 0; window.__SAVED_AT = 0;
   try{ localStorage.setItem('ctu_last_dash', '/pnl'); }catch(e){}
@@ -506,7 +509,7 @@
     }).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=76699989be';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=26fd2cfec2';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');
