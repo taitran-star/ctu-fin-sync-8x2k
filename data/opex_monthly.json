@@ -1,0 +1,21 @@
+{
+ "schema": 1,
+ "currency": "USD",
+ "updated_at": "2026-09-22",
+ "note": "Chi phi nhap tay theo thang (USD/thang), bang P&L tu rai deu theo ngay trong thang. Muc G&A (tren EBITDA): salary = luong gian tiep (van hanh, quan ly); software = phan mem & cong cu (KHONG gom Snowball $350 va Klaviyo - da co san); office = van phong & van hanh; accounting = ke toan & phap ly; insurance = bao hiem; other = khac. Muc duoi EBITDA: depreciation = khau hao & phan bo (khuon, thiet bi, phan mem mua dut); interest = lai vay & chi phi tai chinh (am neu lai tien gui > lai vay); income_tax = thue TNDN theo thang (bo trong/null de bang uoc tinh theo tax_rate x loi nhuan truoc thue duong; 0 = khong co thue). Thang chua co dong rieng se lay theo thang gan nhat da nhap. Them thang moi = them mot dong \"YYYY-MM\": {...}.",
+ "tax_rate": 0,
+ "months": {
+  "2026-09": {
+   "salary": 0,
+   "software": 0,
+   "office": 0,
+   "accounting": 0,
+   "insurance": 0,
+   "other": 0,
+   "depreciation": 0,
+   "interest": 0,
+   "income_tax": null,
+   "note": ""
+  }
+ }
+}
