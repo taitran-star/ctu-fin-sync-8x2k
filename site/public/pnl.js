@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build a1f66dfaa4).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build ec958a409e).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -66,6 +66,8 @@
   const AMAZON_LIVE_DATA = (window.__LIVE && window.__LIVE["amazon"]) || null; /*AMAZON_DATA_INJECT*/
 
   let amazonMeta = null;
+  let amazonFeeEstRates = null;   // {refRate, fbaPerUnit, settledDays} once estimateUnpostedAmazonFees has run
+  const AMZ_FEE_EST_SETTLE_DAYS = 14, AMZ_FEE_EST_WINDOW_DAYS = 21;   // days Amazon needs to post fees / how far back the top-up applies
   let amazonOrderBasisDays = 0;  let amazonFeeBasisOrderedDays = 0;   // days whose Amazon revenue comes from the order-date report (script schema 3)
   let shopifyMeta = null;   // full data/shopify_pnl.json when baked in (see SHOPIFY_DATA_INJECT)
 
@@ -238,6 +240,7 @@
     let amazonOrdersReal=0, amazonOrdersEst=0, amazonRevenueEst=0;
     let amazonFbaFeesReal=0, amazonReferralFeesReal=0, amazonServiceFeesReal=0, amazonInboundFreightReal=0, amazonOtherFeesReal=0, amazonOtherNetReal=0;
     let amazonStorageAlloc=0, amazonStorageMissingDays=0, amazonStoragePosted=0, amazonRefundFeeAdj=0, amazonFeeOrderedDays=0;
+    let amazonFeeEstDays=0, amazonRefEst=0, amazonFbaEst=0, amazonPendSkuDays=0, amazonPendUnits=0;
     rows.forEach(r=>{
       if(r.amazonReal){
         amazonOrdersReal += r.orders.amazon;
@@ -251,6 +254,8 @@
         amazonStoragePosted += r.amazonReal.storagePosted || 0;
         amazonRefundFeeAdj += r.amazonReal.refundFeeAdj || 0;
         if(r.amazonReal.feeBasisOrdered){ amazonFeeOrderedDays++; if(!r.amazonReal.storageKnown) amazonStorageMissingDays++; }
+        if(r.amazonReal.feeEstimated){ amazonFeeEstDays++; amazonRefEst += r.amazonReal.refEst; amazonFbaEst += r.amazonReal.fbaEst; }
+        if(r.amazonReal.pendKnown){ amazonPendSkuDays++; amazonPendUnits += r.amazonReal.pendUnits; }
       } else {
         amazonOrdersEst += r.orders.amazon;
         amazonRevenueEst += r.channels.amazon;
@@ -405,7 +410,7 @@
       variableTotal, variableRatio, cmRatio, breakEvenRevenue, blendedAOV, breakEvenOrders,
       merValue, attrRevenueSum,
       amazonOrdersReal, amazonReferralFeesReal, amazonServiceFeesReal, amazonInboundFreightReal, amazonOtherFeesReal, amazonOtherUnclassifiedCost, amazonMarketplaceFeesEst, walmartFees, tiktokFees,
-      amazonStorageAlloc, amazonStorageMissingDays, amazonStoragePosted, amazonRefundFeeAdj, amazonFeeOrderedDays,
+      amazonStorageAlloc, amazonStorageMissingDays, amazonStoragePosted, amazonRefundFeeAdj, amazonFeeOrderedDays, amazonFeeEstDays, amazonRefEst, amazonFbaEst, amazonPendSkuDays, amazonPendUnits,
       metaAdsRealDays, metaAdsPurchases, googleAdsRealDays, googleAdsPurchases, amazonAdsRealDays, amazonAdsPurchases, amazonAdsSplit, amazonAdsConsoleSpend, amazonAdsImpressions, amazonAdsClicks, amazonAcos, amazonTacos, amazonRoas,
       snowballRealDays, snowballOrders, snowballRevenue, snowballCommission};
   }
@@ -571,7 +576,9 @@
     };
     rows.push({...stLine('Phí đóng gói (packaging)' + (smLive ? ' — vật liệu đóng gói ShipMonk, ' + smBasis : ''), -a.packaging, nr, 'var', 'cogs'), neg:true, gap: !smLive, live: smLive});
     smStoreRows('packaging', 'packaging');
-    rows.push({...stLine('Phí fulfillment FBA — Amazon pick & pack + ship (FBAPerUnitFulfillmentFee)', -a.fulfillment, nr, 'var', 'cogs'), neg:true, live: a.amazonRealDays>0});
+    const skuPend = a.amazonPendSkuDays>0;
+    const fbaEstTxt = a.amazonFbaEst>0.5 ? ' — trong đó '+money(a.amazonFbaEst)+(skuPend ? ' cho '+a.amazonPendUnits.toLocaleString('en-US')+' units Amazon chưa ghi phí, tính theo cước FBA thật của từng SKU ('+a.amazonFeeEstDays+' ngày; thay bằng số thật khi Amazon ghi)' : ' ước tính cho đơn Amazon chưa ghi phí ('+a.amazonFeeEstDays+' ngày, '+(amazonFeeEstRates ? money(amazonFeeEstRates.fbaPerUnit)+'/unit theo '+amazonFeeEstRates.settledDays+' ngày đã chốt' : '')+')') : '';
+    rows.push({...stLine('Phí fulfillment FBA — Amazon pick & pack + ship (FBAPerUnitFulfillmentFee)'+fbaEstTxt, -a.fulfillment, nr, 'var', 'cogs'), neg:true, live: a.amazonRealDays>0, est: a.amazonFbaEst>0.5});
     const smOrdersTxt = a.shipmonkOrders.toLocaleString('en-US')+' đơn' + (a.shipmonkUnshipped>0 ? ', '+a.shipmonkUnshipped.toLocaleString('en-US')+' chưa ship — tính theo ước tính ShipMonk' : '') + ', '+a.shipmonkUnits.toLocaleString('en-US')+' units';
     rows.push({...stLine(smLive ? 'Phí fulfillment ShipMonk — pick & pack ('+smOrdersTxt+')' + smNote : 'Phí fulfillment ShipMonk / kho thủ công — đơn Shopify + Amazon FBM (chưa kết nối ShipMonk)', -a.shipmonkPickPack, nr, 'var', 'cogs'), neg:true, gap: !smLive, live: smLive});
     smStoreRows('pickPack', 'pick & pack');
@@ -634,8 +641,8 @@
     }
     if(a.amazonOrdersReal>0){
       const feeOrdered = a.amazonFeeOrderedDays>0;
-      const feeBasisTxt = feeOrdered ? ' — theo ngày đặt hàng (đơn chưa ship: phí vào khi Amazon ship)' : ' — theo ngày ship (Finances)';
-      rows.push({...stLine('Phí giới thiệu Amazon (Referral fees)'+feeBasisTxt, -a.amazonReferralFeesReal, nr, 'var', 'opvar'), neg:true, live: feeOrdered});
+      const feeBasisTxt = feeOrdered ? ' — theo ngày đặt hàng' + (a.amazonRefEst>0.5 ? ', trong đó '+money(a.amazonRefEst)+(a.amazonPendSkuDays>0 ? ' cho '+a.amazonPendUnits.toLocaleString('en-US')+' units Amazon chưa ghi phí, tính theo tỷ lệ referral thật của từng SKU ('+a.amazonFeeEstDays+' ngày; thay bằng số thật khi Amazon ghi)' : ' ước tính cho đơn Amazon chưa ghi phí ('+a.amazonFeeEstDays+' ngày, '+(amazonFeeEstRates ? (amazonFeeEstRates.refRate*100).toFixed(1)+'% doanh thu theo '+amazonFeeEstRates.settledDays+' ngày đã chốt' : '')+'; thay bằng số thật khi Amazon ghi)') : ' (Amazon đã ghi phí đủ)') : ' — theo ngày ship (Finances)';
+      rows.push({...stLine('Phí giới thiệu Amazon (Referral fees)'+feeBasisTxt, -a.amazonReferralFeesReal, nr, 'var', 'opvar'), neg:true, live: feeOrdered, est: a.amazonRefEst>0.5});
       rows.push({...stLine(feeOrdered ? 'Phí dịch vụ Amazon (subscription, xử lý trả hàng, removal, Vine/coupon — không gồm lưu kho tháng)' : 'Phí dịch vụ Amazon (subscription, lưu kho FBA, xử lý trả hàng, removal, Vine/coupon)', -a.amazonServiceFeesReal, nr, 'var', 'opvar'), neg:true, gap: a.amazonServiceFeesReal===0});
       if(feeOrdered){
         let sl = 'Phí lưu kho FBA hàng tháng — ghi vào tháng lưu kho (Amazon thu ngày 7 tháng sau)';
@@ -722,8 +729,9 @@
         const tagHtml = r.tag ? `<span class="tag ${r.tag}"><span class="d"></span>${r.tag==='var'?'Biến đổi':'Cố định'}</span>` : '';
         const gapHtml = r.gap ? `<span class="tag gap"><span class="d"></span>Chưa kết nối ($0)</span>` : '';
         const liveHtml = r.live ? `<span class="tag live"><span class="d"></span>${r.live==='real'?'Số thật':'Live'}</span>` : '';
+        const estHtml = r.est ? `<span class="tag info" title="Một phần là ước tính cho đơn Amazon chưa ghi phí — tự thay bằng số thật khi Amazon ghi"><span class="d"></span>Có ước tính</span>` : '';
         const detailCls = r.detail ? 'detail' : '';
-        html += `<tr class="line ${r.neg?'neg':''} ${detailCls} ${hiddenCls}" data-sec="${curSection||''}"><td class="label">${r.label}${tagHtml}${gapHtml}${liveHtml}</td><td class="num">${money(r.value)}</td><td class="pct">${pctStr(r.pct)}</td></tr>`;
+        html += `<tr class="line ${r.neg?'neg':''} ${detailCls} ${hiddenCls}" data-sec="${curSection||''}"><td class="label">${r.label}${tagHtml}${gapHtml}${liveHtml}${estHtml}</td><td class="num">${money(r.value)}</td><td class="pct">${pctStr(r.pct)}</td></tr>`;
       } else if(r.t==='subtotal'){
         html += `<tr class="subtotal"><td class="label">${r.label}</td><td class="num">${money(r.value)}</td><td class="pct">${pctStr(r.pct)}</td></tr>`;
       } else if(r.t==='final'){
@@ -1780,13 +1788,53 @@
         pendingUnits: r.ordered_pending_units||0,
         mcfUnits: r.mcf_units||0,
         mcfOrders: r.mcf_orders||0,
+        orderedUnits: r.ordered_units||0,
+        refEst: 0, fbaEst: 0, feeEstimated: false, pendKnown: false, pendUnits: 0,
       };
+      // Script 2.7 (schema 5): the sync prices every order line Amazon has not posted fees for yet with
+      // that SKU's own posted FBA fee / referral rate -> exact expected fees, no ratio guess needed.
+      if(typeof r.ordered_referral_fees_pending === 'number' && feeBasisOrdered){
+        const ar = days[idx].amazonReal;
+        ar.pendKnown = true;
+        ar.refEst = -(r.ordered_referral_fees_pending||0);
+        ar.fbaEst = -(r.ordered_fba_fulfillment_fees_pending||0);
+        ar.pendUnits = r.ordered_units_pending_fees||0;
+        ar.referralFees += ar.refEst; ar.fbaFees += ar.fbaEst;
+        ar.feeEstimated = (ar.refEst + ar.fbaEst) > 0.005;
+      }
       // NOTE: r.ad_spend is a known gap too (Sponsored Products spend needs the separate
       // Amazon Advertising API, not covered by SP-API) - intentionally NOT overwriting the
       // ads.amazonads estimate with this yet, since the real value would misleadingly read 0.
       matched++;
     });
+    estimateUnpostedAmazonFees(data);
     return matched>0;
+  }
+  // Order-day fees only exist once Amazon posts the shipment (Finances), so the newest days show
+  // referral/FBA fees far below what their orders will cost - the same gap Sellerboard fills with
+  // "estimated" fees. Rates come from settled days (15-60 days back); a recent day whose posted
+  // fees are below 97% of the expected amount is topped up to the expectation and flagged.
+  function estimateUnpostedAmazonFees(data){
+    const withFees = days.filter(d=>d.amazonReal && d.amazonReal.feeBasisOrdered && d.amazonReal.orderBasis);
+    if(!withFees.length) return;
+    const lastIso = withFees[withFees.length-1].iso;
+    const dayMs = 86400000, lastT = Date.parse(lastIso+'T00:00:00Z');
+    const settled = withFees.filter(d=>{ const age = (lastT - Date.parse(d.iso+'T00:00:00Z'))/dayMs; return age > AMZ_FEE_EST_SETTLE_DAYS && age <= AMZ_FEE_EST_SETTLE_DAYS+60 && d.channels.amazon>0; });
+    if(settled.length < 7) return;
+    const sGross = settled.reduce((s,d)=>s+d.channels.amazon,0), sRef = settled.reduce((s,d)=>s+d.amazonReal.referralFees,0);
+    const sUnits = settled.reduce((s,d)=>s+d.amazonReal.orderedUnits,0), sFba = settled.reduce((s,d)=>s+d.amazonReal.fbaFees,0);
+    const refRate = sGross>0 ? sRef/sGross : 0, fbaPerUnit = sUnits>0 ? sFba/sUnits : 0;
+    if(refRate<=0 || fbaPerUnit<=0) return;
+    amazonFeeEstRates = {refRate, fbaPerUnit, settledDays: settled.length};
+    withFees.forEach(d=>{
+      const age = (lastT - Date.parse(d.iso+'T00:00:00Z'))/dayMs;
+      if(age > AMZ_FEE_EST_WINDOW_DAYS) return;
+      const a = d.amazonReal;
+      if(a.pendKnown) return;   // the sync already priced the unposted lines per SKU
+      const expRef = d.channels.amazon*refRate, expFba = a.orderedUnits*fbaPerUnit;
+      if(a.referralFees < expRef*0.97){ a.refEst = expRef - a.referralFees; a.referralFees = expRef; a.feeEstimated = true; }
+      if(a.fbaFees < expFba*0.97){ a.fbaEst = expFba - a.fbaFees; a.fbaFees = expFba; a.feeEstimated = true; }
+    });
   }
   // ---------- live data: Meta Ads Marketing API (via automated GitHub Actions sync) ----------
   function applyMetaAdsRows(data){
