@@ -163,12 +163,24 @@ DAILY_FIELDS += ORDERED_FIELDS
 ORDERED_FEE_FIELDS = ["ordered_referral_fees", "ordered_fba_fulfillment_fees", "ordered_other_fees",
                       "refund_fee_adjustments", "fba_storage_posted"]
 DAILY_FIELDS += ORDERED_FEE_FIELDS
+# v2.7 (schema 5): Amazon posts an order's fees (ShipmentEvent) days after the purchase, so the
+# newest order days are short of fees. For every order line placed in the last PENDING_FEE_DAYS
+# whose units have no posted fee yet, the expected fee is priced with THAT SKU's real per-unit
+# FBA fee and referral rate learned from the posted shipments in the window (fallback: account
+# averages), and booked in these *_pending fields on the order day. They shrink to 0 as Amazon posts.
+PENDING_FEE_FIELDS = ["ordered_referral_fees_pending", "ordered_fba_fulfillment_fees_pending",
+                      "ordered_units_pending_fees", "ordered_lines_pending_fees"]
+DAILY_FIELDS += PENDING_FEE_FIELDS
+PENDING_FEE_DAYS = int(os.environ.get("PENDING_FEE_DAYS", "21"))
 ORDER_MAP_LOOKBACK_DAYS = int(os.environ.get("ORDER_MAP_LOOKBACK_DAYS", "14"))   # orders placed before the window but shipped inside it
 FEE_LAG_DAYS = int(os.environ.get("FEE_LAG_DAYS", "14"))                         # backfill: shipments posted after the range for orders inside it
 ORDER_DAYS = {}          # amazon-order-id -> purchase day (REPORT_TZ), from the All Orders report
 MONTHLY_STORAGE = {}     # "YYYY-MM" (month the inventory was stored) -> FBAStorageFee posted the month after
 KEEP_RANGE = [None, None]
 FEE_MAP = {"mapped_orders": set(), "unmapped_orders": set(), "unmapped_amount": 0.0}
+ORDER_LINES = {}         # amazon-order-id -> [ {day, sku, qty, price, afn} ] from the All Orders report (Amazon.com, not cancelled)
+POSTED_UNITS = {}        # (order id, sku) -> units whose ShipmentEvent fees are posted
+SKU_STATS = {}           # sku -> {"units", "fba", "commission", "principal"} from posted ShipmentItemList (the real fee per SKU)
 
 
 # ---------------------------------------------------------------- history (shared block)
@@ -414,7 +426,14 @@ def process_shipment_event(ev, daily, warnings):
         order_ids.add(order_id)
     for item in ev.get("ShipmentItemList", []) or []:
         d["units"] += item.get("QuantityShipped", 0) or 0
+        sku = (item.get("SellerSKU") or "").strip()
+        st = SKU_STATS.setdefault(sku, {"units": 0, "fba": 0.0, "commission": 0.0, "principal": 0.0})
+        st["units"] += item.get("QuantityShipped", 0) or 0
+        if order_id:
+            POSTED_UNITS[(order_id, sku)] = POSTED_UNITS.get((order_id, sku), 0) + (item.get("QuantityShipped", 0) or 0)
         for charge in item.get("ItemChargeList", []) or []:
+            if charge.get("ChargeType") == "Principal":
+                st["principal"] += amt(charge.get("ChargeAmount"))
             ctype = charge.get("ChargeType")
             v = amt(charge.get("ChargeAmount"))
             diag.bump(diag.charge_types, f"ItemChargeList:{ctype}", v)
@@ -433,6 +452,10 @@ def process_shipment_event(ev, daily, warnings):
             v = amt(fee.get("FeeAmount"))
             diag.bump(diag.fee_types, f"ItemFeeList:{ftype}", v)
             bucket = FEE_BUCKET_MAP.get(ftype)
+            if bucket == "fba_fulfillment_fees":
+                st["fba"] += v
+            elif bucket == "referral_fees":
+                st["commission"] += v
             if bucket:
                 add(d, bucket, v)
                 # order-date copy of the same fee (falls back to the posted day when the order
@@ -822,6 +845,11 @@ def ingest_orders_report(tsv_text, daily, warnings, stats):
         add(d, "ordered_shipping", _num(row.get("shipping-price")) + _num(row.get("gift-wrap-price")))
         add(d, "ordered_promotions", _num(row.get("item-promotion-discount")) + _num(row.get("ship-promotion-discount")))
         add(d, "ordered_units", qty)
+        if order_id:
+            ORDER_LINES.setdefault(order_id, []).append({
+                "day": day, "sku": (row.get("sku") or "").strip(), "qty": qty, "price": _num(price_raw),
+                "afn": (row.get("fulfillment-channel") or "").strip().upper() != "MFN",   # FBA unless merchant-fulfilled
+            })
         if order_id and seen_orders.get(order_id) != (day, "amz"):
             seen_orders[order_id] = (day, "amz")
             add(d, "ordered_orders", 1)
@@ -888,6 +916,60 @@ def fetch_orders_by_order_date(access_token, window_start, window_end, daily, wa
     stats.pop("_order_days", None)
     stats["complete"] = ok
     return stats
+
+
+def sku_fee_rates():
+    """Per-SKU real FBA fee per unit and referral rate from the posted shipments, plus account fallbacks."""
+    tot_units = sum(v["units"] for v in SKU_STATS.values())
+    tot_fba = sum(v["fba"] for v in SKU_STATS.values())
+    tot_comm = sum(v["commission"] for v in SKU_STATS.values())
+    tot_prin = sum(v["principal"] for v in SKU_STATS.values())
+    fallback_fba = (-tot_fba / tot_units) if tot_units else 0.0          # fees are negative in the JSON -> positive cost
+    fallback_rate = (-tot_comm / tot_prin) if tot_prin else 0.15
+    rates = {}
+    for sku, v in SKU_STATS.items():
+        if not sku or v["units"] <= 0:
+            continue
+        rates[sku] = {"units": v["units"], "fba_per_unit": round(-v["fba"] / v["units"], 4),
+                      "referral_rate": round(-v["commission"] / v["principal"], 4) if v["principal"] > 0 else round(fallback_rate, 4)}
+    return rates, round(fallback_fba, 4), round(fallback_rate, 4)
+
+
+def book_pending_fees(daily, today_key):
+    """Order lines of the last PENDING_FEE_DAYS whose units have no posted fee yet: expected fees on the order day."""
+    rates, fallback_fba, fallback_rate = sku_fee_rates()
+    since = (datetime.strptime(today_key, "%Y-%m-%d") - timedelta(days=PENDING_FEE_DAYS)).strftime("%Y-%m-%d")
+    stats = {"orders": 0, "lines": 0, "units": 0, "fba": 0.0, "referral": 0.0, "sku_rates": len(rates),
+             "fallback_fba_per_unit": fallback_fba, "fallback_referral_rate": fallback_rate, "since": since, "days": PENDING_FEE_DAYS}
+    for order_id, lines in ORDER_LINES.items():
+        touched = False
+        for ln in lines:
+            if ln["day"] < since or ln["day"] > today_key or ln["day"] not in daily:
+                continue
+            pending_units = ln["qty"] - POSTED_UNITS.get((order_id, ln["sku"]), 0)
+            if pending_units <= 0:
+                continue
+            r = rates.get(ln["sku"])
+            fba_unit = r["fba_per_unit"] if r else fallback_fba
+            rate = r["referral_rate"] if r else fallback_rate
+            unit_price = ln["price"] / ln["qty"] if ln["qty"] else 0.0
+            fba = pending_units * fba_unit if ln["afn"] else 0.0
+            ref = pending_units * unit_price * rate
+            d = daily[ln["day"]]
+            add(d, "ordered_fba_fulfillment_fees_pending", -round(fba, 2))   # same sign convention as the posted fees (negative = cost)
+            add(d, "ordered_referral_fees_pending", -round(ref, 2))
+            add(d, "ordered_units_pending_fees", pending_units)
+            add(d, "ordered_lines_pending_fees", 1)
+            stats["lines"] += 1
+            stats["units"] += pending_units
+            stats["fba"] += fba
+            stats["referral"] += ref
+            touched = True
+        if touched:
+            stats["orders"] += 1
+    stats["fba"] = round(stats["fba"], 2)
+    stats["referral"] = round(stats["referral"], 2)
+    return stats, rates
 
 
 def compute_net_sales(daily):
@@ -991,6 +1073,10 @@ def main():
         if k <= today_key:
             daily.setdefault(k, new_daily_bucket())
     compute_net_sales(daily)
+    pending_stats, sku_rates = book_pending_fees(daily, today_key)
+    log(f"Pending fees (orders since {pending_stats['since']} not yet posted by Amazon): {pending_stats['orders']} orders / "
+        f"{pending_stats['units']} units -> FBA {pending_stats['fba']:.2f} + referral {pending_stats['referral']:.2f} expected, "
+        f"priced with {pending_stats['sku_rates']} SKU rates (fallback {pending_stats['fallback_fba_per_unit']}/unit, {pending_stats['fallback_referral_rate']*100:.1f}%)")
     log(f"Order-date fees: {len(FEE_MAP['mapped_orders'])} orders mapped to their purchase day, "
         f"{len(FEE_MAP['unmapped_orders'])} not in the report map (kept on the posted day, {FEE_MAP['unmapped_amount']:.2f}); "
         f"FBA storage fee months seen: {sorted(MONTHLY_STORAGE)}")
@@ -1027,8 +1113,8 @@ def main():
         "meta": {
             "events_processed": total_events,
             "warnings": sorted(warnings),
-            "schema": 4,   # 2 = other_fees + giftwrap_credits + diagnostics; 3 = ordered_* fields by order date; 4 = ordered_* fees + monthly storage
-            "script_version": "2.6",   # 2.4 = All Orders report; 2.5 = history + backfill; 2.6 = fees by order date, FBA storage by month stored
+            "schema": 5,   # 2 = other_fees + giftwrap_credits + diagnostics; 3 = ordered_* fields by order date; 4 = ordered_* fees + monthly storage; 5 = *_pending expected fees per SKU
+            "script_version": "2.7",   # 2.4 = All Orders report; 2.5 = history + backfill; 2.6 = fees by order date, FBA storage by month stored; 2.7 = pending fees priced per SKU
             "history": hist,
             "orders_report": orders_stats,
             "sales_basis": {
@@ -1041,7 +1127,10 @@ def main():
                 "fba_storage": "monthly_storage_fees[YYYY-MM] = FBAStorageFee posted the following month, allocated to the month stored; daily fba_storage_posted keeps the cash-day amount",
                 "mapping": {"mapped_orders": len(FEE_MAP["mapped_orders"]), "unmapped_orders": len(FEE_MAP["unmapped_orders"]),
                             "unmapped_amount": round(FEE_MAP["unmapped_amount"], 2), "lookback_days": ORDER_MAP_LOOKBACK_DAYS, "fee_lag_days": FEE_LAG_DAYS},
+                "pending": dict(pending_stats, note="ordered_*_pending = expected referral / FBA fee of order lines (last PENDING_FEE_DAYS) whose units Amazon has not posted fees for yet, "
+                                                    "priced with the SKU's own posted fee per unit and referral rate (fallback: account averages); replaced by the real fee as Amazon posts it"),
             },
+            "sku_fees": sku_rates,
             "diagnostics": diag.as_dict(),
         },
     }
