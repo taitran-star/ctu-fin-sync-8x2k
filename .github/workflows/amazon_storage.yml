@@ -1,0 +1,71 @@
+name: Cattasaurus Amazon FBA storage + inventory sync
+
+on:
+  schedule:
+    # Hourly (UTC). FBA inventory is a live snapshot; the monthly storage-fee reports are pulled once
+    # they exist (a few reports per run until the history since 2025-01 is complete).
+    - cron: "23 * * * *"
+  workflow_dispatch:
+    inputs:
+      max_reports:
+        description: "Max report requests this run (default 6; raise to 12 for a faster backfill)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: amazon-storage-sync
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Sync to the latest main
+        run: |
+          git fetch --depth=1 origin main
+          git reset --hard origin/main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch FBA inventory + storage fee reports
+        env:
+          REPORT_TIMEZONE: America/Los_Angeles
+          HISTORY_START: "2025-01-01"
+          MAX_REPORTS_PER_RUN: ${{ github.event.inputs.max_reports || '6' }}
+          AMAZON_SP_API_CLIENT_ID: ${{ secrets.AMAZON_SP_API_CLIENT_ID }}
+          AMAZON_SP_API_CLIENT_SECRET: ${{ secrets.AMAZON_SP_API_CLIENT_SECRET }}
+          AMAZON_SP_API_REFRESH_TOKEN: ${{ secrets.AMAZON_SP_API_REFRESH_TOKEN }}
+        run: python fetch_amazon_storage.py
+
+      - name: Commit updated data file if changed
+        run: |
+          git config user.name "cattasaurus-amazon-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/amazon_storage.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Update Amazon storage + inventory data ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            if git status --porcelain | grep -q '^UU\|^AA'; then
+              echo "::warning::data conflict with a newer commit on main - keeping main's version, refetched next cycle"
+              git diff --name-only --diff-filter=U | xargs -r git checkout --ours -- && git diff --name-only --diff-filter=U | xargs -r git add -- && GIT_EDITOR=true git rebase --continue || git rebase --abort
+              git push && exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "Push attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "Could not push after 5 attempts." && exit 1
