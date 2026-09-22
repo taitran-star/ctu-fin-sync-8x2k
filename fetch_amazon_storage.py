@@ -37,7 +37,7 @@ from datetime import datetime, timedelta, timezone
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import fetch_amazon_pnl as base  # noqa: E402  (LWA token, rate limiter, SP-API GET/POST, report download, log)
 
-SCRIPT_VERSION = "1.1"
+SCRIPT_VERSION = "1.2"
 SCHEMA = 1
 OUTPUT_PATH = os.environ.get("OUTPUT_PATH", "data/amazon_storage.json")
 HISTORY_START = os.environ.get("HISTORY_START", "2025-01-01").strip() or "2025-01-01"
@@ -233,8 +233,19 @@ def ingest_storage_report(text, mk, fnsku_to_sku):
     for d in by_sku.values():
         for k in ("fee", "avg_qty", "volume", "unit_volume", "rate", "incentive"):
             d[k] = round(d[k], 4)
+    # Rate per size tier: the report's storage_rate column when present, otherwise the EFFECTIVE rate implied by the
+    # report itself (fee / (average units x unit volume)) - this includes the utilization surcharge automatically.
     rate_med = {t: round(statistics.median(v), 4) for t, v in rates.items()}
-    return {"total": round(total, 2), "rows": n, "skus": len(by_sku), "by_sku": by_sku, "rates": rate_med,
+    eff_fee, eff_cuft = {}, {}
+    for d in by_sku.values():
+        t = tier_class(d.get("tier"))
+        eff_fee[t] = eff_fee.get(t, 0.0) + d["fee"]
+        eff_cuft[t] = eff_cuft.get(t, 0.0) + d["avg_qty"] * d["unit_volume"]
+    rate_eff = {t: round(eff_fee[t] / eff_cuft[t], 4) for t in eff_fee if eff_cuft.get(t)}
+    for t, r in rate_eff.items():
+        rate_med.setdefault(t, r)
+    return {"total": round(total, 2), "rows": n, "skus": len(by_sku), "by_sku": by_sku, "rates": rate_med, "rates_effective": rate_eff,
+            "columns": list(rows[0].keys()) if rows else [],
             "months_in_report": sorted(charge_months), "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
 
 
