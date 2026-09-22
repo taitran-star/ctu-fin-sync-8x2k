@@ -5,10 +5,11 @@
 //      password. Not set => the site shows a setup notice. Session = HttpOnly cookie "exp.signature",
 //      signature = HMAC-SHA256(DASH_PASSWORD, "sess|" + exp), valid SESSION_DAYS days; changing the password
 //      logs every device out. Wrong password => 1.5 s delay + 401. /login, /logout, /robots.txt (public).
-//   2. /data/<file>.json — the dashboards' data: proxied from the GitHub repo that the sync workflows commit
-//      to (raw.githubusercontent.com, cached at the Cloudflare edge for 5 minutes, ETag/304 to the browser), or the invoice files
-//      that live next to this site's pages. Optional env: GH_TOKEN (if the repo is ever made private),
-//      DATA_BASE_URL (data moved to another repo).
+//   2. /data/<file>.json — the dashboards' data: the GitHub repo that the sync workflows commit to
+//      (raw.githubusercontent.com), kept in the Cloudflare edge cache so a viewer never waits for GitHub when a
+//      copy already exists here (see serveRepoFile: fresh / stale-while-revalidate / GitHub-first / mirror), plus
+//      the invoice files that live next to this site's pages. ETag/304 to the browser end to end.
+//      Optional env: GH_TOKEN (if the repo is ever made private), DATA_BASE_URL (data moved to another repo).
 //   3. everything else — the static pages/files in public/ (index.html hub, pnl.html + pnl.js, icons...).
 //      Brand images, icons and the open-licence fonts (/img/*, /fonts/LibreFranklin-*, /fonts/FuzzyBubbles-*) are public so the
 //      login page can show them; the licensed Bureau Grot font and everything else stay behind the password.
@@ -23,6 +24,14 @@ const REPO_FILES = new Set([
   'shipmonk.json', 'paypal.json', 'klaviyo.json', 'amazon_ads.json', 'opex_monthly.json', 'amazon_storage.json',
 ]);
 const STATIC_FILES = new Set(['shipmonk_invoices.json', 'shipmonk_storage_daily.json', 'klaviyo_invoices.json']);   // in public/ (read by Claude's browser); amazon_ads.json now comes from the repo (sellerboard_ads.yml)
+// Edge copies of the repo files. Cloudflare -> raw.githubusercontent.com is sometimes very slow (minutes for a 1 KB
+// file, seen 22/09/2026), so GitHub is asked only when needed and never while a viewer waits if a copy can stand in.
+const MIRROR_BASE = 'https://cdn.jsdelivr.net/gh/taitran-star/ctu-fin-sync-8x2k@main/data/';   // last resort when nothing is cached (may lag GitHub by hours)
+const EDGE_FRESH_MS = 5 * 60 * 1000;        // copy younger than this: served as is
+const EDGE_STALE_OK_MS = 20 * 60 * 1000;    // younger than this: served at once, GitHub asked again in the background
+const WAIT_COLD_MS = 90 * 1000;             // nothing cached: how long to wait for GitHub
+const WAIT_WARM_MS = 12 * 1000;             // an old copy exists: how long to wait for GitHub before serving the copy
+const WAIT_BG_MS = 25 * 1000;               // background refresh (runs after the answer went out)
 const PUBLIC_ASSET = /^\/(img\/[\w.-]+\.(png|svg|webp)|fonts\/(LibreFranklin|FuzzyBubbles)[\w-]*\.woff2|favicon\.png|apple-touch-icon\.png|icon-[\w-]+\.png)$/;
 const LONG_CACHE = /^\/(img|fonts|splash)\/|^\/(favicon\.png|apple-touch-icon\.png|icon-[\w-]+\.png)$/;   // immutable brand files
 
@@ -43,7 +52,7 @@ export async function onRequest(context) {
     return loginPage(url, null, 401);
   }
 
-  if (path.startsWith('/data/')) return asset(await serveData(path.slice('/data/'.length), request, env), 'private, no-cache');
+  if (path.startsWith('/data/')) return asset(await serveData(path.slice('/data/'.length), request, env, context), 'private, no-cache');
   const res = await env.ASSETS.fetch(request);
   // pages always revalidate (ETag: a 304 costs nothing); brand files (fonts, images) are cached for a week
   return asset(res, LONG_CACHE.test(path) ? 'private, max-age=604800' : 'private, no-cache');
@@ -59,8 +68,8 @@ function asset(res, cacheControl) {
 
 // ---------- /data/<file>.json ----------
 // Conditional requests end to end: the browser keeps the last copy and sends If-None-Match; when the file
-// on GitHub has not changed we answer 304 and nothing is downloaded again (the big files are 2-5 MB).
-async function serveData(name, request, env) {
+// has not changed we answer 304 and nothing is downloaded again (the big files are 2-5 MB).
+async function serveData(name, request, env, context) {
   name = decodeURIComponent(name);
   const inm = request.headers.get('If-None-Match') || '';
 
@@ -72,23 +81,112 @@ async function serveData(name, request, env) {
     if (!REPO_FILES.has(name)) return json({ error: 'static file missing: ' + name }, 404);   // else fall through to the repo copy
   }
   if (!REPO_FILES.has(name)) return json({ error: 'unknown source' }, 404);
+  return serveRepoFile(name, request, env, context, inm);
+}
 
+// A repo file, from the edge copy when one exists:
+//   copy < EDGE_FRESH_MS      -> served as is                          (X-Data-Source: edge)
+//   copy < EDGE_STALE_OK_MS   -> served at once, refreshed in the background  (edge-stale)
+//   older copy                -> GitHub asked first (WAIT_WARM_MS), the copy is the fallback
+//   no copy                   -> GitHub (WAIT_COLD_MS), then the jsDelivr mirror, else 502
+async function serveRepoFile(name, request, env, context, inm) {
+  const edge = edgeCache(name, request);
+  let hit = null;
+  if (edge) { try { hit = await edge.cache.match(edge.key); } catch (e) { hit = null; } }
+  const age = hit ? Date.now() - Number(hit.headers.get('X-Fetched-At') || 0) : Infinity;
+  if (hit && age < EDGE_FRESH_MS) return answer(hit, inm, 'edge', age);
+  if (hit && age < EDGE_STALE_OK_MS) {
+    later(context, refreshEdge(name, env, edge, WAIT_BG_MS));
+    return answer(hit, inm, 'edge-stale', age);
+  }
+  const got = await fetchUpstream(name, env, hit ? WAIT_WARM_MS : WAIT_COLD_MS, !hit);
+  if (got.buf) {
+    const stored = makeStored(got);
+    if (edge) later(context, edge.cache.put(edge.key, stored.clone()).catch(() => {}));
+    return answer(stored, inm, got.source, 0);
+  }
+  if (hit) {
+    later(context, refreshEdge(name, env, edge, WAIT_BG_MS));
+    return answer(hit, inm, 'edge-stale', age);
+  }
+  if (got.status === 404) return json({ error: 'not in repo yet: ' + name }, 404);
+  return json({ error: got.error || 'upstream failed' }, 502);
+}
+
+function edgeCache(name, request) {
+  try {
+    if (typeof caches === 'undefined' || !caches.default) return null;
+    return { cache: caches.default, key: new Request(new URL('/__edge/data/' + name, request.url).toString()) };
+  } catch (e) { return null; }
+}
+
+function later(context, promise) {
+  const p = Promise.resolve(promise).catch(() => {});
+  if (context && typeof context.waitUntil === 'function') context.waitUntil(p);
+}
+
+async function refreshEdge(name, env, edge, waitMs) {
+  if (!edge) return;
+  const got = await fetchUpstream(name, env, waitMs, false);   // GitHub only: the mirror may be older than what is cached
+  if (got.buf) await edge.cache.put(edge.key, makeStored(got));
+}
+
+function makeStored(got) {
+  return new Response(got.buf, { status: 200, headers: {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'public, s-maxage=604800',   // stays at this edge location up to a week; freshness is decided by X-Fetched-At
+    'ETag': got.etag, 'X-Fetched-At': String(Date.now()), 'X-Data-Origin': got.source,
+  } });
+}
+
+// One complete copy of the file: GitHub first, the mirror only when allowed. Never throws.
+async function fetchUpstream(name, env, waitMs, allowMirror) {
   const base = env.DATA_BASE_URL || RAW_BASE;
   const headers = { 'User-Agent': 'cattasaurus-dashboard' };
   if (env.GH_TOKEN) headers['Authorization'] = 'token ' + env.GH_TOKEN;
-  if (inm) headers['If-None-Match'] = inm;
-  let upstream;
+  const first = await fetchComplete(base + name, headers, waitMs, 'github');
+  if (first.buf || first.status === 404 || !allowMirror) return first;
+  const second = await fetchComplete(MIRROR_BASE + name, { 'User-Agent': 'cattasaurus-dashboard' }, Math.min(waitMs, 30000), 'mirror');
+  return second.buf ? second : first;
+}
+
+async function fetchComplete(url, headers, waitMs, source) {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), waitMs);
   try {
-    upstream = await fetch(base + name, { headers, cf: { cacheTtl: 300, cacheEverything: true } });
+    const r = await fetch(url, { headers, signal: ctl.signal });
+    if (r.status === 404) return { error: 'not found', status: 404 };
+    if (!r.ok) return { error: source + ' HTTP ' + r.status, status: r.status };
+    const buf = await r.arrayBuffer();
+    const declared = Number(r.headers.get('Content-Length') || 0);
+    if ((declared && declared !== buf.byteLength) || !looksComplete(buf)) return { error: source + ' answer incomplete' };
+    const etag = r.headers.get('ETag') || ('W/"' + buf.byteLength + '-' + Date.now() + '"');
+    return { buf, etag, source };
   } catch (e) {
-    return json({ error: 'upstream fetch failed' }, 502);
+    return { error: source + ' ' + (e && e.name === 'AbortError' ? 'timeout after ' + Math.round(waitMs / 1000) + 's' : 'fetch failed') };
+  } finally {
+    clearTimeout(timer);
   }
-  if (upstream.status === 304) return notModified(inm);
-  if (upstream.status === 404) return json({ error: 'not in repo yet: ' + name }, 404);
-  if (!upstream.ok) return json({ error: 'upstream HTTP ' + upstream.status }, 502);
-  const etag = upstream.headers.get('ETag') || '';
-  if (etag && inm && inm === etag) return notModified(etag);
-  return new Response(upstream.body, { status: 200, headers: jsonHeaders('github', etag) });
+}
+
+// cheap check (no JSON.parse of a 5 MB file on the edge): the body ends with } or ]
+function looksComplete(buf) {
+  const n = buf.byteLength;
+  if (!n) return false;
+  const tail = new Uint8Array(buf, Math.max(0, n - 32), Math.min(32, n));
+  let i = tail.length - 1;
+  while (i >= 0 && (tail[i] === 10 || tail[i] === 13 || tail[i] === 32 || tail[i] === 9)) i--;
+  return i >= 0 && (tail[i] === 125 || tail[i] === 93);
+}
+
+function answer(res, inm, source, ageMs) {
+  const etag = res.headers.get('ETag') || '';
+  const h = jsonHeaders(source, etag);
+  h['X-Data-Age'] = String(Math.round(ageMs / 1000));
+  const fetchedAt = Number(res.headers.get('X-Fetched-At') || 0);
+  if (fetchedAt) h['X-Data-Fetched-At'] = new Date(fetchedAt).toISOString();
+  if (etag && inm && inm === etag) { delete h['Content-Type']; return new Response(null, { status: 304, headers: h }); }
+  return new Response(res.body, { status: 200, headers: h });
 }
 
 function notModified(etag) {

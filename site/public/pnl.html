@@ -497,25 +497,43 @@
   if('serviceWorker' in navigator){ navigator.serviceWorker.register('/sw.js').catch(function(){}); }
   var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
   var msg = document.getElementById('siteLoadMsg'), bar = document.getElementById('siteLoadBar');
+  var t0 = Date.now();
   function tick(){ done++; if(msg) msg.textContent = 'Đang tải số liệu… ' + done + '/' + keys.length; if(bar) bar.style.width = Math.round(6 + 94 * done / keys.length) + '%'; }
+  var slowTimer = setInterval(function(){
+    if(done >= keys.length){ clearInterval(slowTimer); return; }
+    var pending = keys.filter(function(k){ return !(k in window.__LIVE); });
+    if(msg && Date.now() - t0 > 12000) msg.textContent = 'Đang tải số liệu… ' + done + '/' + keys.length + ' — GitHub đang chậm, chờ: ' + pending.join(', ') + ' (' + Math.round((Date.now() - t0)/1000) + 's)';
+  }, 3000);
   function sad(text){ var im = document.getElementById('siteLoadImg'); if(im){ im.src = '/img/mascot-shy.png'; im.style.animation = 'none'; } if(msg) msg.textContent = text; if(bar) bar.style.width = '100%'; }
-  Promise.all(keys.map(function(k){
+  window.__STALE = {};   // sources answered from a saved copy (service worker) or an old edge copy, with the reason
+  function load(k, attempt){
     return fetch('/data/' + SOURCES[k], {credentials:'same-origin', cache:'no-cache'}).then(function(r){
       if(r.status === 401){ location.replace('/login'); throw new Error('login'); }
       if(r.status === 404){ return null; }
       if(!r.ok){ throw new Error('HTTP ' + r.status); }
-      var saved = r.headers.get('X-SW-Cached-At'); if(saved){ var t = Date.parse(saved); if(t && t > window.__SAVED_AT) window.__SAVED_AT = t; }
+      var saved = r.headers.get('X-SW-Cached-At'), why = r.headers.get('X-SW-Reason');
+      if(why && saved){ var t = Date.parse(saved); if(t && t > window.__SAVED_AT) window.__SAVED_AT = t; window.__STALE[k] = why; }
+      var age = Number(r.headers.get('X-Data-Age') || 0); if(age > 1800) window.__STALE[k] = 'edge ' + Math.round(age/60) + 'min';
       return r.json();
-    }).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
+    }).catch(function(e){
+      if(attempt < 2 && !/login/.test(String(e && e.message))){ return new Promise(function(res){ setTimeout(res, 2500); }).then(function(){ return load(k, attempt + 1); }); }
+      throw e;
+    });
+  }
+  Promise.all(keys.map(function(k){
+    return load(k, 1).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=c8b4463df2';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=33ef063b84';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');
       var hhmm = function(ms){ var d = new Date(ms); return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); };
       if(at){
-        if(window.__SAVED_AT){ at.textContent = 'ngoại tuyến · số liệu đã lưu lúc ' + hhmm(window.__SAVED_AT); at.style.color = 'var(--status-serious)'; at.title = 'Không có mạng — đang xem bản số liệu máy này lưu lần cuối'; }
+        var stale = Object.keys(window.__STALE);
+        var allSaved = stale.length === keys.length && stale.every(function(k){ return window.__STALE[k] === 'error'; });
+        if(window.__SAVED_AT && (navigator.onLine === false || allSaved)){ at.textContent = 'ngoại tuyến · số liệu đã lưu lúc ' + hhmm(window.__SAVED_AT); at.style.color = 'var(--status-serious)'; at.title = 'Không có mạng — đang xem bản số liệu máy này lưu lần cuối'; }
+        else if(stale.length){ at.textContent = stale.length + ' nguồn dùng bản đã lưu (GitHub đang chậm) · bấm ↻ để thử lại'; at.style.color = 'var(--status-serious)'; at.title = 'Nguồn: ' + stale.map(function(k){ return k + ' (' + window.__STALE[k] + ')'; }).join(', '); }
         else at.textContent = 'số liệu lúc ' + hhmm(window.__LOADED_AT);
       }
       var inst = document.getElementById('siteInstall'); if(inst && !standalone) inst.hidden = false;
