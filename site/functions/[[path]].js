@@ -20,9 +20,9 @@ const SESSION_DAYS = 90;
 const RAW_BASE = 'https://raw.githubusercontent.com/taitran-star/ctu-fin-sync-8x2k/main/data/';
 const REPO_FILES = new Set([
   'amazon_pnl.json', 'meta_ads.json', 'shopify_pnl.json', 'google_ads.json',
-  'shipmonk.json', 'paypal.json', 'klaviyo.json', 'amazon_ads.json', 'opex_monthly.json',
+  'shipmonk.json', 'paypal.json', 'klaviyo.json', 'amazon_ads.json', 'opex_monthly.json', 'amazon_storage.json',
 ]);
-const STATIC_FILES = new Set(['shipmonk_invoices.json', 'klaviyo_invoices.json', 'amazon_ads.json']);   // in public/ (amazon_ads: Sellerboard export until the Ads API workflow exists; then it also lives in the repo)
+const STATIC_FILES = new Set(['shipmonk_invoices.json', 'shipmonk_storage_daily.json', 'klaviyo_invoices.json', 'amazon_ads.json']);   // in public/ (amazon_ads: Sellerboard export until the Ads API workflow exists; then it also lives in the repo)
 const PUBLIC_ASSET = /^\/(img\/[\w.-]+\.(png|svg|webp)|fonts\/(LibreFranklin|FuzzyBubbles)[\w-]*\.woff2|favicon\.png|apple-touch-icon\.png|icon-[\w-]+\.png)$/;
 const LONG_CACHE = /^\/(img|fonts|splash)\/|^\/(favicon\.png|apple-touch-icon\.png|icon-[\w-]+\.png)$/;   // immutable brand files
 

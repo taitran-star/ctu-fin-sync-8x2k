@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 26fd2cfec2).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build c8b4463df2).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -104,6 +104,14 @@
   // API) and booked per billing cycle (19th -> 18th), spread per day - data/klaviyo_invoices.json.
   const KLAVIYO_INVOICES_LIVE_DATA = (window.__LIVE && window.__LIVE["klaviyo_invoices"]) || null; /*KLAVIYO_INVOICES_INJECT*/
   let klaviyoInvMeta = null;
+  // ShipMonk storage fee per DAY and warehouse (Reports > Storage Fees Breakdown, read by Claude's browser):
+  // the exact amount the semi-monthly invoice will charge for that day - data/shipmonk_storage_daily.json.
+  const SHIPMONK_STORAGE_LIVE_DATA = (window.__LIVE && window.__LIVE["shipmonk_storage"]) || null; /*SHIPMONK_STORAGE_INJECT*/
+  let shipmonkStorageMeta = null;
+  // Amazon FBA inventory snapshot + monthly storage fee reports + a per-day storage estimate for months Amazon has not
+  // billed yet - data/amazon_storage.json from fetch_amazon_storage.py (hourly). Do not rename this line.
+  const AMAZON_STORAGE_LIVE_DATA = (window.__LIVE && window.__LIVE["amazon_storage"]) || null; /*AMAZON_STORAGE_INJECT*/
+  let amazonStorageMeta = null;
   // Monthly OpEx entered by hand (no API): payroll, software, office, accounting, insurance, other (G&A, above EBITDA)
   // and depreciation, interest, income tax (below EBITDA) - data/opex_monthly.json in the repo, USD per month,
   // spread evenly over the days of the month. A month with no entry takes the latest earlier month ("carried").
@@ -208,6 +216,7 @@
     {key:'applovin', name:'AppLovin', age:'Chưa kết nối — $0', level:'c'},
     {key:'amazonads', name:'Amazon Ads (SP / SB / SD)', age:'Chờ Amazon duyệt Advertising API — $0', level:'c'},
     {key:'amazonfin', name:'Amazon SP-API Finances', age:'Chưa kết nối — $0', level:'c'},
+    {key:'amazon_storage', name:'Amazon FBA tồn kho & phí lưu kho (Inventory API + report)', age:'Chưa kết nối — lưu kho theo số Amazon thu', level:'c'},
     {key:'shipmonk', name:'ShipMonk (phí fulfillment theo đơn)', age:'Chưa kết nối — $0', level:'c'},
     {key:'shipmonk_inv', name:'ShipMonk hoá đơn (lưu kho, receiving, hàng trả…)', age:'Chưa kết nối — $0', level:'c'},
     {key:'paypal', name:'PayPal (phí giao dịch)', age:'Chưa kết nối — $0', level:'c'},
@@ -247,6 +256,7 @@
     let amazonOrdersReal=0, amazonOrdersEst=0, amazonRevenueEst=0;
     let amazonFbaFeesReal=0, amazonReferralFeesReal=0, amazonServiceFeesReal=0, amazonInboundFreightReal=0, amazonOtherFeesReal=0, amazonOtherNetReal=0;
     let amazonStorageAlloc=0, amazonStorageMissingDays=0, amazonStoragePosted=0, amazonRefundFeeAdj=0, amazonFeeOrderedDays=0;
+    let amazonStorageReportDays=0, amazonStorageEstDays=0, amazonStorageEstAmt=0;
     let amazonFeeEstDays=0, amazonRefEst=0, amazonFbaEst=0, amazonPendSkuDays=0, amazonPendUnits=0;
     rows.forEach(r=>{
       if(r.amazonReal){
@@ -258,6 +268,8 @@
         amazonOtherFeesReal += r.amazonReal.otherFees || 0;
         amazonOtherNetReal += r.amazonReal.otherNet;
         amazonStorageAlloc += r.amazonReal.storageAlloc || 0;
+        if(r.amazonReal.storageSrc==='report') amazonStorageReportDays++;
+        if(r.amazonReal.storageSrc==='estimate'){ amazonStorageEstDays++; amazonStorageEstAmt += (r.amazonReal.storageAlloc||0); }
         amazonStoragePosted += r.amazonReal.storagePosted || 0;
         amazonRefundFeeAdj += r.amazonReal.refundFeeAdj || 0;
         if(r.amazonReal.feeBasisOrdered){ amazonFeeOrderedDays++; if(!r.amazonReal.storageKnown) amazonStorageMissingDays++; }
@@ -315,6 +327,13 @@
     // Invoice items that belong with the per-order shipping cost stay in COGS (true-up, credits); warehousing,
     // receiving, returns handling and packaging purchases are operating logistics costs (OpEx), not cost of the order.
     const shipmonkInvoiceExtras = smInvAdjCredits + smTrueUp + smInv.packaging_purchases;   // packaging bought in bulk = packaging material cost (COGS)
+    // Storage for days without an invoice yet (open billing period + today): the daily report / carry-forward estimate
+    let smStorageOpen = 0, smStorageOpenDays = 0, smStorageCarryDays = 0, smStorageReportDays = 0;
+    rows.forEach(r=>{
+      if(r.shipmonkInv){ if(r.shipmonkInv.storageSrc==='report') smStorageReportDays++; return; }
+      if(r.shipmonkStorage){ smStorageOpen += r.shipmonkStorage.inv; smStorageOpenDays++; if(r.shipmonkStorage.src==='carry') smStorageCarryDays++; }
+    });
+    smInv.storage += smStorageOpen;
     const shipmonkLogistics = smInv.storage + smInv.receiving + smInv.returns + smInvOther;
     // Inbound freight/duty into FBA is capitalised into inventory (landed cost -> product COGS per SKU),
     // so it is shown as a memo line only and NOT expensed here (user rule 2026-09-20).
@@ -443,14 +462,14 @@
     return {n, gross, refund, discountBy, orders, ads, adsAttr, grossSales, discount, refundsTotal, netRevenue, totalOrders,
       productCost, packaging, fulfillment, postage, cogs, grossProfit, nonAmazonOrders, shopifyTax, shopifyRealDays, amazonRealDays,
       shipmonkRealDays, shipmonkOrders, shipmonkUnshipped, shipmonkUnits, shipmonkPickPack, shipmonkByStore,
-      smInvDays, smInv, smInvOther, smInvAdjCredits, smInvShipCmp, smApiShipCmp, smCmpDays, smCmpMissingDays, smTrueUp, shipmonkInvoiceExtras, shipmonkLogistics, amazonLogistics, logisticsTotal, feesTotal, marketingTotal, cmBeforeMarketing,
+      smInvDays, smInv, smInvOther, smInvAdjCredits, smStorageOpen, smStorageOpenDays, smStorageCarryDays, smStorageReportDays, smInvShipCmp, smApiShipCmp, smCmpDays, smCmpMissingDays, smTrueUp, shipmonkInvoiceExtras, shipmonkLogistics, amazonLogistics, logisticsTotal, feesTotal, marketingTotal, cmBeforeMarketing,
       paymentFees, paymentFeeDays, paymentFeeOrders, feesMissingOrders, gatewayMix, feeTypeMix, paypalDays, paypalFees, paypalPayments, paypalPaymentsCount, paypalCompare, paymentFeesAll, marketplaceFees, adSpend, otherVarTotal, contributionProfit,
       gaItems, gaTotal, inventoryHolding, fixedTotal, netProfit, klaviyoCost, klaviyoCostDays, klaviyoCostParts,
       opexDays, opexCarriedDays, opexNote, salaryEntered, depreciation, interest, depreciationEntered, interestEntered, taxEntered, taxRate, ebit, ebt, incomeTax, incomeTaxEstimated, netIncome, belowEbitdaEntered,
       variableTotal, variableRatio, cmRatio, breakEvenRevenue, blendedAOV, breakEvenOrders,
       merValue, attrRevenueSum,
       amazonOrdersReal, amazonReferralFeesReal, amazonServiceFeesReal, amazonInboundFreightReal, amazonOtherFeesReal, amazonOtherUnclassifiedCost, amazonMarketplaceFeesEst, walmartFees, tiktokFees,
-      amazonStorageAlloc, amazonStorageMissingDays, amazonStoragePosted, amazonRefundFeeAdj, amazonFeeOrderedDays, amazonFeeEstDays, amazonRefEst, amazonFbaEst, amazonPendSkuDays, amazonPendUnits,
+      amazonStorageAlloc, amazonStorageMissingDays, amazonStoragePosted, amazonStorageReportDays, amazonStorageEstDays, amazonStorageEstAmt, amazonRefundFeeAdj, amazonFeeOrderedDays, amazonFeeEstDays, amazonRefEst, amazonFbaEst, amazonPendSkuDays, amazonPendUnits,
       metaAdsRealDays, metaAdsPurchases, googleAdsRealDays, googleAdsPurchases, amazonAdsRealDays, amazonAdsPurchases, amazonAdsSplit, amazonAdsConsoleSpend, amazonAdsImpressions, amazonAdsClicks, amazonAcos, amazonTacos, amazonRoas,
       snowballRealDays, snowballOrders, snowballRevenue, snowballCommission};
   }
@@ -735,17 +754,36 @@
     if(a.amazonOrdersReal>0){
       const feeOrdered = a.amazonFeeOrderedDays>0;
       if(feeOrdered){
-        let sl = 'Phí lưu kho FBA hàng tháng — ghi vào tháng lưu kho (Amazon thu ngày 7 tháng sau)';
-        if(a.amazonStorageMissingDays>0) sl += ' ('+a.amazonStorageMissingDays+' ngày thuộc tháng Amazon chưa thu phí = $0)';
-        rows.push({...stLine(sl, -a.amazonStorageAlloc, nr, 'fix', 'logi'), neg:true, live:true});
+        let sl = 'Phí lưu kho FBA hàng tháng — ghi vào tháng lưu kho (Amazon thu ngày 7–15 tháng sau)';
+        const slParts = [];
+        if(a.amazonStorageReportDays>0) slParts.push(a.amazonStorageReportDays+' ngày theo report Storage Fees của Amazon, chưa thu tiền');
+        if(a.amazonStorageEstDays>0) slParts.push(a.amazonStorageEstDays+' ngày ước tính '+money(a.amazonStorageEstAmt)+' = tồn kho FBA từng SKU × thể tích × đơn giá Amazon');
+        if(a.amazonStorageMissingDays>0) slParts.push(a.amazonStorageMissingDays+' ngày thuộc tháng Amazon chưa thu phí = $0');
+        if(slParts.length) sl += ' ('+slParts.join(' · ')+')';
+        rows.push({...stLine(sl, -a.amazonStorageAlloc, nr, 'fix', 'logi'), neg:true, live:true, est: a.amazonStorageEstDays>0, estTitle:'Ước tính theo cách tính của Amazon (unit trung bình/ngày × cu ft × đơn giá theo mùa & size tier, học từ report các tháng trước); thay bằng report rồi bằng số Amazon thu thật'});
         if(Math.abs(a.amazonStoragePosted) >= 0.01) rows.push({...stLine('Đối chiếu: Amazon thu phí lưu kho '+money(a.amazonStoragePosted)+' trong khoảng này (ngày 7–15 hàng tháng, cho tháng trước)', 0, nr, null, 'logi'), detail:true, live:true});
       }
       rows.push({...stLine(feeOrdered ? 'Phí dịch vụ Amazon (subscription, xử lý trả hàng, removal, Vine/coupon — không gồm lưu kho tháng)' : 'Phí dịch vụ Amazon (subscription, lưu kho FBA, xử lý trả hàng, removal, Vine/coupon)', -a.amazonServiceFeesReal, nr, 'fix', 'logi'), neg:true, gap: a.amazonServiceFeesReal===0});
     }
-    if(a.smInvDays>0){
+    if(a.smInvDays>0 || a.smStorageOpenDays>0){
       const invNote = ' — theo hoá đơn ShipMonk' + (a.smInvDays<a.n ? ' ('+(a.n-a.smInvDays)+' ngày chưa có hoá đơn)' : '');
-      const logiLine = (label, v) => rows.push({...stLine(label + invNote, -v, nr, 'fix', 'logi'), neg: v>=0, live:true});
-      logiLine('Lưu kho ShipMonk — pallet & bin, chia đều theo ngày trong kỳ hoá đơn', a.smInv.storage);
+      const logiLine = (label, v, extra) => rows.push({...stLine(label + (extra===undefined ? invNote : extra), -v, nr, 'fix', 'logi'), neg: v>=0, live:true});
+      // storage: exact per-day amounts from the ShipMonk report (= invoice when the period closes); before 06/2025 the invoice is spread evenly
+      const evenDays = a.smInvDays - a.smStorageReportDays;
+      let stNote = '';
+      if(a.smStorageReportDays>0 || a.smStorageOpenDays>0){
+        stNote = ' — phí thật từng ngày theo report Storage Fees của ShipMonk';
+        if(a.smStorageReportDays>0 && a.smInvDays===a.smStorageReportDays && a.smStorageOpenDays===0) stNote += ' (đã khớp hoá đơn)';
+        else {
+          const parts = [];
+          if(a.smStorageReportDays>0) parts.push(a.smStorageReportDays+' ngày đã khớp hoá đơn');
+          if(a.smStorageOpenDays - a.smStorageCarryDays>0) parts.push((a.smStorageOpenDays - a.smStorageCarryDays)+' ngày kỳ chưa xuất hoá đơn: theo report');
+          if(a.smStorageCarryDays>0) parts.push(a.smStorageCarryDays+' ngày report chưa có: tạm lấy bằng ngày gần nhất');
+          if(evenDays>0) parts.push(evenDays+' ngày trước 06/2025: chia đều theo kỳ hoá đơn');
+          stNote += ' ('+parts.join(' · ')+')';
+        }
+      } else stNote = ' — chia đều theo ngày trong kỳ hoá đơn (report theo ngày chỉ có từ 06/2025)' + (a.smInvDays<a.n ? ' ('+(a.n-a.smInvDays)+' ngày chưa có hoá đơn)' : '');
+      rows.push({...stLine('Lưu kho ShipMonk — pallet & bin' + stNote, -a.smInv.storage, nr, 'fix', 'logi'), neg: a.smInv.storage>=0, live:true, est: a.smStorageCarryDays>0, estTitle:'Ngày report ShipMonk chưa cập nhật (làm mới ~04:00 giờ kho) tạm lấy bằng ngày gần nhất; tự thay khi report có số'});
       logiLine('Receiving hàng nhập ShipMonk — nhận carton, dỡ container', a.smInv.receiving);
       logiLine('Xử lý hàng trả ShipMonk — processing + cước hàng trả', a.smInv.returns);
       if(a.smInvOther !== 0) logiLine('Phí khác ShipMonk — phí tối thiểu, phạt trễ, audit, phụ phí' + (Math.abs(a.smInv.unallocated)>=1 ? ' (gồm '+money(a.smInv.unallocated)+' hoá đơn không tách được mục)' : ''), a.smInvOther);
@@ -1135,6 +1173,12 @@
   // above) by the automated GitHub Actions -> Claude scheduled-task sync, so it's applied
   // synchronously here before the very first render.
   const amazonMatched = AMAZON_LIVE_DATA ? applyAmazonRows(AMAZON_LIVE_DATA) : false;
+  const amazonStorageMatched = (amazonMatched && AMAZON_STORAGE_LIVE_DATA) ? applyAmazonStorageRows(AMAZON_STORAGE_LIVE_DATA) : false;
+  if(amazonStorageMatched){
+    const st = AMAZON_STORAGE_LIVE_DATA.storage || {}, iv = AMAZON_STORAGE_LIVE_DATA.inventory || {};
+    const mr = st.months_with_report || [];
+    setSource('amazon_storage', ageLevel(AMAZON_STORAGE_LIVE_DATA.generated_at), fmtAmazonAge(AMAZON_STORAGE_LIVE_DATA.generated_at) + ' · tồn kho ' + (iv.on_hand||0).toLocaleString('en-US') + ' units / ' + (iv.skus||0) + ' SKU' + (mr.length ? ' · report phí lưu kho ' + mr[0].slice(5,7)+'/'+mr[0].slice(0,4) + ' → ' + mr[mr.length-1].slice(5,7)+'/'+mr[mr.length-1].slice(0,4) : ' · chưa có report tháng nào'));
+  }
   if(amazonMatched){
     setSource('amazon',ageLevel(AMAZON_LIVE_DATA.generated_at), fmtAmazonAge(AMAZON_LIVE_DATA.generated_at)+fmtCoverage(AMAZON_LIVE_DATA));
     setSource('amazonfin',ageLevel(AMAZON_LIVE_DATA.generated_at), fmtAmazonAge(AMAZON_LIVE_DATA.generated_at)+fmtCoverage(AMAZON_LIVE_DATA));
@@ -1165,11 +1209,12 @@
   if(shipmonkMatched){
     setSource('shipmonk',ageLevel(SHIPMONK_LIVE_DATA.generated_at), fmtAmazonAge(SHIPMONK_LIVE_DATA.generated_at)+fmtCoverage(SHIPMONK_LIVE_DATA));
   }
+  const shipmonkStorageMatched = SHIPMONK_STORAGE_LIVE_DATA ? applyShipmonkStorageRows(SHIPMONK_STORAGE_LIVE_DATA) : false;   // before the invoices: they reallocate storage by it
   const shipmonkInvMatched = SHIPMONK_INVOICES_LIVE_DATA ? applyShipmonkInvoiceRows(SHIPMONK_INVOICES_LIVE_DATA) : false;
   if(shipmonkInvMatched){
     const im = SHIPMONK_INVOICES_LIVE_DATA.meta || {};
     const fmtD = k => k ? k.slice(8,10)+'/'+k.slice(5,7)+'/'+k.slice(0,4) : '';
-    setSource('shipmonk_inv',(SHIPMONK_INVOICES_LIVE_DATA.meta && SHIPMONK_INVOICES_LIVE_DATA.meta.current_period ? 'g' : 'w'), fmtAmazonAge(SHIPMONK_INVOICES_LIVE_DATA.generated_at) + (im.first_day ? ' · hoá đơn '+fmtD(im.first_day)+' → '+fmtD(im.last_day) : '') + (im.missing_count ? ' (thiếu '+im.missing_count+' ngày)' : ''));
+    setSource('shipmonk_inv',(SHIPMONK_INVOICES_LIVE_DATA.meta && SHIPMONK_INVOICES_LIVE_DATA.meta.current_period ? 'g' : 'w'), fmtAmazonAge(SHIPMONK_INVOICES_LIVE_DATA.generated_at) + (im.first_day ? ' · hoá đơn '+fmtD(im.first_day)+' → '+fmtD(im.last_day) : '') + (im.missing_count ? ' (thiếu '+im.missing_count+' ngày)' : '') + (shipmonkStorageMatched ? ' · lưu kho theo ngày đến '+fmtD(SHIPMONK_STORAGE_LIVE_DATA.last_day) : ''));
   }
   // Klaviyo (email + SMS) attribution + campaign/flow performance, and the Klaviyo invoices (cost).
   const klaviyoMatched = KLAVIYO_LIVE_DATA ? applyKlaviyoRows(KLAVIYO_LIVE_DATA) : false;
@@ -1199,6 +1244,7 @@
     if(shopifyMatched) names.push('Shopify (Admin API thật)');
     if(shopifyMatched) names.push('Snowball (hoa hồng từ tag Shopify)');
     if(amazonMatched) names.push('Amazon (SP-API thật)');
+    if(amazonStorageMatched) names.push('Amazon FBA tồn kho & phí lưu kho (Inventory API + report tháng)');
     if(metaMatched) names.push('Meta Ads (Marketing API thật)');
     if(googleMatched) names.push('Google Ads (Google Ads API thật)');
     if(amazonAdsMatched) names.push(AMAZON_ADS_LIVE_DATA.source==='sellerboard' ? 'Amazon Ads (chi phí SP/SB/SD qua Sellerboard)' : 'Amazon Ads (Ads API thật)');
@@ -1291,6 +1337,47 @@
     }
     return matched>0;
   }
+  // Amazon storage per day: Finances posting (FBAStorageFee, month stored) stays the truth; months Amazon has not
+  // billed yet take the storage-fee report total (est=false) or the inventory x volume x rate estimate (est=true).
+  function applyAmazonStorageRows(data){
+    if(!data || !data.storage || !data.storage.daily) return false;
+    amazonStorageMeta = data;
+    let matched = 0;
+    days.forEach(d=>{
+      const r = data.storage.daily[d.iso];
+      if(!r || !d.amazonReal) return;
+      const fee = parseFloat(r.fee)||0;
+      d.amazonReal.storageReport = fee;
+      if(!d.amazonReal.storageKnown){
+        d.amazonReal.storageAlloc = fee;   // positive cost, like the Finances allocation (-monthly fee / days)
+        d.amazonReal.storageKnown = true;
+        d.amazonReal.storageSrc = r.est ? 'estimate' : 'report';
+        d.amazonReal.storageEst = !!r.est;
+      } else d.amazonReal.storageSrc = 'posted';
+      matched++;
+    });
+    return matched>0;
+  }
+
+  // Daily storage fee (report): every day in the file gets the reported amount; days after the report's last day
+  // (today, and yesterday until the 04:00 refresh) carry the last reported day forward as an estimate.
+  function applyShipmonkStorageRows(data){
+    if(!data || !data.daily) return false;
+    shipmonkStorageMeta = data;
+    let matched = 0, lastIso = null, last = null;
+    days.forEach(d=>{
+      const r = data.daily[d.iso];
+      if(r){
+        d.shipmonkStorage = {inv: parseFloat(r.inv)||0, tru: parseFloat(r.tru)||0, wh: r.wh||{}, src:'report'};
+        lastIso = d.iso; last = d.shipmonkStorage; matched++;
+      } else if(last && d.iso > lastIso && dayDiff(lastIso, d.iso) <= 7){
+        d.shipmonkStorage = {inv: last.inv, tru: last.tru, wh: last.wh, src:'carry', from: lastIso};
+      }
+    });
+    return matched>0;
+  }
+  function dayDiff(a, b){ return Math.round((new Date(b+'T00:00:00Z') - new Date(a+'T00:00:00Z'))/86400000); }
+
   function applyShipmonkInvoiceRows(data){
     if(!data || !data.daily) return false;
     shipmonkInvMeta = data;
@@ -1309,12 +1396,23 @@
       for(let i=0;i<n;i++){ const dt = new Date(start.getFullYear(), start.getMonth(), start.getDate()+i); const k = isoDate(dt); const b = ds[k]; if(b){ covered++; const v = parseFloat(b.total_cost)||0; api += v; apiByDay[k] = v; } else if(inHistory(k)){ covered++; apiByDay[k] = 0; } }
       if(covered===n) trueUp[inv.number] = {perDay: ((inv.shipping||0) - api)/n, invPerDay: (inv.shipping||0)/n, apiByDay};
     });
+    // Storage: the invoice total is spread by the daily report (exact per-day amounts) instead of evenly, when the
+    // report covers the whole period; the period total stays the invoice's to the cent.
+    const storageScale = {};   // invoice number -> factor applied to the reported daily amount
+    (data.invoices||[]).forEach(inv=>{
+      const n = inv.days || 1; let sum = 0, covered = 0;
+      const start = new Date(inv.start.slice(0,4), inv.start.slice(5,7)-1, inv.start.slice(8,10));
+      for(let i=0;i<n;i++){ const k = isoDate(new Date(start.getFullYear(), start.getMonth(), start.getDate()+i)); const d = days.find(x=>x.iso===k); if(d && d.shipmonkStorage && d.shipmonkStorage.src==='report'){ covered++; sum += d.shipmonkStorage.inv; } }
+      if(covered===n && sum>0 && (inv.storage||0)>0) storageScale[inv.number] = inv.storage/sum;
+    });
     days.forEach(d=>{
       const r = data.daily[d.iso];
       if(!r) return;
       const f = k => parseFloat(r[k])||0;
       const tu = trueUp[r.invoice];
-      d.shipmonkInv = {storage:f('storage'), receiving:f('receiving'), returns:f('returns'), packaging_purchases:f('packaging_purchases'), fees_other:f('fees_other'),
+      const sc = storageScale[r.invoice];
+      const storage = (sc && d.shipmonkStorage) ? d.shipmonkStorage.inv*sc : f('storage');
+      d.shipmonkInv = {storage, storageSrc: sc ? 'report' : 'even', receiving:f('receiving'), returns:f('returns'), packaging_purchases:f('packaging_purchases'), fees_other:f('fees_other'),
                        adjustments:f('adjustments'), credits:f('credits'), unallocated:f('unallocated'), shipping:f('shipping'), total:f('total'), invoice:r.invoice,
                        trueUp: tu ? tu.perDay : 0, cmpOk: !!tu, cmpInv: tu ? tu.invPerDay : 0, cmpApi: tu ? (tu.apiByDay[d.iso]||0) : 0};
       matched++;
