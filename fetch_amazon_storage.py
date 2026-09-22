@@ -37,11 +37,18 @@ from datetime import datetime, timedelta, timezone
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import fetch_amazon_pnl as base  # noqa: E402  (LWA token, rate limiter, SP-API GET/POST, report download, log)
 
-SCRIPT_VERSION = "1.2"
+SCRIPT_VERSION = "1.3"
 SCHEMA = 1
 OUTPUT_PATH = os.environ.get("OUTPUT_PATH", "data/amazon_storage.json")
 HISTORY_START = os.environ.get("HISTORY_START", "2025-01-01").strip() or "2025-01-01"
-MAX_REPORTS_PER_RUN = int(os.environ.get("MAX_REPORTS_PER_RUN", "6"))
+MAX_REPORTS_PER_RUN = int(os.environ.get("MAX_REPORTS_PER_RUN", "4"))
+CREATE_GAP_SECONDS = int(os.environ.get("CREATE_GAP_SECONDS", "62"))   # createReport quota = 1 per minute (burst 15), shared with amazon_pnl.yml
+_last_create_ts = 0.0
+
+
+class QuotaExceeded(RuntimeError):
+    """createReport still 429 after retries: stop asking for reports this run, keep what we have (next run continues)."""
+
 INVENTORY_ONLY = os.environ.get("INVENTORY_ONLY", "0").strip() in ("1", "true", "yes")
 REPORT_POLL_SECONDS = int(os.environ.get("REPORT_POLL_SECONDS", "20"))
 REPORT_MAX_WAIT = int(os.environ.get("REPORT_MAX_WAIT", "600"))
@@ -173,7 +180,15 @@ def request_report(access_token, report_type, start, end, label, report_options=
             "dataStartTime": base.iso(start), "dataEndTime": base.iso(end)}
     if report_options:
         body["reportOptions"] = report_options
-    created = base.sp_api_post("/reports/2021-06-30/reports", access_token, body)
+    global _last_create_ts
+    gap = CREATE_GAP_SECONDS - (time.time() - _last_create_ts)
+    if _last_create_ts and gap > 0:
+        time.sleep(gap)
+    try:
+        created = base.sp_api_post("/reports/2021-06-30/reports", access_token, body)
+    except RuntimeError as e:
+        raise QuotaExceeded(f"{label}: createReport quota exceeded ({e})") from e
+    _last_create_ts = time.time()
     rid = created.get("reportId")
     if not rid:
         raise RuntimeError(f"createReport returned no reportId: {json.dumps(created)[:300]}")
@@ -446,7 +461,10 @@ def main():
             if due(months.get(mk)):
                 start = datetime(int(mk[:4]), int(mk[5:7]), 1, tzinfo=timezone.utc)
                 end = start + timedelta(days=days_in_month(mk)) - timedelta(seconds=1)
-                txt = request_report(access_token, STORAGE_REPORT, start, end, f"storage {mk}")
+                try:
+                    txt = request_report(access_token, STORAGE_REPORT, start, end, f"storage {mk}")
+                except QuotaExceeded as e:
+                    log(str(e)); warnings["quota_exceeded"] = str(e)[:200]; requested = MAX_REPORTS_PER_RUN; break
                 requested += 1
                 if txt:
                     rep = ingest_storage_report(txt, mk, fnsku_to_sku)
@@ -469,7 +487,10 @@ def main():
             if due(ltsf_months.get(mk)):
                 start = datetime(int(mk[:4]), int(mk[5:7]), 1, tzinfo=timezone.utc)
                 end = start + timedelta(days=days_in_month(mk)) - timedelta(seconds=1)
-                txt = request_report(access_token, LTSF_REPORT, start, end, f"ltsf {mk}")
+                try:
+                    txt = request_report(access_token, LTSF_REPORT, start, end, f"ltsf {mk}")
+                except QuotaExceeded as e:
+                    log(str(e)); warnings["quota_exceeded"] = str(e)[:200]; requested = MAX_REPORTS_PER_RUN; break
                 requested += 1
                 if txt:
                     rep = ingest_ltsf_report(txt, fnsku_to_sku)
@@ -493,7 +514,10 @@ def main():
             start = datetime(int(mk[:4]), int(mk[5:7]), 1, tzinfo=timezone.utc)
             end = start + timedelta(days=days_in_month(mk)) - timedelta(seconds=1)
             body_opts = {"aggregateByLocation": "COUNTRY", "aggregatedByTimePeriod": "DAILY"}
-            txt = request_report(access_token, LEDGER_REPORT, start, end, f"ledger {mk}", body_opts)
+            try:
+                txt = request_report(access_token, LEDGER_REPORT, start, end, f"ledger {mk}", body_opts)
+            except QuotaExceeded as e:
+                log(str(e)); warnings["quota_exceeded"] = str(e)[:200]; break
             requested += 1
             if txt:
                 got, n = ingest_ledger_report(txt, fnsku_to_sku)
