@@ -177,6 +177,11 @@
   table.stmt tr.hidden{display:none;}
   table.stmt tr.detail td.label{padding-left:40px;color:var(--ink-muted);font-weight:400;}
   table.stmt tr.detail td{font-size:11.5px;}
+  /* sub-group inside a section (e.g. marketplace fees vs payment processing): a small caps heading carrying the group's subtotal */
+  table.stmt tr.group td{font-family:var(--font-head);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--brand-forest, var(--ink-secondary));background:color-mix(in srgb, var(--surface-card-2) 55%, transparent);border-bottom:1px solid var(--gridline);}
+  table.stmt tr.group td.label{padding-left:16px;text-transform:none;letter-spacing:0;font-size:12px;}
+  table.stmt tr.group td.label b{text-transform:uppercase;letter-spacing:.05em;font-size:10.5px;}
+  table.stmt tr.group td.num,table.stmt tr.group td.pct{font-family:var(--font-mono);font-size:12px;text-transform:none;letter-spacing:0;}
   .caret{display:inline-block;width:10px;transition:transform .15s;}
   .caret.open{transform:rotate(90deg);}
   .tag{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-body);font-size:10px;font-weight:600;padding:1px 7px;border-radius:999px;margin-left:8px;white-space:nowrap;}
@@ -221,6 +226,30 @@
   .mer-band{display:flex;justify-content:space-between;align-items:center;gap:14px;background:var(--surface-card-3);border-radius:12px;padding:14px 16px;margin-top:12px;flex-wrap:wrap;}
   .mer-band .m-label{font-size:12.5px;color:var(--ink-secondary);max-width:480px;}
   .mer-band .m-value{font-family:var(--font-display);font-size:42px;font-weight:500;color:var(--accent);}
+
+  /* cost to sell through each channel (take rate) */
+  .chan-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}
+  @media (max-width:900px){.chan-grid{grid-template-columns:1fr;}}
+  .chan{background:var(--surface-card-2);border-radius:12px;padding:12px 14px 10px;border-top:3px solid var(--c);min-width:0;}
+  .chan .chan-head{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
+  .chan .chan-name{font-family:var(--font-head);font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-primary);}
+  .chan .chan-sub{font-size:11.5px;color:var(--ink-muted);margin-top:2px;}
+  .chan .chan-rate{text-align:right;}
+  .chan .chan-rate .v{font-family:var(--font-display);font-size:34px;font-weight:500;line-height:1;color:var(--c);}
+  .chan .chan-rate .l{font-size:10.5px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.04em;}
+  .chan table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  .chan td{padding:5px 4px;border-bottom:1px solid var(--gridline);vertical-align:top;}
+  .chan td.name{color:var(--ink-primary);}
+  .chan td.name small{display:block;color:var(--ink-muted);font-size:11px;}
+  .chan td.num{text-align:right;font-family:var(--font-mono);font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .chan td.pct{text-align:right;font-family:var(--font-mono);color:var(--ink-muted);width:56px;white-space:nowrap;}
+  .chan tr.rev td{font-weight:600;color:var(--ink-primary);}
+  .chan tr.total td{font-weight:700;color:var(--ink-primary);border-top:1.5px solid var(--baseline);border-bottom:1.5px solid var(--baseline);}
+  .chan tr.left td{font-weight:600;border-bottom:none;}
+  .chan tr.left td.num{color:var(--success-text);}
+  .chan tr.left.bad td.num{color:var(--status-critical);}
+  .chan tr.grp td{font-family:var(--font-head);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-muted);padding-top:9px;border-bottom:none;}
+  .chan-empty{font-size:12.5px;color:var(--ink-muted);padding:8px 2px;}
 
   table.simple{width:100%;border-collapse:collapse;font-size:12.5px;}
   table.simple th{text-align:left;color:var(--ink-muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.03em;padding:6px 10px;border-bottom:1px solid var(--gridline);}
@@ -366,7 +395,16 @@
       <div class="note">% tính trên Doanh thu thuần · bấm dòng nhóm để thu gọn/mở rộng</div>
     </div>
     <div class="stmt-wrap"><table class="stmt" id="stmtTable"></table></div>
-    <div class="caption" style="padding-left:2px;margin-top:8px;">Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa kết nối ($0)</span> chưa có nguồn dữ liệu nên để $0 (không ước tính). Vì vậy <b>Lợi nhuận gộp / đóng góp / EBITDA ở trên là lợi nhuận TRƯỚC</b> các khoản còn gắn nhãn đó (giá vốn sản phẩm, phí cổng thanh toán, G&amp;A…) — sẽ tự đúng dần khi từng nguồn được nối vào. Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa nhập ($0)</span> là chi phí không có API (lương, văn phòng, khấu hao, lãi vay, thuế TNDN): điền theo tháng vào file <code>data/opex_monthly.json</code> trên GitHub, bảng tự đọc và rải đều theo ngày; tháng chưa điền lấy theo tháng gần nhất đã điền.</div>
+    <div class="caption" style="padding-left:2px;margin-top:8px;">Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa kết nối ($0)</span> chưa có nguồn dữ liệu nên để $0 (không ước tính). Vì vậy <b>Lợi nhuận gộp / đóng góp / EBITDA ở trên là lợi nhuận TRƯỚC</b> các khoản còn gắn nhãn đó (giá vốn sản phẩm, phí sàn Walmart/TikTok, phí Afterpay, G&amp;A…) — sẽ tự đúng dần khi từng nguồn được nối vào. Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa nhập ($0)</span> là chi phí không có API (lương, văn phòng, khấu hao, lãi vay, thuế TNDN): điền theo tháng vào file <code>data/opex_monthly.json</code> trên GitHub, bảng tự đọc và rải đều theo ngày; tháng chưa điền lấy theo tháng gần nhất đã điền.</div>
+  </div>
+
+  <div class="card" id="channelCostCard">
+    <div class="card-head">
+      <h2>Chi phí để bán qua từng kênh (take rate)</h2>
+      <div class="note">Mỗi $1 doanh thu thuần của kênh, kênh và dịch vụ đi kèm lấy bao nhiêu — trước giá vốn sản phẩm và G&amp;A</div>
+    </div>
+    <div class="chan-grid" id="channelCostGrid"></div>
+    <div class="caption" style="padding-left:2px;margin-top:8px;">Cùng số với bảng P&amp;L, chỉ xếp lại theo kênh. <b>Hoa hồng &amp; phí sàn / cổng thanh toán</b> là % cố định trên mỗi đơn (như margin của nhà bán lẻ) — chuẩn P&amp;L quản trị D2C xếp vào <i>phí bán hàng theo giao dịch</i> (trước CM2); <b>quảng cáo &amp; affiliate</b> là chi phí tuỳ chọn để tạo nhu cầu, xếp vào <i>marketing</i> (trước CM3) — không gộp chung để còn đọc được ACOS/TACOS. Tổng của cả hai cộng fulfillment và lưu kho = <b>take rate</b> của kênh ("Amazon lấy bao nhiêu %"). Klaviyo và gói Social Snowball trên P&amp;L nằm ở G&amp;A, ở đây tính cho kênh D2C vì chỉ phục vụ kênh đó.<span id="channelCostNote"></span></div>
   </div>
 
   <div class="card">
@@ -524,7 +562,7 @@
     return load(k, 1).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=33ef063b84';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=ba1a40cd75';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');

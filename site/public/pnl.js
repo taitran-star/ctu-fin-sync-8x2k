@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 33ef063b84).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build ba1a40cd75).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -308,6 +308,10 @@
         t.shipping += bs[k].shipping_cost||0; t.packaging += bs[k].packaging_cost||0; t.pickPack += bs[k].pick_pack_cost||0; t.total += bs[k].total_cost||0;
       });
     });
+    // ShipMonk per-order cost by sales channel (store name -> channel) for the take-rate card: the Amazon FBM store,
+    // the Walmart store, everything else (the Shopify store + manual orders) = D2C.
+    const shipmonkByChannel = {shopify:0, amazon:0, walmart:0};
+    Object.entries(shipmonkByStore).forEach(([k,v])=>{ const ch = /amazon/i.test(k) ? 'amazon' : /walmart/i.test(k) ? 'walmart' : 'shopify'; shipmonkByChannel[ch] += v.total; });
     const nonAmazonOrders = orders.shopify + orders.walmart + orders.tiktok;
     const fulfillment = amazonFbaFeesReal;
     // Inbound freight/duty into FBA is landed inventory cost -> COGS. It is booked on the day
@@ -461,7 +465,7 @@
 
     return {n, gross, refund, discountBy, orders, ads, adsAttr, grossSales, discount, refundsTotal, netRevenue, totalOrders,
       productCost, packaging, fulfillment, postage, cogs, grossProfit, nonAmazonOrders, shopifyTax, shopifyRealDays, amazonRealDays,
-      shipmonkRealDays, shipmonkOrders, shipmonkUnshipped, shipmonkUnits, shipmonkPickPack, shipmonkByStore,
+      shipmonkRealDays, shipmonkOrders, shipmonkUnshipped, shipmonkUnits, shipmonkPickPack, shipmonkByStore, shipmonkByChannel,
       smInvDays, smInv, smInvOther, smInvAdjCredits, smStorageOpen, smStorageOpenDays, smStorageCarryDays, smStorageReportDays, smInvShipCmp, smApiShipCmp, smCmpDays, smCmpMissingDays, smTrueUp, shipmonkInvoiceExtras, shipmonkLogistics, amazonLogistics, logisticsTotal, feesTotal, marketingTotal, cmBeforeMarketing,
       paymentFees, paymentFeeDays, paymentFeeOrders, feesMissingOrders, gatewayMix, feeTypeMix, paypalDays, paypalFees, paypalPayments, paypalPaymentsCount, paypalCompare, paymentFeesAll, marketplaceFees, adSpend, otherVarTotal, contributionProfit,
       gaItems, gaTotal, inventoryHolding, fixedTotal, netProfit, klaviyoCost, klaviyoCostDays, klaviyoCostParts,
@@ -584,6 +588,7 @@
   // ---------- statement ----------
   function stLine(label, value, base, tag, key, extra){ return {t:'line', label, value, pct: base? value/base*100:0, tag, key, extra}; }
   function stSection(label, key){ return {t:'section', label, key}; }
+  function stGroup(label, value, base, key){ return {t:'group', label, value, pct: base? value/base*100:0, key}; }   // sub-heading inside a section, with the group's subtotal
   function stSub(label, value, base, key){ return {t:'subtotal', label, value, pct: base? value/base*100:0, key}; }
   function stFinal(label, value, base){ return {t:'final', label, value, pct: base? value/base*100:0}; }
 
@@ -664,7 +669,31 @@
     rows.push(stSub('= Tổng COGS', -a.cogs, nr, 'cogs_sub'));
     rows.push(stSub('= Lợi nhuận gộp (Gross Profit)', a.grossProfit, nr, 'gp'));
 
-    rows.push(stSection('Phí thanh toán & phí sàn (payment + marketplace fees)','opvar'));
+    // Variable selling fees = what the channel and the payment processor keep out of every order (a fixed % per
+    // transaction, like a retailer's margin) - NOT marketing: ads/affiliates are discretionary demand generation (next section).
+    rows.push(stSection('Phí bán hàng theo giao dịch — hoa hồng sàn & cổng thanh toán (variable selling fees)','opvar'));
+    rows.push(stGroup('<b>Hoa hồng & phí sàn</b> (marketplace fees) — % cố định trên mỗi đơn, như margin của nhà bán lẻ; không phải marketing', -a.marketplaceFees, nr, 'opvar'));
+    if(a.amazonOrdersReal>0){
+      const feeOrdered = a.amazonFeeOrderedDays>0;
+      const feeBasisTxt = feeOrdered ? ' — theo ngày đặt hàng' + (a.amazonRefEst>0.5 ? ', trong đó '+money(a.amazonRefEst)+(a.amazonPendSkuDays>0 ? ' cho '+a.amazonPendUnits.toLocaleString('en-US')+' units Amazon chưa ghi phí, tính theo tỷ lệ referral thật của từng SKU ('+a.amazonFeeEstDays+' ngày; thay bằng số thật khi Amazon ghi)' : ' ước tính cho đơn Amazon chưa ghi phí ('+a.amazonFeeEstDays+' ngày, '+(amazonFeeEstRates ? (amazonFeeEstRates.refRate*100).toFixed(1)+'% doanh thu theo '+amazonFeeEstRates.settledDays+' ngày đã chốt' : '')+'; thay bằng số thật khi Amazon ghi)') : ' (Amazon đã ghi phí đủ)') : ' — theo ngày ship (Finances)';
+      rows.push({...stLine('Phí giới thiệu Amazon (Referral fees)'+feeBasisTxt, -a.amazonReferralFeesReal, nr, 'var', 'opvar'), neg:true, live: feeOrdered, est: a.amazonRefEst>0.5});
+      // Script schema 2 splits the per-order "other" fees out of the catch-all; on older
+      // JSON they are still inside the catch-all and this line would be a misleading $0.
+      const amazonSchema2 = !!(amazonMeta && amazonMeta.schema >= 2);
+      if(amazonSchema2 || a.amazonOtherFeesReal !== 0){
+        rows.push({...stLine('Phí Amazon khác (thu hộ sales tax, shipping chargeback/holdback, phí xử lý hoàn tiền, postage nhãn trả hàng)' + (feeOrdered ? ' — theo ngày đặt hàng, gồm điều chỉnh phí khi hoàn tiền' : ''), -a.amazonOtherFeesReal, nr, 'var', 'opvar'), neg: a.amazonOtherFeesReal>=0});
+        if(feeOrdered && Math.abs(a.amazonRefundFeeAdj) >= 0.01) rows.push({...stLine('… trong đó Amazon trả lại phí khi hoàn tiền (theo ngày hoàn): '+money(a.amazonRefundFeeAdj), 0, nr, null, 'opvar'), detail:true, live:true});
+      }
+      const catchAllLabel = amazonSchema2
+        ? 'Điều chỉnh & khoản Amazon trả lại / chưa phân loại (reimbursement hàng mất/hỏng, reserve, liquidation, mục chưa map) — số dương = Amazon trả lại tiền'
+        : 'Phí Amazon khác/chưa phân loại (gift wrap, sales tax fee, shipping chargeback...)';
+      rows.push({...stLine(catchAllLabel, -a.amazonOtherUnclassifiedCost, nr, 'var', 'opvar'), neg: a.amazonOtherUnclassifiedCost>=0});
+    } else {
+      rows.push({...stLine('Phí sàn Amazon (khoảng này chưa có dữ liệu SP-API)', 0, nr, 'var', 'opvar'), neg:true, gap:true});
+    }
+    rows.push({...stLine('Phí sàn Walmart — chưa kết nối', -a.walmartFees, nr, 'var', 'opvar'), neg:true, gap:true});
+    rows.push({...stLine('Phí sàn TikTok Shop — chưa kết nối', -a.tiktokFees, nr, 'var', 'opvar'), neg:true, gap:true});
+    rows.push(stGroup('<b>Phí cổng thanh toán</b> (payment processing) — Shopify Payments, PayPal, theo từng giao dịch', -a.paymentFeesAll, nr, 'opvar'));
     if(a.paymentFeeDays>0){
       const GW_LABEL = {shopify_payments:'Shopify Payments (thẻ, Shop Pay)', paypal:'PayPal', shop_cash:'Shop Cash', gift_card:'Gift card', manual:'Thủ công', shopify_installments:'Shop Pay Installments', 'afterpay (new)':'Afterpay (trả góp)', afterpay:'Afterpay (trả góp)'};
       // Gateways that never carry a per-transaction fee: gift cards, Shop Cash rewards and manual/COD orders.
@@ -673,7 +702,7 @@
       if(a.paymentFeeDays<a.n) lbl += ' ('+(a.n-a.paymentFeeDays)+' ngày ngoài cửa sổ đồng bộ = $0)';
       rows.push({...stLine(lbl, -a.paymentFees, nr, 'var', 'opvar'), neg:true, live:true});
       Object.entries(a.feeTypeMix).sort((x,y)=>y[1]-x[1]).forEach(([k,v])=>{
-        const FT = {domestic_card_not_present:'thẻ nội địa 2.25% + $0.30', premium_domestic_card_not_present:'thẻ premium 2.95% + $0.30', amex_card_not_present:'Amex 2.95% + $0.30', international_card_not_present:'thẻ quốc tế 3.25% + $0.42', foreign_exchange_fee:'phí quy đổi ngoại tệ 1.5%'};
+        const FT = {domestic_card_not_present:'thẻ nội địa 2.25% + $0.30', premium_domestic_card_not_present:'thẻ premium 2.95% + $0.30', amex_card_not_present:'Amex 2.95% + $0.30', international_card_not_present:'thẻ quốc tế 3.25% + $0.42', foreign_exchange_fee:'phí quy đổi ngoại tệ 1.5%', amazon_pay_base:'Amazon Pay', amex_international_card_not_present:'Amex quốc tế', premium_international_card_not_present:'thẻ premium quốc tế', shop_pay_installments:'Shop Pay Installments'};
         rows.push({...stLine((FT[k]||k), -v, nr, null, 'opvar'), detail:true, neg:true, live:true});
       });
       Object.entries(a.gatewayMix).filter(([g])=>g!=='shopify_payments' && !(g==='paypal' && a.paypalDays>0)).sort((x,y)=>y[1].amount-x[1].amount).forEach(([g,v])=>{
@@ -694,28 +723,8 @@
         rows.push({...stLine('Đối chiếu '+pc.days+' ngày cả hai cùng live: Shopify ghi '+money(pc.shopify)+' qua PayPal ('+pc.shopifyOrders.toLocaleString('en-US')+' đơn) · PayPal ghi '+money(pc.paypal)+' ('+pc.paypalCount.toLocaleString('en-US')+' thanh toán) · khớp '+pct.toFixed(1)+'%'+(Math.abs(gap)>=1 ? ', chênh '+money(gap)+' = thanh toán của đơn đã huỷ / ngoài Shopify' : ''), 0, nr, null, 'opvar'), detail:true, live:true});
       }
     }
-    if(a.amazonOrdersReal>0){
-      const feeOrdered = a.amazonFeeOrderedDays>0;
-      const feeBasisTxt = feeOrdered ? ' — theo ngày đặt hàng' + (a.amazonRefEst>0.5 ? ', trong đó '+money(a.amazonRefEst)+(a.amazonPendSkuDays>0 ? ' cho '+a.amazonPendUnits.toLocaleString('en-US')+' units Amazon chưa ghi phí, tính theo tỷ lệ referral thật của từng SKU ('+a.amazonFeeEstDays+' ngày; thay bằng số thật khi Amazon ghi)' : ' ước tính cho đơn Amazon chưa ghi phí ('+a.amazonFeeEstDays+' ngày, '+(amazonFeeEstRates ? (amazonFeeEstRates.refRate*100).toFixed(1)+'% doanh thu theo '+amazonFeeEstRates.settledDays+' ngày đã chốt' : '')+'; thay bằng số thật khi Amazon ghi)') : ' (Amazon đã ghi phí đủ)') : ' — theo ngày ship (Finances)';
-      rows.push({...stLine('Phí giới thiệu Amazon (Referral fees)'+feeBasisTxt, -a.amazonReferralFeesReal, nr, 'var', 'opvar'), neg:true, live: feeOrdered, est: a.amazonRefEst>0.5});
-      // Script schema 2 splits the per-order "other" fees out of the catch-all; on older
-      // JSON they are still inside the catch-all and this line would be a misleading $0.
-      const amazonSchema2 = !!(amazonMeta && amazonMeta.schema >= 2);
-      if(amazonSchema2 || a.amazonOtherFeesReal !== 0){
-        rows.push({...stLine('Phí Amazon khác (thu hộ sales tax, shipping chargeback/holdback, phí xử lý hoàn tiền, postage nhãn trả hàng)' + (feeOrdered ? ' — theo ngày đặt hàng, gồm điều chỉnh phí khi hoàn tiền' : ''), -a.amazonOtherFeesReal, nr, 'var', 'opvar'), neg: a.amazonOtherFeesReal>=0});
-        if(feeOrdered && Math.abs(a.amazonRefundFeeAdj) >= 0.01) rows.push({...stLine('… trong đó Amazon trả lại phí khi hoàn tiền (theo ngày hoàn): '+money(a.amazonRefundFeeAdj), 0, nr, null, 'opvar'), detail:true, live:true});
-      }
-      const catchAllLabel = amazonSchema2
-        ? 'Điều chỉnh Amazon & khoản chưa phân loại (reimbursement, reserve, liquidation, mục chưa map)'
-        : 'Phí Amazon khác/chưa phân loại (gift wrap, sales tax fee, shipping chargeback...)';
-      rows.push({...stLine(catchAllLabel, -a.amazonOtherUnclassifiedCost, nr, 'var', 'opvar'), neg: a.amazonOtherUnclassifiedCost>=0});
-    } else {
-      rows.push({...stLine('Phí sàn Amazon (khoảng này chưa có dữ liệu SP-API)', 0, nr, 'var', 'opvar'), neg:true, gap:true});
-    }
-    rows.push({...stLine('Phí sàn Walmart — chưa kết nối', -a.walmartFees, nr, 'var', 'opvar'), neg:true, gap:true});
-    rows.push({...stLine('Phí sàn TikTok Shop — chưa kết nối', -a.tiktokFees, nr, 'var', 'opvar'), neg:true, gap:true});
-    rows.push(stSub('= Tổng phí thanh toán & phí sàn', -a.feesTotal, nr, 'opvar_sub'));
-    rows.push(stSub('= Lợi nhuận đóng góp trước marketing (CM trước quảng cáo)', a.cmBeforeMarketing, nr, 'cm2'));
+    rows.push(stSub('= Tổng phí bán hàng theo giao dịch (hoa hồng sàn + cổng thanh toán)', -a.feesTotal, nr, 'opvar_sub'));
+    rows.push(stSub('= Lợi nhuận đóng góp trước marketing (CM2 — sau phí giao dịch, trước quảng cáo)', a.cmBeforeMarketing, nr, 'cm2'));
 
     rows.push(stSection('Marketing & bán hàng (quảng cáo + hoa hồng affiliate)','mkt'));
     AD_KEYS.forEach(k=>{
@@ -831,8 +840,10 @@
         html += `<tr class="section" data-toggle="${r.key}"><td class="label" colspan="3"><span class="caret ${sectionOpen?'open':''}">▸</span> ${r.label}</td></tr>`;
         return;
       }
-      const hiddenCls = (r.t==='line' && curSection && r.key===curSection && !sectionOpen) ? 'hidden' : '';
-      if(r.t==='line'){
+      const hiddenCls = ((r.t==='line' || r.t==='group') && curSection && r.key===curSection && !sectionOpen) ? 'hidden' : '';
+      if(r.t==='group'){
+        html += `<tr class="group ${hiddenCls}" data-sec="${curSection||''}"><td class="label">${r.label}</td><td class="num">${money(r.value)}</td><td class="pct">${pctStr(r.pct)}</td></tr>`;
+      } else if(r.t==='line'){
         const tagHtml = r.tag ? `<span class="tag ${r.tag}"><span class="d"></span>${r.tag==='var'?'Biến đổi':'Cố định'}</span>` : '';
         const gapHtml = r.gap ? `<span class="tag gap"><span class="d"></span>${r.gap==='manual' ? 'Chưa nhập ($0)' : 'Chưa kết nối ($0)'}</span>` : '';
         const liveHtml = r.live ? `<span class="tag live"><span class="d"></span>${r.live==='real'?'Số thật': r.live==='manual' ? 'Nhập tay' : 'Live'}</span>` : '';
@@ -856,6 +867,67 @@
         renderStatement();
       });
     });
+  }
+
+  // ---------- cost to sell through each channel (take rate) ----------
+  // Same figures as the P&L, regrouped per sales channel: transaction fees (marketplace commission / payment
+  // processing), fulfillment & storage, marketing (ads, affiliates, D2C tools) as % of the channel's net revenue.
+  function renderChannelCosts(){
+    const grid = document.getElementById('channelCostGrid'); if(!grid) return;
+    const a = aggregate(currentRows());
+    const netOf = ch => a.gross[ch] - a.discountBy[ch] - a.refund[ch];
+    const smCh = {...a.shipmonkByChannel};
+    const smAll = a.postage + a.shipmonkPickPack + a.packaging;
+    if(smCh.shopify + smCh.amazon + smCh.walmart < 0.01 && smAll > 0.01) smCh.shopify = smAll;   // ShipMonk JSON without by_store: all D2C
+    const snowballSub = (a.gaItems.find(it=>it.key==='snowball_sub')||{}).value || 0;
+    const d2cAds = AD_KEYS.filter(k=>k!=='amazonads').reduce((t,k)=>t+a.ads[k],0);
+    const chans = [];
+    chans.push({key:'amazon', name:'Amazon (FBA + FBM)', sub:'phí Amazon thu theo đơn, FBA, lưu kho, quảng cáo trên sàn', net: netOf('amazon'), orders: a.orders.amazon, groups:[
+      {label:'Phí bán hàng theo giao dịch', rows:[
+        {n:'Hoa hồng Amazon (referral) & phí theo đơn', s:'gồm phí xử lý hoàn tiền, điều chỉnh và khoản Amazon trả lại', v: a.amazonReferralFeesReal + a.amazonOtherFeesReal + a.amazonOtherUnclassifiedCost, est: a.amazonRefEst>0.5, gap: a.amazonOrdersReal===0 && a.orders.amazon>0},
+      ]},
+      {label:'Fulfillment & kho', rows:[
+        {n:'FBA fulfillment (pick, pack, ship)', v: a.fulfillment, est: a.amazonFbaEst>0.5},
+        {n:'ShipMonk cho đơn FBM', v: smCh.amazon},
+        {n:'Lưu kho FBA + phí dịch vụ Amazon', s:'lưu kho tháng, removal, returns, subscription', v: a.amazonLogistics},
+      ]},
+      {label:'Marketing trên sàn', rows:[
+        {n:'Amazon Ads (SP · SB · SD)', v: a.ads.amazonads, gap: !amazonAdsMatched},
+      ]},
+    ]});
+    chans.push({key:'shopify', name:'Shopify (D2C)', sub:'cổng thanh toán, ShipMonk, quảng cáo, affiliate, công cụ D2C', net: netOf('shopify'), orders: a.orders.shopify, groups:[
+      {label:'Phí bán hàng theo giao dịch', rows:[
+        {n:'Cổng thanh toán (Shopify Payments, PayPal)', v: a.paymentFeesAll, gap: a.paymentFeeDays===0 && a.paypalDays===0},
+      ]},
+      {label:'Fulfillment & kho', rows:[
+        {n:'ShipMonk theo đơn (cước, pick & pack, bao bì)', s:'gồm bao bì mua sỉ, credit và chênh lệch hoá đơn', v: smCh.shopify + a.shipmonkInvoiceExtras},
+        {n:'Kho ShipMonk (lưu kho, receiving, hàng trả, phí khác)', v: a.shipmonkLogistics},
+      ]},
+      {label:'Marketing', rows:[
+        {n:'Quảng cáo (Meta, Google, TikTok, AppLovin)', v: d2cAds},
+        {n:'Hoa hồng affiliate / creator (Snowball)', v: a.snowballCommission},
+        {n:'Công cụ D2C: Klaviyo + gói Social Snowball', s:'trên P&L nằm ở G&A', v: a.klaviyoCost + snowballSub},
+      ]},
+    ]});
+    if(netOf('walmart') > 0.01) chans.push({key:'walmart', name:'Walmart', sub:'phí sàn chưa kết nối', net: netOf('walmart'), orders: a.orders.walmart, groups:[
+      {label:'Phí bán hàng theo giao dịch', rows:[{n:'Phí sàn Walmart', v: a.walmartFees, gap:true}]},
+      {label:'Fulfillment & kho', rows:[{n:'ShipMonk theo đơn', v: smCh.walmart}]},
+    ]});
+    const note = document.getElementById('channelCostNote');
+    if(note) note.textContent = (netOf('walmart') <= 0.01 && smCh.walmart > 0.01) ? ' ShipMonk còn ship đơn Walmart ('+money(smCh.walmart)+' trong kỳ, nằm trong COGS của P&L) — doanh thu Walmart chưa kết nối nên chưa tính take rate cho kênh này.' : '';
+    grid.innerHTML = chans.map(c=>{
+      const total = c.groups.reduce((t,g)=>t+g.rows.reduce((u,r)=>u+r.v,0),0);
+      const left = c.net - total;
+      const pctOf = v => c.net>0 ? (v/c.net*100).toFixed(1)+'%' : '—';
+      let rows = `<tr class="rev"><td class="name">Doanh thu thuần ${CH_LABEL[c.key]}<small>${c.orders.toLocaleString('en-US')} đơn · gross − giảm giá − hoàn tiền</small></td><td class="num">${money(c.net)}</td><td class="pct">100%</td></tr>`;
+      c.groups.forEach(g=>{
+        rows += `<tr class="grp"><td colspan="3">${g.label}</td></tr>`;
+        g.rows.forEach(r=>{ rows += `<tr><td class="name">${r.n}${r.s ? `<small>${r.s}</small>` : ''}${r.gap ? ' <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa kết nối ($0)</span>' : ''}${r.est ? ' <span class="tag info" style="margin-left:0;"><span class="d"></span>Có ước tính</span>' : ''}</td><td class="num">${money(-r.v)}</td><td class="pct">${pctOf(r.v)}</td></tr>`; });
+      });
+      rows += `<tr class="total"><td class="name">Kênh & dịch vụ đi kèm lấy (take rate)</td><td class="num">${money(-total)}</td><td class="pct">${pctOf(total)}</td></tr>`;
+      rows += `<tr class="left ${left<0 ? 'bad' : ''}"><td class="name">Còn lại để trả giá vốn sản phẩm & G&amp;A</td><td class="num">${money(left)}</td><td class="pct">${pctOf(left)}</td></tr>`;
+      return `<div class="chan" style="--c:${CH_COLOR[c.key]}"><div class="chan-head"><div><div class="chan-name">${c.name}</div><div class="chan-sub">${c.sub}</div></div><div class="chan-rate"><div class="v">${c.net>0 ? (total/c.net*100).toFixed(1)+'%' : '—'}</div><div class="l">take rate</div></div></div><table>${rows}</table></div>`;
+    }).join('');
   }
 
   // ---------- break-even ----------
@@ -1160,7 +1232,7 @@
   let lastVw = window.innerWidth;
   window.addEventListener('resize', ()=>{ clearTimeout(window.__rsz); window.__rsz = setTimeout(()=>{ if(window.innerWidth!==lastVw){ lastVw = window.innerWidth; renderTrend(); renderBreakeven(); } }, 150); });
   function renderAll(){
-    renderSubCtl(); renderKpis(); renderTrend(); renderStatement(); renderBreakeven(); renderRoas(); renderAttribution(); renderKlaviyo(); renderTax(); renderSources(); renderAmazonGaps(); renderShipmonk(); renderShopifyRecon(); renderSnowball(); renderMetaCampaigns(); renderGoogleCampaigns();
+    renderSubCtl(); renderKpis(); renderTrend(); renderStatement(); renderChannelCosts(); renderBreakeven(); renderRoas(); renderAttribution(); renderKlaviyo(); renderTax(); renderSources(); renderAmazonGaps(); renderShipmonk(); renderShopifyRecon(); renderSnowball(); renderMetaCampaigns(); renderGoogleCampaigns();
   }
   document.getElementById('modeSeg').addEventListener('click', (e)=>{
     const btn = e.target.closest('button'); if(!btn) return;
