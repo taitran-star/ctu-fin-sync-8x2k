@@ -1,0 +1,62 @@
+name: Cattasaurus Amazon Ads sync (Sellerboard export)
+
+on:
+  schedule:
+    # Hourly (UTC). Sellerboard regenerates the export once a day; the hourly pull just picks it up when it lands.
+    - cron: "41 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sellerboard-ads-sync
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Sync to the latest main
+        run: |
+          git fetch --depth=1 origin main
+          git reset --hard origin/main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download the Sellerboard export and merge it into data/amazon_ads.json
+        env:
+          REPORT_TIMEZONE: America/Los_Angeles
+          SELLERBOARD_DASHBOARD_URL: ${{ secrets.SELLERBOARD_DASHBOARD_URL }}
+          SELLERBOARD_PPC_URL: ${{ secrets.SELLERBOARD_PPC_URL }}
+        run: python fetch_sellerboard_ads.py
+
+      - name: Commit updated data file if changed
+        run: |
+          git config user.name "cattasaurus-sellerboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/amazon_ads.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Update Amazon Ads data from Sellerboard ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            if git status --porcelain | grep -q '^UU\|^AA'; then
+              echo "::warning::data conflict with a newer commit on main - keeping main's version, refetched next cycle"
+              git diff --name-only --diff-filter=U | xargs -r git checkout --ours -- && git diff --name-only --diff-filter=U | xargs -r git add -- && GIT_EDITOR=true git rebase --continue || git rebase --abort
+              git push && exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "Push attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "Could not push after 5 attempts." && exit 1
