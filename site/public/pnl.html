@@ -324,7 +324,7 @@
       <div class="brand-logo"><img class="logo-light" src="/img/logo-h-pine.png" alt="Cattasaurus" width="1000" height="327"><img class="logo-dark" src="/img/logo-h-pistachio.png" alt="" aria-hidden="true" width="1000" height="327"></div>
       <div class="brand-text">
         <h1 class="brand-title">Dashboard · P&amp;L chuẩn D2C</h1>
-        <div class="sub">Contribution-margin P&amp;L: COGS gồm giá vốn + fulfillment, tách rõ chi phí cố định/biến đổi, điểm hoà vốn, ROAS &amp; MER · <b>ngày tính theo giờ Los Angeles (PT)</b> cho mọi nguồn · nguồn chưa kết nối hiển thị <b>$0</b>, không dùng số mẫu</div>
+        <div class="sub">P&amp;L quản trị chuẩn D2C: Doanh thu thuần → COGS → Lợi nhuận gộp → phí thanh toán &amp; sàn → marketing → Lợi nhuận đóng góp → OpEx → EBITDA; điểm hoà vốn, ROAS &amp; MER · <b>ngày tính theo giờ Los Angeles (PT)</b> cho mọi nguồn · nguồn chưa kết nối hiển thị <b>$0</b>, không dùng số mẫu</div>
       </div>
     </div>
     <img class="band-mascot" src="/img/mascot-lying.png" alt="" aria-hidden="true" width="720" height="429">
@@ -354,7 +354,7 @@
     </div>
     <div class="legend" id="trendLegend" style="margin-bottom:8px;"></div>
     <div id="trendWrap" style="position:relative;"><svg id="trendChart" style="width:100%;display:block;"></svg><div class="tooltip" id="trendTip"></div></div>
-    <div class="caption" id="trendCaption" style="padding-left:2px;margin-top:6px;">Doanh thu thuần, <b>chi phí biến đổi</b> (giá vốn + fulfillment + phí giao dịch + quảng cáo + hoa hồng… — tăng giảm theo doanh thu), <b>chi phí cố định</b> (G&amp;A + tồn kho, đường đứt nét — hiện chỉ có Klaviyo và Snowball, các khoản khác chưa nhập nên đường này còn thấp) và lợi nhuận ròng của từng kỳ, cùng định nghĩa với bảng P&amp;L. Bấm tên trong chú giải để ẩn/hiện một đường (ẩn doanh thu để nhìn rõ chi phí). Kỳ đang xem được tô nền; kỳ chưa kết thúc vẽ điểm rỗng. Rê chuột để xem số và tỷ lệ chi phí trên doanh thu.</div>
+    <div class="caption" id="trendCaption" style="padding-left:2px;margin-top:6px;">Doanh thu thuần, <b>chi phí biến đổi</b> (giá vốn + fulfillment + phí giao dịch + quảng cáo + hoa hồng… — tăng giảm theo doanh thu), <b>chi phí hoạt động</b> (kho bãi & logistics + G&amp;A, đường đứt nét — lương, văn phòng… chưa nhập nên đường này còn thấp) và lợi nhuận hoạt động (EBITDA) của từng kỳ, cùng định nghĩa với bảng P&amp;L. Bấm tên trong chú giải để ẩn/hiện một đường (ẩn doanh thu để nhìn rõ chi phí). Kỳ đang xem được tô nền; kỳ chưa kết thúc vẽ điểm rỗng. Rê chuột để xem số và tỷ lệ chi phí trên doanh thu.</div>
   </div>
 
   <div class="card">
@@ -363,11 +363,11 @@
       <div class="note">% tính trên Doanh thu thuần · bấm dòng nhóm để thu gọn/mở rộng</div>
     </div>
     <div class="stmt-wrap"><table class="stmt" id="stmtTable"></table></div>
-    <div class="caption" style="padding-left:2px;margin-top:8px;">Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa kết nối ($0)</span> chưa có nguồn dữ liệu nên để $0 (không ước tính). Vì vậy <b>Lợi nhuận gộp / đóng góp / ròng ở trên là lợi nhuận TRƯỚC</b> các khoản còn gắn nhãn đó (giá vốn sản phẩm, phí cổng thanh toán, G&amp;A…) — sẽ tự đúng dần khi từng nguồn được nối vào.</div>
+    <div class="caption" style="padding-left:2px;margin-top:8px;">Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa kết nối ($0)</span> chưa có nguồn dữ liệu nên để $0 (không ước tính). Vì vậy <b>Lợi nhuận gộp / đóng góp / EBITDA ở trên là lợi nhuận TRƯỚC</b> các khoản còn gắn nhãn đó (giá vốn sản phẩm, phí cổng thanh toán, G&amp;A…) — sẽ tự đúng dần khi từng nguồn được nối vào.</div>
   </div>
 
   <div class="card">
-    <div class="card-head"><h2>Điểm hoà vốn (break-even)</h2><div class="note">Dựa trên tỷ lệ chi phí biến đổi &amp; tổng chi phí cố định của kỳ đang xem</div></div>
+    <div class="card-head"><h2>Điểm hoà vốn (break-even)</h2><div class="note">Dựa trên tỷ lệ chi phí biến đổi &amp; chi phí hoạt động (kho bãi, G&amp;A) của kỳ đang xem</div></div>
     <div class="be-grid" id="beGrid"></div>
     <div style="position:relative;"><svg id="beChart" style="width:100%;display:block;"></svg></div>
   </div>
@@ -506,7 +506,7 @@
     }).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=ec958a409e';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=76699989be';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');

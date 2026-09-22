@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build ec958a409e).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 76699989be).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -305,7 +305,10 @@
     let smInvShipCmp = 0, smApiShipCmp = 0, smCmpDays = 0, smTrueUp = 0;
     invRows.forEach(r=>{ if(r.shipmonkInv.cmpOk){ smCmpDays++; smInvShipCmp += r.shipmonkInv.cmpInv; smApiShipCmp += r.shipmonkInv.cmpApi; smTrueUp += r.shipmonkInv.trueUp; } });
     const smCmpMissingDays = smInvDays - smCmpDays;
-    const shipmonkInvoiceExtras = smInv.storage + smInv.receiving + smInv.returns + smInv.packaging_purchases + smInvOther + smInvAdjCredits + smTrueUp;
+    // Invoice items that belong with the per-order shipping cost stay in COGS (true-up, credits); warehousing,
+    // receiving, returns handling and packaging purchases are operating logistics costs (OpEx), not cost of the order.
+    const shipmonkInvoiceExtras = smInvAdjCredits + smTrueUp + smInv.packaging_purchases;   // packaging bought in bulk = packaging material cost (COGS)
+    const shipmonkLogistics = smInv.storage + smInv.receiving + smInv.returns + smInvOther;
     // Inbound freight/duty into FBA is capitalised into inventory (landed cost -> product COGS per SKU),
     // so it is shown as a memo line only and NOT expensed here (user rule 2026-09-20).
     const cogs = productCost + packaging + fulfillment + shipmonkPickPack + postage + shipmonkInvoiceExtras;
@@ -340,7 +343,10 @@
     } : null;
     const amazonMarketplaceFeesEst = 0;    // Amazon days without SP-API data stay $0 (no estimate)
     const amazonOtherUnclassifiedCost = -amazonOtherNetReal;
-    const amazonMarketplaceFeesReal = amazonReferralFeesReal + amazonServiceFeesReal + amazonStorageAlloc + amazonOtherFeesReal + amazonOtherUnclassifiedCost;
+    // Per-order selling fees (referral, other per-order fees, adjustments) = marketplace fees; FBA storage and
+    // service fees (removal, returns processing, subscription) are logistics / operating costs below the contribution line.
+    const amazonMarketplaceFeesReal = amazonReferralFeesReal + amazonOtherFeesReal + amazonOtherUnclassifiedCost;
+    const amazonLogistics = amazonServiceFeesReal + amazonStorageAlloc;
     const walmartFees = 0;                 // Walmart not connected
     const tiktokFees = 0;                  // TikTok Shop not connected
     const marketplaceFees = amazonMarketplaceFeesEst + amazonMarketplaceFeesReal + walmartFees + tiktokFees;
@@ -351,8 +357,11 @@
     const snowballOrders = sum(rows.map(r=> r.snowballReal ? r.snowballReal.orders : 0));
     const snowballRevenue = sum(rows.map(r=> r.snowballReal ? r.snowballReal.revenue : 0));
     const snowballCommission = sum(rows.map(r=> r.snowballReal ? r.snowballReal.commissionNet : 0));
-    const otherVarTotal = paymentFeesAll + marketplaceFees + adSpend + snowballCommission;
-    const contributionProfit = grossProfit - otherVarTotal;
+    const feesTotal = paymentFeesAll + marketplaceFees;               // payment gateways + marketplace selling fees
+    const marketingTotal = adSpend + snowballCommission;               // paid ads + affiliate commissions
+    const otherVarTotal = feesTotal + marketingTotal;
+    const cmBeforeMarketing = grossProfit - feesTotal;                 // CM2: what is left to pay for marketing
+    const contributionProfit = cmBeforeMarketing - marketingTotal;     // CM3: after marketing
 
     const gaItems = GA_ITEMS.map(it=>({...it, value: it.monthly/30*n}));
     // Klaviyo: real invoices booked per billing cycle (data/klaviyo_invoices.json), spread per day
@@ -365,8 +374,9 @@
     }
     const gaTotal = sum(gaItems.map(it=>it.value));
     const inventoryHolding = INVENTORY_MONTHLY/30*n;
-    const fixedTotal = gaTotal + inventoryHolding;
-    const netProfit = contributionProfit - fixedTotal;
+    const logisticsTotal = shipmonkLogistics + amazonLogistics;        // warehousing, receiving, returns handling, FBA storage & service fees
+    const fixedTotal = gaTotal + inventoryHolding + logisticsTotal;    // operating costs (OpEx) below the contribution line
+    const netProfit = contributionProfit - fixedTotal;                 // operating profit (EBITDA): before payroll not entered, depreciation, interest, income tax
 
     const variableTotal = cogs + otherVarTotal;
     const variableRatio = netRevenue>0 ? variableTotal/netRevenue : 0;
@@ -404,7 +414,7 @@
     return {n, gross, refund, discountBy, orders, ads, adsAttr, grossSales, discount, refundsTotal, netRevenue, totalOrders,
       productCost, packaging, fulfillment, postage, cogs, grossProfit, nonAmazonOrders, shopifyTax, shopifyRealDays, amazonRealDays,
       shipmonkRealDays, shipmonkOrders, shipmonkUnshipped, shipmonkUnits, shipmonkPickPack, shipmonkByStore,
-      smInvDays, smInv, smInvOther, smInvAdjCredits, smInvShipCmp, smApiShipCmp, smCmpDays, smCmpMissingDays, smTrueUp, shipmonkInvoiceExtras,
+      smInvDays, smInv, smInvOther, smInvAdjCredits, smInvShipCmp, smApiShipCmp, smCmpDays, smCmpMissingDays, smTrueUp, shipmonkInvoiceExtras, shipmonkLogistics, amazonLogistics, logisticsTotal, feesTotal, marketingTotal, cmBeforeMarketing,
       paymentFees, paymentFeeDays, paymentFeeOrders, feesMissingOrders, gatewayMix, feeTypeMix, paypalDays, paypalFees, paypalPayments, paypalPaymentsCount, paypalCompare, paymentFeesAll, marketplaceFees, adSpend, otherVarTotal, contributionProfit,
       gaItems, gaTotal, inventoryHolding, fixedTotal, netProfit, klaviyoCost, klaviyoCostDays, klaviyoCostParts,
       variableTotal, variableRatio, cmRatio, breakEvenRevenue, blendedAOV, breakEvenOrders,
@@ -497,9 +507,9 @@
     const items = [
       {label:'Doanh thu thuần', v:cur.netRevenue, pv:prev&&prev.netRevenue},
       {label:'Lợi nhuận gộp', v:cur.grossProfit, pv:prev&&prev.grossProfit},
-      {label:'LN đóng góp (CM1)', v:cur.contributionProfit, pv:prev&&prev.contributionProfit},
-      {label:'Lợi nhuận ròng', v:cur.netProfit, pv:prev&&prev.netProfit},
-      {label:'Biên LN ròng', v: cur.netRevenue? cur.netProfit/cur.netRevenue*100:0, pv: prev&&prev.netRevenue? prev.netProfit/prev.netRevenue*100:null, pct:true},
+      {label:'LN đóng góp (sau marketing)', v:cur.contributionProfit, pv:prev&&prev.contributionProfit},
+      {label:'LN hoạt động (EBITDA)', v:cur.netProfit, pv:prev&&prev.netProfit},
+      {label:'Biên EBITDA', v: cur.netRevenue? cur.netProfit/cur.netRevenue*100:0, pv: prev&&prev.netRevenue? prev.netProfit/prev.netRevenue*100:null, pct:true},
     ];
     document.getElementById('kpiRow').innerHTML = items.map(it=>{
       let deltaHtml = '<div class="delta flat">— kỳ trước không có dữ liệu</div>';
@@ -587,21 +597,15 @@
     if(a.smInvDays>0){
       const invNote = ' — theo hoá đơn ShipMonk' + (a.smInvDays<a.n ? ' ('+(a.n-a.smInvDays)+' ngày chưa có hoá đơn)' : '');
       const invLine = (label, v, opts) => rows.push({...stLine(label + invNote, -v, nr, 'var', 'cogs'), neg: v>=0, live:true, ...(opts||{})});
-      invLine('Lưu kho ShipMonk — pallet & bin, chia đều theo ngày trong kỳ hoá đơn', a.smInv.storage);
-      invLine('Receiving hàng nhập ShipMonk — nhận carton, dỡ container', a.smInv.receiving);
-      invLine('Xử lý hàng trả ShipMonk — processing + cước hàng trả', a.smInv.returns);
       if(a.smInv.packaging_purchases !== 0) invLine('Mua bao bì riêng qua ShipMonk — custom packaging, ghi khi ShipMonk xuất hoá đơn', a.smInv.packaging_purchases);
-      if(a.smInvOther !== 0) invLine('Phí khác ShipMonk — phí tối thiểu, phạt trễ, audit, phụ phí' + (Math.abs(a.smInv.unallocated)>=1 ? ' (gồm '+money(a.smInv.unallocated)+' hoá đơn không phân loại)' : ''), a.smInvOther);
       if(a.smInvAdjCredits !== 0) invLine('Điều chỉnh cước & credit ShipMonk — hoàn/điều chỉnh trên hoá đơn', a.smInvAdjCredits);
       if(a.smCmpDays>0){
         const pct = a.smInvShipCmp ? (Math.min(a.smInvShipCmp, a.smApiShipCmp)/Math.max(a.smInvShipCmp, a.smApiShipCmp)*100) : 100;
         invLine('Chênh lệch hoá đơn − ước tính API (cước + pick & pack), tính theo từng kỳ hoá đơn', a.smTrueUp);
-        rows.push({...stLine('Đối chiếu '+a.smCmpDays+' ngày: hoá đơn ghi '+money(a.smInvShipCmp)+' cước + pick & pack · API ước tính '+money(a.smApiShipCmp)+' (theo ngày ship) · khớp '+pct.toFixed(1)+'%' + (a.smCmpMissingDays ? ' · '+a.smCmpMissingDays+' ngày thuộc kỳ API chưa đủ dữ liệu để đối chiếu' : ''), 0, nr, null, 'cogs'), detail:true, live:true});
+        rows.push({...stLine('Đối chiếu '+a.smCmpDays+' ngày: hoá đơn ghi '+money(a.smInvShipCmp)+' cước + pick & pack · API ước tính '+money(a.smApiShipCmp)+' (theo ngày ship) · khớp '+pct.toFixed(1)+'%', 0, nr, null, 'cogs'), detail:true, live:true});
       } else if(a.smCmpMissingDays>0){
-        rows.push({...stLine('Đối chiếu cước + pick & pack với hoá đơn: chưa được — API chưa có đủ ngày ship của kỳ này (chờ backfill)', 0, nr, null, 'cogs'), detail:true, live:true});
+        rows.push({...stLine('Đối chiếu cước + pick & pack với hoá đơn: chưa được — API chưa có đủ ngày ship của kỳ này (chờ backfill)', 0, nr, null, 'cogs'), detail:true});
       }
-    } else if(smLive){
-      rows.push({...stLine('Lưu kho / receiving / hàng trả ShipMonk — chưa có hoá đơn cho khoảng này', 0, nr, 'var', 'cogs'), gap:true});
     }
     if(a.amazonInboundFreightReal !== 0){
       rows.push({...stLine('Memo — cước & thuế nhập hàng vào FBA '+money(a.amazonInboundFreightReal)+' (Amazon Global Logistics, ngày hoá đơn): tính vào giá vốn hàng nhập kho, KHÔNG trừ ở đây', 0, nr, null, 'cogs'), detail:true, live:true});
@@ -609,7 +613,7 @@
     rows.push(stSub('= Tổng COGS', -a.cogs, nr, 'cogs_sub'));
     rows.push(stSub('= Lợi nhuận gộp (Gross Profit)', a.grossProfit, nr, 'gp'));
 
-    rows.push(stSection('Chi phí biến đổi khác (phí giao dịch + quảng cáo)','opvar'));
+    rows.push(stSection('Phí thanh toán & phí sàn (payment + marketplace fees)','opvar'));
     if(a.paymentFeeDays>0){
       const GW_LABEL = {shopify_payments:'Shopify Payments (thẻ, Shop Pay)', paypal:'PayPal', shop_cash:'Shop Cash', gift_card:'Gift card', manual:'Thủ công', shopify_installments:'Shop Pay Installments', 'afterpay (new)':'Afterpay (trả góp)', afterpay:'Afterpay (trả góp)'};
       // Gateways that never carry a per-transaction fee: gift cards, Shop Cash rewards and manual/COD orders.
@@ -643,13 +647,6 @@
       const feeOrdered = a.amazonFeeOrderedDays>0;
       const feeBasisTxt = feeOrdered ? ' — theo ngày đặt hàng' + (a.amazonRefEst>0.5 ? ', trong đó '+money(a.amazonRefEst)+(a.amazonPendSkuDays>0 ? ' cho '+a.amazonPendUnits.toLocaleString('en-US')+' units Amazon chưa ghi phí, tính theo tỷ lệ referral thật của từng SKU ('+a.amazonFeeEstDays+' ngày; thay bằng số thật khi Amazon ghi)' : ' ước tính cho đơn Amazon chưa ghi phí ('+a.amazonFeeEstDays+' ngày, '+(amazonFeeEstRates ? (amazonFeeEstRates.refRate*100).toFixed(1)+'% doanh thu theo '+amazonFeeEstRates.settledDays+' ngày đã chốt' : '')+'; thay bằng số thật khi Amazon ghi)') : ' (Amazon đã ghi phí đủ)') : ' — theo ngày ship (Finances)';
       rows.push({...stLine('Phí giới thiệu Amazon (Referral fees)'+feeBasisTxt, -a.amazonReferralFeesReal, nr, 'var', 'opvar'), neg:true, live: feeOrdered, est: a.amazonRefEst>0.5});
-      rows.push({...stLine(feeOrdered ? 'Phí dịch vụ Amazon (subscription, xử lý trả hàng, removal, Vine/coupon — không gồm lưu kho tháng)' : 'Phí dịch vụ Amazon (subscription, lưu kho FBA, xử lý trả hàng, removal, Vine/coupon)', -a.amazonServiceFeesReal, nr, 'var', 'opvar'), neg:true, gap: a.amazonServiceFeesReal===0});
-      if(feeOrdered){
-        let sl = 'Phí lưu kho FBA hàng tháng — ghi vào tháng lưu kho (Amazon thu ngày 7 tháng sau)';
-        if(a.amazonStorageMissingDays>0) sl += ' ('+a.amazonStorageMissingDays+' ngày thuộc tháng Amazon chưa thu phí = $0)';
-        rows.push({...stLine(sl, -a.amazonStorageAlloc, nr, 'var', 'opvar'), neg:true, live:true});
-        if(Math.abs(a.amazonStoragePosted) >= 0.01) rows.push({...stLine('Đối chiếu: Amazon thu phí lưu kho '+money(a.amazonStoragePosted)+' trong khoảng này (ngày 7–15 hàng tháng, cho tháng trước)', 0, nr, null, 'opvar'), detail:true, live:true});
-      }
       // Script schema 2 splits the per-order "other" fees out of the catch-all; on older
       // JSON they are still inside the catch-all and this line would be a misleading $0.
       const amazonSchema2 = !!(amazonMeta && amazonMeta.schema >= 2);
@@ -666,12 +663,16 @@
     }
     rows.push({...stLine('Phí sàn Walmart — chưa kết nối', -a.walmartFees, nr, 'var', 'opvar'), neg:true, gap:true});
     rows.push({...stLine('Phí sàn TikTok Shop — chưa kết nối', -a.tiktokFees, nr, 'var', 'opvar'), neg:true, gap:true});
+    rows.push(stSub('= Tổng phí thanh toán & phí sàn', -a.feesTotal, nr, 'opvar_sub'));
+    rows.push(stSub('= Lợi nhuận đóng góp trước marketing (CM trước quảng cáo)', a.cmBeforeMarketing, nr, 'cm2'));
+
+    rows.push(stSection('Marketing & bán hàng (quảng cáo + hoa hồng affiliate)','mkt'));
     AD_KEYS.forEach(k=>{
       let label = 'Quảng cáo — '+AD_LABEL[k];
       let live = false, gap = false;
       if(k==='amazonads'){
         if(!amazonAdsMatched){ label += ' (chờ Amazon duyệt Advertising API)'; gap = true; }
-        else if(a.amazonAdsRealDays===a.n){ live = true; label += ' (SP '+money(a.amazonAdsSplit.sp)+' · SB '+money(a.amazonAdsSplit.sb)+' · SD '+money(a.amazonAdsSplit.sd)+(a.amazonAdsSplit.stv?' · khác '+money(a.amazonAdsSplit.stv):'')+')'; }
+        else if(a.amazonAdsRealDays===a.n){ live = true; label += ' (SP '+money(a.amazonAdsSplit.sp)+' · SB '+money(a.amazonAdsSplit.sb)+' · SD '+money(a.amazonAdsSplit.sd)+')'+(a.amazonAdsSplit.stv>0.005 ? ' — Sellerboard ghi thêm '+money(a.amazonAdsSplit.stv)+' "Sponsored TV" không có trong Ads console: không tính' : ''); }
         else if(a.amazonAdsRealDays>0){ live = true; label += ' ('+(a.n-a.amazonAdsRealDays)+' ngày chưa có số = $0)'; }
         else { label += ' (khoảng này chưa có số)'; gap = true; }
       }
@@ -686,30 +687,54 @@
         else if(a.googleAdsRealDays>0){ live = true; label += ' ('+(a.n-a.googleAdsRealDays)+' ngày ngoài cửa sổ Google Ads API = $0)'; }
         else { label += googleMatched ? ' (khoảng này ngoài cửa sổ Google Ads API)' : ' — chưa kết nối'; gap = true; }
       }
-      rows.push({...stLine(label, -a.ads[k], nr, 'var', 'opvar'), neg:true, live, gap});
+      rows.push({...stLine(label, -a.ads[k], nr, 'var', 'mkt'), neg:true, live, gap});
     });
     if(a.snowballRealDays>0){
       let label = 'Hoa hồng influencer/affiliate — Snowball · '+a.snowballOrders.toLocaleString('en-US')+' đơn referral';
       if(a.snowballRealDays<a.n) label += ' ('+(a.n-a.snowballRealDays)+' ngày ngoài cửa sổ đồng bộ chưa tính)';
-      rows.push({...stLine(label, -a.snowballCommission, nr, 'var', 'opvar'), neg: a.snowballCommission>=0, live:true});
+      rows.push({...stLine(label, -a.snowballCommission, nr, 'var', 'mkt'), neg: a.snowballCommission>=0, live:true});
     } else if(shopifyMatched){
-      rows.push({...stLine('Hoa hồng influencer/affiliate — Snowball (khoảng này ngoài cửa sổ đồng bộ Shopify — chưa có số)', 0, nr, 'var', 'opvar'), neg:true, gap:true});
+      rows.push({...stLine('Hoa hồng influencer/affiliate — Snowball (khoảng này ngoài cửa sổ đồng bộ Shopify — chưa có số)', 0, nr, 'var', 'mkt'), neg:true, gap:true});
     }
-    rows.push(stSub('= Tổng chi phí biến đổi khác', -a.otherVarTotal, nr, 'opvar_sub'));
-    rows.push(stSub('= Lợi nhuận đóng góp (Contribution Margin)', a.contributionProfit, nr, 'cm'));
+    rows.push(stSub('= Tổng marketing & bán hàng', -a.marketingTotal, nr, 'mkt_sub'));
+    rows.push(stSub('= Lợi nhuận đóng góp (Contribution Margin, sau marketing)', a.contributionProfit, nr, 'cm'));
 
-    rows.push(stSection('Chi phí cố định (G&A + tồn kho)','fixed'));
+    rows.push(stSection('Chi phí hoạt động (OpEx) — kho bãi & logistics','logi'));
+    if(a.amazonOrdersReal>0){
+      const feeOrdered = a.amazonFeeOrderedDays>0;
+      if(feeOrdered){
+        let sl = 'Phí lưu kho FBA hàng tháng — ghi vào tháng lưu kho (Amazon thu ngày 7 tháng sau)';
+        if(a.amazonStorageMissingDays>0) sl += ' ('+a.amazonStorageMissingDays+' ngày thuộc tháng Amazon chưa thu phí = $0)';
+        rows.push({...stLine(sl, -a.amazonStorageAlloc, nr, 'fix', 'logi'), neg:true, live:true});
+        if(Math.abs(a.amazonStoragePosted) >= 0.01) rows.push({...stLine('Đối chiếu: Amazon thu phí lưu kho '+money(a.amazonStoragePosted)+' trong khoảng này (ngày 7–15 hàng tháng, cho tháng trước)', 0, nr, null, 'logi'), detail:true, live:true});
+      }
+      rows.push({...stLine(feeOrdered ? 'Phí dịch vụ Amazon (subscription, xử lý trả hàng, removal, Vine/coupon — không gồm lưu kho tháng)' : 'Phí dịch vụ Amazon (subscription, lưu kho FBA, xử lý trả hàng, removal, Vine/coupon)', -a.amazonServiceFeesReal, nr, 'fix', 'logi'), neg:true, gap: a.amazonServiceFeesReal===0});
+    }
+    if(a.smInvDays>0){
+      const invNote = ' — theo hoá đơn ShipMonk' + (a.smInvDays<a.n ? ' ('+(a.n-a.smInvDays)+' ngày chưa có hoá đơn)' : '');
+      const logiLine = (label, v) => rows.push({...stLine(label + invNote, -v, nr, 'fix', 'logi'), neg: v>=0, live:true});
+      logiLine('Lưu kho ShipMonk — pallet & bin, chia đều theo ngày trong kỳ hoá đơn', a.smInv.storage);
+      logiLine('Receiving hàng nhập ShipMonk — nhận carton, dỡ container', a.smInv.receiving);
+      logiLine('Xử lý hàng trả ShipMonk — processing + cước hàng trả', a.smInv.returns);
+      if(a.smInvOther !== 0) logiLine('Phí khác ShipMonk — phí tối thiểu, phạt trễ, audit, phụ phí' + (Math.abs(a.smInv.unallocated)>=1 ? ' (gồm '+money(a.smInv.unallocated)+' hoá đơn không tách được mục)' : ''), a.smInvOther);
+    } else if(a.shipmonkRealDays>0){
+      rows.push({...stLine('Lưu kho / receiving / hàng trả ShipMonk — chưa có hoá đơn cho khoảng này', 0, nr, 'fix', 'logi'), gap:true});
+    }
+    rows.push({...stLine('Chi phí tồn kho (holding cost) — chưa nhập', -a.inventoryHolding, nr, 'fix', 'logi'), neg:true, gap:true});
+    rows.push(stSub('= Tổng kho bãi & logistics', -(a.logisticsTotal + a.inventoryHolding), nr, 'logi_sub'));
+
+    rows.push(stSection('Chi phí hoạt động (OpEx) — G&A (phần mềm, lương, văn phòng…)','fixed'));
     a.gaItems.forEach(it=>{
       rows.push({...stLine(it.label + (it.real ? '' : ' — chưa nhập'), -it.value, nr, 'fix', 'fixed'), neg:true, live: it.real ? 'real' : false, gap: !it.real});
     });
-    rows.push({...stLine('Chi phí tồn kho (holding cost) — chưa nhập', -a.inventoryHolding, nr, 'fix', 'fixed'), neg:true, gap:true});
-    rows.push(stSub('= Tổng chi phí cố định', -a.fixedTotal, nr, 'fixed_sub'));
+    rows.push(stSub('= Tổng G&A', -a.gaTotal, nr, 'fixed_sub'));
+    rows.push(stSub('= Tổng chi phí hoạt động (OpEx)', -a.fixedTotal, nr, 'opex_sub'));
 
-    rows.push(stFinal('= Lợi nhuận ròng (Net Profit)', a.netProfit, nr));
+    rows.push(stFinal('= Lợi nhuận hoạt động (EBITDA) — trước lương chưa nhập, khấu hao, lãi vay, thuế TNDN', a.netProfit, nr));
     return rows;
   }
 
-  const SECTION_DEFAULT_OPEN = {cogs:true, opvar:true, fixed:true};
+  const SECTION_DEFAULT_OPEN = {cogs:true, opvar:true, mkt:true, logi:true, fixed:true};
 
   function renderStatement(){
     const rows = currentRows();
@@ -790,8 +815,8 @@
     const allSeries = [
       {id:'rev', name:'Doanh thu thuần', color: revC},
       {id:'varc', name:'Chi phí biến đổi', color: varC},
-      {id:'fixc', name:'Chi phí cố định', color: fixC, dash:'6,4'},
-      {id:'profit', name:'Lợi nhuận ròng', color: profC},
+      {id:'fixc', name:'Chi phí hoạt động (OpEx)', color: fixC, dash:'6,4'},
+      {id:'profit', name:'LN hoạt động (EBITDA)', color: profC},
     ];
     const series = allSeries.filter(sr=>!trendHidden.has(sr.id));
     const legend = document.getElementById('trendLegend');
@@ -858,7 +883,7 @@
       const pctOf = v => p.rev ? (v/p.rev*100).toFixed(1)+'% DT' : '—';
       tip.innerHTML = `<div class="t-title">${p.label}${p.partial?' · chưa kết thúc':''}</div>`
         + allSeries.map(sr=>`<div class="t-row"><span style="color:${sr.color}">■ ${sr.name}</span><span>${money(p[sr.id])}${sr.id==='varc'||sr.id==='fixc'?' · '+pctOf(p[sr.id]):''}</span></div>`).join('')
-        + `<div class="t-row"><span>Tổng chi phí</span><span>${money(p.cost)}</span></div><div class="t-row"><span>Biên LN ròng</span><span>${p.rev ? (p.profit/p.rev*100).toFixed(1)+'%' : '—'}</span></div>`;
+        + `<div class="t-row"><span>Tổng chi phí</span><span>${money(p.cost)}</span></div><div class="t-row"><span>Biên EBITDA</span><span>${p.rev ? (p.profit/p.rev*100).toFixed(1)+'%' : '—'}</span></div>`;
       const left = (ev.clientX-rect.left), top = (ev.clientY-rect.top);
       const tw = tip.offsetWidth || 230;
       tip.style.left = Math.max(0, Math.min(left+14, wrap.clientWidth-tw))+'px'; tip.style.top = Math.max(0, top-70)+'px'; tip.style.opacity = '1';
@@ -884,7 +909,7 @@
     const grid = document.getElementById('beGrid');
     const gap = a.netRevenue - a.breakEvenRevenue;
     grid.innerHTML = `
-      <div class="be-stat"><div class="l">Tổng chi phí cố định</div><div class="v">${money(a.fixedTotal)}</div></div>
+      <div class="be-stat"><div class="l">Chi phí hoạt động (OpEx)</div><div class="v">${money(a.fixedTotal)}</div></div>
       <div class="be-stat"><div class="l">Biên đóng góp (CM %)</div><div class="v">${(a.cmRatio*100).toFixed(1)}%</div></div>
       <div class="be-stat"><div class="l">Doanh thu hoà vốn</div><div class="v">${money(a.breakEvenRevenue)}</div></div>
       <div class="be-stat"><div class="l">${gap>=0?'Vượt hoà vốn':'Còn thiếu để hoà vốn'}</div><div class="v ${gap>=0?'good':'bad'}">${money(Math.abs(gap))}</div></div>
@@ -949,7 +974,7 @@
         <div class="p">${AD_LABEL[k]}${noteStar}${liveTag}</div>
         <div class="roas">${a.ads[k]>0 ? roas.toFixed(2)+'x' : '—'}</div>
         <div class="sub">Chi: ${money(k==='amazonads' && a.amazonAdsConsoleSpend>0 ? a.amazonAdsConsoleSpend : a.ads[k])} · DT quy về: ${money(a.adsAttr[k])}${extra}</div>
-        ${k==='amazonads' && a.amazonAdsConsoleSpend>0 ? `<div class="kv"><span title="ACOS = chi SP+SB+SD ÷ doanh thu Amazon gán cho quảng cáo (cùng cách tính với Amazon Ads console)"><b>ACOS</b> ${a.adsAttr[k]>0 ? (a.amazonAcos*100).toFixed(1)+'%' : '—'}</span><span title="TACOS = toàn bộ chi quảng cáo Amazon (kể cả Sponsored TV) ÷ doanh thu gộp Amazon của kỳ"><b>TACOS</b> ${a.amazonTacos>0 ? (a.amazonTacos*100).toFixed(1)+'%' : '—'}</span>${a.amazonAdsImpressions>0 ? `<span title="CTR = clicks ÷ impressions">CTR ${(a.amazonAdsClicks/a.amazonAdsImpressions*100).toFixed(2)}%</span>` : ''}${a.ads[k]-a.amazonAdsConsoleSpend>0.005 ? `<span title="Sponsored TV / các dòng quảng cáo khác — có trong bảng P&L nhưng không nằm trong ACOS">+${money(a.ads[k]-a.amazonAdsConsoleSpend)} STV</span>` : ''}</div>` : ''}
+        ${k==='amazonads' && a.amazonAdsConsoleSpend>0 ? `<div class="kv"><span title="ACOS = chi SP+SB+SD ÷ doanh thu Amazon gán cho quảng cáo (cùng cách tính với Amazon Ads console)"><b>ACOS</b> ${a.adsAttr[k]>0 ? (a.amazonAcos*100).toFixed(1)+'%' : '—'}</span><span title="TACOS = chi quảng cáo Amazon (SP+SB+SD) ÷ doanh thu gộp Amazon của kỳ"><b>TACOS</b> ${a.amazonTacos>0 ? (a.amazonTacos*100).toFixed(1)+'%' : '—'}</span>${a.amazonAdsImpressions>0 ? `<span title="CTR = clicks ÷ impressions">CTR ${(a.amazonAdsClicks/a.amazonAdsImpressions*100).toFixed(2)}%</span>` : ''}${a.amazonAdsSplit.stv>0.005 ? `<span title="Sellerboard ghi thêm khoản 'Sponsored Television' này nhưng Amazon Ads console không có chiến dịch nào — không tính vào P&L">Sellerboard +${money(a.amazonAdsSplit.stv)} STV (bỏ qua)</span>` : ''}</div>` : ''}
       </div>`;
     }).join('');
     document.getElementById('merValue').textContent = a.adSpend>0 ? a.merValue.toFixed(2)+'x' : '—';
@@ -1085,7 +1110,7 @@
     const via = AMAZON_ADS_LIVE_DATA.source==='sellerboard' ? 'qua Sellerboard' : 'Amazon Ads API';
     setSource('amazonads', ageLevel(AMAZON_ADS_LIVE_DATA.generated_at), fmtAmazonAge(AMAZON_ADS_LIVE_DATA.generated_at)+' · '+via+(cov.first_day ? ' · từ '+cov.first_day.slice(8,10)+'/'+cov.first_day.slice(5,7)+'/'+cov.first_day.slice(0,4) : ''));
     const cap = document.getElementById('adsCaptionAmazon');
-    if(cap) cap.outerHTML = `<span id="adsCaptionAmazon">Amazon Ads: "Chi" và "DT quy về" trên thẻ = Total cost và Sales trong Amazon Ads console (SP+SB+SD, doanh thu Amazon gán cho quảng cáo trong cửa sổ 7/14 ngày, được cập nhật thêm vài ngày sau khi click) — ROAS = Sales ÷ Total cost, ACOS = Total cost ÷ Sales, TACOS = toàn bộ chi quảng cáo Amazon (kể cả Sponsored TV) ÷ doanh thu gộp Amazon của kỳ. Dòng P&amp;L tính đủ cả Sponsored TV. </span>`;
+    if(cap) cap.outerHTML = `<span id="adsCaptionAmazon">Amazon Ads: "Chi" và "DT quy về" trên thẻ = Total cost và Sales trong Amazon Ads console (SP+SB+SD, doanh thu Amazon gán cho quảng cáo trong cửa sổ 7/14 ngày, được cập nhật thêm vài ngày sau khi click) — ROAS = Sales ÷ Total cost, ACOS = Total cost ÷ Sales, TACOS = chi quảng cáo Amazon ÷ doanh thu gộp Amazon của kỳ. Khoản "Sponsored Television" Sellerboard ghi từ 31/08 không có trong Ads console nên không tính. </span>`;
   }
   // ShipMonk fulfillment costs baked in by the same sync.
   const paypalMatched = PAYPAL_LIVE_DATA ? applyPaypalRows(PAYPAL_LIVE_DATA) : false;
@@ -1886,8 +1911,12 @@
       const idx = days.findIndex(d=>d.iso===iso);
       if(idx<0) return;
       const r = data.daily[iso] || {};
-      const spend = Math.max(0, parseFloat(r.spend)||0);
-      days[idx].ads.amazonads = spend;                                         // SP + SB + SD (+ STV) for the day
+      const split = (parseFloat(r.sp)||0) + (parseFloat(r.sb)||0) + (parseFloat(r.sd)||0);
+      const consoleSpend = (r.ads_spend_console!=null) ? (parseFloat(r.ads_spend_console)||0) : split;
+      // P&L cost = SP + SB + SD, exactly what the Amazon Ads console bills. Sellerboard also reports a
+      // "Sponsored Television" line (r.stv) that does not exist in the console (checked 22/09) -> not booked, shown as a note.
+      const spend = Math.max(0, consoleSpend>0 ? consoleSpend : (parseFloat(r.spend)||0) - (parseFloat(r.stv)||0));
+      days[idx].ads.amazonads = spend;
       days[idx].adsAttr.amazonads = Math.max(0, parseFloat(r.purchase_value)||0);   // Amazon-attributed sales (not added to revenue)
       days[idx].amazonAdsReal = {
         sp: parseFloat(r.sp)||0, sb: parseFloat(r.sb)||0, sd: parseFloat(r.sd)||0, stv: parseFloat(r.stv)||0,
