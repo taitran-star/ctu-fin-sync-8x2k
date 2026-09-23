@@ -60,8 +60,8 @@
         "sales": 89.0
       },
       "direct": {
-        "orders": 506,
-        "sales": 60355.78
+        "orders": 507,
+        "sales": 60454.78
       },
       "email": {
         "orders": 961,
@@ -72,8 +72,8 @@
         "sales": 1137.58
       },
       "google_ads": {
-        "orders": 1244,
-        "sales": 150621.17
+        "orders": 1245,
+        "sales": 150730.17
       },
       "meta_organic": {
         "orders": 215,
@@ -104,8 +104,8 @@
         "sales": 4062.81
       },
       "referral": {
-        "orders": 62,
-        "sales": 6566.66
+        "orders": 63,
+        "sales": 6665.66
       },
       "shop_app": {
         "orders": 78,
@@ -189797,16 +189797,16 @@
         },
         "first_touch": {
           "direct": {
-            "orders": 10,
-            "sales": 1402.57
+            "orders": 12,
+            "sales": 1600.57
           },
           "email": {
             "orders": 2,
             "sales": 250.17
           },
           "google_ads": {
-            "orders": 9,
-            "sales": 1021.38
+            "orders": 10,
+            "sales": 1130.38
           },
           "meta_organic": {
             "orders": 4,
@@ -189839,8 +189839,8 @@
         },
         "journeys": {
           "direct>direct": {
-            "orders": 7,
-            "sales": 813.42
+            "orders": 8,
+            "sales": 912.42
           },
           "direct>email": {
             "orders": 1,
@@ -189854,6 +189854,10 @@
             "orders": 1,
             "sales": 99.0
           },
+          "direct>referral": {
+            "orders": 1,
+            "sales": 99.0
+          },
           "email>email": {
             "orders": 1,
             "sales": 121.17
@@ -189863,8 +189867,8 @@
             "sales": 129.0
           },
           "google_ads>google_ads": {
-            "orders": 7,
-            "sales": 779.98
+            "orders": 8,
+            "sales": 888.98
           },
           "google_ads>meta_paid": {
             "orders": 1,
@@ -189930,10 +189934,10 @@
         "last_touch": {
           "direct": {
             "new": 6,
-            "orders": 7,
+            "orders": 8,
             "paid_first": 0,
-            "returning": 1,
-            "sales": 813.42
+            "returning": 2,
+            "sales": 912.42
           },
           "email": {
             "new": 10,
@@ -189950,11 +189954,11 @@
             "sales": 18.0
           },
           "google_ads": {
-            "new": 9,
-            "orders": 9,
-            "paid_first": 8,
+            "new": 10,
+            "orders": 10,
+            "paid_first": 9,
             "returning": 0,
-            "sales": 1037.98
+            "sales": 1146.98
           },
           "meta_organic": {
             "new": 5,
@@ -189986,10 +189990,10 @@
           },
           "referral": {
             "new": 1,
-            "orders": 1,
+            "orders": 2,
             "paid_first": 1,
-            "returning": 0,
-            "sales": 119.2
+            "returning": 1,
+            "sales": 218.2
           },
           "shop_app": {
             "new": 1,
@@ -190008,7 +190012,7 @@
         },
         "no_journey": 0,
         "orders": 151,
-        "pending": 3
+        "pending": 0
       },
       "discounts": 13180.75,
       "fees_missing_orders": 21,
@@ -190061,7 +190065,7 @@
       "total_sales": 17621.04
     }
   },
-  "generated_at": "2026-09-23T04:21:20Z",
+  "generated_at": "2026-09-23T04:47:07Z",
   "meta": {
     "api_cost_actual": 38061,
     "api_cost_requested_max": 354,
@@ -190072,13 +190076,13 @@
       "edit_lists_truncated": 0,
       "fee_transactions": 8009,
       "fees_missing_orders": 1303,
-      "journeys_deferred": 733,
+      "journeys_deferred": 734,
       "journeys_missing": 0,
       "journeys_moments_truncated": 2,
       "journeys_no_session": 1015,
-      "journeys_pending": 3,
-      "journeys_ready": 8703,
-      "journeys_resolved_by_moments": 588,
+      "journeys_pending": 0,
+      "journeys_ready": 8706,
+      "journeys_resolved_by_moments": 589,
       "journeys_unresolved": 0,
       "late_orders_scanned": 3180,
       "late_refund_orders": 254,
@@ -190204,7 +190208,6 @@
     "script_version": "1.9",
     "throttled_waits": 0,
     "warnings": [
-      "3 orders not attributed by Shopify yet (customerJourneySummary.ready=false, normal for the newest orders) - counted as pending, refetched next run",
       "45 orders carry the __snowball attribute but no 'Referral - SS - *' tag (Snowball rejected/untracked them) - not counted as referrals",
       "no rate known for Snowball program 'Default program' - using SNOWBALL_DEFAULT_RATE=0",
       "no rate known for Snowball program 'asher_fitfeline_partner' - using SNOWBALL_DEFAULT_RATE=0",
