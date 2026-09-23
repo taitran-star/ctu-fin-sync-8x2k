@@ -64,8 +64,8 @@
         "sales": 58378.91
       },
       "email": {
-        "orders": 943,
-        "sales": 115425.5
+        "orders": 944,
+        "sales": 115585.7
       },
       "email_other": {
         "orders": 9,
@@ -80,16 +80,16 @@
         "sales": 25752.64
       },
       "meta_paid": {
-        "orders": 3806,
-        "sales": 451035.61
+        "orders": 3809,
+        "sales": 451362.61
       },
       "meta_shop": {
         "orders": 4,
         "sales": 392.7
       },
       "organic_search": {
-        "orders": 505,
-        "sales": 62899.15
+        "orders": 506,
+        "sales": 63028.15
       },
       "other_channel": {
         "orders": 831,
@@ -190096,12 +190096,21 @@
             "medium": "email",
             "orders": 1,
             "sales": 119.0
+          },
+          "Email #4A | Peekaboo | last reminder": {
+            "medium": "email",
+            "orders": 1,
+            "sales": 160.2
           }
         },
         "first_touch": {
           "direct": {
             "orders": 6,
             "sales": 806.79
+          },
+          "email": {
+            "orders": 1,
+            "sales": 160.2
           },
           "google_ads": {
             "orders": 1,
@@ -190112,12 +190121,12 @@
             "sales": 128.0
           },
           "meta_paid": {
-            "orders": 23,
-            "sales": 2770.19
+            "orders": 26,
+            "sales": 3097.19
           },
           "organic_search": {
-            "orders": 1,
-            "sales": 129.0
+            "orders": 2,
+            "sales": 258.0
           },
           "other_channel": {
             "orders": 20,
@@ -190141,6 +190150,10 @@
             "orders": 2,
             "sales": 330.79
           },
+          "email>email": {
+            "orders": 1,
+            "sales": 160.2
+          },
           "google_ads>google_ads": {
             "orders": 1,
             "sales": 89.0
@@ -190162,10 +190175,14 @@
             "sales": 129.0
           },
           "meta_paid>meta_paid": {
-            "orders": 17,
-            "sales": 2027.19
+            "orders": 20,
+            "sales": 2354.19
           },
           "organic_search>google_ads": {
+            "orders": 1,
+            "sales": 129.0
+          },
+          "organic_search>organic_search": {
             "orders": 1,
             "sales": 129.0
           },
@@ -190187,11 +190204,11 @@
             "sales": 377.0
           },
           "email": {
-            "new": 3,
-            "orders": 3,
+            "new": 4,
+            "orders": 4,
             "paid_first": 2,
             "returning": 0,
-            "sales": 356.0
+            "sales": 516.2
           },
           "google_ads": {
             "new": 5,
@@ -190208,11 +190225,18 @@
             "sales": 257.0
           },
           "meta_paid": {
-            "new": 19,
-            "orders": 19,
-            "paid_first": 17,
+            "new": 22,
+            "orders": 22,
+            "paid_first": 20,
             "returning": 0,
-            "sales": 2357.98
+            "sales": 2684.98
+          },
+          "organic_search": {
+            "new": 1,
+            "orders": 1,
+            "paid_first": 0,
+            "returning": 0,
+            "sales": 129.0
           },
           "other_channel": {
             "new": 0,
@@ -190230,11 +190254,11 @@
           }
         },
         "no_journey": 0,
-        "orders": 57,
-        "pending": 4
+        "orders": 60,
+        "pending": 2
       },
-      "discounts": 4571.59,
-      "fees_missing_orders": 6,
+      "discounts": 4881.89,
+      "fees_missing_orders": 7,
       "gateways": {
         "paypal": {
           "amount": 395.37,
@@ -190245,22 +190269,22 @@
           "orders": 1
         },
         "shopify_payments": {
-          "amount": 5729.67,
-          "orders": 54
+          "amount": 6210.34,
+          "orders": 57
         }
       },
-      "gross_sales": 10207.57,
-      "net_sales": 5635.98,
-      "orders": 57,
+      "gross_sales": 10970.57,
+      "net_sales": 6088.68,
+      "orders": 60,
       "payment_fee_types": {
         "amex_card_not_present": 23.66,
-        "domestic_card_not_present": 109.64,
+        "domestic_card_not_present": 117.2,
         "foreign_exchange_fee": 3.16,
         "international_card_not_present": 7.38,
         "premium_domestic_card_not_present": 4.37
       },
-      "payment_fees": 148.21,
-      "payment_fees_orders": 51,
+      "payment_fees": 155.77,
+      "payment_fees_orders": 53,
       "refunded_shipping": 2.99,
       "refunded_tax": 42.77,
       "refunded_total": 2792.51,
@@ -190271,35 +190295,35 @@
       "snowball_orders": 2,
       "snowball_revenue": 271.53,
       "snowball_reversals": 0,
-      "tax": 327.6,
-      "total_sales": 3324.88
+      "tax": 355.57,
+      "total_sales": 3805.55
     }
   },
-  "generated_at": "2026-09-23T15:21:04Z",
+  "generated_at": "2026-09-23T15:47:28Z",
   "meta": {
-    "api_cost_actual": 37317,
+    "api_cost_actual": 37325,
     "api_cost_requested_max": 354,
     "api_requests": 413,
     "auth_mode": "client_credentials",
     "counts": {
       "edit_additions_moved": 1173,
       "edit_lists_truncated": 0,
-      "fee_transactions": 7804,
-      "fees_missing_orders": 1271,
+      "fee_transactions": 7806,
+      "fees_missing_orders": 1272,
       "journeys_deferred": 712,
       "journeys_missing": 0,
       "journeys_moments_truncated": 2,
       "journeys_no_session": 1027,
-      "journeys_pending": 4,
-      "journeys_ready": 8483,
+      "journeys_pending": 2,
+      "journeys_ready": 8488,
       "journeys_resolved_by_moments": 574,
       "journeys_unresolved": 0,
       "late_orders_scanned": 3201,
       "late_refund_orders": 276,
-      "orders_counted": 8487,
+      "orders_counted": 8490,
       "orders_edited": 1027,
       "orders_outside_window": 531,
-      "orders_seen": 12219,
+      "orders_seen": 12222,
       "orders_skipped_test": 0,
       "orders_skipped_voided": 0,
       "orders_with_shipping_discount": 17,
@@ -190310,7 +190334,7 @@
       "refunds_outside_window": 103,
       "refunds_with_adjustments": 445,
       "snowball_attr_without_tag": 45,
-      "snowball_exact": 176,
+      "snowball_exact": 177,
       "snowball_export_without_tag": 0,
       "snowball_tagged": 240,
       "transactions_truncated": 12
@@ -190337,9 +190361,9 @@
         "orders": 72
       },
       "shopify_payments": {
-        "amount": 925824.17,
-        "fees": 23512.08,
-        "orders": 7588
+        "amount": 926304.84,
+        "fees": 23519.64,
+        "orders": 7591
       }
     },
     "granted_scope": "read_all_orders,read_orders",
@@ -190418,7 +190442,7 @@
     "script_version": "1.9",
     "throttled_waits": 0,
     "warnings": [
-      "4 orders not attributed by Shopify yet (customerJourneySummary.ready=false, normal for the newest orders) - counted as pending, refetched next run",
+      "2 orders not attributed by Shopify yet (customerJourneySummary.ready=false, normal for the newest orders) - counted as pending, refetched next run",
       "45 orders carry the __snowball attribute but no 'Referral - SS - *' tag (Snowball rejected/untracked them) - not counted as referrals",
       "no rate known for Snowball program 'Default program' - using SNOWBALL_DEFAULT_RATE=0",
       "no rate known for Snowball program 'asher_fitfeline_partner' - using SNOWBALL_DEFAULT_RATE=0",
@@ -190640,10 +190664,10 @@
       },
       {
         "file": "live feed #1",
-        "rows": 25
+        "rows": 26
       }
     ],
-    "conversions_loaded": 177,
+    "conversions_loaded": 178,
     "programs": {
       "15% CODE + 10% commission": {
         "commission": 0.0,
@@ -190755,7 +190779,7 @@
       "Peekaboo Affiliate 15": {
         "payout": "cash",
         "rate": 0.2,
-        "samples": 25
+        "samples": 26
       },
       "THANKYOU20_CAMP": {
         "payout": "cash",
@@ -190781,15 +190805,15 @@
   "timezone": "America/Los_Angeles",
   "totals": {
     "last_30d": {
-      "discounts": 505549.34,
-      "fees_missing_orders": 797,
+      "discounts": 505859.64,
+      "fees_missing_orders": 798,
       "gateways": {},
-      "gross_sales": 1116694.96,
-      "net_sales": 611145.62,
-      "orders": 5081,
+      "gross_sales": 1117457.96,
+      "net_sales": 611598.32,
+      "orders": 5084,
       "payment_fee_types": {},
-      "payment_fees": 14681.18,
-      "payment_fees_orders": 4261,
+      "payment_fees": 14688.74,
+      "payment_fees_orders": 4263,
       "refunded_shipping": 95.77,
       "refunded_tax": 1303.77,
       "refunded_total": 34873.11,
@@ -190800,19 +190824,19 @@
       "snowball_orders": 146,
       "snowball_revenue": 18663.12,
       "snowball_reversals": 215.34,
-      "tax": 40095.48,
-      "total_sales": 619235.15
+      "tax": 40123.45,
+      "total_sales": 619715.82
     },
     "mtd": {
-      "discounts": 348964.02,
-      "fees_missing_orders": 552,
+      "discounts": 349274.32,
+      "fees_missing_orders": 553,
       "gateways": {},
-      "gross_sales": 774993.36,
-      "net_sales": 426029.34,
-      "orders": 3524,
+      "gross_sales": 775756.36,
+      "net_sales": 426482.04,
+      "orders": 3527,
       "payment_fee_types": {},
-      "payment_fees": 10313.64,
-      "payment_fees_orders": 2964,
+      "payment_fees": 10321.2,
+      "payment_fees_orders": 2966,
       "refunded_shipping": 90.77,
       "refunded_tax": 1064.86,
       "refunded_total": 26467.93,
@@ -190823,19 +190847,19 @@
       "snowball_orders": 89,
       "snowball_revenue": 11565.01,
       "snowball_reversals": 170.18,
-      "tax": 27972.09,
-      "total_sales": 430262.96
+      "tax": 28000.06,
+      "total_sales": 430743.63
     },
     "today": {
-      "discounts": 4571.59,
-      "fees_missing_orders": 6,
+      "discounts": 4881.89,
+      "fees_missing_orders": 7,
       "gateways": {},
-      "gross_sales": 10207.57,
-      "net_sales": 5635.98,
-      "orders": 57,
+      "gross_sales": 10970.57,
+      "net_sales": 6088.68,
+      "orders": 60,
       "payment_fee_types": {},
-      "payment_fees": 148.21,
-      "payment_fees_orders": 51,
+      "payment_fees": 155.77,
+      "payment_fees_orders": 53,
       "refunded_shipping": 2.99,
       "refunded_tax": 42.77,
       "refunded_total": 2792.51,
@@ -190846,8 +190870,8 @@
       "snowball_orders": 2,
       "snowball_revenue": 271.53,
       "snowball_reversals": 0,
-      "tax": 327.6,
-      "total_sales": 3324.88
+      "tax": 355.57,
+      "total_sales": 3805.55
     }
   },
   "window": {
