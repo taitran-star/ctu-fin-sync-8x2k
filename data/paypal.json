@@ -16452,9 +16452,9 @@
           "fee": -15.89
         },
         "T0006": {
-          "amount": 872.71,
-          "count": 6,
-          "fee": -33.4
+          "amount": 987.68,
+          "count": 7,
+          "fee": -37.9
         },
         "T0400": {
           "amount": -1665.13,
@@ -16462,45 +16462,57 @@
           "fee": 0.0
         }
       },
-      "fees": 49.29,
+      "fees": 53.79,
       "fees_credited": 0,
       "other": 0,
-      "payments": 1285.78,
-      "payments_count": 9,
+      "payments": 1400.75,
+      "payments_count": 10,
       "refunds": 0,
       "refunds_count": 0,
-      "transactions": 10,
+      "transactions": 11,
       "withdrawals": 1665.13
+    },
+    "2026-09-25": {
+      "by_event_code": {},
+      "fees": 0,
+      "fees_credited": 0,
+      "other": 0,
+      "payments": 0,
+      "payments_count": 0,
+      "refunds": 0,
+      "refunds_count": 0,
+      "transactions": 0,
+      "withdrawals": 0
     }
   },
-  "generated_at": "2026-09-25T06:47:00Z",
+  "generated_at": "2026-09-25T07:13:43Z",
   "meta": {
     "api_requests": 4,
     "api_retries": 0,
     "counts": {
-      "transactions_counted": 983,
+      "transactions_counted": 950,
       "transactions_duplicate": 0,
       "transactions_not_success": 22,
-      "transactions_outside_window": 33,
-      "transactions_seen": 1038,
+      "transactions_outside_window": 37,
+      "transactions_seen": 1009,
       "transactions_without_date": 0
     },
     "currencies_seen": {
-      "CAD": 76,
-      "USD": 1801
+      "CAD": 70,
+      "USD": 1747
     },
     "event_codes_seen": {
       "T0000": 2,
       "T0001": 2,
       "T0003": 213,
-      "T0006": 667,
+      "T0006": 640,
       "T0114": 5,
       "T0200": 54,
       "T0300": 2,
-      "T0400": 20,
+      "T0400": 19,
       "T0403": 2,
       "T1106": 2,
-      "T1107": 44,
+      "T1107": 43,
       "T1110": 11,
       "T1111": 10,
       "T1201": 3,
@@ -16515,13 +16527,13 @@
           "start": "2025-01-01"
         }
       ],
-      "days": 632,
+      "days": 633,
       "fetched": {
-        "end": "2026-09-24",
-        "start": "2026-08-10"
+        "end": "2026-09-25",
+        "start": "2026-08-11"
       },
       "first_day": "2025-01-01",
-      "last_day": "2026-09-24",
+      "last_day": "2026-09-25",
       "missing_count": 0,
       "missing_days": [],
       "mode": "rolling",
@@ -16533,49 +16545,49 @@
     "script_version": "1.0",
     "slices": 2,
     "warnings": [
-      "transactions in currencies other than USD were summed as-is: {'CAD': 76, 'USD': 1801}"
+      "transactions in currencies other than USD were summed as-is: {'USD': 1747, 'CAD': 70}"
     ]
   },
   "source": "paypal_transaction_search",
   "timezone": "America/Los_Angeles",
   "totals": {
     "last_30d": {
-      "fees": 2745.64,
+      "fees": 2669.49,
       "fees_credited": 119.34,
       "other": -2164.61,
-      "payments": 72149.0,
-      "payments_count": 545,
+      "payments": 70321.57,
+      "payments_count": 530,
       "refunds": 3296.91,
       "refunds_count": 34,
-      "transactions": 635,
+      "transactions": 620,
       "withdrawals": 75094.13
     },
     "mtd": {
-      "fees": 1990.82,
+      "fees": 1995.32,
       "fees_credited": 119.34,
       "other": -1944.61,
-      "payments": 53838.03,
-      "payments_count": 402,
+      "payments": 53953.0,
+      "payments_count": 403,
       "refunds": 3296.91,
       "refunds_count": 34,
-      "transactions": 488,
+      "transactions": 489,
       "withdrawals": 75094.13
     },
     "today": {
-      "fees": 49.29,
+      "fees": 0,
       "fees_credited": 0,
       "other": 0,
-      "payments": 1285.78,
-      "payments_count": 9,
+      "payments": 0,
+      "payments_count": 0,
       "refunds": 0,
       "refunds_count": 0,
-      "transactions": 10,
-      "withdrawals": 1665.13
+      "transactions": 0,
+      "withdrawals": 0
     }
   },
   "window": {
-    "end": "2026-09-24",
-    "start": "2026-08-10"
+    "end": "2026-09-25",
+    "start": "2026-08-11"
   },
   "window_days": 45
 }
