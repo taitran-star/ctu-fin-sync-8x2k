@@ -42992,13 +42992,13 @@
     "2026-09-25": {
       "by_carrier": {
         "unknown": {
-          "orders": 17,
+          "orders": 18,
           "shipping_cost": 0.0
         }
       },
       "by_store": {
         "Cattasaurus - shoproxstore - Shopify": {
-          "orders": 17,
+          "orders": 18,
           "packaging_cost": 0.0,
           "pick_pack_cost": 0.0,
           "shipping_cost": 0.0,
@@ -43008,7 +43008,7 @@
       },
       "by_type": {
         "direct_to_consumer": {
-          "orders": 17,
+          "orders": 18,
           "packaging_cost": 0.0,
           "pick_pack_cost": 0.0,
           "shipping_cost": 0.0,
@@ -43016,12 +43016,12 @@
           "units": 18
         }
       },
-      "cost_missing_orders": 17,
+      "cost_missing_orders": 18,
       "foreign_cost": {},
-      "orders": 17,
+      "orders": 18,
       "orders_onhold": 0,
       "orders_shipped": 0,
-      "orders_unshipped": 17,
+      "orders_unshipped": 18,
       "packages": 0,
       "packaging_cost": 0.0,
       "pick_pack_cost": 0.0,
@@ -83684,7 +83684,7 @@
       "units": 308
     }
   },
-  "generated_at": "2026-09-25T08:22:02Z",
+  "generated_at": "2026-09-25T08:47:31Z",
   "meta": {
     "api_requests": 99,
     "api_retries": 0,
@@ -83697,11 +83697,11 @@
       "unknown"
     ],
     "counts": {
-      "cost_missing_orders": 36,
+      "cost_missing_orders": 37,
       "fx_converted_charges": 386,
       "fx_unknown_currency_charges": 0,
-      "orders_counted": 8006,
-      "orders_duplicate": 1,
+      "orders_counted": 8007,
+      "orders_duplicate": 0,
       "orders_fulfilled_outside": 27,
       "orders_onhold_counted": 612,
       "orders_outside_window": 6,
@@ -83711,7 +83711,7 @@
       "orders_skipped_store": 0,
       "orders_skipped_type": 5,
       "orders_skipped_unshipped": 0,
-      "orders_unshipped_counted": 820,
+      "orders_unshipped_counted": 821,
       "shipping_from_shipment_estimate": 0
     },
     "currencies_seen": {
@@ -83756,10 +83756,10 @@
     ],
     "oldest_order_day_seen": "2026-06-04",
     "order_currencies_seen": {
-      "USD": 8378
+      "USD": 8379
     },
     "order_types_seen": {
-      "direct_to_consumer": 9851,
+      "direct_to_consumer": 9852,
       "unknown": 43,
       "work_order": 5
     },
@@ -83784,7 +83784,7 @@
       "TO1": "Toronto"
     },
     "warnings": [
-      "36 orders had no cost estimate from ShipMonk yet - their cost is $0 until ShipMonk fills it in (re-fetched every run)",
+      "37 orders had no cost estimate from ShipMonk yet - their cost is $0 until ShipMonk fills it in (re-fetched every run)",
       "43 orders came back with no order_type (counted as D2C); samples: [{'order_number': '253671', 'store': 'Cattasaurus - shoproxstore - Shopify', 'status': 'fulfilled', 'shipped': False}, {'order_number': '253353', 'store': 'Cattasaurus - shoproxstore - Shopify', 'status': 'fulfilled', 'shipped': False}, {'order_number': '253158', 'store': 'Cattasaurus - shoproxstore - Shopify', 'status': 'cancelled', 'shipped': False}, {'order_number': '253157', 'store': 'Cattasaurus - shoproxstore - Shopify', 'status': 'cancelled', 'shipped': False}, {'order_number': '253110', 'store': 'Cattasaurus - shoproxstore - Shopify', 'status': 'cancelled', 'shipped': False}]",
       "charges stated in CAD (657.23 CAD this run) converted to USD at 0.73 - set SHIPMONK_FX_TO_USD to the rate on ShipMonk's invoice if it differs"
     ]
@@ -83793,11 +83793,11 @@
   "timezone": "America/Los_Angeles",
   "totals": {
     "last_30d": {
-      "cost_missing_orders": 36,
-      "orders": 5068,
+      "cost_missing_orders": 37,
+      "orders": 5069,
       "orders_onhold": 612,
       "orders_shipped": 4248,
-      "orders_unshipped": 820,
+      "orders_unshipped": 821,
       "packages": 4347,
       "packaging_cost": 58.1,
       "pick_pack_cost": 13177.44,
@@ -83806,11 +83806,11 @@
       "units": 9613
     },
     "mtd": {
-      "cost_missing_orders": 36,
-      "orders": 3918,
+      "cost_missing_orders": 37,
+      "orders": 3919,
       "orders_onhold": 611,
       "orders_shipped": 3099,
-      "orders_unshipped": 819,
+      "orders_unshipped": 820,
       "packages": 3175,
       "packaging_cost": 47.6,
       "pick_pack_cost": 10418.39,
@@ -83819,11 +83819,11 @@
       "units": 7408
     },
     "today": {
-      "cost_missing_orders": 17,
-      "orders": 17,
+      "cost_missing_orders": 18,
+      "orders": 18,
       "orders_onhold": 0,
       "orders_shipped": 0,
-      "orders_unshipped": 17,
+      "orders_unshipped": 18,
       "packages": 0,
       "packaging_cost": 0.0,
       "pick_pack_cost": 0.0,
