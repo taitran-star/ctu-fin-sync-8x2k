@@ -80,8 +80,8 @@
         "sales": 26915.29
       },
       "meta_paid": {
-        "orders": 3782,
-        "sales": 451155.19
+        "orders": 3784,
+        "sales": 451383.19
       },
       "meta_shop": {
         "orders": 3,
@@ -112,8 +112,8 @@
         "sales": 9238.79
       },
       "snowball": {
-        "orders": 92,
-        "sales": 11662.55
+        "orders": 93,
+        "sales": 11775.54
       },
       "social_other": {
         "orders": 89,
@@ -190742,17 +190742,21 @@
             "orders": 3,
             "sales": 392.1
           },
+          "email": {
+            "orders": 1,
+            "sales": 112.99
+          },
           "google_ads": {
             "orders": 3,
             "sales": 506.95
           },
           "meta_organic": {
-            "orders": 1,
-            "sales": 109.0
+            "orders": 2,
+            "sales": 198.0
           },
           "meta_paid": {
-            "orders": 22,
-            "sales": 2707.26
+            "orders": 23,
+            "sales": 2846.26
           },
           "organic_search": {
             "orders": 3,
@@ -190772,6 +190776,10 @@
             "orders": 3,
             "sales": 392.1
           },
+          "email>snowball": {
+            "orders": 1,
+            "sales": 112.99
+          },
           "google_ads>google_ads": {
             "orders": 3,
             "sales": 506.95
@@ -190780,9 +190788,13 @@
             "orders": 1,
             "sales": 109.0
           },
+          "meta_organic>meta_paid": {
+            "orders": 1,
+            "sales": 89.0
+          },
           "meta_paid>meta_paid": {
-            "orders": 20,
-            "sales": 2495.27
+            "orders": 21,
+            "sales": 2634.27
           },
           "meta_paid>organic_search": {
             "orders": 1,
@@ -190832,11 +190844,11 @@
             "sales": 109.0
           },
           "meta_paid": {
-            "new": 21,
-            "orders": 21,
-            "paid_first": 20,
+            "new": 23,
+            "orders": 23,
+            "paid_first": 21,
             "returning": 0,
-            "sales": 2604.27
+            "sales": 2832.27
           },
           "organic_search": {
             "new": 3,
@@ -190861,15 +190873,15 @@
           },
           "snowball": {
             "new": 1,
-            "orders": 1,
+            "orders": 2,
             "paid_first": 1,
-            "returning": 0,
-            "sales": 102.99
+            "returning": 1,
+            "sales": 215.98
           }
         },
         "no_journey": 0,
         "orders": 119,
-        "pending": 66
+        "pending": 63
       },
       "discounts": 9572.8,
       "fees_missing_orders": 18,
@@ -190917,7 +190929,7 @@
       "total_sales": 14226.97
     }
   },
-  "generated_at": "2026-09-25T20:19:28Z",
+  "generated_at": "2026-09-25T20:46:54Z",
   "meta": {
     "api_cost_actual": 37143,
     "api_cost_requested_max": 354,
@@ -190932,8 +190944,8 @@
       "journeys_missing": 0,
       "journeys_moments_truncated": 2,
       "journeys_no_session": 1053,
-      "journeys_pending": 66,
-      "journeys_ready": 8353,
+      "journeys_pending": 63,
+      "journeys_ready": 8356,
       "journeys_resolved_by_moments": 575,
       "journeys_unresolved": 0,
       "late_orders_scanned": 3274,
@@ -191061,7 +191073,7 @@
     "throttled_waits": 0,
     "warnings": [
       "41 orders carry the __snowball attribute but no 'Referral - SS - *' tag (Snowball rejected/untracked them) - not counted as referrals",
-      "66 orders not attributed by Shopify yet (customerJourneySummary.ready=false, normal for the newest orders) - counted as pending, refetched next run",
+      "63 orders not attributed by Shopify yet (customerJourneySummary.ready=false, normal for the newest orders) - counted as pending, refetched next run",
       "no rate known for Snowball program 'asher_fitfeline_partner' - using SNOWBALL_DEFAULT_RATE=0",
       "rate for Snowball program '20 % Commision No Discou' inferred from its name (20%) - set SNOWBALL_PROGRAM_RATES to pin it",
       "rate for Snowball program 'rachelandkittiess 10' inferred from its name (10%) - set SNOWBALL_PROGRAM_RATES to pin it"
