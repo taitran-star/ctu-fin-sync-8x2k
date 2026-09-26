@@ -22,6 +22,7 @@ const RAW_BASE = 'https://raw.githubusercontent.com/taitran-star/ctu-fin-sync-8x
 const REPO_FILES = new Set([
   'amazon_pnl.json', 'meta_ads.json', 'shopify_pnl.json', 'google_ads.json',
   'shipmonk.json', 'paypal.json', 'klaviyo.json', 'amazon_ads.json', 'opex_monthly.json', 'amazon_storage.json',
+  'amazon_sns.json',
 ]);
 const STATIC_FILES = new Set(['shipmonk_invoices.json', 'shipmonk_storage_daily.json', 'klaviyo_invoices.json']);   // in public/ (read by Claude's browser); amazon_ads.json now comes from the repo (sellerboard_ads.yml)
 // Edge copies of the repo files. Cloudflare -> raw.githubusercontent.com is sometimes very slow (minutes for a 1 KB
