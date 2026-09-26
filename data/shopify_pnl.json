@@ -60,12 +60,12 @@
         "sales": 89.0
       },
       "direct": {
-        "orders": 470,
-        "sales": 56604.21
+        "orders": 471,
+        "sales": 56742.21
       },
       "email": {
-        "orders": 912,
-        "sales": 112365.47
+        "orders": 913,
+        "sales": 112454.47
       },
       "email_other": {
         "orders": 7,
@@ -80,8 +80,8 @@
         "sales": 27027.38
       },
       "meta_paid": {
-        "orders": 3767,
-        "sales": 449560.37
+        "orders": 3768,
+        "sales": 449689.37
       },
       "meta_shop": {
         "orders": 3,
@@ -191081,6 +191081,11 @@
     "2026-09-26": {
       "attribution": {
         "email_detail": {
+          "20 sep | sun | E8 | reminder | Talk Like a Pirate Day\u00a0b1g2 offer": {
+            "medium": "email",
+            "orders": 1,
+            "sales": 89.0
+          },
           "Email #1A: Scratching Furniture": {
             "medium": "email",
             "orders": 1,
@@ -191093,9 +191098,13 @@
           }
         },
         "first_touch": {
+          "direct": {
+            "orders": 1,
+            "sales": 138.0
+          },
           "meta_paid": {
-            "orders": 4,
-            "sales": 455.0
+            "orders": 6,
+            "sales": 673.0
           },
           "other_channel": {
             "orders": 15,
@@ -191103,13 +191112,17 @@
           }
         },
         "journeys": {
+          "direct>direct": {
+            "orders": 1,
+            "sales": 138.0
+          },
           "meta_paid>email": {
-            "orders": 2,
-            "sales": 267.0
+            "orders": 3,
+            "sales": 356.0
           },
           "meta_paid>meta_paid": {
-            "orders": 2,
-            "sales": 188.0
+            "orders": 3,
+            "sales": 317.0
           },
           "other_channel>other_channel": {
             "orders": 15,
@@ -191117,19 +191130,26 @@
           }
         },
         "last_touch": {
+          "direct": {
+            "new": 1,
+            "orders": 1,
+            "paid_first": 0,
+            "returning": 0,
+            "sales": 138.0
+          },
           "email": {
             "new": 2,
-            "orders": 2,
-            "paid_first": 2,
-            "returning": 0,
-            "sales": 267.0
+            "orders": 3,
+            "paid_first": 3,
+            "returning": 1,
+            "sales": 356.0
           },
           "meta_paid": {
-            "new": 2,
-            "orders": 2,
-            "paid_first": 2,
+            "new": 3,
+            "orders": 3,
+            "paid_first": 3,
             "returning": 0,
-            "sales": 188.0
+            "sales": 317.0
           },
           "other_channel": {
             "new": 0,
@@ -191141,7 +191161,7 @@
         },
         "no_journey": 0,
         "orders": 22,
-        "pending": 3
+        "pending": 0
       },
       "discounts": 536.0,
       "fees_missing_orders": 0,
@@ -191174,7 +191194,7 @@
       "total_sales": 1701.63
     }
   },
-  "generated_at": "2026-09-26T11:19:03Z",
+  "generated_at": "2026-09-26T11:45:01Z",
   "meta": {
     "api_cost_actual": 36586,
     "api_cost_requested_max": 354,
@@ -191189,8 +191209,8 @@
       "journeys_missing": 0,
       "journeys_moments_truncated": 2,
       "journeys_no_session": 1060,
-      "journeys_pending": 3,
-      "journeys_ready": 8318,
+      "journeys_pending": 0,
+      "journeys_ready": 8321,
       "journeys_resolved_by_moments": 563,
       "journeys_unresolved": 0,
       "late_orders_scanned": 3352,
@@ -191317,7 +191337,6 @@
     "script_version": "1.9",
     "throttled_waits": 0,
     "warnings": [
-      "3 orders not attributed by Shopify yet (customerJourneySummary.ready=false, normal for the newest orders) - counted as pending, refetched next run",
       "40 orders carry the __snowball attribute but no 'Referral - SS - *' tag (Snowball rejected/untracked them) - not counted as referrals",
       "no rate known for Snowball program 'asher_fitfeline_partner' - using SNOWBALL_DEFAULT_RATE=0",
       "rate for Snowball program '20 % Commision No Discou' inferred from its name (20%) - set SNOWBALL_PROGRAM_RATES to pin it",
