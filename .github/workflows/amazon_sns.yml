@@ -1,0 +1,72 @@
+name: Cattasaurus Amazon Subscribe & Save sync
+
+on:
+  schedule:
+    # Every 6 hours (UTC). Each run lists orders updated since the previous run and checks new ones for the
+    # Subscribe & Save flag (a few minutes). The first run backfills 30 days over 2-3 runs (MAX_ITEM_CALLS).
+    - cron: "47 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      backfill_days:
+        description: "Force a backfill of the last N days (leave empty for a normal incremental run)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: amazon-sns-sync
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 110
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Sync to the latest main
+        run: |
+          git fetch --depth=1 origin main
+          git reset --hard origin/main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch Subscribe & Save orders + Replenishment metrics
+        env:
+          REPORT_TIMEZONE: America/Los_Angeles
+          BACKFILL_DAYS: ${{ github.event.inputs.backfill_days || '30' }}
+          FORCE_BACKFILL: ${{ github.event.inputs.backfill_days != '' && github.event.inputs.backfill_days != null && '1' || '0' }}
+          MAX_ITEM_CALLS: "1600"
+          AMAZON_SP_API_CLIENT_ID: ${{ secrets.AMAZON_SP_API_CLIENT_ID }}
+          AMAZON_SP_API_CLIENT_SECRET: ${{ secrets.AMAZON_SP_API_CLIENT_SECRET }}
+          AMAZON_SP_API_REFRESH_TOKEN: ${{ secrets.AMAZON_SP_API_REFRESH_TOKEN }}
+        run: python fetch_amazon_sns.py
+
+      - name: Commit updated data file if changed
+        run: |
+          git config user.name "cattasaurus-amazon-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/amazon_sns.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Update Amazon Subscribe & Save data ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            if git status --porcelain | grep -q '^UU\|^AA'; then
+              echo "::warning::data conflict with a newer commit on main - keeping main's version, refetched next cycle"
+              git diff --name-only --diff-filter=U | xargs -r git checkout --ours -- && git diff --name-only --diff-filter=U | xargs -r git add -- && GIT_EDITOR=true git rebase --continue || git rebase --abort
+              git push && exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "Push attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "Could not push after 5 attempts." && exit 1
