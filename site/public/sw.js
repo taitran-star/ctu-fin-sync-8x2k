@@ -2,7 +2,7 @@
 const BUILD = 'ba1a40cd75';
 const SHELL = 'ctu-shell-' + BUILD;   // pages + code + brand files of this build
 const DATA = 'ctu-data-v1';           // last good /data/*.json, kept across builds
-const PRECACHE = ['/', '/pnl', '/pnl.js?v=' + BUILD, '/offline.html', '/manifest.webmanifest',
+const PRECACHE = ['/', '/pnl', '/sns', '/pnl.js?v=' + BUILD, '/offline.html', '/manifest.webmanifest',
   '/img/logo-h-pine.png', '/img/logo-h-pistachio.png', '/img/mascot-bag.png', '/img/mascot-shy.png', '/img/mascot-sidelook.png', '/img/mascot-lying.png', '/img/mascot-sleep.png',
   '/fonts/BureauGrot-CondMedium.woff2', '/fonts/LibreFranklin-Regular.woff2', '/fonts/LibreFranklin-SemiBold.woff2', '/fonts/FuzzyBubbles-Bold.woff2'];
 const NEVER = new Set(['/login', '/logout', '/sw.js', '/robots.txt']);
@@ -67,7 +67,7 @@ async function pageFetch(e) {
   const req = e.request, key = new URL(req.url).pathname;
   try {
     const res = await fetch(req);
-    if (res.status === 200 && (key === '/' || key === '/pnl')) { const copy = res.clone(); e.waitUntil(caches.open(SHELL).then((c) => c.put(key, copy))); }
+    if (res.status === 200 && (key === '/' || key === '/pnl' || key === '/sns')) { const copy = res.clone(); e.waitUntil(caches.open(SHELL).then((c) => c.put(key, copy))); }
     return res;
   } catch (err) {
     const c = await caches.open(SHELL);

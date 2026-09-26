@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#f2f6e6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b1f1b" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Cattasaurus">
+<meta name="application-name" content="Cattasaurus Dashboard">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="64x64" href="/favicon.png">
+<link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials">
+<title>Subscribe &amp; Save · Cattasaurus</title>
+<style>
+  @font-face{font-family:'Bureau Grot Cond';font-weight:100 900;font-style:normal;font-display:swap;src:url(/fonts/BureauGrot-CondMedium.woff2) format('woff2');}
+  @font-face{font-family:'Libre Franklin';font-weight:100 500;font-style:normal;font-display:swap;src:url(/fonts/LibreFranklin-Regular.woff2) format('woff2');}
+  @font-face{font-family:'Libre Franklin';font-weight:600 900;font-style:normal;font-display:swap;src:url(/fonts/LibreFranklin-SemiBold.woff2) format('woff2');}
+  @font-face{font-family:'Fuzzy Bubbles';font-weight:700;font-style:normal;font-display:swap;src:url(/fonts/FuzzyBubbles-Bold.woff2) format('woff2');}
+  :root{color-scheme:light;--logo-light:block;--logo-dark:none;--brand-pistachio:#C9E595;--brand-pine:#05372E;--brand-forest:#285D18;--brand-pear:#669937;
+    --band-bg:#C9E595;--band-ink:#05372E;--surface-page:#f2f6e6;--surface-card:#ffffff;--surface-card-2:#f3f7e9;--ink-primary:#05372E;--ink-secondary:#33544a;--ink-muted:#6c857a;
+    --border:rgba(5,55,46,0.14);--gridline:#dfe8cf;--baseline:#b5c7a0;--accent:#285D18;--accent-solid:#05372E;--accent-solid-ink:#C9E595;--bar:#669937;--bar-now:#285D18;
+    --status-good:#3f8a1e;--status-warning:#d4a017;--status-serious:#d9762b;--status-critical:#b3261e;
+    --font-display:'Bureau Grot Cond','Arial Narrow',system-ui,sans-serif;--font-body:'Libre Franklin',system-ui,-apple-system,sans-serif;--font-fun:'Fuzzy Bubbles','Comic Sans MS',cursive;
+    padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--logo-light:none;--logo-dark:block;--band-bg:#05372E;--band-ink:#C9E595;--surface-page:#0b1f1b;--surface-card:#123029;--surface-card-2:#183a32;--ink-primary:#eef5df;--ink-secondary:#c3d3b3;--ink-muted:#8fa697;--border:rgba(201,229,149,0.16);--gridline:#274b41;--baseline:#3a6152;--accent:#8fbf3f;--accent-solid:#C9E595;--accent-solid-ink:#05372E;--bar:#5f8f3a;--bar-now:#b9da7a;--status-good:#6db33f;--status-warning:#e4bc3f;--status-serious:#f29a55;--status-critical:#f06a6a;--brand-forest:#b9da7a;}}
+  :root[data-theme="dark"]{color-scheme:dark;--logo-light:none;--logo-dark:block;--band-bg:#05372E;--band-ink:#C9E595;--surface-page:#0b1f1b;--surface-card:#123029;--surface-card-2:#183a32;--ink-primary:#eef5df;--ink-secondary:#c3d3b3;--ink-muted:#8fa697;--border:rgba(201,229,149,0.16);--gridline:#274b41;--baseline:#3a6152;--accent:#8fbf3f;--accent-solid:#C9E595;--accent-solid-ink:#05372E;--bar:#5f8f3a;--bar-now:#b9da7a;--status-good:#6db33f;--status-warning:#e4bc3f;--status-serious:#f29a55;--status-critical:#f06a6a;--brand-forest:#b9da7a;}
+  *{box-sizing:border-box} [hidden]{display:none!important} img{max-width:100%}
+  body{margin:0;background:var(--surface-page);color:var(--ink-primary);font-family:var(--font-body);font-size:14px;line-height:1.5;padding-inline:20px;padding-block:0 84px;}
+  .wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:16px;}
+  .band{position:relative;background:var(--band-bg);color:var(--band-ink);border-radius:18px;padding:20px 170px 20px 24px;margin-top:18px;display:flex;flex-direction:column;gap:4px;}
+  .band .eyebrow{font-weight:600;font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.85;}
+  .band h1{margin:2px 0 0;font-family:var(--font-display);font-weight:500;font-size:clamp(30px,5vw,44px);line-height:1;letter-spacing:.01em;text-transform:uppercase;text-wrap:balance;}
+  .band .tag{font-family:var(--font-fun);font-size:16px;color:var(--brand-forest);}
+  .band .sub{font-size:12.5px;font-weight:500;opacity:.85;max-width:640px;}
+  .band .mascot{position:absolute;right:22px;bottom:0;height:140px;width:auto;pointer-events:none;}
+  .card{background:var(--surface-card);border:1px solid var(--border);border-radius:16px;padding:18px 20px;min-width:0;}
+  .card-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px 14px;flex-wrap:wrap;margin-bottom:12px;}
+  h2{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin:0;color:var(--brand-forest);}
+  .note{font-size:12px;color:var(--ink-muted);}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;}
+  .kpi{background:var(--surface-card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;}
+  .kpi .k{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);}
+  .kpi .v{font-family:var(--font-display);font-size:30px;line-height:1.05;font-variant-numeric:tabular-nums;}
+  .kpi .d{font-size:12px;color:var(--ink-secondary);}
+  .up{color:var(--status-good);font-weight:600} .down{color:var(--status-critical);font-weight:600}
+  .row{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;align-items:start;}
+  @media (max-width:880px){.row{grid-template-columns:1fr}}
+  svg text{fill:var(--ink-muted);font:11px var(--font-body);font-variant-numeric:tabular-nums}
+  .tbl{overflow-x:auto;}
+  table{border-collapse:collapse;width:100%;font-size:13px;}
+  th{font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--baseline);white-space:nowrap;}
+  td{padding:8px 10px;border-bottom:1px solid var(--gridline);vertical-align:top;}
+  tr:last-child td{border-bottom:0}
+  .n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .id{font-variant-numeric:tabular-nums;white-space:nowrap;font-size:12.5px;}
+  td.t{min-width:200px;max-width:360px;}
+  .s{display:block;font-size:11.5px;color:var(--ink-muted);}
+  .meter{display:block;height:5px;border-radius:3px;background:var(--bar);margin-top:5px;min-width:2px;}
+  .pill{display:inline-block;font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;background:var(--surface-card-2);color:var(--ink-secondary);white-space:nowrap;}
+  .pill.Shipped{background:color-mix(in srgb,var(--status-good) 16%,transparent);color:var(--status-good);}
+  .pill.Pending,.pill.Unshipped,.pill.PartiallyShipped{background:color-mix(in srgb,var(--status-warning) 18%,transparent);color:var(--ink-primary);}
+  .pill.Canceled{background:color-mix(in srgb,var(--status-critical) 14%,transparent);color:var(--status-critical);}
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+  select,input[type=search]{font:inherit;font-size:13px;color:var(--ink-primary);background:var(--surface-card-2);border:1px solid var(--border);border-radius:9px;padding:7px 10px;min-width:0;max-width:100%;}
+  input[type=search]{width:230px;}
+  button{font:inherit;font-weight:600;font-size:12.5px;border-radius:9px;padding:7px 12px;border:1px solid var(--accent-solid);background:var(--accent-solid);color:var(--accent-solid-ink);cursor:pointer;}
+  button.ghost{background:transparent;color:var(--ink-primary);border-color:var(--border);}
+  button:disabled{opacity:.45;cursor:default}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin:-4px 0 14px;overflow-x:auto;}
+  .tab{background:none;border:0;border-bottom:2px solid transparent;border-radius:0;color:var(--ink-muted);padding:8px 12px;text-transform:uppercase;letter-spacing:.06em;font-size:12px;white-space:nowrap;}
+  .tab[aria-selected="true"]{color:var(--ink-primary);border-bottom-color:var(--accent);}
+  .empty{padding:26px 8px;text-align:center;color:var(--ink-muted);display:flex;flex-direction:column;gap:6px;align-items:center;}
+  .empty b{color:var(--ink-primary);}
+  .warn{border-color:color-mix(in srgb,var(--status-serious) 45%,transparent);background:color-mix(in srgb,var(--status-serious) 8%,var(--surface-card));font-size:13px;color:var(--ink-secondary);}
+  .more{display:flex;justify-content:center;padding-top:10px;}
+  .foot{font-size:12px;color:var(--ink-muted);line-height:1.6;}
+  #siteLoad{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;background:var(--brand-pistachio);color:var(--brand-pine);font-size:14px;font-weight:500;text-align:center;}
+  #siteLoad .wm{height:54px;width:auto;} #siteLoad .mascot{height:170px;width:auto;margin-top:10px;animation:siteWalk 1.1s ease-in-out infinite;}
+  #siteLoad .fun{font-family:var(--font-fun);font-size:19px;color:#285D18;}
+  @keyframes siteWalk{0%,100%{transform:translateY(0) rotate(-1.5deg)}50%{transform:translateY(-6px) rotate(1.5deg)}}
+  @media (prefers-reduced-motion:reduce){#siteLoad .mascot{animation:none}}
+  #siteRefresh{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:40;display:flex;align-items:center;gap:10px;background:var(--surface-card);border:1px solid var(--border);border-radius:999px;padding:6px 8px 6px 12px;font-size:12px;color:var(--ink-secondary);box-shadow:0 8px 28px rgba(0,0,0,.14);}
+  #siteRefresh button{border:0;border-radius:999px;padding:6px 11px;font-size:12px;}
+  #siteRefresh a{color:var(--ink-muted);text-decoration:none;padding:0 4px;}
+  @media (max-width:640px){body{padding-inline:14px;} .band{padding:16px 110px 16px 16px;margin-top:14px;} .band .mascot{height:104px;right:10px;} input[type=search]{width:100%;}}
+  @media (max-width:520px){#siteRefresh{left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));justify-content:space-between;gap:6px;padding:6px 6px 6px 10px;font-size:11.5px;} #siteRefresh a{padding:0 2px;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="band">
+    <div class="eyebrow">Amazon US · FBA · theo tuần (thứ Hai → Chủ nhật, giờ LA)</div>
+    <h1>Subscribe &amp; Save</h1>
+    <div class="tag">khách quen, giao đều đặn.</div>
+    <div class="sub" id="bandSub">Đơn có cờ Subscribe &amp; Save từ SP-API Orders + chỉ số Replenishment API.</div>
+    <img class="mascot" src="/img/mascot-lying.png" alt="" aria-hidden="true">
+  </div>
+
+  <div class="card warn" id="warnBox" hidden></div>
+
+  <section class="kpis" id="kpis" aria-label="Tuần gần nhất"></section>
+
+  <div class="row">
+    <section class="card">
+      <div class="card-head"><h2>Đơn S&amp;S mỗi tuần</h2><span class="note">12 tuần gần nhất · tuần hiện tại tô đậm (chưa hết tuần)</span></div>
+      <div id="chart"></div>
+    </section>
+    <section class="card">
+      <div class="card-head"><h2>Theo SKU</h2><span class="note" id="skuNote"></span></div>
+      <div class="tbl" id="skus"></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tab-orders" aria-selected="true">Danh sách đơn</button>
+      <button class="tab" role="tab" id="tab-metrics" aria-selected="false">Chỉ số subscription</button>
+      <button class="tab" role="tab" id="tab-forecast" aria-selected="false">Dự báo 30/60/90 ngày</button>
+    </div>
+    <div id="pane-orders">
+      <div class="card-head">
+        <div class="controls">
+          <select id="weekSel" aria-label="Tuần"></select>
+          <select id="statusSel" aria-label="Trạng thái"></select>
+          <input type="search" id="q" placeholder="Mã đơn, SKU, ASIN, tên…" aria-label="Tìm đơn">
+        </div>
+        <div class="controls"><button class="ghost" id="dlWeek">CSV tuần đang xem</button><button id="dlAll">CSV tất cả</button></div>
+      </div>
+      <div class="tbl" id="orders"></div>
+      <div class="more" id="moreWrap" hidden><button class="ghost" id="more">Xem thêm</button></div>
+    </div>
+    <div id="pane-metrics" hidden>
+      <div class="card-head"><div class="controls"><select id="mWeekSel" aria-label="Tuần"></select></div><button class="ghost" id="dlMetrics">CSV chỉ số theo ASIN</button></div>
+      <div id="metrics"></div>
+    </div>
+    <div id="pane-forecast" hidden><div id="forecast"></div></div>
+  </section>
+
+  <div class="foot">Nguồn: SP-API Orders — dòng hàng có <b>AmazonPrograms = SUBSCRIBE_AND_SAVE</b> (giống bộ lọc Subscribe &amp; Save trên Seller Central, chỉ FBA, bỏ đơn MCF) và SP-API Replenishment (chỉ số tổng hợp, tuần theo lịch Amazon). Doanh thu = giá sản phẩm trước thuế, trước khuyến mãi; đơn Pending chưa có giá; đơn huỷ không tính. Workflow <code>amazon_sns.yml</code> chạy 6 giờ/lần.</div>
+</div>
+
+<div id="siteLoad" role="status" aria-live="polite"><img class="wm" src="/img/logo-h-pine.png" alt="Cattasaurus" width="1000" height="327"><img class="mascot" id="siteLoadImg" src="/img/mascot-bag.png" alt="" aria-hidden="true" width="515" height="720"><div class="fun" aria-hidden="true">meow… đang đếm khách quen</div><div id="siteLoadMsg">Đang tải số liệu…</div></div>
+<div id="siteRefresh" hidden><span id="siteLoadedAt"></span><button type="button" id="siteReload">↻ Cập nhật</button><a href="/?menu=1">bảng khác</a><a href="/logout">thoát</a></div>
+
+<script>
+(function(){
+  try{ localStorage.setItem('ctu_last_dash', '/sns'); }catch(e){}
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('/sw.js').catch(function(){}); }
+  var $ = function(id){ return document.getElementById(id); };
+  var esc = function(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); };
+  var money = function(n, c){ return n == null || isNaN(n) ? '—' : ((c && c !== 'USD') ? c + ' ' : '$') + Number(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); };
+  var int = function(n){ return n == null || isNaN(n) ? '—' : Number(n).toLocaleString('en-US', {maximumFractionDigits:0}); };
+  var num = function(v){ return typeof v === 'number' ? (Number.isInteger(v) ? int(v) : v.toLocaleString('en-US', {maximumFractionDigits:2})) : esc(v); };
+  var D = null, weeks = [], metrics = [], shown = 150, loadedAt = 0;
+
+  var LABELS = {activeSubscriptions:'Subscription đang chạy', totalSubscriptionsRevenue:'Doanh thu S&S', shippedSubscriptionUnits:'Units S&S đã ship',
+    notDeliveredDueToOOS:'Không giao được do hết hàng (%)', lostRevenueDueToOOS:'Doanh thu mất do hết hàng', revenuePenetration:'Tỷ trọng doanh thu S&S (%)',
+    couponsRevenuePenetration:'Doanh thu có coupon (%)', shareOfCouponSubscriptions:'Subscription dùng coupon (%)',
+    subscriberAverageRevenue:'Doanh thu TB / subscriber', nonSubscriberAverageRevenue:'Doanh thu TB / khách thường',
+    subscriberAverageReorders:'Số lần mua lại TB / subscriber', nonSubscriberAverageReorders:'Số lần mua lại TB / khách thường',
+    subscriberRetentionFor30Days:'Giữ chân subscriber 30 ngày (%)', subscriberRetentionFor90Days:'Giữ chân subscriber 90 ngày (%)',
+    revenueFromSubscriptionsWithMultipleDeliveries:'Doanh thu từ sub đã giao ≥2 lần', revenueFromActiveSubscriptionsWithSingleDelivery:'Doanh thu sub mới giao 1 lần',
+    revenueFromCancelledSubscriptionsAfterSingleDelivery:'Doanh thu sub huỷ sau lần 1',
+    next30DayTotalSubscriptionsRevenue:'Doanh thu 30 ngày tới', next60DayTotalSubscriptionsRevenue:'Doanh thu 60 ngày tới', next90DayTotalSubscriptionsRevenue:'Doanh thu 90 ngày tới',
+    next30DayShippedSubscriptionUnits:'Units 30 ngày tới', next60DayShippedSubscriptionUnits:'Units 60 ngày tới', next90DayShippedSubscriptionUnits:'Units 90 ngày tới',
+    fulfillmentChannelType:'Kênh', brandName:'Brand', productGroup:'Nhóm', currencyCode:'Tiền tệ'};
+  var TOP = ['activeSubscriptions','totalSubscriptionsRevenue','shippedSubscriptionUnits','revenuePenetration','subscriberRetentionFor90Days','notDeliveredDueToOOS','lostRevenueDueToOOS','couponsRevenuePenetration'];
+
+  function lines(w){ return (w && w.orders) || []; }
+  function cancelled(o){ return /cancel/i.test(o.status || ''); }
+  function sum(w){
+    var L = lines(w).filter(function(o){ return !cancelled(o); }), ids = {}, cx = {}, u = 0, r = 0;
+    L.forEach(function(o){ ids[o.id] = 1; u += +o.qty || 0; r += +o.price || 0; });
+    lines(w).filter(cancelled).forEach(function(o){ cx[o.id] = 1; });
+    return {orders:Object.keys(ids).length, units:u, revenue:r, cancelled:Object.keys(cx).length};
+  }
+  function delta(a, b){ if(!b) return ''; var p = (a - b) / b * 100; if(!isFinite(p)) return ''; return '<span class="' + (p >= 0 ? 'up' : 'down') + '">' + (p >= 0 ? '▲' : '▼') + ' ' + Math.abs(p).toFixed(0) + '%</span> so với tuần trước'; }
+  function todayLA(){ return new Intl.DateTimeFormat('en-CA', {timeZone:'America/Los_Angeles'}).format(new Date()); }
+
+  function renderWarn(){
+    var m = (D && D.meta) || {}, msgs = [];
+    if(m.queue && m.queue.length && m.complete === false) msgs.push('Đang nạp dữ liệu lần đầu: còn ' + m.queue.length + ' đơn chưa kiểm tra — số các tuần cũ sẽ đủ sau vài lần chạy (6 giờ/lần).');
+    if(m.replenishment && m.replenishment.ok === false) msgs.push('Chưa lấy được chỉ số Replenishment API: ' + esc(m.replenishment.error || '') );
+    $('warnBox').innerHTML = msgs.join('<br>'); $('warnBox').hidden = !msgs.length;
+  }
+
+  function renderKpis(){
+    var today = todayLA(), cur = weeks[0], full = weeks.find(function(w){ return w.end < today; }) || cur;
+    if(!cur){ $('kpis').innerHTML = '<div class="kpi"><span class="k">Tuần gần nhất</span><span class="v">—</span><span class="d">Chưa có dữ liệu</span></div>'; return; }
+    var i = weeks.indexOf(full), s = sum(full), p = weeks[i + 1] ? sum(weeks[i + 1]) : null, c = sum(cur);
+    var mm = metrics.find(function(x){ return x.totals; }), subs = mm ? mm.totals.activeSubscriptions : null;
+    var cards = [
+      ['Đơn S&S · ' + full.week, int(s.orders), p ? delta(s.orders, p.orders) : esc(full.start + ' → ' + full.end)],
+      ['Units', int(s.units), p ? delta(s.units, p.units) : ''],
+      ['Doanh thu S&S', money(s.revenue), p ? delta(s.revenue, p.revenue) : ''],
+      ['Tuần này (đang chạy)', int(c.orders) + ' đơn', cur !== full ? money(c.revenue) + ' · ' + esc(cur.start) + ' → nay' : 'tuần gần nhất đã đủ ngày'],
+      ['Subscription đang chạy', subs == null ? '—' : int(subs), subs == null ? 'chờ Replenishment API' : 'Replenishment API · ' + esc(mm.week)]
+    ];
+    $('kpis').innerHTML = cards.map(function(k){ return '<div class="kpi"><span class="k">' + esc(k[0]) + '</span><span class="v">' + k[1] + '</span><span class="d">' + (k[2] || '&nbsp;') + '</span></div>'; }).join('');
+  }
+
+  function renderChart(){
+    var data = weeks.slice(0, 12).reverse().map(function(w){ return {k:w.week, v:sum(w).orders, u:sum(w).units}; });
+    if(!data.length){ $('chart').innerHTML = '<div class="empty">Biểu đồ hiện khi có dữ liệu.</div>'; return; }
+    var W = 640, H = 230, pl = 40, pr = 8, pt = 18, pb = 28, iw = W - pl - pr, ih = H - pt - pb;
+    var max = Math.max.apply(null, [1].concat(data.map(function(d){ return d.v; })));
+    var mag = Math.pow(10, Math.floor(Math.log10(max))), top = Math.ceil(max / mag) * mag; if(top / mag <= 2) top = Math.ceil(max / (mag / 2)) * (mag / 2);
+    var bw = iw / data.length, g = '';
+    [0, top / 2, top].forEach(function(t){ var y = pt + ih - t / top * ih; g += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + y + '" y2="' + y + '" stroke="var(--gridline)"/><text x="' + (pl - 6) + '" y="' + (y + 4) + '" text-anchor="end">' + int(t) + '</text>'; });
+    data.forEach(function(d, i){
+      var h = d.v / top * ih, x = pl + i * bw + bw * .17, y = pt + ih - h, last = i === data.length - 1, cx = x + bw * .33;
+      g += '<rect x="' + x + '" y="' + y + '" width="' + (bw * .66) + '" height="' + h + '" rx="3" fill="' + (last ? 'var(--bar-now)' : 'var(--bar)') + '"><title>' + d.k + ': ' + d.v + ' đơn · ' + d.u + ' units</title></rect>';
+      if(last || i === data.length - 2) g += '<text x="' + cx + '" y="' + (y - 5) + '" text-anchor="middle" style="fill:var(--ink-primary);font-weight:600">' + d.v + '</text>';
+      g += '<text x="' + cx + '" y="' + (H - 9) + '" text-anchor="middle">' + d.k.slice(5) + '</text>';
+    });
+    g += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + (pt + ih) + '" y2="' + (pt + ih) + '" stroke="var(--baseline)"/>';
+    $('chart').innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Số đơn Subscribe & Save theo tuần">' + g + '</svg>';
+  }
+
+  function selWeek(){ var v = $('weekSel').value; return v === 'all' ? null : weeks.find(function(w){ return w.week === v; }); }
+  function renderSkus(){
+    var w = selWeek(), L = w ? lines(w) : weeks.flatMap(lines), map = {};
+    $('skuNote').textContent = w ? w.week + ' · ' + w.start + ' → ' + w.end : 'tất cả tuần đã lưu';
+    L.filter(function(o){ return !cancelled(o); }).forEach(function(o){ var k = o.sku || o.asin || '?'; var r = map[k] || (map[k] = {sku:k, asin:o.asin, title:o.title, u:0, r:0, ids:{}}); r.u += +o.qty || 0; r.r += +o.price || 0; r.ids[o.id] = 1; });
+    var rows = Object.keys(map).map(function(k){ return map[k]; }).sort(function(a, b){ return b.u - a.u; }), mx = Math.max.apply(null, [1].concat(rows.map(function(r){ return r.u; })));
+    $('skus').innerHTML = rows.length ? '<table><thead><tr><th>SKU</th><th class="n">Đơn</th><th class="n">Units</th><th class="n">Doanh thu</th></tr></thead><tbody>' + rows.map(function(r){
+      return '<tr><td>' + esc(r.sku) + '<span class="s">' + esc(r.asin || '') + '</span><span class="meter" style="width:' + (r.u / mx * 100) + '%"></span></td><td class="n">' + Object.keys(r.ids).length + '</td><td class="n">' + int(r.u) + '</td><td class="n">' + money(r.r) + '</td></tr>'; }).join('') + '</tbody></table>' : '<div class="empty">Không có đơn.</div>';
+  }
+
+  function filtered(){
+    var w = selWeek(), st = $('statusSel').value, q = $('q').value.trim().toLowerCase();
+    var L = w ? lines(w) : weeks.flatMap(lines);
+    if(st) L = L.filter(function(o){ return o.status === st; });
+    if(q) L = L.filter(function(o){ return [o.id, o.sku, o.asin, o.title].join(' ').toLowerCase().indexOf(q) >= 0; });
+    return L.slice().sort(function(a, b){ return String(b.purchase_date).localeCompare(String(a.purchase_date)); });
+  }
+  function renderOrders(){
+    if(!weeks.length){ $('orders').innerHTML = '<div class="empty"><b>Chưa có đơn nào</b><span>Lần chạy đầu của workflow amazon_sns.yml sẽ nạp đơn S&amp;S 30 ngày gần nhất.</span></div>'; $('moreWrap').hidden = true; return; }
+    var L = filtered();
+    if(!L.length){ $('orders').innerHTML = '<div class="empty">Không có đơn khớp bộ lọc.</div>'; $('moreWrap').hidden = true; return; }
+    $('orders').innerHTML = '<table><thead><tr><th>Mã đơn</th><th>Ngày đặt (LA)</th><th>Sản phẩm</th><th class="n">SL</th><th class="n">Giá</th><th>Trạng thái</th></tr></thead><tbody>' + L.slice(0, shown).map(function(o){
+      return '<tr><td class="id">' + esc(o.id) + '</td><td class="id">' + esc(o.date) + '<span class="s">' + esc(o.time || '') + '</span></td><td class="t">' + esc(o.title || '') + '<span class="s">' + esc(o.sku || '') + (o.asin ? ' · ' + esc(o.asin) : '') + '</span></td><td class="n">' + int(o.qty) + '</td><td class="n">' + money(o.price, o.currency) + (o.promo ? '<span class="s">KM −' + money(o.promo) + '</span>' : '') + '</td><td><span class="pill ' + esc(String(o.status || '').replace(/\W/g, '')) + '">' + esc(o.status || '—') + '</span></td></tr>'; }).join('') + '</tbody></table>';
+    $('moreWrap').hidden = L.length <= shown;
+  }
+
+  function mWeek(){ var v = $('mWeekSel').value; return metrics.find(function(m){ return m.week === v; }) || metrics[0]; }
+  function kvCards(obj){
+    var keys = Object.keys(obj || {}).filter(function(k){ return typeof obj[k] === 'number'; });
+    keys.sort(function(a, b){ var ia = TOP.indexOf(a), ib = TOP.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); });
+    return '<div class="kpis">' + keys.map(function(k){ return '<div class="kpi"><span class="k">' + esc(LABELS[k] || k) + '</span><span class="v" style="font-size:24px">' + (/Revenue|revenue|LifeTimeValue/.test(k) && !/Penetration|share/i.test(k) ? money(obj[k]) : num(obj[k])) + '</span></div>'; }).join('') + '</div>';
+  }
+  function asinTable(rows){
+    if(!rows || !rows.length) return '';
+    var cols = []; rows.forEach(function(r){ Object.keys(r).forEach(function(k){ if(['asin','sku','currencyCode','fulfillmentChannelType','brandName','productGroup'].indexOf(k) < 0 && cols.indexOf(k) < 0) cols.push(k); }); });
+    cols.sort(function(a, b){ var ia = TOP.indexOf(a), ib = TOP.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); });
+    return '<div class="tbl" style="margin-top:14px"><table><thead><tr><th>ASIN / SKU</th>' + cols.map(function(c){ return '<th class="n">' + esc(LABELS[c] || c) + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.map(function(r){
+      return '<tr><td class="id">' + esc(r.asin || '') + '<span class="s">' + esc(r.sku || '') + '</span></td>' + cols.map(function(c){ return '<td class="n">' + (/Revenue/.test(c) && !/Penetration/.test(c) ? money(r[c]) : num(r[c])) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
+  }
+  function renderMetrics(){
+    var m = mWeek();
+    if(!m){ $('metrics').innerHTML = '<div class="empty"><b>Chưa có chỉ số</b><span>Điền từ Replenishment API sau lần chạy đầu' + ((D && D.meta && D.meta.replenishment && D.meta.replenishment.ok === false) ? ' — hiện API đang báo lỗi (xem khung cảnh báo phía trên).' : '.') + '</span></div>'; return; }
+    $('metrics').innerHTML = (m.totals ? kvCards(m.totals) : '<div class="note">Tuần này chưa có số tổng.</div>') + asinTable(m.by_asin) +
+      '<p class="note" style="margin:10px 0 0">Tuần Amazon: ' + esc((m.amazon_interval || [m.start, m.end]).join(' → ')) + ' · lấy lúc ' + esc(m.fetched_at || '') + '</p>';
+  }
+  function renderForecast(){
+    var f = D && D.forecast;
+    if(!f || !f.by_asin || !f.by_asin.length){ $('forecast').innerHTML = '<div class="empty"><b>Chưa có dự báo</b><span>Replenishment API trả doanh thu và units S&amp;S dự kiến cho 30/60/90 ngày tới theo từng ASIN.</span></div>'; return; }
+    var tot = {}; f.by_asin.forEach(function(r){ Object.keys(r).forEach(function(k){ if(/^next\d+Day/.test(k) && typeof r[k] === 'number') tot[k] = (tot[k] || 0) + r[k]; }); });
+    $('forecast').innerHTML = kvCards(tot) + asinTable(f.by_asin) + '<p class="note" style="margin:10px 0 0">Lấy lúc ' + esc(f.fetched_at || '') + '</p>';
+  }
+
+  function fillSelects(){
+    var cur = $('weekSel').value;
+    $('weekSel').innerHTML = '<option value="all">Tất cả tuần</option>' + weeks.map(function(w){ var s = sum(w); return '<option value="' + esc(w.week) + '">' + esc(w.week) + ' · ' + esc(w.start.slice(5)) + '→' + esc(w.end.slice(5)) + ' · ' + s.orders + ' đơn</option>'; }).join('');
+    $('weekSel').value = cur && weeks.some(function(w){ return w.week === cur; }) ? cur : (weeks[0] ? weeks[0].week : 'all');
+    var sts = []; weeks.flatMap(lines).forEach(function(o){ if(o.status && sts.indexOf(o.status) < 0) sts.push(o.status); }); sts.sort();
+    $('statusSel').innerHTML = '<option value="">Mọi trạng thái</option>' + sts.map(function(s){ return '<option>' + esc(s) + '</option>'; }).join('');
+    $('mWeekSel').innerHTML = metrics.map(function(m){ return '<option value="' + esc(m.week) + '">' + esc(m.week) + ' · ' + esc(m.start) + '</option>'; }).join('') || '<option value="">—</option>';
+  }
+
+  var OCOLS = ['week','id','date','time','purchase_date','status','sku','asin','title','qty','price','promo','currency'];
+  function cell(v){ v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+  function csv(rows, cols){ return '﻿' + [cols.join(',')].concat(rows.map(function(r){ return cols.map(function(c){ return cell(r[c]); }).join(','); })).join('\n'); }
+  function save(name, text){ var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], {type:'text/csv;charset=utf-8'})); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000); }
+  function withWeek(w){ return lines(w).map(function(o){ var r = {week:w.week}; for(var k in o) r[k] = o[k]; return r; }); }
+  $('dlAll').onclick = function(){ save('amazon_sns_orders_' + todayLA() + '.csv', csv(weeks.flatMap(withWeek), OCOLS)); };
+  $('dlWeek').onclick = function(){ var w = selWeek(); if(!w) return $('dlAll').onclick(); save('amazon_sns_orders_' + w.week + '.csv', csv(withWeek(w), OCOLS)); };
+  $('dlMetrics').onclick = function(){ var rows = []; metrics.forEach(function(m){ (m.by_asin || []).forEach(function(r){ var o = {week:m.week}; for(var k in r) o[k] = r[k]; rows.push(o); }); }); var cols = ['week']; rows.forEach(function(r){ Object.keys(r).forEach(function(k){ if(cols.indexOf(k) < 0) cols.push(k); }); }); save('amazon_sns_metrics_' + todayLA() + '.csv', csv(rows, cols)); };
+  $('weekSel').onchange = function(){ shown = 150; renderSkus(); renderOrders(); };
+  $('statusSel').onchange = $('q').oninput = function(){ shown = 150; renderOrders(); };
+  $('mWeekSel').onchange = renderMetrics;
+  $('more').onclick = function(){ shown += 300; renderOrders(); };
+  ['orders','metrics','forecast'].forEach(function(t){ $('tab-' + t).onclick = function(){ ['orders','metrics','forecast'].forEach(function(x){ $('tab-' + x).setAttribute('aria-selected', x === t); $('pane-' + x).hidden = x !== t; }); }; });
+
+  function renderAll(){
+    weeks = Object.keys((D && D.weeks) || {}).map(function(k){ return D.weeks[k]; }).sort(function(a, b){ return b.week.localeCompare(a.week); });
+    metrics = Object.keys((D && D.metrics) || {}).map(function(k){ return D.metrics[k]; }).sort(function(a, b){ return b.week.localeCompare(a.week); });
+    fillSelects(); renderWarn(); renderKpis(); renderChart(); renderSkus(); renderOrders(); renderMetrics(); renderForecast();
+    $('dlAll').disabled = $('dlWeek').disabled = !weeks.length; $('dlMetrics').disabled = !metrics.some(function(m){ return m.by_asin && m.by_asin.length; });
+    if(D && D.generated_at){ var g = new Date(D.generated_at); $('bandSub').textContent = 'Đơn có cờ Subscribe & Save từ SP-API Orders + chỉ số Replenishment API · đồng bộ lần cuối ' + g.toLocaleString('vi-VN', {dateStyle:'medium', timeStyle:'short'}) + '.'; }
+  }
+
+  function done(stale){
+    var box = $('siteLoad'); if(box) box.remove();
+    var at = $('siteLoadedAt'), d = new Date(loadedAt);
+    at.textContent = (stale ? 'bản đã lưu · ' : 'số liệu lúc ') + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    if(stale) at.style.color = 'var(--status-serious)';
+    $('siteRefresh').hidden = false;
+  }
+  function load(attempt){
+    return fetch('/data/amazon_sns.json', {credentials:'same-origin', cache:'no-cache'}).then(function(r){
+      if(r.status === 401){ location.replace('/login'); throw new Error('login'); }
+      if(r.status === 404) return {stale:false, json:null};
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      var stale = !!r.headers.get('X-SW-Reason') || Number(r.headers.get('X-Data-Age') || 0) > 1800;
+      return r.json().then(function(j){ return {stale:stale, json:j}; });
+    }).catch(function(e){
+      if(attempt < 2 && !/login/.test(String(e && e.message))) return new Promise(function(res){ setTimeout(res, 2500); }).then(function(){ return load(attempt + 1); });
+      throw e;
+    });
+  }
+  load(1).then(function(res){ D = res.json; loadedAt = Date.now(); renderAll(); done(res.stale); }).catch(function(e){
+    if(/login/.test(String(e && e.message))) return;
+    var im = $('siteLoadImg'); if(im){ im.src = '/img/mascot-shy.png'; im.style.animation = 'none'; }
+    $('siteLoadMsg').textContent = navigator.onLine === false ? 'Không có mạng và máy này chưa lưu số liệu — có mạng lại thì tải lại trang.' : 'Chưa lấy được số liệu S&S (workflow chưa chạy lần nào hoặc GitHub đang lỗi) — thử lại sau.';
+    setTimeout(function(){ D = null; loadedAt = Date.now(); renderAll(); done(true); }, 2500);
+  });
+  $('siteReload').addEventListener('click', function(){ location.reload(); });
+  document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'visible' && loadedAt && Date.now() - loadedAt > 15 * 60000) location.reload(); });
+})();
+</script>
+</body>
+</html>
