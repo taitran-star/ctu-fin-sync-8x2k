@@ -16534,7 +16534,13 @@
       "withdrawals": 1950.49
     },
     "2026-09-27": {
-      "by_event_code": {},
+      "by_event_code": {
+        "T0400": {
+          "amount": -924.43,
+          "count": 1,
+          "fee": 0.0
+        }
+      },
       "fees": 0,
       "fees_credited": 0,
       "other": 0,
@@ -16542,25 +16548,25 @@
       "payments_count": 0,
       "refunds": 0,
       "refunds_count": 0,
-      "transactions": 0,
-      "withdrawals": 0
+      "transactions": 1,
+      "withdrawals": 924.43
     }
   },
-  "generated_at": "2026-09-27T11:11:58Z",
+  "generated_at": "2026-09-27T11:40:41Z",
   "meta": {
     "api_requests": 4,
     "api_retries": 0,
     "counts": {
-      "transactions_counted": 959,
+      "transactions_counted": 960,
       "transactions_duplicate": 0,
       "transactions_not_success": 21,
       "transactions_outside_window": 14,
-      "transactions_seen": 994,
+      "transactions_seen": 995,
       "transactions_without_date": 0
     },
     "currencies_seen": {
       "CAD": 79,
-      "USD": 1750
+      "USD": 1751
     },
     "event_codes_seen": {
       "T0000": 2,
@@ -16570,7 +16576,7 @@
       "T0114": 5,
       "T0200": 56,
       "T0300": 2,
-      "T0400": 19,
+      "T0400": 20,
       "T0403": 2,
       "T1106": 2,
       "T1107": 42,
@@ -16606,7 +16612,7 @@
     "script_version": "1.0",
     "slices": 2,
     "warnings": [
-      "transactions in currencies other than USD were summed as-is: {'USD': 1750, 'CAD': 79}"
+      "transactions in currencies other than USD were summed as-is: {'USD': 1751, 'CAD': 79}"
     ]
   },
   "source": "paypal_transaction_search",
@@ -16620,8 +16626,8 @@
       "payments_count": 518,
       "refunds": 3463.19,
       "refunds_count": 36,
-      "transactions": 618,
-      "withdrawals": 78391.58
+      "transactions": 619,
+      "withdrawals": 79316.01
     },
     "mtd": {
       "fees": 2128.31,
@@ -16631,8 +16637,8 @@
       "payments_count": 429,
       "refunds": 3463.19,
       "refunds_count": 36,
-      "transactions": 525,
-      "withdrawals": 78391.58
+      "transactions": 526,
+      "withdrawals": 79316.01
     },
     "today": {
       "fees": 0,
@@ -16642,8 +16648,8 @@
       "payments_count": 0,
       "refunds": 0,
       "refunds_count": 0,
-      "transactions": 0,
-      "withdrawals": 0
+      "transactions": 1,
+      "withdrawals": 924.43
     }
   },
   "window": {
