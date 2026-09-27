@@ -60,40 +60,40 @@
         "sales": 89.0
       },
       "direct": {
-        "orders": 482,
-        "sales": 58604.51
+        "orders": 471,
+        "sales": 57380.91
       },
       "email": {
-        "orders": 930,
-        "sales": 114573.76
+        "orders": 916,
+        "sales": 112833.74
       },
       "email_other": {
         "orders": 7,
         "sales": 790.58
       },
       "google_ads": {
-        "orders": 1128,
-        "sales": 137471.14
+        "orders": 1102,
+        "sales": 134535.52
       },
       "meta_organic": {
-        "orders": 228,
-        "sales": 27607.28
+        "orders": 226,
+        "sales": 27449.28
       },
       "meta_paid": {
-        "orders": 3852,
-        "sales": 460687.66
+        "orders": 3768,
+        "sales": 451700.66
       },
       "meta_shop": {
         "orders": 3,
         "sales": 277.0
       },
       "organic_search": {
-        "orders": 492,
-        "sales": 61859.75
+        "orders": 490,
+        "sales": 61494.91
       },
       "other_channel": {
-        "orders": 879,
-        "sales": 51302.0
+        "orders": 877,
+        "sales": 51216.0
       },
       "other_paid": {
         "orders": 10,
@@ -104,24 +104,24 @@
         "sales": 3465.83
       },
       "referral": {
-        "orders": 61,
-        "sales": 6391.91
+        "orders": 58,
+        "sales": 6066.71
       },
       "shop_app": {
         "orders": 77,
         "sales": 9255.95
       },
       "snowball": {
-        "orders": 96,
-        "sales": 12225.53
+        "orders": 92,
+        "sales": 11809.53
       },
       "social_other": {
-        "orders": 89,
-        "sales": 11343.87
+        "orders": 88,
+        "sales": 11244.87
       },
       "unknown": {
-        "orders": 103,
-        "sales": 12258.25
+        "orders": 101,
+        "sales": 12070.25
       }
     }
   },
@@ -191383,31 +191383,31 @@
       "total_sales": 21521.9
     }
   },
-  "generated_at": "2026-09-27T06:50:21Z",
+  "generated_at": "2026-09-27T07:20:10Z",
   "meta": {
-    "api_cost_actual": 37001,
+    "api_cost_actual": 36097,
     "api_cost_requested_max": 354,
-    "api_requests": 413,
+    "api_requests": 404,
     "auth_mode": "client_credentials",
     "counts": {
-      "edit_additions_moved": 1179,
+      "edit_additions_moved": 1166,
       "edit_lists_truncated": 0,
-      "fee_transactions": 7821,
-      "fees_missing_orders": 1238,
-      "journeys_deferred": 710,
+      "fee_transactions": 7678,
+      "fees_missing_orders": 1220,
+      "journeys_deferred": 693,
       "journeys_missing": 0,
       "journeys_moments_truncated": 2,
-      "journeys_no_session": 1062,
+      "journeys_no_session": 1058,
       "journeys_pending": 0,
-      "journeys_ready": 8467,
-      "journeys_resolved_by_moments": 572,
+      "journeys_ready": 8316,
+      "journeys_resolved_by_moments": 559,
       "journeys_unresolved": 0,
-      "late_orders_scanned": 3356,
-      "late_refund_orders": 250,
-      "orders_counted": 8467,
-      "orders_edited": 1025,
-      "orders_outside_window": 376,
-      "orders_seen": 12199,
+      "late_orders_scanned": 3279,
+      "late_refund_orders": 261,
+      "orders_counted": 8316,
+      "orders_edited": 1012,
+      "orders_outside_window": 324,
+      "orders_seen": 11919,
       "orders_skipped_test": 0,
       "orders_skipped_voided": 0,
       "orders_with_shipping_discount": 17,
@@ -191415,12 +191415,12 @@
       "refund_tip_lines": 3,
       "refunds_counted": 643,
       "refunds_edit_removals": 107,
-      "refunds_outside_window": 132,
+      "refunds_outside_window": 123,
       "refunds_with_adjustments": 390,
       "snowball_attr_without_tag": 40,
       "snowball_exact": 199,
       "snowball_export_without_tag": 0,
-      "snowball_tagged": 238,
+      "snowball_tagged": 233,
       "transactions_truncated": 11
     },
     "gateways": {
@@ -191430,14 +191430,14 @@
         "orders": 35
       },
       "gift_card": {
-        "amount": 441.12,
+        "amount": 371.19,
         "fees": 0.0,
-        "orders": 8
+        "orders": 7
       },
       "paypal": {
-        "amount": 104844.21,
+        "amount": 103799.84,
         "fees": 0.0,
-        "orders": 813
+        "orders": 803
       },
       "shop_cash": {
         "amount": 1907.81,
@@ -191445,9 +191445,9 @@
         "orders": 70
       },
       "shopify_payments": {
-        "amount": 930708.86,
-        "fees": 23729.75,
-        "orders": 7591
+        "amount": 914106.45,
+        "fees": 23301.99,
+        "orders": 7450
       }
     },
     "granted_scope": "read_all_orders,read_orders",
@@ -191506,20 +191506,22 @@
       ],
       "days": 634,
       "fetched": {
-        "end": "2026-09-26",
-        "start": "2026-08-12"
+        "end": "2026-09-27",
+        "start": "2026-08-13"
       },
       "first_day": "2025-01-01",
       "last_day": "2026-09-26",
-      "missing_count": 0,
-      "missing_days": [],
+      "missing_count": 1,
+      "missing_days": [
+        "2026-09-27"
+      ],
       "mode": "rolling",
       "start": "2025-01-01"
     },
     "late_orders_mode": "all",
     "order_edits": "booked_on_edit_date",
     "orders_visibility": "all",
-    "pages": 411,
+    "pages": 402,
     "payment_fees_basis": "shopify_payments_transaction_fees_on_order_day",
     "returns_basis": "shopify_sales_reversals",
     "schema": 3,
@@ -191619,9 +191621,9 @@
       "DAILYCXT703408": {
         "commission": 0.0,
         "commission_net": 0.0,
-        "orders": 111,
+        "orders": 108,
         "program": "Organic short content",
-        "revenue": 14978.87,
+        "revenue": 14636.38,
         "reversals": 0.0
       },
       "DEBBIE39222": {
@@ -191641,11 +191643,11 @@
         "reversals": 0.0
       },
       "Gingiandluna": {
-        "commission": 681.31,
-        "commission_net": 664.35,
-        "orders": 17,
+        "commission": 652.73,
+        "commission_net": 635.77,
+        "orders": 16,
         "program": "B1G2F_WEEKEND",
-        "revenue": 2384.01,
+        "revenue": 2288.76,
         "reversals": 16.96
       },
       "JOY23391": {
@@ -191713,11 +191715,11 @@
         "reversals": 9.01
       },
       "WONKY": {
-        "commission": 591.44,
-        "commission_net": 499.81,
-        "orders": 16,
+        "commission": 562.42,
+        "commission_net": 470.79,
+        "orders": 15,
         "program": "B1G2F_WEEKEND",
-        "revenue": 1971.47,
+        "revenue": 1874.72,
         "reversals": 91.63
       },
       "catluminati": {
@@ -191776,11 +191778,11 @@
         "reversals": 0.0
       },
       "B1G2F_WEEKEND": {
-        "commission": 2710.89,
-        "commission_net": 2573.31,
-        "orders": 72,
+        "commission": 2653.29,
+        "commission_net": 2515.71,
+        "orders": 70,
         "rate": 0.3,
-        "revenue": 9275.39,
+        "revenue": 9083.39,
         "reversals": 137.58
       },
       "Default program": {
@@ -191794,9 +191796,9 @@
       "Organic short content": {
         "commission": 0.0,
         "commission_net": 0.0,
-        "orders": 112,
+        "orders": 109,
         "rate": 0.0,
-        "revenue": 15262.84,
+        "revenue": 14920.35,
         "reversals": 0.0
       },
       "Peekaboo Affiliate 15": {
@@ -191889,10 +191891,10 @@
     },
     "tag_prefix": "Referral - SS - ",
     "window_totals": {
-      "commission": 4054.45,
-      "commission_net": 3830.46,
-      "orders": 238,
-      "revenue": 30939.07,
+      "commission": 3996.85,
+      "commission_net": 3772.86,
+      "orders": 233,
+      "revenue": 30404.58,
       "reversals": 223.99
     }
   },
@@ -191900,27 +191902,27 @@
   "timezone": "America/Los_Angeles",
   "totals": {
     "last_30d": {
-      "discounts": 522671.33,
-      "fees_missing_orders": 795,
+      "discounts": 502498.83,
+      "fees_missing_orders": 761,
       "gateways": {},
-      "gross_sales": 1153588.95,
-      "net_sales": 630917.62,
-      "orders": 5213,
+      "gross_sales": 1110787.74,
+      "net_sales": 608288.91,
+      "orders": 5019,
       "payment_fee_types": {},
-      "payment_fees": 15371.68,
-      "payment_fees_orders": 4401,
+      "payment_fees": 14849.39,
+      "payment_fees_orders": 4246,
       "refunded_shipping": 100.77,
-      "refunded_tax": 1257.07,
-      "refunded_total": 33411.07,
-      "returns": 33731.81,
-      "shipping": 5923.55,
-      "snowball_commission": 2753.54,
-      "snowball_commission_net": 2557.31,
-      "snowball_orders": 150,
-      "snowball_revenue": 19640.46,
+      "refunded_tax": 1227.47,
+      "refunded_total": 32698.49,
+      "returns": 33048.83,
+      "shipping": 5902.55,
+      "snowball_commission": 2613.47,
+      "snowball_commission_net": 2417.24,
+      "snowball_orders": 143,
+      "snowball_revenue": 18862.03,
       "snowball_reversals": 196.23,
-      "tax": 41146.91,
-      "total_sales": 642898.43
+      "tax": 39706.15,
+      "total_sales": 619520.54
     },
     "mtd": {
       "discounts": 411847.71,
@@ -191946,32 +191948,32 @@
       "total_sales": 509563.6
     },
     "today": {
-      "discounts": 18517.02,
-      "fees_missing_orders": 16,
+      "discounts": 0,
+      "fees_missing_orders": 0,
       "gateways": {},
-      "gross_sales": 39522.72,
-      "net_sales": 21005.7,
-      "orders": 168,
+      "gross_sales": 0,
+      "net_sales": 0,
+      "orders": 0,
       "payment_fee_types": {},
-      "payment_fees": 580.28,
-      "payment_fees_orders": 152,
+      "payment_fees": 0,
+      "payment_fees_orders": 0,
       "refunded_shipping": 0,
-      "refunded_tax": 40.34,
-      "refunded_total": 1100.87,
-      "returns": 1060.53,
-      "shipping": 346.62,
-      "snowball_commission": 76.85,
-      "snowball_commission_net": 76.85,
-      "snowball_orders": 4,
-      "snowball_revenue": 571.22,
+      "refunded_tax": 0,
+      "refunded_total": 0,
+      "returns": 0,
+      "shipping": 0,
+      "snowball_commission": 0,
+      "snowball_commission_net": 0,
+      "snowball_orders": 0,
+      "snowball_revenue": 0,
       "snowball_reversals": 0,
-      "tax": 1270.45,
-      "total_sales": 21521.9
+      "tax": 0,
+      "total_sales": 0
     }
   },
   "window": {
-    "end": "2026-09-26",
-    "start": "2026-08-12"
+    "end": "2026-09-27",
+    "start": "2026-08-13"
   },
   "window_days": 45
 }
