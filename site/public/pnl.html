@@ -311,21 +311,18 @@
   .sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:middle;flex:none;}
   table.simple td.sub{font-family:var(--font-body);font-size:11px;color:var(--ink-muted);}
 
-  /* multi-period comparison table (reuses table.simple's sticky-first-column + h-scroll shape).
-     Each kỳ = 2 cột (số tiền + %); "grpstart" vẽ 1 đường phân cách trước mỗi kỳ để dễ đọc.
-     Kỳ đang xem chỉ in đậm (không tô nền) - giữ đúng bảng màu ban ngày của site. */
-  table.simple.multi th.num{text-align:right;font-family:var(--font-mono);font-weight:600;font-size:11px;text-transform:none;letter-spacing:0;white-space:nowrap;}
-  table.simple.multi th.pct{text-align:right;font-family:var(--font-mono);font-weight:500;font-size:10px;color:var(--ink-muted);text-transform:none;letter-spacing:0;width:44px;}
-  table.simple.multi th .sub{display:block;color:var(--ink-muted);font-weight:500;font-size:10px;text-transform:none;letter-spacing:0;margin-top:2px;}
-  table.simple.multi th.grpstart,table.simple.multi td.grpstart{border-left:1px solid var(--gridline);}
-  table.simple.multi th.cur,table.simple.multi td.cur{font-weight:700;}
-  table.simple.multi td.num{font-variant-numeric:tabular-nums;white-space:nowrap;}
-  table.simple.multi td.num.neg{color:var(--status-critical);}
-  table.simple.multi td.pct{text-align:right;font-family:var(--font-mono);font-size:10.5px;color:var(--ink-muted);white-space:nowrap;}
-  table.simple.multi tr.section td{font-family:var(--font-body);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--ink-primary);background:var(--surface-card-2);}
-  table.simple.multi tr.subtotal td{font-weight:700;color:var(--ink-primary);border-top:1.5px solid var(--baseline);border-bottom:1.5px solid var(--baseline);}
-  table.simple.multi tr.final td{font-family:var(--font-head);font-weight:600;background:var(--surface-card-3);}
-  table.simple.multi tr.final td.num{font-family:var(--font-display);font-weight:500;font-size:14px;letter-spacing:.01em;}
+  /* P&L statement with history columns (6 kỳ liền trước, chỉ ở các dòng tổng lớn — xem HIST_GETTERS
+     trong pnl.js; breakdown từng kênh vẫn chỉ hiện cho kỳ đang xem). "grpstart" vẽ 1 đường phân cách
+     trước mỗi kỳ; cột kỳ đang xem ("cur") là 2 cột cuối, giữ nguyên style gốc của .stmt — không tô
+     nền riêng, đúng bảng màu ban ngày của site. Cột đầu (nhãn dòng) cố định khi cuộn ngang. */
+  table.stmt.multihist td.label,table.stmt.multihist th:first-child{position:sticky;left:0;z-index:1;box-shadow:1px 0 0 var(--gridline);}
+  table.stmt th.hist,table.stmt td.hist{color:var(--ink-muted);}
+  table.stmt th.num.hist{font-family:var(--font-mono);font-weight:600;font-size:10.5px;text-transform:none;letter-spacing:0;white-space:nowrap;}
+  table.stmt td.num.hist{font-size:11.5px;}
+  table.stmt th.pct.hist,table.stmt td.pct.hist{width:auto;min-width:40px;font-size:10px;}
+  table.stmt th .sub{display:block;font-weight:500;font-size:9.5px;text-transform:none;letter-spacing:0;margin-top:2px;}
+  table.stmt th.grpstart,table.stmt td.grpstart{border-left:1px solid var(--gridline);}
+  table.stmt td.num.hist.neg{color:var(--status-critical);}
   .subhead{font-size:13px;font-weight:600;color:var(--brand-forest, var(--ink-primary));margin:12px 0 6px;font-family:var(--font-head);font-size:12px;text-transform:uppercase;letter-spacing:.06em;}
 
   /* phones: everything that is not a table must fit the viewport (tables scroll inside their own wrapper) */
@@ -368,6 +365,22 @@
     .src .age{flex:1 1 100%;padding-left:15px;}
     /* wide tables: keep the sticky first column narrow enough that a couple of number columns are visible beside it */
     table.simple th:first-child,table.simple td:first-child{max-width:44vw;white-space:normal;overflow-wrap:anywhere;}
+    /* P&L statement WITH history columns: too many columns for the 3-col grid trick above — fall
+       back to a normal scrollable table (same convention as table.simple's other wide tables),
+       sticky label column so it stays readable while scrolling through the period columns. */
+    .stmt-wrap.has-hist{overflow-x:auto;}
+    table.stmt.multihist{display:table;}
+    table.stmt.multihist thead{display:table-header-group;}
+    table.stmt.multihist tbody{display:table-row-group;}
+    table.stmt.multihist tr{display:table-row;grid-template-columns:none;}
+    table.stmt.multihist th,table.stmt.multihist td{display:table-cell;border-bottom:1px solid var(--gridline);padding:7px 8px;}
+    table.stmt.multihist tr.subtotal td,table.stmt.multihist tr.final td{border-top:0;}
+    table.stmt.multihist tr.subtotal{border-top:1.5px solid var(--baseline);border-bottom:1.5px solid var(--baseline);}
+    table.stmt.multihist td.label{overflow-wrap:normal;white-space:normal;max-width:42vw;line-height:1.35;}
+    table.stmt.multihist tr.section td.label{padding-left:8px;}
+    table.stmt.multihist tr.line td.label{padding-left:14px;}
+    table.stmt.multihist tr.detail td.label{padding-left:24px;}
+    table.stmt.multihist td.pct{width:auto;min-width:40px;}
   }
 </style>
 <style>
@@ -444,18 +457,10 @@
   <div class="card">
     <div class="card-head">
       <h2>Báo cáo lãi lỗ (P&amp;L statement)</h2>
-      <div class="note">% tính trên Doanh thu thuần · bấm dòng nhóm để thu gọn/mở rộng</div>
+      <div class="note">% tính trên Doanh thu thuần của từng cột · bấm dòng nhóm để thu gọn/mở rộng · các dòng tổng lớn có thêm 6 kỳ liền trước để so xu hướng, breakdown từng kênh chỉ hiện cho kỳ đang xem</div>
     </div>
     <div class="stmt-wrap"><table class="stmt" id="stmtTable"></table></div>
     <div class="caption" style="padding-left:2px;margin-top:8px;">Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa kết nối ($0)</span> chưa có nguồn dữ liệu nên để $0 (không ước tính). Vì vậy <b>Lợi nhuận gộp / đóng góp / EBITDA ở trên là lợi nhuận TRƯỚC</b> các khoản còn gắn nhãn đó (giá vốn sản phẩm, phí sàn Walmart/TikTok, phí Afterpay, G&amp;A…) — sẽ tự đúng dần khi từng nguồn được nối vào. Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa nhập ($0)</span> là chi phí không có API (lương, văn phòng, khấu hao, lãi vay, thuế TNDN): điền theo tháng vào file <code>data/opex_monthly.json</code> trên GitHub, bảng tự đọc và rải đều theo ngày; tháng chưa điền lấy theo tháng gần nhất đã điền.</div>
-  </div>
-
-  <div class="card" id="multiCard">
-    <div class="card-head">
-      <h2 id="multiTitle">So sánh 7 kỳ gần nhất</h2>
-      <div class="note">Từng khoản mục theo <span id="multiUnit">ngày</span>, kỳ đang xem tô đậm ở cột phải nhất</div>
-    </div>
-    <div style="overflow-x:auto;"><table class="simple multi" id="multiTable" style="min-width:760px;"></table></div>
   </div>
 
   <div class="card" id="channelCostCard">
@@ -642,7 +647,7 @@
     return load(k, 1).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=c8abba4028';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=b0f1aeab5e';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');

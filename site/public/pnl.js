@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build c8abba4028).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build b0f1aeab5e).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -597,7 +597,7 @@
   function buildRows(a){
     const nr = a.netRevenue;
     const rows = [];
-    rows.push(stLine('Doanh thu gộp (Gross Sales)', a.grossSales, nr, null, 'gs'));
+    rows.push({...stLine('Doanh thu gộp (Gross Sales)', a.grossSales, nr, null, 'gs'), hkey:'grossSales'});
     const chState = k => ({
       unconnected: !!CH_UNCONNECTED[k] || (k==='shopify' && !shopifyMatched) || (k==='amazon' && !amazonMatched),
       liveDays: k==='shopify' ? a.shopifyRealDays : k==='amazon' ? a.amazonRealDays : 0,
@@ -620,7 +620,7 @@
       const note = k==='shopify' ? ' — hàng trả + tiền hoàn thêm, theo ngày Shopify xử lý hoàn (= Returns trên Shopify Analytics)' : k==='amazon' ? ' — ghi ngày Amazon hoàn tiền' : '';
       rows.push({...stLine(CH_LABEL[k]+note, -a.refund[k], nr, null, 'ref'), detail:true, neg: a.refund[k]>0});
     });
-    rows.push(stSub('= Doanh thu thuần (Net Revenue)', nr, nr, 'nr'));
+    rows.push({...stSub('= Doanh thu thuần (Net Revenue)', nr, nr, 'nr'), hkey:'netRevenue'});
     // Same split as Gross Sales: each channel's net = its gross - its discounts - its refunds; the four add up to the subtotal.
     [...CH_KEYS].sort((x,y)=>netBy(y)-netBy(x)).forEach(k=>{
       const {unconnected, liveDays} = chState(k);
@@ -668,8 +668,8 @@
     if(a.amazonInboundFreightReal !== 0){
       rows.push({...stLine('Memo — cước & thuế nhập hàng vào FBA '+money(a.amazonInboundFreightReal)+' (Amazon Global Logistics, ngày hoá đơn): tính vào giá vốn hàng nhập kho, KHÔNG trừ ở đây', 0, nr, null, 'cogs'), detail:true, live:true});
     }
-    rows.push(stSub('= Tổng COGS', -a.cogs, nr, 'cogs_sub'));
-    rows.push(stSub('= Lợi nhuận gộp (Gross Profit)', a.grossProfit, nr, 'gp'));
+    rows.push({...stSub('= Tổng COGS', -a.cogs, nr, 'cogs_sub'), hkey:'cogs'});
+    rows.push({...stSub('= Lợi nhuận gộp (Gross Profit)', a.grossProfit, nr, 'gp'), hkey:'grossProfit'});
 
     // Variable selling fees = what the channel and the payment processor keep out of every order (a fixed % per
     // transaction, like a retailer's margin) - NOT marketing: ads/affiliates are discretionary demand generation (next section).
@@ -725,8 +725,8 @@
         rows.push({...stLine('Đối chiếu '+pc.days+' ngày cả hai cùng live: Shopify ghi '+money(pc.shopify)+' qua PayPal ('+pc.shopifyOrders.toLocaleString('en-US')+' đơn) · PayPal ghi '+money(pc.paypal)+' ('+pc.paypalCount.toLocaleString('en-US')+' thanh toán) · khớp '+pct.toFixed(1)+'%'+(Math.abs(gap)>=1 ? ', chênh '+money(gap)+' = thanh toán của đơn đã huỷ / ngoài Shopify' : ''), 0, nr, null, 'opvar'), detail:true, live:true});
       }
     }
-    rows.push(stSub('= Tổng phí bán hàng theo giao dịch (hoa hồng sàn + cổng thanh toán)', -a.feesTotal, nr, 'opvar_sub'));
-    rows.push(stSub('= Lợi nhuận đóng góp trước marketing (CM2 — sau phí giao dịch, trước quảng cáo)', a.cmBeforeMarketing, nr, 'cm2'));
+    rows.push({...stSub('= Tổng phí bán hàng theo giao dịch (hoa hồng sàn + cổng thanh toán)', -a.feesTotal, nr, 'opvar_sub'), hkey:'feesTotal'});
+    rows.push({...stSub('= Lợi nhuận đóng góp trước marketing (CM2 — sau phí giao dịch, trước quảng cáo)', a.cmBeforeMarketing, nr, 'cm2'), hkey:'cm2'});
 
     rows.push(stSection('Marketing & bán hàng (quảng cáo + hoa hồng affiliate)','mkt'));
     AD_KEYS.forEach(k=>{
@@ -764,8 +764,8 @@
     } else if(shopifyMatched){
       rows.push({...stLine('Hoa hồng influencer/affiliate — Snowball (khoảng này ngoài cửa sổ đồng bộ Shopify — chưa có số)', 0, nr, 'var', 'mkt'), neg:true, gap:true});
     }
-    rows.push(stSub('= Tổng marketing & bán hàng', -a.marketingTotal, nr, 'mkt_sub'));
-    rows.push(stSub('= Lợi nhuận đóng góp (Contribution Margin, sau marketing)', a.contributionProfit, nr, 'cm'));
+    rows.push({...stSub('= Tổng marketing & bán hàng', -a.marketingTotal, nr, 'mkt_sub'), hkey:'marketingTotal'});
+    rows.push({...stSub('= Lợi nhuận đóng góp (Contribution Margin, sau marketing)', a.contributionProfit, nr, 'cm'), hkey:'cm3'});
 
     rows.push(stSection('Chi phí hoạt động (OpEx) — kho bãi & logistics','logi'));
     if(a.amazonOrdersReal>0){
@@ -808,37 +808,34 @@
       rows.push({...stLine('Lưu kho / receiving / hàng trả ShipMonk — chưa có hoá đơn cho khoảng này', 0, nr, 'fix', 'logi'), gap:true});
     }
     rows.push({...stLine('Chi phí tồn kho (holding cost) — chưa nhập', -a.inventoryHolding, nr, 'fix', 'logi'), neg:true, gap:true});
-    rows.push(stSub('= Tổng kho bãi & logistics', -(a.logisticsTotal + a.inventoryHolding), nr, 'logi_sub'));
+    rows.push({...stSub('= Tổng kho bãi & logistics', -(a.logisticsTotal + a.inventoryHolding), nr, 'logi_sub'), hkey:'logistics'});
 
     rows.push(stSection('Chi phí hoạt động (OpEx) — G&A (phần mềm, lương, văn phòng…)','fixed'));
     a.gaItems.forEach(it=>{
       const known = it.real || it.manual;
       rows.push({...stLine(it.label + (known ? '' : ' — chưa nhập'), -it.value, nr, 'fix', 'fixed'), neg:true, live: it.real ? 'real' : (it.manual ? 'manual' : false), gap: known ? false : 'manual'});
     });
-    rows.push(stSub('= Tổng G&A', -a.gaTotal, nr, 'fixed_sub'));
-    rows.push(stSub('= Tổng chi phí hoạt động (OpEx)', -a.fixedTotal, nr, 'opex_sub'));
+    rows.push({...stSub('= Tổng G&A', -a.gaTotal, nr, 'fixed_sub'), hkey:'gaTotal'});
+    rows.push({...stSub('= Tổng chi phí hoạt động (OpEx)', -a.fixedTotal, nr, 'opex_sub'), hkey:'opexTotal'});
 
-    rows.push(stFinal('= Lợi nhuận hoạt động (EBITDA)' + (a.salaryEntered ? ' — trước khấu hao, lãi vay, thuế TNDN' : ' — trước lương chưa nhập, khấu hao, lãi vay, thuế TNDN'), a.netProfit, nr));
+    rows.push({...stFinal('= Lợi nhuận hoạt động (EBITDA)' + (a.salaryEntered ? ' — trước khấu hao, lãi vay, thuế TNDN' : ' — trước lương chưa nhập, khấu hao, lãi vay, thuế TNDN'), a.netProfit, nr), hkey:'ebitda'});
 
     // Below EBITDA: D&A -> EBIT, interest -> EBT, income tax -> net income (manual monthly entries in data/opex_monthly.json)
     rows.push(stSection('Dưới EBITDA — khấu hao, lãi vay, thuế TNDN (nhập tay theo tháng)','below'));
     const manualNote = ' — nhập tay theo tháng' + a.opexNote;
     rows.push({...stLine('Khấu hao & phân bổ (D&A) — khuôn, thiết bị, phần mềm mua đứt' + (a.depreciationEntered ? manualNote : ' — chưa nhập'), -a.depreciation, nr, 'fix', 'below'), neg:true, live: a.depreciationEntered ? 'manual' : false, gap: a.depreciationEntered ? false : 'manual'});
-    rows.push(stSub('= EBIT (lợi nhuận trước lãi vay & thuế)', a.ebit, nr, 'ebit_sub'));
+    rows.push({...stSub('= EBIT (lợi nhuận trước lãi vay & thuế)', a.ebit, nr, 'ebit_sub'), hkey:'ebit'});
     rows.push({...stLine('Lãi vay & chi phí tài chính (± lãi tiền gửi, chênh lệch tỷ giá)' + (a.interestEntered ? manualNote : ' — chưa nhập'), -a.interest, nr, 'fix', 'below'), neg: a.interest>=0, live: a.interestEntered ? 'manual' : false, gap: a.interestEntered ? false : 'manual'});
-    rows.push(stSub('= Lợi nhuận trước thuế (EBT)', a.ebt, nr, 'ebt_sub'));
+    rows.push({...stSub('= Lợi nhuận trước thuế (EBT)', a.ebt, nr, 'ebt_sub'), hkey:'ebt'});
     const taxLabel = 'Thuế thu nhập doanh nghiệp (TNDN)' + (a.taxEntered ? manualNote : a.incomeTaxEstimated ? ` — ước tính ${(a.taxRate*100).toFixed(a.taxRate*100%1 ? 1 : 0)}% × lợi nhuận trước thuế dương (tax_rate trong file; thay bằng số kế toán khi có)` : ' — chưa nhập');
     rows.push({...stLine(taxLabel, -a.incomeTax, nr, 'fix', 'below'), neg:true, live: a.taxEntered ? 'manual' : false, gap: (a.taxEntered || a.incomeTaxEstimated) ? false : 'manual', est: a.incomeTaxEstimated, estTitle:'Ước tính theo thuế suất trong data/opex_monthly.json — nhập income_tax theo tháng để thay bằng số thật'});
-    rows.push(stFinal('= Lợi nhuận ròng (Net Profit, sau thuế)' + (a.belowEbitdaEntered ? '' : ' — hiện bằng EBITDA vì các khoản dưới EBITDA còn để $0'), a.netIncome, nr));
+    rows.push({...stFinal('= Lợi nhuận ròng (Net Profit, sau thuế)' + (a.belowEbitdaEntered ? '' : ' — hiện bằng EBITDA vì các khoản dưới EBITDA còn để $0'), a.netIncome, nr), hkey:'netIncome'});
     return rows;
   }
 
-  // ---------- multi-period comparison (last 7 ngày/tuần/tháng, depending on mode) ----------
-  // Static row schema (stable labels pulled straight from aggregate()'s field names / GA_ITEMS'
-  // own static labels) so columns line up across periods - buildRows() above is NOT reused here
-  // because its labels change per-period (e.g. "— chưa nhập" vs "— nhập tay theo tháng").
-  const MULTI_UNIT_LABEL = {day:'ngày', week:'tuần', month:'tháng'};
-
+  // ---------- trailing periods (last n ngày/tuần/tháng ending at the one currently selected) ----------
+  // Used by renderStatement() below to add history columns to the P&L statement's "big total" rows
+  // (returns [] for mode==='range', where "kỳ liền trước" has no clear meaning).
   function trailingPeriods(n){
     const out = [];
     if(mode==='day'){
@@ -873,80 +870,28 @@
     return out;
   }
 
-  function multiRowDefs(periods){
-    const showBelow = periods.some(p=>p.a.belowEbitdaEntered);
-    const gaVal = (a,key) => { const it = a.gaItems.find(x=>x.key===key); return it ? it.value : 0; };
-    const defs = [];
-    defs.push({t:'line', label:'Doanh thu thuần', get:a=>a.netRevenue});
-    defs.push({t:'section', label:'Giá vốn hàng bán (COGS)'});
-    defs.push({t:'line', label:'Giá vốn sản phẩm', get:a=>-a.productCost});
-    defs.push({t:'line', label:'Đóng gói (packaging)', get:a=>-a.packaging});
-    defs.push({t:'line', label:'Fulfillment FBA', get:a=>-a.fulfillment});
-    defs.push({t:'line', label:'Cước vận chuyển (ShipMonk)', get:a=>-a.postage});
-    defs.push({t:'subtotal', label:'Tổng COGS', get:a=>-a.cogs});
-    defs.push({t:'subtotal', label:'= Lợi nhuận gộp', get:a=>a.grossProfit});
-    defs.push({t:'section', label:'Chi phí bán hàng'});
-    defs.push({t:'line', label:'Phí thanh toán (payment gateway)', get:a=>-a.paymentFeesAll});
-    defs.push({t:'line', label:'Phí sàn (marketplace fees)', get:a=>-a.marketplaceFees});
-    defs.push({t:'subtotal', label:'= CM2 (trước marketing)', get:a=>a.cmBeforeMarketing});
-    defs.push({t:'section', label:'Marketing'});
-    AD_KEYS.forEach(k=>{ defs.push({t:'line', label:AD_LABEL[k], get:a=>-a.ads[k]}); });
-    defs.push({t:'line', label:'Snowball / affiliate', get:a=>-a.snowballCommission});
-    defs.push({t:'subtotal', label:'= CM3 (Lợi nhuận đóng góp)', get:a=>a.contributionProfit});
-    defs.push({t:'section', label:'Kho bãi & Logistics'});
-    defs.push({t:'line', label:'Kho bãi & xử lý (ShipMonk + Amazon)', get:a=>-a.logisticsTotal});
-    defs.push({t:'line', label:'Tồn kho (holding cost)', get:a=>-a.inventoryHolding});
-    defs.push({t:'section', label:'Chi phí quản lý (G&A)'});
-    GA_ITEMS.forEach(it=>{ defs.push({t:'line', label:it.label, get:a=>-gaVal(a,it.key)}); });
-    defs.push({t:'line', label:'Klaviyo — email & SMS', get:a=>-gaVal(a,'klaviyo')});
-    defs.push({t:'subtotal', label:'Tổng OpEx', get:a=>-a.fixedTotal});
-    defs.push({t:'final', label:'= EBITDA (Lợi nhuận hoạt động)', get:a=>a.netProfit});
-    if(showBelow){
-      defs.push({t:'section', label:'Dưới EBITDA'});
-      defs.push({t:'line', label:'Khấu hao (D&A)', get:a=>-a.depreciation});
-      defs.push({t:'subtotal', label:'= EBIT', get:a=>a.ebit});
-      defs.push({t:'line', label:'Lãi vay', get:a=>-a.interest});
-      defs.push({t:'subtotal', label:'= EBT', get:a=>a.ebt});
-      defs.push({t:'line', label:'Thuế TNDN', get:a=>-a.incomeTax});
-      defs.push({t:'final', label:'= Lợi nhuận ròng (Net Income)', get:a=>a.netIncome});
-    }
-    return defs;
-  }
-
-  function renderMultiTable(){
-    const card = document.getElementById('multiCard');
-    if(!card) return;
-    if(mode==='range'){ card.hidden = true; return; }
-    card.hidden = false;
-    const periods = trailingPeriods(7).map(p=>({...p, a: aggregate(p.rows)}));
-    if(!periods.length){ card.hidden = true; return; }
-    const unit = MULTI_UNIT_LABEL[mode] || 'kỳ';
-    document.getElementById('multiTitle').textContent = 'So sánh '+periods.length+' '+unit+' gần nhất';
-    document.getElementById('multiUnit').textContent = unit;
-    const defs = multiRowDefs(periods);
-    // Each period gets 2 columns: số tiền + % trên doanh thu thuần của CHÍNH kỳ đó (cùng base
-    // như bảng P&L 1-kỳ) - "grpstart" chỉ vẽ 1 đường phân cách trước mỗi kỳ để dễ đọc khi có 7×2 cột.
-    let html = '<thead><tr><th>Khoản mục</th>'+periods.map(p=>
-      `<th class="num grpstart${p.current?' cur':''}">${p.label}${p.sub?`<br><span class="sub">${p.sub}</span>`:''}</th><th class="pct${p.current?' cur':''}">%</th>`
-    ).join('')+'</tr></thead><tbody>';
-    defs.forEach(d=>{
-      if(d.t==='section'){
-        html += `<tr class="section"><td colspan="${periods.length*2+1}">${d.label}</td></tr>`;
-        return;
-      }
-      html += `<tr class="${d.t}"><td class="name">${d.label}</td>`;
-      periods.forEach(p=>{
-        const v = d.get(p.a);
-        const nr = p.a.netRevenue;
-        const pctV = nr ? v/nr*100 : 0;
-        html += `<td class="num grpstart${v<0?' neg':''}${p.current?' cur':''}">${money(v,{compact:true})}</td>`;
-        html += `<td class="pct${p.current?' cur':''}">${pctV.toFixed(1)}%</td>`;
-      });
-      html += '</tr>';
-    });
-    html += '</tbody>';
-    document.getElementById('multiTable').innerHTML = html;
-  }
+  // Value getters for the "big total" rows only (subtotals/finals + the opening Gross Sales line) -
+  // these are the rows buildRows() below tags with an `hkey`, and the only ones that get history
+  // columns in the P&L statement table. Per user request (28/09): keep full per-channel/detail
+  // breakdown for the CURRENT period only; trend columns are for the big picture lines, not every
+  // sub-line. Reusing buildRows()'s own field names keeps this in lockstep with the statement itself.
+  const HIST_GETTERS = {
+    grossSales: a=>a.grossSales,
+    netRevenue: a=>a.netRevenue,
+    cogs: a=>-a.cogs,
+    grossProfit: a=>a.grossProfit,
+    feesTotal: a=>-a.feesTotal,
+    cm2: a=>a.cmBeforeMarketing,
+    marketingTotal: a=>-a.marketingTotal,
+    cm3: a=>a.contributionProfit,
+    logistics: a=>-(a.logisticsTotal + a.inventoryHolding),
+    gaTotal: a=>-a.gaTotal,
+    opexTotal: a=>-a.fixedTotal,
+    ebitda: a=>a.netProfit,
+    ebit: a=>a.ebit,
+    ebt: a=>a.ebt,
+    netIncome: a=>a.netIncome,
+  };
 
   const SECTION_DEFAULT_OPEN = {cogs:true, opvar:true, mkt:true, logi:true, fixed:true, below:true};
 
@@ -954,33 +899,52 @@
     const rows = currentRows();
     const a = aggregate(rows);
     const built = buildRows(a);
-    let html = `<thead><tr><th>Khoản mục</th><th class="num">Số tiền</th><th class="pct">% DT thuần</th></tr></thead><tbody>`;
+    // History columns (last 6 kỳ liền trước) on the "big total" rows only - buildRows() tags those
+    // with `hkey` (see HIST_GETTERS above); every other row (channel/detail breakdown) just shows
+    // blank cells there so the table stays one consistent grid. [] in range mode (no "kỳ trước").
+    const hist = trailingPeriods(7).slice(0, -1).map(p=>({label:p.label, sub:p.sub, a: aggregate(p.rows)}));
+    const totalCols = 1 + (hist.length+1)*2;
+    const table = document.getElementById('stmtTable');
+    table.classList.toggle('multihist', hist.length>0);
+    table.style.minWidth = hist.length>0 ? (480 + hist.length*120)+'px' : '';
+    const wrap = table.closest('.stmt-wrap'); if(wrap) wrap.classList.toggle('has-hist', hist.length>0);
+    const histHeadCells = hist.map(h=>`<th class="num hist grpstart">${h.label}${h.sub?`<br><span class="sub">${h.sub}</span>`:''}</th><th class="pct hist">%</th>`).join('');
+    let html = `<thead><tr><th>Khoản mục</th>${histHeadCells}<th class="num cur grpstart">Số tiền</th><th class="pct cur">% DT thuần</th></tr></thead><tbody>`;
     let curSection = null, sectionOpen = true;
+    const histCells = r => {
+      if(!hist.length) return '';
+      if(!r.hkey || !HIST_GETTERS[r.hkey]) return '<td class="num hist grpstart"></td><td class="pct hist"></td>' + '<td class="num hist"></td><td class="pct hist"></td>'.repeat(Math.max(0, hist.length-1));
+      return hist.map((h,i)=>{
+        const v = HIST_GETTERS[r.hkey](h.a);
+        const nrH = h.a.netRevenue;
+        const pctV = nrH ? v/nrH*100 : 0;
+        return `<td class="num hist${i===0?' grpstart':''}${v<0?' neg':''}">${money(v,{compact:true})}</td><td class="pct hist">${pctV.toFixed(1)}%</td>`;
+      }).join('');
+    };
     built.forEach(r=>{
       if(r.t==='section'){
         curSection = r.key;
         sectionOpen = collapsed[curSection]===undefined ? SECTION_DEFAULT_OPEN[curSection] : !collapsed[curSection];
-        html += `<tr class="section" data-toggle="${r.key}"><td class="label" colspan="3"><span class="caret ${sectionOpen?'open':''}">▸</span> ${r.label}</td></tr>`;
+        html += `<tr class="section" data-toggle="${r.key}"><td class="label" colspan="${totalCols}"><span class="caret ${sectionOpen?'open':''}">▸</span> ${r.label}</td></tr>`;
         return;
       }
       const hiddenCls = ((r.t==='line' || r.t==='group') && curSection && r.key===curSection && !sectionOpen) ? 'hidden' : '';
       if(r.t==='group'){
-        html += `<tr class="group ${hiddenCls}" data-sec="${curSection||''}"><td class="label">${r.label}</td><td class="num">${money(r.value)}</td><td class="pct">${pctStr(r.pct)}</td></tr>`;
+        html += `<tr class="group ${hiddenCls}" data-sec="${curSection||''}"><td class="label">${r.label}</td>${histCells(r)}<td class="num cur grpstart">${money(r.value)}</td><td class="pct cur">${pctStr(r.pct)}</td></tr>`;
       } else if(r.t==='line'){
         const tagHtml = r.tag ? `<span class="tag ${r.tag}"><span class="d"></span>${r.tag==='var'?'Biến đổi':'Cố định'}</span>` : '';
         const gapHtml = r.gap ? `<span class="tag gap"><span class="d"></span>${r.gap==='manual' ? 'Chưa nhập ($0)' : 'Chưa kết nối ($0)'}</span>` : '';
         const liveHtml = r.live ? `<span class="tag live"><span class="d"></span>${r.live==='real'?'Số thật': r.live==='manual' ? 'Nhập tay' : 'Live'}</span>` : '';
         const estHtml = r.est ? `<span class="tag info" title="${r.estTitle || 'Một phần là ước tính cho đơn Amazon chưa ghi phí — tự thay bằng số thật khi Amazon ghi'}"><span class="d"></span>Có ước tính</span>` : '';
         const detailCls = r.detail ? 'detail' : '';
-        html += `<tr class="line ${r.neg?'neg':''} ${detailCls} ${hiddenCls}" data-sec="${curSection||''}"><td class="label">${r.label}${tagHtml}${gapHtml}${liveHtml}${estHtml}</td><td class="num">${money(r.value)}</td><td class="pct">${pctStr(r.pct)}</td></tr>`;
+        html += `<tr class="line ${r.neg?'neg':''} ${detailCls} ${hiddenCls}" data-sec="${curSection||''}"><td class="label">${r.label}${tagHtml}${gapHtml}${liveHtml}${estHtml}</td>${histCells(r)}<td class="num cur grpstart">${money(r.value)}</td><td class="pct cur">${pctStr(r.pct)}</td></tr>`;
       } else if(r.t==='subtotal'){
-        html += `<tr class="subtotal"><td class="label">${r.label}</td><td class="num">${money(r.value)}</td><td class="pct">${pctStr(r.pct)}</td></tr>`;
+        html += `<tr class="subtotal"><td class="label">${r.label}</td>${histCells(r)}<td class="num cur grpstart">${money(r.value)}</td><td class="pct cur">${pctStr(r.pct)}</td></tr>`;
       } else if(r.t==='final'){
-        html += `<tr class="final"><td class="label">${r.label}</td><td class="num">${money(r.value)}</td><td class="pct">${pctStr(r.pct)}</td></tr>`;
+        html += `<tr class="final"><td class="label">${r.label}</td>${histCells(r)}<td class="num cur grpstart">${money(r.value)}</td><td class="pct cur">${pctStr(r.pct)}</td></tr>`;
       }
     });
     html += '</tbody>';
-    const table = document.getElementById('stmtTable');
     table.innerHTML = html;
     table.querySelectorAll('tr.section').forEach(tr=>{
       tr.addEventListener('click', ()=>{
@@ -1433,7 +1397,7 @@
   let lastVw = window.innerWidth;
   window.addEventListener('resize', ()=>{ clearTimeout(window.__rsz); window.__rsz = setTimeout(()=>{ if(window.innerWidth!==lastVw){ lastVw = window.innerWidth; renderTrend(); renderBreakeven(); } }, 150); });
   function renderAll(){
-    renderSubCtl(); renderKpis(); renderTrend(); renderStatement(); renderMultiTable(); renderChannelCosts(); renderBreakeven(); renderRoas(); renderAttribution(); renderKlaviyo(); renderTax(); renderSources(); renderOpexTable(); renderGaps(); renderAmazonGaps(); renderShipmonk(); renderShopifyRecon(); renderSnowball(); renderMetaCampaigns(); renderGoogleCampaigns();
+    renderSubCtl(); renderKpis(); renderTrend(); renderStatement(); renderChannelCosts(); renderBreakeven(); renderRoas(); renderAttribution(); renderKlaviyo(); renderTax(); renderSources(); renderOpexTable(); renderGaps(); renderAmazonGaps(); renderShipmonk(); renderShopifyRecon(); renderSnowball(); renderMetaCampaigns(); renderGoogleCampaigns();
   }
   document.getElementById('mainTabs').addEventListener('click', (e)=>{
     const btn = e.target.closest('button'); if(!btn) return;
