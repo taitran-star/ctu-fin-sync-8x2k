@@ -36,7 +36,7 @@ from datetime import datetime, timedelta, timezone
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import fetch_amazon_pnl as base  # noqa: E402  (LWA token, rate limiter, SP host, marketplace, timezone)
 
-SCRIPT_VERSION = "sns-1.0"
+SCRIPT_VERSION = "sns-1.2"
 OUTPUT_PATH = os.environ.get("OUTPUT_PATH", "data/amazon_sns.json")
 BACKFILL_DAYS = int(os.environ.get("BACKFILL_DAYS", "30") or 30)
 MAX_ITEM_CALLS = int(os.environ.get("MAX_ITEM_CALLS", "1600") or 1600)      # ~2.1 s each -> ~56 min
@@ -47,6 +47,8 @@ METRIC_WEEKS = int(os.environ.get("METRIC_WEEKS", "12") or 12)             # wee
 OFFER_WEEKS = int(os.environ.get("OFFER_WEEKS", "4") or 4)                 # per-ASIN weeks refreshed each run
 FORCE_BACKFILL = os.environ.get("FORCE_BACKFILL", "0").strip() in ("1", "true", "yes")
 SKIP_METRICS = os.environ.get("SKIP_METRICS", "0").strip() in ("1", "true", "yes")
+DEBUG_ORDER_IDS = [x.strip() for x in os.environ.get("DEBUG_ORDER_IDS", "").split(",") if x.strip()]
+TOKEN_MAX_AGE = 45 * 60   # LWA access tokens live 1 hour; refresh well before
 TZ = base.REPORT_TZ
 MARKETPLACE = base.MARKETPLACE_IDS[0]
 SNS = "SUBSCRIBE_AND_SAVE"
@@ -62,6 +64,18 @@ def log(msg):
     print(f"[amazon_sns] {msg}", file=sys.stderr, flush=True)
 
 
+_TOK = {"value": None, "at": 0.0, "creds": None}
+
+
+def access_token(force=False):
+    """LWA access token, refreshed every 45 minutes (a backfill run lasts longer than the 1-hour token)."""
+    if force or not _TOK["value"] or time.monotonic() - _TOK["at"] > TOKEN_MAX_AGE:
+        _TOK["value"] = base.get_access_token(*_TOK["creds"])
+        _TOK["at"] = time.monotonic()
+        log("access token refreshed")
+    return _TOK["value"]
+
+
 class ApiError(Exception):
     def __init__(self, code, body):
         super().__init__(f"HTTP {code}: {body[:300]}")
@@ -74,14 +88,16 @@ def call(method, path, token, params=None, body=None, min_gap=2.1, backoffs=(5, 
     qs = f"?{urllib.parse.urlencode(params)}" if params else ""
     url = f"{base.SP_API_HOST}{path}{qs}"
     data = json.dumps(body).encode() if body is not None else None
-    for attempt in range(len(backoffs) + 1):
+    refreshed = False
+    attempt = 0
+    while attempt <= len(backoffs):
         now = time.monotonic()
         gap = now - call.last.get(path.split("/")[1] + method, 0)
         if gap < min_gap:
             time.sleep(min_gap - gap)
         call.last[path.split("/")[1] + method] = time.monotonic()
         req = urllib.request.Request(url, data=data, method=method)
-        req.add_header("x-amz-access-token", token)
+        req.add_header("x-amz-access-token", access_token())
         req.add_header("Accept", "application/json")
         if data is not None:
             req.add_header("Content-Type", "application/json")
@@ -90,15 +106,21 @@ def call(method, path, token, params=None, body=None, min_gap=2.1, backoffs=(5, 
                 return json.loads(resp.read().decode() or "{}")
         except urllib.error.HTTPError as e:
             err = e.read().decode(errors="replace")
+            if e.code in (401, 403) and "expired" in err.lower() and not refreshed:
+                access_token(force=True)
+                refreshed = True
+                continue
             if (e.code == 429 or e.code >= 500) and attempt < len(backoffs):
                 wait = backoffs[attempt]
                 log(f"HTTP {e.code} on {method} {path}, retry in {wait}s")
                 time.sleep(wait)
+                attempt += 1
                 continue
             raise ApiError(e.code, err)
         except (urllib.error.URLError, TimeoutError) as e:
             if attempt < len(backoffs):
                 time.sleep(backoffs[attempt])
+                attempt += 1
                 continue
             raise ApiError(0, str(e))
     raise ApiError(0, "retries exhausted")
@@ -172,11 +194,21 @@ def order_items(token, order_id):
             return items
 
 
+DIAG = {"items_checked": 0, "items_with_programs": 0, "programs": {}, "item_keys": {}}
+
+
 def sns_lines(order, items):
     lt = to_local(order["purchase_date"])
     lines = []
     for it in items:
         progs = ((it.get("AmazonPrograms") or {}).get("Programs")) or []
+        DIAG["items_checked"] += 1
+        for k in it.keys():
+            DIAG["item_keys"][k] = DIAG["item_keys"].get(k, 0) + 1
+        if progs:
+            DIAG["items_with_programs"] += 1
+        for p in progs:
+            DIAG["programs"][p] = DIAG["programs"].get(p, 0) + 1
         if SNS not in progs:
             continue
         price = it.get("ItemPrice")
@@ -198,47 +230,70 @@ def iso_z(d):
     return d.strftime("%Y-%m-%dT00:00:00Z")
 
 
+def amazon_week_start(d):
+    """Amazon's WEEK runs Sunday -> Saturday (API: 'startDate and endDate must be of same Week', e.g. 2026-09-13..19)."""
+    return d - timedelta(days=(d.weekday() + 1) % 7)
+
+
+def metric_entry(metrics, sun):
+    wk = iso_week(sun + timedelta(days=3))          # the Wednesday decides the ISO week (Mon-Sun) it is filed under
+    ws, we = week_bounds(sun + timedelta(days=3))
+    e = metrics.get(wk) or {"week": wk, "start": str(ws), "end": str(we)}
+    e["amazon_interval"] = [str(sun), str(sun + timedelta(days=6))]
+    return wk, e
+
+
 def fetch_metrics(token, today, prev_metrics, warnings):
-    """Weekly totals (getSellingPartnerMetrics) + per-ASIN weeks (listOfferMetrics) + forecast."""
+    """Weekly totals (getSellingPartnerMetrics) + per-ASIN weeks (listOfferMetrics) + forecast.
+    Each WEEK request covers exactly one Amazon week; every part fails on its own (a warning), never the run."""
     metrics = dict(prev_metrics or {})
-    this_monday, _ = week_bounds(today)
-    start = this_monday - timedelta(weeks=METRIC_WEEKS)
-    body = {"aggregationFrequency": "WEEK", "timePeriodType": "PERFORMANCE", "programTypes": [SNS],
-            "marketplaceId": MARKETPLACE, "metrics": ALL_METRICS,
-            "timeInterval": {"startDate": iso_z(start), "endDate": iso_z(this_monday)}}
-    res = call("POST", "/replenishment/2022-11-07/sellingPartners/metrics/search", token, body=body, min_gap=1.1)
-    rows = res.get("metrics") or []
-    for m in rows:
-        ti = m.pop("timeInterval", {}) or {}
-        s = (ti.get("startDate") or "")[:10]
-        e = (ti.get("endDate") or "")[:10]
-        if not s:
+    this_sun = amazon_week_start(today)
+    now = lambda: datetime.now(timezone.utc).isoformat(timespec="seconds")  # noqa: E731
+    errors, ok = [], 0
+    for n in range(1, METRIC_WEEKS + 1):
+        sun = this_sun - timedelta(weeks=n)
+        wk, entry = metric_entry(metrics, sun)
+        if n > 2 and entry.get("totals"):
+            continue   # older weeks do not change - fetched once
+        body = {"aggregationFrequency": "WEEK", "timePeriodType": "PERFORMANCE", "programTypes": [SNS],
+                "marketplaceId": MARKETPLACE, "metrics": ALL_METRICS,
+                "timeInterval": {"startDate": iso_z(sun), "endDate": iso_z(sun + timedelta(days=6))}}
+        try:
+            res = call("POST", "/replenishment/2022-11-07/sellingPartners/metrics/search", token, body=body, min_gap=1.1)
+        except ApiError as e:
+            errors.append(f"totals {wk}: {e}")
             continue
-        mid = datetime.strptime(s, "%Y-%m-%d").date() + timedelta(days=3)   # Amazon may start weeks on Sunday
-        wk = iso_week(mid)
-        ws, we = week_bounds(mid)
-        entry = metrics.get(wk) or {"week": wk, "start": str(ws), "end": str(we)}
-        entry["amazon_interval"] = [s, e]
-        entry["totals"] = {k: v for k, v in m.items() if v is not None}
-        entry["fetched_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        rows = res.get("metrics") or []
+        tot = {}
+        for m in rows:
+            m.pop("timeInterval", None)
+            tot.update({k: v for k, v in m.items() if v is not None})
+        entry["totals"] = tot
+        entry["fetched_at"] = now()
         metrics[wk] = entry
-    log(f"replenishment: {len(rows)} weekly total rows")
-
-    # per ASIN, the last OFFER_WEEKS completed weeks (one interval = one unit of the frequency)
+        ok += 1
     for n in range(1, OFFER_WEEKS + 1):
-        ws = this_monday - timedelta(weeks=n)
-        we = ws + timedelta(days=7)
-        offers = list_offer_metrics(token, {"aggregationFrequency": "WEEK", "timePeriodType": "PERFORMANCE",
-                                            "timeInterval": {"startDate": iso_z(ws), "endDate": iso_z(we)}})
-        wk = iso_week(ws + timedelta(days=3))
-        entry = metrics.get(wk) or {"week": wk, "start": str(ws), "end": str(ws + timedelta(days=6))}
-        entry["by_asin"] = offers
-        entry["fetched_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        sun = this_sun - timedelta(weeks=n)
+        wk, entry = metric_entry(metrics, sun)
+        try:
+            entry["by_asin"] = list_offer_metrics(token, {"aggregationFrequency": "WEEK", "timePeriodType": "PERFORMANCE",
+                                                          "timeInterval": {"startDate": iso_z(sun), "endDate": iso_z(sun + timedelta(days=6))}})
+        except ApiError as e:
+            errors.append(f"offers {wk}: {e}")
+            continue
+        entry["fetched_at"] = now()
         metrics[wk] = entry
-
-    forecast = list_offer_metrics(token, {"timePeriodType": "FORECAST",
-                                          "timeInterval": {"startDate": iso_z(today), "endDate": iso_z(today + timedelta(days=90))}})
-    return metrics, {"fetched_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "by_asin": forecast}
+        ok += 1
+    forecast = None
+    try:
+        forecast = {"fetched_at": now(), "by_asin": list_offer_metrics(
+            token, {"timePeriodType": "FORECAST",
+                    "timeInterval": {"startDate": iso_z(today), "endDate": iso_z(today + timedelta(days=90))}})}
+        ok += 1
+    except ApiError as e:
+        errors.append(f"forecast: {e}")
+    log(f"replenishment: {ok} calls ok, {len(errors)} failed")
+    return metrics, forecast, errors
 
 
 def list_offer_metrics(token, filters):
@@ -286,11 +341,15 @@ def main():
 
     run_started = datetime.now(timezone.utc)
     today = datetime.now(TZ).date()
-    token = base.get_access_token(cid, csec, rtok)
+    _TOK["creds"] = (cid, csec, rtok)
+    token = None   # call() takes the current token from access_token()
 
     # 1. which orders to look at ------------------------------------------------------------------
     last_listed = pmeta.get("last_listed_at")
-    if FORCE_BACKFILL or not last_listed:
+    carried = [q for q in (pmeta.get("queue") or []) if q.get("id") not in checked]
+    # sns-1.0 lost the rest of its backfill queue when the token expired -> no "backfill_done" key = list again
+    backfill_done = bool(pmeta.get("backfill_done"))
+    if FORCE_BACKFILL or not last_listed or (not backfill_done and not carried) or "backfill_done" not in pmeta:
         mode = "backfill"
         start_local = datetime.combine(today - timedelta(days=BACKFILL_DAYS), datetime.min.time(), TZ)
         listed = list_orders(token, created_after=start_local.astimezone(timezone.utc))
@@ -318,7 +377,17 @@ def main():
     todo = sorted(queue.values(), key=lambda o: o["purchase_date"])
     calls = 0
     left = []
+    debug_items = {}
+    for oid in DEBUG_ORDER_IDS:
+        try:
+            debug_items[oid] = order_items(token, oid)
+        except ApiError as e:
+            debug_items[oid] = {"error": str(e)}
+    fatal = False
     for o in todo:
+        if fatal:
+            left.append(o)
+            continue
         if calls >= MAX_ITEM_CALLS or (datetime.now(timezone.utc) - run_started).total_seconds() > TIME_BUDGET_MIN * 60:
             left.append(o)
             continue
@@ -328,7 +397,7 @@ def main():
             warnings.append(f"orderItems {o['id']}: {e}")
             left.append(o)
             if e.code in (401, 403):
-                break
+                fatal = True   # keep every remaining order in the queue for the next run
             continue
         calls += 1
         lines = sns_lines(o, items)
@@ -371,10 +440,17 @@ def main():
     repl = {"ok": None}
     if not SKIP_METRICS:
         try:
-            metrics, forecast = fetch_metrics(token, today, metrics, warnings)
-            repl = {"ok": True}
+            metrics, fc, errs = fetch_metrics(token, today, metrics, warnings)
+            forecast = fc or forecast
+            repl = {"ok": not errs or len(errs) < METRIC_WEEKS + OFFER_WEEKS + 1,
+                    "errors": [x[:300] for x in errs[:6]]}
+            if errs:
+                warnings.extend(f"replenishment {x[:300]}" for x in errs[:6])
+                if repl["ok"] is False:
+                    repl["error"] = errs[0][:400]
         except ApiError as e:
-            hint = " (app is missing the role for the Replenishment API - add it in Developer Central, re-authorize)" if e.code == 403 else ""
+            hint = (" (app is missing the role for the Replenishment API - add it in Developer Central, re-authorize)"
+                    if e.code == 403 and "expired" not in e.body.lower() else "")
             repl = {"ok": False, "error": f"{e}{hint}"}
             warnings.append(f"replenishment: {e}{hint}")
             log(f"replenishment failed: {e}{hint}")
@@ -395,6 +471,10 @@ def main():
             "last_listed_at": run_started.isoformat(timespec="seconds"),
             "backfill_start": pmeta.get("backfill_start") or str(today - timedelta(days=BACKFILL_DAYS)),
             "queue": left, "complete": not any(checked.get(o["id"]) is None for o in left),
+            "backfill_done": not any(checked.get(o["id"]) is None for o in left),
+            "diag": {"items_checked": DIAG["items_checked"], "items_with_programs": DIAG["items_with_programs"],
+                     "programs": DIAG["programs"], "item_keys": DIAG["item_keys"]},
+            "debug_items": debug_items,
             "sns_orders": sum(1 for v in checked.values() if v[1] == 1),
             "checked_orders": len(checked),
             "replenishment": repl, "warnings": warnings[:50],
