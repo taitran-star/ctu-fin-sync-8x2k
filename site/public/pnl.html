@@ -310,6 +310,22 @@
   .share-bar .sg span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:10.5px;white-space:nowrap;overflow:hidden;padding:0 3px;}
   .sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:middle;flex:none;}
   table.simple td.sub{font-family:var(--font-body);font-size:11px;color:var(--ink-muted);}
+
+  /* multi-period comparison table (reuses table.simple's sticky-first-column + h-scroll shape).
+     Each kỳ = 2 cột (số tiền + %); "grpstart" vẽ 1 đường phân cách trước mỗi kỳ để dễ đọc.
+     Kỳ đang xem chỉ in đậm (không tô nền) - giữ đúng bảng màu ban ngày của site. */
+  table.simple.multi th.num{text-align:right;font-family:var(--font-mono);font-weight:600;font-size:11px;text-transform:none;letter-spacing:0;white-space:nowrap;}
+  table.simple.multi th.pct{text-align:right;font-family:var(--font-mono);font-weight:500;font-size:10px;color:var(--ink-muted);text-transform:none;letter-spacing:0;width:44px;}
+  table.simple.multi th .sub{display:block;color:var(--ink-muted);font-weight:500;font-size:10px;text-transform:none;letter-spacing:0;margin-top:2px;}
+  table.simple.multi th.grpstart,table.simple.multi td.grpstart{border-left:1px solid var(--gridline);}
+  table.simple.multi th.cur,table.simple.multi td.cur{font-weight:700;}
+  table.simple.multi td.num{font-variant-numeric:tabular-nums;white-space:nowrap;}
+  table.simple.multi td.num.neg{color:var(--status-critical);}
+  table.simple.multi td.pct{text-align:right;font-family:var(--font-mono);font-size:10.5px;color:var(--ink-muted);white-space:nowrap;}
+  table.simple.multi tr.section td{font-family:var(--font-body);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--ink-primary);background:var(--surface-card-2);}
+  table.simple.multi tr.subtotal td{font-weight:700;color:var(--ink-primary);border-top:1.5px solid var(--baseline);border-bottom:1.5px solid var(--baseline);}
+  table.simple.multi tr.final td{font-family:var(--font-head);font-weight:600;background:var(--surface-card-3);}
+  table.simple.multi tr.final td.num{font-family:var(--font-display);font-weight:500;font-size:14px;letter-spacing:.01em;}
   .subhead{font-size:13px;font-weight:600;color:var(--brand-forest, var(--ink-primary));margin:12px 0 6px;font-family:var(--font-head);font-size:12px;text-transform:uppercase;letter-spacing:.06em;}
 
   /* phones: everything that is not a table must fit the viewport (tables scroll inside their own wrapper) */
@@ -432,6 +448,14 @@
     </div>
     <div class="stmt-wrap"><table class="stmt" id="stmtTable"></table></div>
     <div class="caption" style="padding-left:2px;margin-top:8px;">Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa kết nối ($0)</span> chưa có nguồn dữ liệu nên để $0 (không ước tính). Vì vậy <b>Lợi nhuận gộp / đóng góp / EBITDA ở trên là lợi nhuận TRƯỚC</b> các khoản còn gắn nhãn đó (giá vốn sản phẩm, phí sàn Walmart/TikTok, phí Afterpay, G&amp;A…) — sẽ tự đúng dần khi từng nguồn được nối vào. Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa nhập ($0)</span> là chi phí không có API (lương, văn phòng, khấu hao, lãi vay, thuế TNDN): điền theo tháng vào file <code>data/opex_monthly.json</code> trên GitHub, bảng tự đọc và rải đều theo ngày; tháng chưa điền lấy theo tháng gần nhất đã điền.</div>
+  </div>
+
+  <div class="card" id="multiCard">
+    <div class="card-head">
+      <h2 id="multiTitle">So sánh 7 kỳ gần nhất</h2>
+      <div class="note">Từng khoản mục theo <span id="multiUnit">ngày</span>, kỳ đang xem tô đậm ở cột phải nhất</div>
+    </div>
+    <div style="overflow-x:auto;"><table class="simple multi" id="multiTable" style="min-width:760px;"></table></div>
   </div>
 
   <div class="card" id="channelCostCard">

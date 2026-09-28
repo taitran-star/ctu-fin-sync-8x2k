@@ -833,6 +833,121 @@
     return rows;
   }
 
+  // ---------- multi-period comparison (last 7 ngày/tuần/tháng, depending on mode) ----------
+  // Static row schema (stable labels pulled straight from aggregate()'s field names / GA_ITEMS'
+  // own static labels) so columns line up across periods - buildRows() above is NOT reused here
+  // because its labels change per-period (e.g. "— chưa nhập" vs "— nhập tay theo tháng").
+  const MULTI_UNIT_LABEL = {day:'ngày', week:'tuần', month:'tháng'};
+
+  function trailingPeriods(n){
+    const out = [];
+    if(mode==='day'){
+      for(let i=n-1;i>=0;i--){
+        const idx = selDayIdx-i;
+        if(idx<0) continue;
+        const d = days[idx];
+        out.push({rows:[d], label: fmtDate(d.date), sub: DOW[d.date.getDay()], current: idx===selDayIdx});
+      }
+    } else if(mode==='week'){
+      const ci = WEEKS.indexOf(selWeek);
+      for(let i=n-1;i>=0;i--){
+        const wi = ci-i;
+        if(wi<0) continue;
+        const wk = WEEKS[wi];
+        const r = weekMap[wk];
+        const mon = new Date(parseInt(wk.slice(0,4),10), parseInt(wk.slice(5,7),10)-1, parseInt(wk.slice(8,10),10));
+        const sun = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+6);
+        out.push({rows:r, label: fmtDate(mon)+'–'+fmtDate(sun), sub: 'Tuần '+isoWeekNo(mon), current: wk===selWeek});
+      }
+    } else if(mode==='month'){
+      const ci = MONTHS.indexOf(selMonth);
+      for(let i=n-1;i>=0;i--){
+        const mi = ci-i;
+        if(mi<0) continue;
+        const mk = MONTHS[mi];
+        const r = monthMap[mk];
+        const [y,mo] = mk.split('-');
+        out.push({rows:r, label:'Th'+parseInt(mo,10)+'/'+y, sub: r.length<28 ? 'đến '+fmtDate(r[r.length-1].date) : r.length+' ngày', current: mk===selMonth});
+      }
+    }
+    return out;
+  }
+
+  function multiRowDefs(periods){
+    const showBelow = periods.some(p=>p.a.belowEbitdaEntered);
+    const gaVal = (a,key) => { const it = a.gaItems.find(x=>x.key===key); return it ? it.value : 0; };
+    const defs = [];
+    defs.push({t:'line', label:'Doanh thu thuần', get:a=>a.netRevenue});
+    defs.push({t:'section', label:'Giá vốn hàng bán (COGS)'});
+    defs.push({t:'line', label:'Giá vốn sản phẩm', get:a=>-a.productCost});
+    defs.push({t:'line', label:'Đóng gói (packaging)', get:a=>-a.packaging});
+    defs.push({t:'line', label:'Fulfillment FBA', get:a=>-a.fulfillment});
+    defs.push({t:'line', label:'Cước vận chuyển (ShipMonk)', get:a=>-a.postage});
+    defs.push({t:'subtotal', label:'Tổng COGS', get:a=>-a.cogs});
+    defs.push({t:'subtotal', label:'= Lợi nhuận gộp', get:a=>a.grossProfit});
+    defs.push({t:'section', label:'Chi phí bán hàng'});
+    defs.push({t:'line', label:'Phí thanh toán (payment gateway)', get:a=>-a.paymentFeesAll});
+    defs.push({t:'line', label:'Phí sàn (marketplace fees)', get:a=>-a.marketplaceFees});
+    defs.push({t:'subtotal', label:'= CM2 (trước marketing)', get:a=>a.cmBeforeMarketing});
+    defs.push({t:'section', label:'Marketing'});
+    AD_KEYS.forEach(k=>{ defs.push({t:'line', label:AD_LABEL[k], get:a=>-a.ads[k]}); });
+    defs.push({t:'line', label:'Snowball / affiliate', get:a=>-a.snowballCommission});
+    defs.push({t:'subtotal', label:'= CM3 (Lợi nhuận đóng góp)', get:a=>a.contributionProfit});
+    defs.push({t:'section', label:'Kho bãi & Logistics'});
+    defs.push({t:'line', label:'Kho bãi & xử lý (ShipMonk + Amazon)', get:a=>-a.logisticsTotal});
+    defs.push({t:'line', label:'Tồn kho (holding cost)', get:a=>-a.inventoryHolding});
+    defs.push({t:'section', label:'Chi phí quản lý (G&A)'});
+    GA_ITEMS.forEach(it=>{ defs.push({t:'line', label:it.label, get:a=>-gaVal(a,it.key)}); });
+    defs.push({t:'line', label:'Klaviyo — email & SMS', get:a=>-gaVal(a,'klaviyo')});
+    defs.push({t:'subtotal', label:'Tổng OpEx', get:a=>-a.fixedTotal});
+    defs.push({t:'final', label:'= EBITDA (Lợi nhuận hoạt động)', get:a=>a.netProfit});
+    if(showBelow){
+      defs.push({t:'section', label:'Dưới EBITDA'});
+      defs.push({t:'line', label:'Khấu hao (D&A)', get:a=>-a.depreciation});
+      defs.push({t:'subtotal', label:'= EBIT', get:a=>a.ebit});
+      defs.push({t:'line', label:'Lãi vay', get:a=>-a.interest});
+      defs.push({t:'subtotal', label:'= EBT', get:a=>a.ebt});
+      defs.push({t:'line', label:'Thuế TNDN', get:a=>-a.incomeTax});
+      defs.push({t:'final', label:'= Lợi nhuận ròng (Net Income)', get:a=>a.netIncome});
+    }
+    return defs;
+  }
+
+  function renderMultiTable(){
+    const card = document.getElementById('multiCard');
+    if(!card) return;
+    if(mode==='range'){ card.hidden = true; return; }
+    card.hidden = false;
+    const periods = trailingPeriods(7).map(p=>({...p, a: aggregate(p.rows)}));
+    if(!periods.length){ card.hidden = true; return; }
+    const unit = MULTI_UNIT_LABEL[mode] || 'kỳ';
+    document.getElementById('multiTitle').textContent = 'So sánh '+periods.length+' '+unit+' gần nhất';
+    document.getElementById('multiUnit').textContent = unit;
+    const defs = multiRowDefs(periods);
+    // Each period gets 2 columns: số tiền + % trên doanh thu thuần của CHÍNH kỳ đó (cùng base
+    // như bảng P&L 1-kỳ) - "grpstart" chỉ vẽ 1 đường phân cách trước mỗi kỳ để dễ đọc khi có 7×2 cột.
+    let html = '<thead><tr><th>Khoản mục</th>'+periods.map(p=>
+      `<th class="num grpstart${p.current?' cur':''}">${p.label}${p.sub?`<br><span class="sub">${p.sub}</span>`:''}</th><th class="pct${p.current?' cur':''}">%</th>`
+    ).join('')+'</tr></thead><tbody>';
+    defs.forEach(d=>{
+      if(d.t==='section'){
+        html += `<tr class="section"><td colspan="${periods.length*2+1}">${d.label}</td></tr>`;
+        return;
+      }
+      html += `<tr class="${d.t}"><td class="name">${d.label}</td>`;
+      periods.forEach(p=>{
+        const v = d.get(p.a);
+        const nr = p.a.netRevenue;
+        const pctV = nr ? v/nr*100 : 0;
+        html += `<td class="num grpstart${v<0?' neg':''}${p.current?' cur':''}">${money(v,{compact:true})}</td>`;
+        html += `<td class="pct${p.current?' cur':''}">${pctV.toFixed(1)}%</td>`;
+      });
+      html += '</tr>';
+    });
+    html += '</tbody>';
+    document.getElementById('multiTable').innerHTML = html;
+  }
+
   const SECTION_DEFAULT_OPEN = {cogs:true, opvar:true, mkt:true, logi:true, fixed:true, below:true};
 
   function renderStatement(){
@@ -1318,7 +1433,7 @@
   let lastVw = window.innerWidth;
   window.addEventListener('resize', ()=>{ clearTimeout(window.__rsz); window.__rsz = setTimeout(()=>{ if(window.innerWidth!==lastVw){ lastVw = window.innerWidth; renderTrend(); renderBreakeven(); } }, 150); });
   function renderAll(){
-    renderSubCtl(); renderKpis(); renderTrend(); renderStatement(); renderChannelCosts(); renderBreakeven(); renderRoas(); renderAttribution(); renderKlaviyo(); renderTax(); renderSources(); renderOpexTable(); renderGaps(); renderAmazonGaps(); renderShipmonk(); renderShopifyRecon(); renderSnowball(); renderMetaCampaigns(); renderGoogleCampaigns();
+    renderSubCtl(); renderKpis(); renderTrend(); renderStatement(); renderMultiTable(); renderChannelCosts(); renderBreakeven(); renderRoas(); renderAttribution(); renderKlaviyo(); renderTax(); renderSources(); renderOpexTable(); renderGaps(); renderAmazonGaps(); renderShipmonk(); renderShopifyRecon(); renderSnowball(); renderMetaCampaigns(); renderGoogleCampaigns();
   }
   document.getElementById('mainTabs').addEventListener('click', (e)=>{
     const btn = e.target.closest('button'); if(!btn) return;
