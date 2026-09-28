@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build b0f1aeab5e).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 38fa47d88d).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -597,7 +597,7 @@
   function buildRows(a){
     const nr = a.netRevenue;
     const rows = [];
-    rows.push({...stLine('Doanh thu gộp (Gross Sales)', a.grossSales, nr, null, 'gs'), hkey:'grossSales'});
+    rows.push({...stLine('Doanh thu gộp (Gross Sales)', a.grossSales, nr, null, 'gs'), hget: x=>x.grossSales});
     const chState = k => ({
       unconnected: !!CH_UNCONNECTED[k] || (k==='shopify' && !shopifyMatched) || (k==='amazon' && !amazonMatched),
       liveDays: k==='shopify' ? a.shopifyRealDays : k==='amazon' ? a.amazonRealDays : 0,
@@ -608,30 +608,30 @@
       let label = CH_LABEL[k]+' · '+a.orders[k].toLocaleString('en-US')+' đơn';
       if(k==='amazon' && liveDays>0) label += amazonOrderBasisDays>0 ? ' (theo ngày đặt hàng — khớp Seller Central)' : ' (theo ngày ship — Finances)';
       if(!unconnected && liveDays>0 && liveDays<a.n) label += ' ('+(a.n-liveDays)+' ngày ngoài cửa sổ đồng bộ = $0)';
-      rows.push({...stLine(label, a.gross[k], nr, null, 'gs'), detail:true, gap: unconnected, live: !unconnected && liveDays>0});
+      rows.push({...stLine(label, a.gross[k], nr, null, 'gs'), detail:true, gap: unconnected, live: !unconnected && liveDays>0, hget: x=>x.gross[k]});
     });
-    rows.push({...stLine('Giảm giá & khuyến mãi', -a.discount, nr, 'var', 'disc'), neg:true});
+    rows.push({...stLine('Giảm giá & khuyến mãi', -a.discount, nr, 'var', 'disc'), neg:true, hget: x=>-x.discount});
     CH_KEYS.filter(k=>a.discountBy[k]>0).sort((x,y)=>a.discountBy[y]-a.discountBy[x]).forEach(k=>{
       const note = k==='shopify' ? ' — mã giảm giá, KM tự động, B1G2F… (Shopify Analytics: Discounts)' : k==='amazon' ? ' — promotions Amazon' : '';
-      rows.push({...stLine(CH_LABEL[k]+note, -a.discountBy[k], nr, null, 'disc'), detail:true, neg:true});
+      rows.push({...stLine(CH_LABEL[k]+note, -a.discountBy[k], nr, null, 'disc'), detail:true, neg:true, hget: x=>-x.discountBy[k]});
     });
-    rows.push({...stLine('Hoàn tiền / Trả hàng', -a.refundsTotal, nr, 'var', 'ref'), neg:true});
+    rows.push({...stLine('Hoàn tiền / Trả hàng', -a.refundsTotal, nr, 'var', 'ref'), neg:true, hget: x=>-x.refundsTotal});
     CH_KEYS.filter(k=>a.refund[k]!==0).sort((x,y)=>a.refund[y]-a.refund[x]).forEach(k=>{
       const note = k==='shopify' ? ' — hàng trả + tiền hoàn thêm, theo ngày Shopify xử lý hoàn (= Returns trên Shopify Analytics)' : k==='amazon' ? ' — ghi ngày Amazon hoàn tiền' : '';
-      rows.push({...stLine(CH_LABEL[k]+note, -a.refund[k], nr, null, 'ref'), detail:true, neg: a.refund[k]>0});
+      rows.push({...stLine(CH_LABEL[k]+note, -a.refund[k], nr, null, 'ref'), detail:true, neg: a.refund[k]>0, hget: x=>-x.refund[k]});
     });
-    rows.push({...stSub('= Doanh thu thuần (Net Revenue)', nr, nr, 'nr'), hkey:'netRevenue'});
+    rows.push({...stSub('= Doanh thu thuần (Net Revenue)', nr, nr, 'nr'), hget: x=>x.netRevenue});
     // Same split as Gross Sales: each channel's net = its gross - its discounts - its refunds; the four add up to the subtotal.
     [...CH_KEYS].sort((x,y)=>netBy(y)-netBy(x)).forEach(k=>{
       const {unconnected, liveDays} = chState(k);
       let label = CH_LABEL[k]+' — thuần (gộp − giảm giá − hoàn tiền)';
       if(k==='shopify' && !unconnected) label = 'Shopify — thuần = Net sales trên Shopify Analytics';
       if(k==='amazon' && !unconnected) label = 'Amazon — thuần (giá bán − promotions − hoàn tiền)';
-      rows.push({...stLine(label, netBy(k), nr, null, 'nr'), detail:true, gap: unconnected, live: !unconnected && liveDays>0});
+      rows.push({...stLine(label, netBy(k), nr, null, 'nr'), detail:true, gap: unconnected, live: !unconnected && liveDays>0, hget: x=>x.gross[k]-x.discountBy[k]-x.refund[k]});
     });
 
     rows.push(stSection('Giá vốn hàng bán — COGS (giá vốn sản phẩm + fulfillment)','cogs'));
-    rows.push({...stLine('Giá vốn sản phẩm (chưa có bảng giá vốn theo SKU)', -a.productCost, nr, 'var', 'cogs'), neg:true, gap:true});
+    rows.push({...stLine('Giá vốn sản phẩm (chưa có bảng giá vốn theo SKU)', -a.productCost, nr, 'var', 'cogs'), neg:true, gap:true, hget: x=>-x.productCost});
     const smLive = a.shipmonkRealDays>0;
     const smBasis = shipmonkOrderBasis() ? 'theo ngày đặt hàng' : 'theo ngày ship';
     const smNote = smLive ? ' — ShipMonk, ' + smBasis + (a.shipmonkRealDays<a.n ? ' ('+(a.n-a.shipmonkRealDays)+' ngày ngoài cửa sổ đồng bộ = $0)' : '') : '';
@@ -642,15 +642,15 @@
         rows.push({...stLine(shipmonkStoreLabel(name)+' — '+what+' ('+t.orders.toLocaleString('en-US')+' đơn)', -t[field], nr, null, 'cogs'), detail:true, neg:true, live:true});
       });
     };
-    rows.push({...stLine('Phí đóng gói (packaging)' + (smLive ? ' — vật liệu đóng gói ShipMonk, ' + smBasis : ''), -a.packaging, nr, 'var', 'cogs'), neg:true, gap: !smLive, live: smLive});
+    rows.push({...stLine('Phí đóng gói (packaging)' + (smLive ? ' — vật liệu đóng gói ShipMonk, ' + smBasis : ''), -a.packaging, nr, 'var', 'cogs'), neg:true, gap: !smLive, live: smLive, hget: x=>-x.packaging});
     smStoreRows('packaging', 'packaging');
     const skuPend = a.amazonPendSkuDays>0;
     const fbaEstTxt = a.amazonFbaEst>0.5 ? ' — trong đó '+money(a.amazonFbaEst)+(skuPend ? ' cho '+a.amazonPendUnits.toLocaleString('en-US')+' units Amazon chưa ghi phí, tính theo cước FBA thật của từng SKU ('+a.amazonFeeEstDays+' ngày; thay bằng số thật khi Amazon ghi)' : ' ước tính cho đơn Amazon chưa ghi phí ('+a.amazonFeeEstDays+' ngày, '+(amazonFeeEstRates ? money(amazonFeeEstRates.fbaPerUnit)+'/unit theo '+amazonFeeEstRates.settledDays+' ngày đã chốt' : '')+')') : '';
-    rows.push({...stLine('Phí fulfillment FBA — Amazon pick & pack + ship (FBAPerUnitFulfillmentFee)'+fbaEstTxt, -a.fulfillment, nr, 'var', 'cogs'), neg:true, live: a.amazonRealDays>0, est: a.amazonFbaEst>0.5});
+    rows.push({...stLine('Phí fulfillment FBA — Amazon pick & pack + ship (FBAPerUnitFulfillmentFee)'+fbaEstTxt, -a.fulfillment, nr, 'var', 'cogs'), neg:true, live: a.amazonRealDays>0, est: a.amazonFbaEst>0.5, hget: x=>-x.fulfillment});
     const smOrdersTxt = a.shipmonkOrders.toLocaleString('en-US')+' đơn' + (a.shipmonkUnshipped>0 ? ', '+a.shipmonkUnshipped.toLocaleString('en-US')+' chưa ship — tính theo ước tính ShipMonk' : '') + ', '+a.shipmonkUnits.toLocaleString('en-US')+' units';
-    rows.push({...stLine(smLive ? 'Phí fulfillment ShipMonk — pick & pack ('+smOrdersTxt+')' + smNote : 'Phí fulfillment ShipMonk / kho thủ công — đơn Shopify + Amazon FBM (chưa kết nối ShipMonk)', -a.shipmonkPickPack, nr, 'var', 'cogs'), neg:true, gap: !smLive, live: smLive});
+    rows.push({...stLine(smLive ? 'Phí fulfillment ShipMonk — pick & pack ('+smOrdersTxt+')' + smNote : 'Phí fulfillment ShipMonk / kho thủ công — đơn Shopify + Amazon FBM (chưa kết nối ShipMonk)', -a.shipmonkPickPack, nr, 'var', 'cogs'), neg:true, gap: !smLive, live: smLive, hget: x=>-x.shipmonkPickPack});
     smStoreRows('pickPack', 'pick & pack');
-    rows.push({...stLine('Phí vận chuyển đến khách (postage) — đơn ngoài FBA' + (smLive ? ' — cước carrier ShipMonk ước tính theo đơn, ' + smBasis : ''), -a.postage, nr, 'var', 'cogs'), neg:true, gap: !smLive, live: smLive});
+    rows.push({...stLine('Phí vận chuyển đến khách (postage) — đơn ngoài FBA' + (smLive ? ' — cước carrier ShipMonk ước tính theo đơn, ' + smBasis : ''), -a.postage, nr, 'var', 'cogs'), neg:true, gap: !smLive, live: smLive, hget: x=>-x.postage});
     smStoreRows('shipping', 'postage');
     if(a.smInvDays>0){
       const invNote = ' — theo hoá đơn ShipMonk' + (a.smInvDays<a.n ? ' ('+(a.n-a.smInvDays)+' ngày chưa có hoá đơn)' : '');
@@ -668,41 +668,41 @@
     if(a.amazonInboundFreightReal !== 0){
       rows.push({...stLine('Memo — cước & thuế nhập hàng vào FBA '+money(a.amazonInboundFreightReal)+' (Amazon Global Logistics, ngày hoá đơn): tính vào giá vốn hàng nhập kho, KHÔNG trừ ở đây', 0, nr, null, 'cogs'), detail:true, live:true});
     }
-    rows.push({...stSub('= Tổng COGS', -a.cogs, nr, 'cogs_sub'), hkey:'cogs'});
-    rows.push({...stSub('= Lợi nhuận gộp (Gross Profit)', a.grossProfit, nr, 'gp'), hkey:'grossProfit'});
+    rows.push({...stSub('= Tổng COGS', -a.cogs, nr, 'cogs_sub'), hget: x=>-x.cogs});
+    rows.push({...stSub('= Lợi nhuận gộp (Gross Profit)', a.grossProfit, nr, 'gp'), hget: x=>x.grossProfit});
 
     // Variable selling fees = what the channel and the payment processor keep out of every order (a fixed % per
     // transaction, like a retailer's margin) - NOT marketing: ads/affiliates are discretionary demand generation (next section).
     rows.push(stSection('Phí bán hàng theo giao dịch — hoa hồng sàn & cổng thanh toán (variable selling fees)','opvar'));
-    rows.push(stGroup('<b>Hoa hồng & phí sàn</b> (marketplace fees) — % cố định trên mỗi đơn, như margin của nhà bán lẻ; không phải marketing', -a.marketplaceFees, nr, 'opvar'));
+    rows.push({...stGroup('<b>Hoa hồng & phí sàn</b> (marketplace fees) — % cố định trên mỗi đơn, như margin của nhà bán lẻ; không phải marketing', -a.marketplaceFees, nr, 'opvar'), hget: x=>-x.marketplaceFees});
     if(a.amazonOrdersReal>0){
       const feeOrdered = a.amazonFeeOrderedDays>0;
       const feeBasisTxt = feeOrdered ? ' — theo ngày đặt hàng' + (a.amazonRefEst>0.5 ? ', trong đó '+money(a.amazonRefEst)+(a.amazonPendSkuDays>0 ? ' cho '+a.amazonPendUnits.toLocaleString('en-US')+' units Amazon chưa ghi phí, tính theo tỷ lệ referral thật của từng SKU ('+a.amazonFeeEstDays+' ngày; thay bằng số thật khi Amazon ghi)' : ' ước tính cho đơn Amazon chưa ghi phí ('+a.amazonFeeEstDays+' ngày, '+(amazonFeeEstRates ? (amazonFeeEstRates.refRate*100).toFixed(1)+'% doanh thu theo '+amazonFeeEstRates.settledDays+' ngày đã chốt' : '')+'; thay bằng số thật khi Amazon ghi)') : ' (Amazon đã ghi phí đủ)') : ' — theo ngày ship (Finances)';
-      rows.push({...stLine('Phí giới thiệu Amazon (Referral fees)'+feeBasisTxt, -a.amazonReferralFeesReal, nr, 'var', 'opvar'), neg:true, live: feeOrdered, est: a.amazonRefEst>0.5});
+      rows.push({...stLine('Phí giới thiệu Amazon (Referral fees)'+feeBasisTxt, -a.amazonReferralFeesReal, nr, 'var', 'opvar'), neg:true, live: feeOrdered, est: a.amazonRefEst>0.5, hget: x=>-x.amazonReferralFeesReal});
       // Script schema 2 splits the per-order "other" fees out of the catch-all; on older
       // JSON they are still inside the catch-all and this line would be a misleading $0.
       const amazonSchema2 = !!(amazonMeta && amazonMeta.schema >= 2);
       if(amazonSchema2 || a.amazonOtherFeesReal !== 0){
-        rows.push({...stLine('Phí Amazon khác (thu hộ sales tax, shipping chargeback/holdback, phí xử lý hoàn tiền, postage nhãn trả hàng)' + (feeOrdered ? ' — theo ngày đặt hàng, gồm điều chỉnh phí khi hoàn tiền' : ''), -a.amazonOtherFeesReal, nr, 'var', 'opvar'), neg: a.amazonOtherFeesReal>=0});
+        rows.push({...stLine('Phí Amazon khác (thu hộ sales tax, shipping chargeback/holdback, phí xử lý hoàn tiền, postage nhãn trả hàng)' + (feeOrdered ? ' — theo ngày đặt hàng, gồm điều chỉnh phí khi hoàn tiền' : ''), -a.amazonOtherFeesReal, nr, 'var', 'opvar'), neg: a.amazonOtherFeesReal>=0, hget: x=>-x.amazonOtherFeesReal});
         if(feeOrdered && Math.abs(a.amazonRefundFeeAdj) >= 0.01) rows.push({...stLine('… trong đó Amazon trả lại phí khi hoàn tiền (theo ngày hoàn): '+money(a.amazonRefundFeeAdj), 0, nr, null, 'opvar'), detail:true, live:true});
       }
       const catchAllLabel = amazonSchema2
         ? 'Điều chỉnh & khoản Amazon trả lại / chưa phân loại (reimbursement hàng mất/hỏng, reserve, liquidation, mục chưa map) — số dương = Amazon trả lại tiền'
         : 'Phí Amazon khác/chưa phân loại (gift wrap, sales tax fee, shipping chargeback...)';
-      rows.push({...stLine(catchAllLabel, -a.amazonOtherUnclassifiedCost, nr, 'var', 'opvar'), neg: a.amazonOtherUnclassifiedCost>=0});
+      rows.push({...stLine(catchAllLabel, -a.amazonOtherUnclassifiedCost, nr, 'var', 'opvar'), neg: a.amazonOtherUnclassifiedCost>=0, hget: x=>-x.amazonOtherUnclassifiedCost});
     } else {
       rows.push({...stLine('Phí sàn Amazon (khoảng này chưa có dữ liệu SP-API)', 0, nr, 'var', 'opvar'), neg:true, gap:true});
     }
-    rows.push({...stLine('Phí sàn Walmart — chưa kết nối', -a.walmartFees, nr, 'var', 'opvar'), neg:true, gap:true});
-    rows.push({...stLine('Phí sàn TikTok Shop — chưa kết nối', -a.tiktokFees, nr, 'var', 'opvar'), neg:true, gap:true});
-    rows.push(stGroup('<b>Phí cổng thanh toán</b> (payment processing) — Shopify Payments, PayPal, theo từng giao dịch', -a.paymentFeesAll, nr, 'opvar'));
+    rows.push({...stLine('Phí sàn Walmart — chưa kết nối', -a.walmartFees, nr, 'var', 'opvar'), neg:true, gap:true, hget: x=>-x.walmartFees});
+    rows.push({...stLine('Phí sàn TikTok Shop — chưa kết nối', -a.tiktokFees, nr, 'var', 'opvar'), neg:true, gap:true, hget: x=>-x.tiktokFees});
+    rows.push({...stGroup('<b>Phí cổng thanh toán</b> (payment processing) — Shopify Payments, PayPal, theo từng giao dịch', -a.paymentFeesAll, nr, 'opvar'), hget: x=>-x.paymentFeesAll});
     if(a.paymentFeeDays>0){
       const GW_LABEL = {shopify_payments:'Shopify Payments (thẻ, Shop Pay)', paypal:'PayPal', shop_cash:'Shop Cash', gift_card:'Gift card', manual:'Thủ công', shopify_installments:'Shop Pay Installments', 'afterpay (new)':'Afterpay (trả góp)', afterpay:'Afterpay (trả góp)'};
       // Gateways that never carry a per-transaction fee: gift cards, Shop Cash rewards and manual/COD orders.
       const GW_NO_FEE = new Set(['gift_card','shop_cash','manual']);
       let lbl = 'Phí cổng thanh toán — Shopify Payments, phí thật theo từng giao dịch ('+a.paymentFeeOrders.toLocaleString('en-US')+' đơn)';
       if(a.paymentFeeDays<a.n) lbl += ' ('+(a.n-a.paymentFeeDays)+' ngày ngoài cửa sổ đồng bộ = $0)';
-      rows.push({...stLine(lbl, -a.paymentFees, nr, 'var', 'opvar'), neg:true, live:true});
+      rows.push({...stLine(lbl, -a.paymentFees, nr, 'var', 'opvar'), neg:true, live:true, hget: x=>-x.paymentFees});
       Object.entries(a.feeTypeMix).sort((x,y)=>y[1]-x[1]).forEach(([k,v])=>{
         const FT = {domestic_card_not_present:'thẻ nội địa 2.25% + $0.30', premium_domestic_card_not_present:'thẻ premium 2.95% + $0.30', amex_card_not_present:'Amex 2.95% + $0.30', international_card_not_present:'thẻ quốc tế 3.25% + $0.42', foreign_exchange_fee:'phí quy đổi ngoại tệ 1.5%', amazon_pay_base:'Amazon Pay', amex_international_card_not_present:'Amex quốc tế', premium_international_card_not_present:'thẻ premium quốc tế', shop_pay_installments:'Shop Pay Installments'};
         rows.push({...stLine((FT[k]||k), -v, nr, null, 'opvar'), detail:true, neg:true, live:true});
@@ -718,15 +718,15 @@
     if(a.paypalDays>0){
       let plbl = 'Phí PayPal — phí thật theo từng giao dịch ('+a.paypalPaymentsCount.toLocaleString('en-US')+' thanh toán, '+money(a.paypalPayments)+' thu qua PayPal)';
       if(a.paypalDays<a.n) plbl += ' ('+(a.n-a.paypalDays)+' ngày ngoài cửa sổ đồng bộ = $0)';
-      rows.push({...stLine(plbl, -a.paypalFees, nr, 'var', 'opvar'), neg:true, live:true});
+      rows.push({...stLine(plbl, -a.paypalFees, nr, 'var', 'opvar'), neg:true, live:true, hget: x=>-x.paypalFees});
       const pc = a.paypalCompare;
       if(pc && pc.shopify>0){
         const gap = pc.paypal - pc.shopify, pct = pc.paypal ? (Math.min(pc.shopify, pc.paypal)/pc.paypal*100) : 0;
         rows.push({...stLine('Đối chiếu '+pc.days+' ngày cả hai cùng live: Shopify ghi '+money(pc.shopify)+' qua PayPal ('+pc.shopifyOrders.toLocaleString('en-US')+' đơn) · PayPal ghi '+money(pc.paypal)+' ('+pc.paypalCount.toLocaleString('en-US')+' thanh toán) · khớp '+pct.toFixed(1)+'%'+(Math.abs(gap)>=1 ? ', chênh '+money(gap)+' = thanh toán của đơn đã huỷ / ngoài Shopify' : ''), 0, nr, null, 'opvar'), detail:true, live:true});
       }
     }
-    rows.push({...stSub('= Tổng phí bán hàng theo giao dịch (hoa hồng sàn + cổng thanh toán)', -a.feesTotal, nr, 'opvar_sub'), hkey:'feesTotal'});
-    rows.push({...stSub('= Lợi nhuận đóng góp trước marketing (CM2 — sau phí giao dịch, trước quảng cáo)', a.cmBeforeMarketing, nr, 'cm2'), hkey:'cm2'});
+    rows.push({...stSub('= Tổng phí bán hàng theo giao dịch (hoa hồng sàn + cổng thanh toán)', -a.feesTotal, nr, 'opvar_sub'), hget: x=>-x.feesTotal});
+    rows.push({...stSub('= Lợi nhuận đóng góp trước marketing (CM2 — sau phí giao dịch, trước quảng cáo)', a.cmBeforeMarketing, nr, 'cm2'), hget: x=>x.cmBeforeMarketing});
 
     rows.push(stSection('Marketing & bán hàng (quảng cáo + hoa hồng affiliate)','mkt'));
     AD_KEYS.forEach(k=>{
@@ -755,17 +755,17 @@
         est = true; estTitle = 'Export Sellerboard mới có đến '+exl.slice(8,10)+'/'+exl.slice(5,7)+' — số của '+a.amazonAdsProvisionalDays+' ngày sau đó ('+money(a.amazonAdsProvisionalAmt)+') là bản tạm kéo từ PPC dashboard trong ngày (thường mới một phần ngày), tự thay khi export có';
         label += ' — '+a.amazonAdsProvisionalDays+' ngày sau export Sellerboard (đến '+exl.slice(8,10)+'/'+exl.slice(5,7)+'): số tạm, tự cập nhật';
       }
-      rows.push({...stLine(label, -a.ads[k], nr, 'var', 'mkt'), neg:true, live, gap, est, estTitle});
+      rows.push({...stLine(label, -a.ads[k], nr, 'var', 'mkt'), neg:true, live, gap, est, estTitle, hget: x=>-x.ads[k]});
     });
     if(a.snowballRealDays>0){
       let label = 'Hoa hồng influencer/affiliate — Snowball · '+a.snowballOrders.toLocaleString('en-US')+' đơn referral';
       if(a.snowballRealDays<a.n) label += ' ('+(a.n-a.snowballRealDays)+' ngày ngoài cửa sổ đồng bộ chưa tính)';
-      rows.push({...stLine(label, -a.snowballCommission, nr, 'var', 'mkt'), neg: a.snowballCommission>=0, live:true});
+      rows.push({...stLine(label, -a.snowballCommission, nr, 'var', 'mkt'), neg: a.snowballCommission>=0, live:true, hget: x=>-x.snowballCommission});
     } else if(shopifyMatched){
-      rows.push({...stLine('Hoa hồng influencer/affiliate — Snowball (khoảng này ngoài cửa sổ đồng bộ Shopify — chưa có số)', 0, nr, 'var', 'mkt'), neg:true, gap:true});
+      rows.push({...stLine('Hoa hồng influencer/affiliate — Snowball (khoảng này ngoài cửa sổ đồng bộ Shopify — chưa có số)', 0, nr, 'var', 'mkt'), neg:true, gap:true, hget: x=>-x.snowballCommission});
     }
-    rows.push({...stSub('= Tổng marketing & bán hàng', -a.marketingTotal, nr, 'mkt_sub'), hkey:'marketingTotal'});
-    rows.push({...stSub('= Lợi nhuận đóng góp (Contribution Margin, sau marketing)', a.contributionProfit, nr, 'cm'), hkey:'cm3'});
+    rows.push({...stSub('= Tổng marketing & bán hàng', -a.marketingTotal, nr, 'mkt_sub'), hget: x=>-x.marketingTotal});
+    rows.push({...stSub('= Lợi nhuận đóng góp (Contribution Margin, sau marketing)', a.contributionProfit, nr, 'cm'), hget: x=>x.contributionProfit});
 
     rows.push(stSection('Chi phí hoạt động (OpEx) — kho bãi & logistics','logi'));
     if(a.amazonOrdersReal>0){
@@ -777,14 +777,14 @@
         if(a.amazonStorageEstDays>0) slParts.push(a.amazonStorageEstDays+' ngày ước tính '+money(a.amazonStorageEstAmt)+' = tồn kho FBA từng SKU × thể tích × đơn giá Amazon');
         if(a.amazonStorageMissingDays>0) slParts.push(a.amazonStorageMissingDays+' ngày thuộc tháng Amazon chưa thu phí = $0');
         if(slParts.length) sl += ' ('+slParts.join(' · ')+')';
-        rows.push({...stLine(sl, -a.amazonStorageAlloc, nr, 'fix', 'logi'), neg:true, live:true, est: a.amazonStorageEstDays>0, estTitle:'Ước tính theo cách tính của Amazon (unit trung bình/ngày × cu ft × đơn giá theo mùa & size tier, học từ report các tháng trước); thay bằng report rồi bằng số Amazon thu thật'});
+        rows.push({...stLine(sl, -a.amazonStorageAlloc, nr, 'fix', 'logi'), neg:true, live:true, est: a.amazonStorageEstDays>0, estTitle:'Ước tính theo cách tính của Amazon (unit trung bình/ngày × cu ft × đơn giá theo mùa & size tier, học từ report các tháng trước); thay bằng report rồi bằng số Amazon thu thật', hget: x=>-x.amazonStorageAlloc});
         if(Math.abs(a.amazonStoragePosted) >= 0.01) rows.push({...stLine('Đối chiếu: Amazon thu phí lưu kho '+money(a.amazonStoragePosted)+' trong khoảng này (ngày 7–15 hàng tháng, cho tháng trước)', 0, nr, null, 'logi'), detail:true, live:true});
       }
-      rows.push({...stLine(feeOrdered ? 'Phí dịch vụ Amazon (subscription, xử lý trả hàng, removal, Vine/coupon — không gồm lưu kho tháng)' : 'Phí dịch vụ Amazon (subscription, lưu kho FBA, xử lý trả hàng, removal, Vine/coupon)', -a.amazonServiceFeesReal, nr, 'fix', 'logi'), neg:true, gap: a.amazonServiceFeesReal===0});
+      rows.push({...stLine(feeOrdered ? 'Phí dịch vụ Amazon (subscription, xử lý trả hàng, removal, Vine/coupon — không gồm lưu kho tháng)' : 'Phí dịch vụ Amazon (subscription, lưu kho FBA, xử lý trả hàng, removal, Vine/coupon)', -a.amazonServiceFeesReal, nr, 'fix', 'logi'), neg:true, gap: a.amazonServiceFeesReal===0, hget: x=>-x.amazonServiceFeesReal});
     }
     if(a.smInvDays>0 || a.smStorageOpenDays>0){
       const invNote = ' — theo hoá đơn ShipMonk' + (a.smInvDays<a.n ? ' ('+(a.n-a.smInvDays)+' ngày chưa có hoá đơn)' : '');
-      const logiLine = (label, v, extra) => rows.push({...stLine(label + (extra===undefined ? invNote : extra), -v, nr, 'fix', 'logi'), neg: v>=0, live:true});
+      const logiLine = (label, v, extra, hget) => rows.push({...stLine(label + (extra===undefined ? invNote : extra), -v, nr, 'fix', 'logi'), neg: v>=0, live:true, hget});
       // storage: exact per-day amounts from the ShipMonk report (= invoice when the period closes); before 06/2025 the invoice is spread evenly
       const evenDays = a.smInvDays - a.smStorageReportDays;
       let stNote = '';
@@ -800,36 +800,36 @@
           stNote += ' ('+parts.join(' · ')+')';
         }
       } else stNote = ' — chia đều theo ngày trong kỳ hoá đơn (report theo ngày chỉ có từ 06/2025)' + (a.smInvDays<a.n ? ' ('+(a.n-a.smInvDays)+' ngày chưa có hoá đơn)' : '');
-      rows.push({...stLine('Lưu kho ShipMonk — pallet & bin' + stNote, -a.smInv.storage, nr, 'fix', 'logi'), neg: a.smInv.storage>=0, live:true, est: a.smStorageCarryDays>0, estTitle:'Ngày report ShipMonk chưa cập nhật (làm mới ~04:00 giờ kho) tạm lấy bằng ngày gần nhất; tự thay khi report có số'});
-      logiLine('Receiving hàng nhập ShipMonk — nhận carton, dỡ container', a.smInv.receiving);
-      logiLine('Xử lý hàng trả ShipMonk — processing + cước hàng trả', a.smInv.returns);
-      if(a.smInvOther !== 0) logiLine('Phí khác ShipMonk — phí tối thiểu, phạt trễ, audit, phụ phí' + (Math.abs(a.smInv.unallocated)>=1 ? ' (gồm '+money(a.smInv.unallocated)+' hoá đơn không tách được mục)' : ''), a.smInvOther);
+      rows.push({...stLine('Lưu kho ShipMonk — pallet & bin' + stNote, -a.smInv.storage, nr, 'fix', 'logi'), neg: a.smInv.storage>=0, live:true, est: a.smStorageCarryDays>0, estTitle:'Ngày report ShipMonk chưa cập nhật (làm mới ~04:00 giờ kho) tạm lấy bằng ngày gần nhất; tự thay khi report có số', hget: x=>-x.smInv.storage});
+      logiLine('Receiving hàng nhập ShipMonk — nhận carton, dỡ container', a.smInv.receiving, undefined, x=>-x.smInv.receiving);
+      logiLine('Xử lý hàng trả ShipMonk — processing + cước hàng trả', a.smInv.returns, undefined, x=>-x.smInv.returns);
+      if(a.smInvOther !== 0) logiLine('Phí khác ShipMonk — phí tối thiểu, phạt trễ, audit, phụ phí' + (Math.abs(a.smInv.unallocated)>=1 ? ' (gồm '+money(a.smInv.unallocated)+' hoá đơn không tách được mục)' : ''), a.smInvOther, undefined, x=>-x.smInvOther);
     } else if(a.shipmonkRealDays>0){
       rows.push({...stLine('Lưu kho / receiving / hàng trả ShipMonk — chưa có hoá đơn cho khoảng này', 0, nr, 'fix', 'logi'), gap:true});
     }
-    rows.push({...stLine('Chi phí tồn kho (holding cost) — chưa nhập', -a.inventoryHolding, nr, 'fix', 'logi'), neg:true, gap:true});
-    rows.push({...stSub('= Tổng kho bãi & logistics', -(a.logisticsTotal + a.inventoryHolding), nr, 'logi_sub'), hkey:'logistics'});
+    rows.push({...stLine('Chi phí tồn kho (holding cost) — chưa nhập', -a.inventoryHolding, nr, 'fix', 'logi'), neg:true, gap:true, hget: x=>-x.inventoryHolding});
+    rows.push({...stSub('= Tổng kho bãi & logistics', -(a.logisticsTotal + a.inventoryHolding), nr, 'logi_sub'), hget: x=>-(x.logisticsTotal + x.inventoryHolding)});
 
     rows.push(stSection('Chi phí hoạt động (OpEx) — G&A (phần mềm, lương, văn phòng…)','fixed'));
     a.gaItems.forEach(it=>{
       const known = it.real || it.manual;
-      rows.push({...stLine(it.label + (known ? '' : ' — chưa nhập'), -it.value, nr, 'fix', 'fixed'), neg:true, live: it.real ? 'real' : (it.manual ? 'manual' : false), gap: known ? false : 'manual'});
+      rows.push({...stLine(it.label + (known ? '' : ' — chưa nhập'), -it.value, nr, 'fix', 'fixed'), neg:true, live: it.real ? 'real' : (it.manual ? 'manual' : false), gap: known ? false : 'manual', hget: x=>-((x.gaItems.find(g=>g.key===it.key)||{}).value||0)});
     });
-    rows.push({...stSub('= Tổng G&A', -a.gaTotal, nr, 'fixed_sub'), hkey:'gaTotal'});
-    rows.push({...stSub('= Tổng chi phí hoạt động (OpEx)', -a.fixedTotal, nr, 'opex_sub'), hkey:'opexTotal'});
+    rows.push({...stSub('= Tổng G&A', -a.gaTotal, nr, 'fixed_sub'), hget: x=>-x.gaTotal});
+    rows.push({...stSub('= Tổng chi phí hoạt động (OpEx)', -a.fixedTotal, nr, 'opex_sub'), hget: x=>-x.fixedTotal});
 
-    rows.push({...stFinal('= Lợi nhuận hoạt động (EBITDA)' + (a.salaryEntered ? ' — trước khấu hao, lãi vay, thuế TNDN' : ' — trước lương chưa nhập, khấu hao, lãi vay, thuế TNDN'), a.netProfit, nr), hkey:'ebitda'});
+    rows.push({...stFinal('= Lợi nhuận hoạt động (EBITDA)' + (a.salaryEntered ? ' — trước khấu hao, lãi vay, thuế TNDN' : ' — trước lương chưa nhập, khấu hao, lãi vay, thuế TNDN'), a.netProfit, nr), hget: x=>x.netProfit});
 
     // Below EBITDA: D&A -> EBIT, interest -> EBT, income tax -> net income (manual monthly entries in data/opex_monthly.json)
     rows.push(stSection('Dưới EBITDA — khấu hao, lãi vay, thuế TNDN (nhập tay theo tháng)','below'));
     const manualNote = ' — nhập tay theo tháng' + a.opexNote;
-    rows.push({...stLine('Khấu hao & phân bổ (D&A) — khuôn, thiết bị, phần mềm mua đứt' + (a.depreciationEntered ? manualNote : ' — chưa nhập'), -a.depreciation, nr, 'fix', 'below'), neg:true, live: a.depreciationEntered ? 'manual' : false, gap: a.depreciationEntered ? false : 'manual'});
-    rows.push({...stSub('= EBIT (lợi nhuận trước lãi vay & thuế)', a.ebit, nr, 'ebit_sub'), hkey:'ebit'});
-    rows.push({...stLine('Lãi vay & chi phí tài chính (± lãi tiền gửi, chênh lệch tỷ giá)' + (a.interestEntered ? manualNote : ' — chưa nhập'), -a.interest, nr, 'fix', 'below'), neg: a.interest>=0, live: a.interestEntered ? 'manual' : false, gap: a.interestEntered ? false : 'manual'});
-    rows.push({...stSub('= Lợi nhuận trước thuế (EBT)', a.ebt, nr, 'ebt_sub'), hkey:'ebt'});
+    rows.push({...stLine('Khấu hao & phân bổ (D&A) — khuôn, thiết bị, phần mềm mua đứt' + (a.depreciationEntered ? manualNote : ' — chưa nhập'), -a.depreciation, nr, 'fix', 'below'), neg:true, live: a.depreciationEntered ? 'manual' : false, gap: a.depreciationEntered ? false : 'manual', hget: x=>-x.depreciation});
+    rows.push({...stSub('= EBIT (lợi nhuận trước lãi vay & thuế)', a.ebit, nr, 'ebit_sub'), hget: x=>x.ebit});
+    rows.push({...stLine('Lãi vay & chi phí tài chính (± lãi tiền gửi, chênh lệch tỷ giá)' + (a.interestEntered ? manualNote : ' — chưa nhập'), -a.interest, nr, 'fix', 'below'), neg: a.interest>=0, live: a.interestEntered ? 'manual' : false, gap: a.interestEntered ? false : 'manual', hget: x=>-x.interest});
+    rows.push({...stSub('= Lợi nhuận trước thuế (EBT)', a.ebt, nr, 'ebt_sub'), hget: x=>x.ebt});
     const taxLabel = 'Thuế thu nhập doanh nghiệp (TNDN)' + (a.taxEntered ? manualNote : a.incomeTaxEstimated ? ` — ước tính ${(a.taxRate*100).toFixed(a.taxRate*100%1 ? 1 : 0)}% × lợi nhuận trước thuế dương (tax_rate trong file; thay bằng số kế toán khi có)` : ' — chưa nhập');
-    rows.push({...stLine(taxLabel, -a.incomeTax, nr, 'fix', 'below'), neg:true, live: a.taxEntered ? 'manual' : false, gap: (a.taxEntered || a.incomeTaxEstimated) ? false : 'manual', est: a.incomeTaxEstimated, estTitle:'Ước tính theo thuế suất trong data/opex_monthly.json — nhập income_tax theo tháng để thay bằng số thật'});
-    rows.push({...stFinal('= Lợi nhuận ròng (Net Profit, sau thuế)' + (a.belowEbitdaEntered ? '' : ' — hiện bằng EBITDA vì các khoản dưới EBITDA còn để $0'), a.netIncome, nr), hkey:'netIncome'});
+    rows.push({...stLine(taxLabel, -a.incomeTax, nr, 'fix', 'below'), neg:true, live: a.taxEntered ? 'manual' : false, gap: (a.taxEntered || a.incomeTaxEstimated) ? false : 'manual', est: a.incomeTaxEstimated, estTitle:'Ước tính theo thuế suất trong data/opex_monthly.json — nhập income_tax theo tháng để thay bằng số thật', hget: x=>-x.incomeTax});
+    rows.push({...stFinal('= Lợi nhuận ròng (Net Profit, sau thuế)' + (a.belowEbitdaEntered ? '' : ' — hiện bằng EBITDA vì các khoản dưới EBITDA còn để $0'), a.netIncome, nr), hget: x=>x.netIncome});
     return rows;
   }
 
@@ -870,38 +870,20 @@
     return out;
   }
 
-  // Value getters for the "big total" rows only (subtotals/finals + the opening Gross Sales line) -
-  // these are the rows buildRows() below tags with an `hkey`, and the only ones that get history
-  // columns in the P&L statement table. Per user request (28/09): keep full per-channel/detail
-  // breakdown for the CURRENT period only; trend columns are for the big picture lines, not every
-  // sub-line. Reusing buildRows()'s own field names keeps this in lockstep with the statement itself.
-  const HIST_GETTERS = {
-    grossSales: a=>a.grossSales,
-    netRevenue: a=>a.netRevenue,
-    cogs: a=>-a.cogs,
-    grossProfit: a=>a.grossProfit,
-    feesTotal: a=>-a.feesTotal,
-    cm2: a=>a.cmBeforeMarketing,
-    marketingTotal: a=>-a.marketingTotal,
-    cm3: a=>a.contributionProfit,
-    logistics: a=>-(a.logisticsTotal + a.inventoryHolding),
-    gaTotal: a=>-a.gaTotal,
-    opexTotal: a=>-a.fixedTotal,
-    ebitda: a=>a.netProfit,
-    ebit: a=>a.ebit,
-    ebt: a=>a.ebt,
-    netIncome: a=>a.netIncome,
-  };
-
+  // History columns (last 6 kỳ liền trước) in the P&L statement table: buildRows() below tags most
+  // rows (subtotals/finals AND per-channel/per-platform detail lines) with an `hget(aggregateOfThatPeriod)`
+  // closure that reads the matching field out of a *different* period's aggregate() result — same
+  // field name/key the row's own current-period value came from, just evaluated against `h.a` instead
+  // of `a`. Only the handful of rows whose very shape can vary between periods (fee-type/gateway mix
+  // breakdowns, ShipMonk per-store rows, reconciliation memo lines, one-off gap fallbacks) are left
+  // without `hget`, which renders as a blank cell in the history columns for that row only.
   const SECTION_DEFAULT_OPEN = {cogs:true, opvar:true, mkt:true, logi:true, fixed:true, below:true};
 
   function renderStatement(){
     const rows = currentRows();
     const a = aggregate(rows);
     const built = buildRows(a);
-    // History columns (last 6 kỳ liền trước) on the "big total" rows only - buildRows() tags those
-    // with `hkey` (see HIST_GETTERS above); every other row (channel/detail breakdown) just shows
-    // blank cells there so the table stays one consistent grid. [] in range mode (no "kỳ trước").
+    // [] in range mode (no "kỳ trước" concept there) - see the `hget` note above SECTION_DEFAULT_OPEN.
     const hist = trailingPeriods(7).slice(0, -1).map(p=>({label:p.label, sub:p.sub, a: aggregate(p.rows)}));
     const totalCols = 1 + (hist.length+1)*2;
     const table = document.getElementById('stmtTable');
@@ -913,9 +895,9 @@
     let curSection = null, sectionOpen = true;
     const histCells = r => {
       if(!hist.length) return '';
-      if(!r.hkey || !HIST_GETTERS[r.hkey]) return '<td class="num hist grpstart"></td><td class="pct hist"></td>' + '<td class="num hist"></td><td class="pct hist"></td>'.repeat(Math.max(0, hist.length-1));
+      if(!r.hget) return '<td class="num hist grpstart"></td><td class="pct hist"></td>' + '<td class="num hist"></td><td class="pct hist"></td>'.repeat(Math.max(0, hist.length-1));
       return hist.map((h,i)=>{
-        const v = HIST_GETTERS[r.hkey](h.a);
+        const v = r.hget(h.a);
         const nrH = h.a.netRevenue;
         const pctV = nrH ? v/nrH*100 : 0;
         return `<td class="num hist${i===0?' grpstart':''}${v<0?' neg':''}">${money(v,{compact:true})}</td><td class="pct hist">${pctV.toFixed(1)}%</td>`;

@@ -311,8 +311,9 @@
   .sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:middle;flex:none;}
   table.simple td.sub{font-family:var(--font-body);font-size:11px;color:var(--ink-muted);}
 
-  /* P&L statement with history columns (6 kỳ liền trước, chỉ ở các dòng tổng lớn — xem HIST_GETTERS
-     trong pnl.js; breakdown từng kênh vẫn chỉ hiện cho kỳ đang xem). "grpstart" vẽ 1 đường phân cách
+  /* P&L statement with history columns (6 kỳ liền trước — mỗi dòng có `hget` trong pnl.js sẽ hiện
+     giá trị lịch sử; chỉ vài dòng phụ có cấu trúc thay đổi theo kỳ (mix phí, breakdown kho ShipMonk,
+     dòng đối chiếu) để trống). "grpstart" vẽ 1 đường phân cách
      trước mỗi kỳ; cột kỳ đang xem ("cur") là 2 cột cuối, giữ nguyên style gốc của .stmt — không tô
      nền riêng, đúng bảng màu ban ngày của site. Cột đầu (nhãn dòng) cố định khi cuộn ngang. */
   table.stmt.multihist td.label,table.stmt.multihist th:first-child{position:sticky;left:0;z-index:1;box-shadow:1px 0 0 var(--gridline);}
@@ -457,7 +458,7 @@
   <div class="card">
     <div class="card-head">
       <h2>Báo cáo lãi lỗ (P&amp;L statement)</h2>
-      <div class="note">% tính trên Doanh thu thuần của từng cột · bấm dòng nhóm để thu gọn/mở rộng · các dòng tổng lớn có thêm 6 kỳ liền trước để so xu hướng, breakdown từng kênh chỉ hiện cho kỳ đang xem</div>
+      <div class="note">% tính trên Doanh thu thuần của từng cột · bấm dòng nhóm để thu gọn/mở rộng · có thêm 6 kỳ liền trước để so xu hướng ở hầu hết các dòng (một vài dòng phụ có cấu trúc đổi theo kỳ — mix loại phí, breakdown kho theo kỳ hoá đơn, dòng đối chiếu — chỉ hiện cho kỳ đang xem)</div>
     </div>
     <div class="stmt-wrap"><table class="stmt" id="stmtTable"></table></div>
     <div class="caption" style="padding-left:2px;margin-top:8px;">Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa kết nối ($0)</span> chưa có nguồn dữ liệu nên để $0 (không ước tính). Vì vậy <b>Lợi nhuận gộp / đóng góp / EBITDA ở trên là lợi nhuận TRƯỚC</b> các khoản còn gắn nhãn đó (giá vốn sản phẩm, phí sàn Walmart/TikTok, phí Afterpay, G&amp;A…) — sẽ tự đúng dần khi từng nguồn được nối vào. Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa nhập ($0)</span> là chi phí không có API (lương, văn phòng, khấu hao, lãi vay, thuế TNDN): điền theo tháng vào file <code>data/opex_monthly.json</code> trên GitHub, bảng tự đọc và rải đều theo ngày; tháng chưa điền lấy theo tháng gần nhất đã điền.</div>
@@ -647,7 +648,7 @@
     return load(k, 1).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=b0f1aeab5e';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=38fa47d88d';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');
