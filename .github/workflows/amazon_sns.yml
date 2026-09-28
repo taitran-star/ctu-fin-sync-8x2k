@@ -11,6 +11,10 @@ on:
         description: "Force a backfill of the last N days (leave empty for a normal incremental run)"
         required: false
         default: ""
+      debug_order_ids:
+        description: "Optional: Amazon order IDs (comma separated) whose raw order items are saved in meta.debug_items"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -43,6 +47,7 @@ jobs:
           BACKFILL_DAYS: ${{ github.event.inputs.backfill_days || '30' }}
           FORCE_BACKFILL: ${{ github.event.inputs.backfill_days != '' && github.event.inputs.backfill_days != null && '1' || '0' }}
           MAX_ITEM_CALLS: "1600"
+          DEBUG_ORDER_IDS: ${{ github.event.inputs.debug_order_ids || '' }}
           AMAZON_SP_API_CLIENT_ID: ${{ secrets.AMAZON_SP_API_CLIENT_ID }}
           AMAZON_SP_API_CLIENT_SECRET: ${{ secrets.AMAZON_SP_API_CLIENT_SECRET }}
           AMAZON_SP_API_REFRESH_TOKEN: ${{ secrets.AMAZON_SP_API_REFRESH_TOKEN }}
