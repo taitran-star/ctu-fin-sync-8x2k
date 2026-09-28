@@ -2,9 +2,11 @@ name: Cattasaurus Amazon Subscribe & Save sync
 
 on:
   schedule:
-    # Every 6 hours (UTC). Each run lists orders updated since the previous run and checks new ones for the
-    # Subscribe & Save flag (a few minutes). The first run backfills 30 days over 2-3 runs (MAX_ITEM_CALLS).
-    - cron: "47 */6 * * *"
+    # Every 4 hours at :17 UTC = 03:17, 07:17, 11:17, 15:17, 19:17, 23:17 Vietnam time.
+    # Each run lists orders updated since the previous run and checks the new ones for the Subscribe & Save flag
+    # (a few minutes). A backfill (first run / schema change) checks ~5,000 orders in one go (~3 hours); runs never
+    # overlap (concurrency group below), a scheduled run that comes while one is still going waits for it.
+    - cron: "17 */4 * * *"
   workflow_dispatch:
     inputs:
       backfill_days:
@@ -26,7 +28,7 @@ concurrency:
 jobs:
   fetch:
     runs-on: ubuntu-latest
-    timeout-minutes: 110
+    timeout-minutes: 240
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -46,7 +48,8 @@ jobs:
           REPORT_TIMEZONE: America/Los_Angeles
           BACKFILL_DAYS: ${{ github.event.inputs.backfill_days || '30' }}
           FORCE_BACKFILL: ${{ github.event.inputs.backfill_days != '' && github.event.inputs.backfill_days != null && '1' || '0' }}
-          MAX_ITEM_CALLS: "1600"
+          MAX_ITEM_CALLS: "6000"
+          TIME_BUDGET_MIN: "215"
           DEBUG_ORDER_IDS: ${{ github.event.inputs.debug_order_ids || '' }}
           AMAZON_SP_API_CLIENT_ID: ${{ secrets.AMAZON_SP_API_CLIENT_ID }}
           AMAZON_SP_API_CLIENT_SECRET: ${{ secrets.AMAZON_SP_API_CLIENT_SECRET }}
