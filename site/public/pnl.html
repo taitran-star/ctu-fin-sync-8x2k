@@ -269,6 +269,35 @@
   .dot{width:7px;height:7px;border-radius:50%;flex:none;}
   .dot.g{background:var(--status-good);} .dot.w{background:var(--status-warning);} .dot.c{background:var(--status-critical);}
 
+  .maintabs{display:flex;gap:4px;background:var(--surface-card-2);border-radius:12px;padding:4px;width:fit-content;}
+  .maintabs button{font:inherit;font-weight:600;font-size:13px;border:0;background:transparent;color:var(--ink-secondary);padding:8px 16px;border-radius:9px;cursor:pointer;}
+  .maintabs button.active{background:var(--surface-card);color:var(--ink-primary);box-shadow:0 1px 3px rgba(0,0,0,.08);}
+  .maintabs button:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+  .view{display:flex;flex-direction:column;gap:18px;}
+
+  .healthgrid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr));}
+  .healthcard{display:flex;flex-direction:column;gap:4px;padding:11px 13px;background:var(--surface-card-2);border-radius:10px;font-size:12px;}
+  .healthcard .hc-top{display:flex;align-items:center;gap:8px;}
+  .healthcard .name{flex:1;color:var(--ink-primary);font-weight:600;}
+  .healthcard .age{color:var(--ink-muted);font-family:var(--font-mono);font-size:11.5px;}
+  .healthcard .stat{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:11px;color:var(--ink-secondary);}
+  .healthcard .stat .bar{flex:1;height:5px;border-radius:3px;background:var(--surface-card-3);overflow:hidden;}
+  .healthcard .stat .bar i{display:block;height:100%;background:var(--status-good);}
+  .healthcard.c .stat .bar i{background:var(--status-critical);}
+  .healthcard.w .stat .bar i{background:var(--status-warning);}
+  .healthcard a.gh{color:var(--ink-muted);text-decoration:none;font-size:11px;}
+  .healthcard a.gh:hover{color:var(--ink-primary);text-decoration:underline;}
+  .healthcard.unconnected{background:color-mix(in srgb, var(--status-critical) 8%, var(--surface-card-2));}
+
+  .gapslist{display:flex;flex-direction:column;gap:8px;}
+  .gapslist .gap-row{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:9px 12px;background:var(--surface-card-2);border-radius:10px;font-size:12.5px;}
+  .gapslist .gap-row .g-name{flex:1;min-width:160px;color:var(--ink-primary);}
+  .gapslist .gap-row .g-note{color:var(--ink-muted);font-size:11.5px;}
+  @media (max-width:520px){
+    .maintabs{width:100%;overflow-x:auto;} .maintabs button{padding:8px 12px;white-space:nowrap;}
+    .gapslist .gap-row .g-note{flex:1 1 100%;padding-left:15px;}
+  }
+
   .tooltip{position:absolute;pointer-events:none;background:var(--surface-card);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12px;box-shadow:0 4px 16px rgba(0,0,0,.15);opacity:0;transition:opacity .1s;z-index:5;min-width:150px;}
   .tooltip .t-title{font-weight:600;margin-bottom:4px;color:var(--ink-primary);}
   .tooltip .t-row{display:flex;justify-content:space-between;gap:10px;font-family:var(--font-mono);color:var(--ink-secondary);}
@@ -362,6 +391,13 @@
     <img class="band-mascot" src="/img/mascot-lying.png" alt="" aria-hidden="true" width="720" height="429">
   </div>
 
+  <div class="maintabs" id="mainTabs" role="tablist">
+    <button type="button" data-view="dashboard" class="active" role="tab" aria-selected="true">Dashboard</button>
+    <button type="button" data-view="data" role="tab" aria-selected="false">Quản lý dữ liệu</button>
+    <button type="button" data-view="reports" role="tab" aria-selected="false">Báo cáo</button>
+  </div>
+
+  <div id="viewDashboard" class="view">
   <div class="modebar">
     <div class="seg" id="modeSeg">
       <button data-mode="day" class="active">Theo ngày</button>
@@ -516,11 +552,31 @@
     </div>
     <div id="snowballBody"></div>
   </div>
+  </div><!-- /viewDashboard -->
 
-  <div class="card">
-    <div class="card-head"><h2>Độ trễ dữ liệu theo nguồn</h2><div class="note">Tuổi của số liệu lúc tải trang (nguồn tự cập nhật mỗi 30 phút — bấm ↻ hoặc tải lại trang để lấy số mới nhất) · Xanh &lt; 4h · Vàng 4–48h · Đỏ quá 48h hoặc chưa kết nối</div></div>
-    <div class="sources" id="sourceGrid"></div>
-  </div>
+  <div id="viewData" class="view" hidden>
+    <div class="card">
+      <div class="card-head"><h2>Sức khoẻ dữ liệu theo nguồn</h2><div class="note">Trạng thái tự động hoá của từng nguồn · chấm màu = tuổi lần đồng bộ gần nhất (Xanh &lt; 4h · Vàng 4–48h · Đỏ quá 48h hoặc chưa kết nối) · "N/14 ngày" = số ngày có số liệu thật trong 14 ngày gần nhất (không tính hôm nay, vì hôm nay chưa chốt)</div></div>
+      <div class="sources healthgrid" id="healthGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Chi phí nhập tay (OpEx theo tháng)</h2><div class="note">Không có API — điền theo tháng vào <code>data/opex_monthly.json</code> trên GitHub; tháng chưa điền lấy theo tháng gần nhất đã điền</div></div>
+      <div style="overflow-x:auto;"><table class="simple" id="opexTable" style="min-width:760px;"></table></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Còn thiếu gì trên P&amp;L</h2><div class="note">Gom lại từ các dòng "Chưa kết nối/Chưa nhập ($0)" đang rải rác trong bảng P&amp;L và ROAS — để biết cần nối gì tiếp theo</div></div>
+      <div id="gapsList" class="gapslist"></div>
+    </div>
+  </div><!-- /viewData -->
+
+  <div id="viewReports" class="view" hidden>
+    <div class="card">
+      <div class="card-head"><h2>Báo cáo</h2><div class="note">Sắp ra mắt</div></div>
+      <div class="caption" style="padding-left:2px;">Bảng chi tiết theo ngày/tháng/kênh (Profit theo ngày, Ad spend theo ngày theo nền tảng, ShipMonk theo đơn, Shopify last-touch, Snowball, Klaviyo…) kèm Export CSV — đang được xây, xem thứ tự dự kiến trong kế hoạch dự án.</div>
+    </div>
+  </div><!-- /viewReports -->
 
   <div class="foot">Mọi nguồn được đồng bộ về cùng một lịch ngày: múi giờ America/Los_Angeles (Shopify, Amazon, Amazon Ads báo cáo sẵn theo giờ này; Meta &amp; Google được quy đổi từ dữ liệu theo giờ) · Cattasaurus Finance</div>
 </div>
@@ -562,7 +618,7 @@
     return load(k, 1).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=ba1a40cd75';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=64f5861f24';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');

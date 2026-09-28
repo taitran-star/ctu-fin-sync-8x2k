@@ -82,7 +82,28 @@ async function serveData(name, request, env, context) {
     if (!REPO_FILES.has(name)) return json({ error: 'static file missing: ' + name }, 404);   // else fall through to the repo copy
   }
   if (!REPO_FILES.has(name)) return json({ error: 'unknown source' }, 404);
+  const fromR2 = await serveFromR2(name, request, env);
+  if (fromR2) return fromR2;
   return serveRepoFile(name, request, env, context, inm);
+}
+
+// Cloudflare R2 copy of data/ (bucket bound as DATA in Pages > Settings > Bindings; filled by the repo workflow
+// publish_data_r2.yml within a minute of every sync commit). Same network as this function: fast and never throttled.
+// No binding / object missing / error -> null, and the GitHub path below takes over.
+async function serveFromR2(name, request, env) {
+  if (!env.DATA || typeof env.DATA.get !== 'function') return null;
+  try {
+    const obj = await env.DATA.get('data/' + name, { onlyIf: request.headers });
+    if (!obj) return null;
+    const etag = obj.httpEtag || '';
+    if (!obj.body) return notModified(etag);   // If-None-Match matched: unchanged
+    const h = jsonHeaders('r2', etag);
+    h['X-Data-Age'] = '0';   // the bucket copy IS the current file (re-uploaded whenever the repo file changes)
+    if (obj.uploaded) h['X-Data-Uploaded-At'] = obj.uploaded.toISOString();
+    return new Response(obj.body, { status: 200, headers: h });
+  } catch (e) {
+    return null;
+  }
 }
 
 // A repo file, from the edge copy when one exists:

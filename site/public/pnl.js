@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build ba1a40cd75).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 64f5861f24).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -453,6 +453,8 @@
     const amazonAdsConsoleSpend = sum(rows.map(r=> r.amazonAdsReal ? r.amazonAdsReal.consoleSpend : 0));   // SP+SB+SD = console "Total cost"
     const amazonAdsImpressions = sum(rows.map(r=> r.amazonAdsReal ? r.amazonAdsReal.impressions : 0));
     const amazonAdsClicks = sum(rows.map(r=> r.amazonAdsReal ? r.amazonAdsReal.clicks : 0));
+    const amazonAdsProvisionalDays = rows.filter(r=> r.amazonAdsReal && r.amazonAdsReal.provisional).length;   // days the Sellerboard export has not reached yet
+    const amazonAdsProvisionalAmt = sum(rows.map(r=> (r.amazonAdsReal && r.amazonAdsReal.provisional) ? r.amazonAdsReal.consoleSpend : 0));
     // Amazon-only ratios (definitions as in the Amazon Ads console / Sellerboard): ACOS = ad spend ÷ ad-attributed sales; TACOS = ALL Amazon ad spend ÷ Amazon gross sales of the period
     const amazonAcos = adsAttr.amazonads>0 ? amazonAdsConsoleSpend/adsAttr.amazonads : 0;
     const amazonTacos = gross.amazon>0 ? ads.amazonads/gross.amazon : 0;
@@ -474,7 +476,7 @@
       merValue, attrRevenueSum,
       amazonOrdersReal, amazonReferralFeesReal, amazonServiceFeesReal, amazonInboundFreightReal, amazonOtherFeesReal, amazonOtherUnclassifiedCost, amazonMarketplaceFeesEst, walmartFees, tiktokFees,
       amazonStorageAlloc, amazonStorageMissingDays, amazonStoragePosted, amazonStorageReportDays, amazonStorageEstDays, amazonStorageEstAmt, amazonRefundFeeAdj, amazonFeeOrderedDays, amazonFeeEstDays, amazonRefEst, amazonFbaEst, amazonPendSkuDays, amazonPendUnits,
-      metaAdsRealDays, metaAdsPurchases, googleAdsRealDays, googleAdsPurchases, amazonAdsRealDays, amazonAdsPurchases, amazonAdsSplit, amazonAdsConsoleSpend, amazonAdsImpressions, amazonAdsClicks, amazonAcos, amazonTacos, amazonRoas,
+      metaAdsRealDays, metaAdsPurchases, googleAdsRealDays, googleAdsPurchases, amazonAdsRealDays, amazonAdsPurchases, amazonAdsSplit, amazonAdsConsoleSpend, amazonAdsImpressions, amazonAdsClicks, amazonAcos, amazonTacos, amazonRoas, amazonAdsProvisionalDays, amazonAdsProvisionalAmt,
       snowballRealDays, snowballOrders, snowballRevenue, snowballCommission};
   }
 
@@ -747,7 +749,13 @@
         else if(a.googleAdsRealDays>0){ live = true; label += ' ('+(a.n-a.googleAdsRealDays)+' ngày ngoài cửa sổ Google Ads API = $0)'; }
         else { label += googleMatched ? ' (khoảng này ngoài cửa sổ Google Ads API)' : ' — chưa kết nối'; gap = true; }
       }
-      rows.push({...stLine(label, -a.ads[k], nr, 'var', 'mkt'), neg:true, live, gap});
+      let est = false, estTitle = '';
+      if(k==='amazonads' && a.amazonAdsProvisionalDays>0){
+        const exl = AMAZON_ADS_LIVE_DATA.meta.automation.fetched_last_day;
+        est = true; estTitle = 'Export Sellerboard mới có đến '+exl.slice(8,10)+'/'+exl.slice(5,7)+' — số của '+a.amazonAdsProvisionalDays+' ngày sau đó ('+money(a.amazonAdsProvisionalAmt)+') là bản tạm kéo từ PPC dashboard trong ngày (thường mới một phần ngày), tự thay khi export có';
+        label += ' — '+a.amazonAdsProvisionalDays+' ngày sau export Sellerboard (đến '+exl.slice(8,10)+'/'+exl.slice(5,7)+'): số tạm, tự cập nhật';
+      }
+      rows.push({...stLine(label, -a.ads[k], nr, 'var', 'mkt'), neg:true, live, gap, est, estTitle});
     });
     if(a.snowballRealDays>0){
       let label = 'Hoa hồng influencer/affiliate — Snowball · '+a.snowballOrders.toLocaleString('en-US')+' đơn referral';
@@ -892,7 +900,7 @@
         {n:'Lưu kho FBA + phí dịch vụ Amazon', s:'lưu kho tháng, removal, returns, subscription', v: a.amazonLogistics},
       ]},
       {label:'Marketing trên sàn', rows:[
-        {n:'Amazon Ads (SP · SB · SD)', v: a.ads.amazonads, gap: !amazonAdsMatched},
+        {n:'Amazon Ads (SP · SB · SD)', s: a.amazonAdsProvisionalDays>0 ? a.amazonAdsProvisionalDays+' ngày sau export Sellerboard: số tạm (một phần ngày), tự cập nhật' : '', v: a.ads.amazonads, gap: !amazonAdsMatched, est: a.amazonAdsProvisionalDays>0},
       ]},
     ]});
     chans.push({key:'shopify', name:'Shopify (D2C)', sub:'cổng thanh toán, ShipMonk, quảng cáo, affiliate, công cụ D2C', net: netOf('shopify'), orders: a.orders.shopify, groups:[
@@ -1165,14 +1173,92 @@
     document.getElementById('taxBody').innerHTML = body;
   }
 
+  // ---------- data health (tab "Quản lý dữ liệu") ----------
+  const GH_ACTIONS_BASE = 'https://github.com/taitran-star/ctu-fin-sync-8x2k/actions/workflows/';
+  // Per-source: the per-day flag object set by that source's apply*Rows() (used to compute freshness below),
+  // and the GitHub Actions workflow file that keeps it in sync (null = manual / no workflow).
+  const HEALTH_FLAG = {amazon:'amazonReal', amazonfin:'amazonReal', meta:'metaReal', google:'googleReal', amazonads:'amazonAdsReal', shopify:'shopifyReal', snowball:'shopifyReal', shipmonk:'shipmonkReal', shipmonk_inv:'shipmonkInv', paypal:'paypalReal', klaviyo:'klaviyoReal'};
+  const HEALTH_WORKFLOW = {amazon:'amazon_pnl.yml', amazonfin:'amazon_pnl.yml', amazon_storage:'amazon_storage.yml', amazonads:'sellerboard_ads.yml', meta:'meta_ads.yml', google:'google_ads.yml', shopify:'shopify_pnl.yml', snowball:'shopify_pnl.yml', shipmonk:'shipmonk.yml', paypal:'paypal.yml', klaviyo:'klaviyo.yml'};
+  // How many of the last WINDOW calendar days (today excluded - most sources aren't expected to have
+  // closed it yet) actually have real data for this source, and the most recent day that does (scanning
+  // back up to SCANMAX days so a longer stale gap still gets reported instead of showing nothing).
+  function sourceFreshness(flagKey){
+    if(!flagKey) return null;
+    const WINDOW = 14, SCANMAX = 60;
+    let lastIso = null, present = 0, total = 0, scanned = 0;
+    for(let i = days.length - 1; i >= 0 && scanned < SCANMAX; i--){
+      if(days[i]._syncing) continue;   // today: not expected to be closed yet for most sources
+      scanned++;
+      const ok = !!days[i][flagKey];
+      if(ok && !lastIso) lastIso = days[i].iso;
+      if(scanned <= WINDOW){ total++; if(ok) present++; }
+    }
+    return {lastIso, present, total, pct: total ? Math.round(present/total*100) : 0};
+  }
+  function fmtLastIso(iso){ return iso ? iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(0,4) : 'chưa có ngày nào'; }
+
   function renderSources(){
-    document.getElementById('sourceGrid').innerHTML = SOURCES.map(s=>`
-      <div class="src"><span class="dot ${s.level}"></span><span class="name">${s.name}</span><span class="age">${s.age}</span></div>
-    `).join('');
+    const el = document.getElementById('healthGrid');
+    if(!el) return;
+    el.innerHTML = SOURCES.map(s=>{
+      const fresh = sourceFreshness(HEALTH_FLAG[s.key]);
+      const wf = HEALTH_WORKFLOW[s.key];
+      const unconnected = s.level==='c' && !fresh;
+      const statLine = fresh
+        ? `<div class="stat"><span>${fresh.present}/${fresh.total} ngày</span><span class="bar"><i style="width:${fresh.pct}%"></i></span><span>gần nhất ${fmtLastIso(fresh.lastIso)}</span></div>`
+        : '';
+      const ghLink = wf ? `<a class="gh" href="${GH_ACTIONS_BASE}${wf}" target="_blank" rel="noopener">↗ GitHub Actions</a>` : '';
+      return `<div class="healthcard ${s.level}${unconnected?' unconnected':''}">
+        <div class="hc-top"><span class="dot ${s.level}"></span><span class="name">${s.name}</span></div>
+        <div class="age">${s.age}</div>
+        ${statLine}
+        ${ghLink}
+      </div>`;
+    }).join('');
   }
   function setSource(key, level, age){
     const s = SOURCES.find(x=>x.key===key);
     if(s){ s.level=level; s.age=age; }
+  }
+
+  // ---------- OpEx nhập tay (tab "Quản lý dữ liệu") ----------
+  function renderOpexTable(){
+    const el = document.getElementById('opexTable');
+    if(!el) return;
+    if(!opexMeta || !OPEX_MONTHLY_LIVE_DATA || !OPEX_MONTHLY_LIVE_DATA.months){
+      el.innerHTML = '<tbody><tr><td style="padding:10px 2px;color:var(--ink-muted);">Chưa có file <code>data/opex_monthly.json</code> hoặc chưa điền tháng nào.</td></tr></tbody>';
+      return;
+    }
+    const months = OPEX_MONTHLY_LIVE_DATA.months;
+    const cols = OPEX_GA_KEYS.concat(OPEX_BELOW_KEYS);
+    const LABEL = {depreciation:'Khấu hao & phân bổ (D&A)', interest:'Lãi vay & chi phí tài chính', income_tax:'Thuế TNDN'};
+    GA_ITEMS.forEach(it=>{ if(OPEX_GA_KEYS.includes(it.key)) LABEL[it.key] = it.label; });
+    let html = `<thead><tr><th>Tháng</th>${cols.map(k=>`<th class="num">${LABEL[k]||k}</th>`).join('')}</tr></thead><tbody>`;
+    opexMeta.entered.slice().reverse().forEach(m=>{
+      const row = months[m] || {};
+      html += `<tr><td class="name">Tháng ${parseInt(m.slice(5,7),10)}/${m.slice(0,4)}</td>${cols.map(k=>{
+        const v = row[k];
+        return `<td class="num">${(v===undefined||v===null||v==='') ? '<span style="color:var(--ink-muted);">—</span>' : money(parseFloat(v)||0)}</td>`;
+      }).join('')}</tr>`;
+    });
+    html += '</tbody>';
+    el.innerHTML = html;
+  }
+
+  // ---------- "còn thiếu gì" gaps list (tab "Quản lý dữ liệu") ----------
+  const STATIC_GAPS = [
+    {name:'Giá vốn hàng bán (COGS) theo SKU', note:'Cần bảng landed cost theo SKU — ảnh hưởng lớn nhất còn lại tới lợi nhuận gộp'},
+    {name:'Phí Afterpay', note:'Chưa có nguồn — hiện $0 trong phí cổng thanh toán'},
+    {name:'G&A chi tiết (ngoài Snowball $350/tháng + Klaviyo hoá đơn + OpEx nhập tay)', note:'Nhập tay khi có, hoặc nối QuickBooks/Xero'},
+  ];
+  function renderGaps(){
+    const el = document.getElementById('gapsList');
+    if(!el) return;
+    const dynamic = SOURCES.filter(s=>s.level==='c').map(s=>({name:s.name, note:s.age}));
+    const all = dynamic.concat(STATIC_GAPS);
+    el.innerHTML = all.length
+      ? all.map(g=>`<div class="gap-row"><span class="dot c"></span><span class="g-name">${g.name}</span><span class="g-note">${g.note}</span></div>`).join('')
+      : '<div class="caption" style="padding-left:0;">Không còn khoảng trống nào đã biết</div>';
   }
 
   // ---------- Amazon data-quality gaps (service fees / ad spend not yet captured) ----------
@@ -1232,8 +1318,14 @@
   let lastVw = window.innerWidth;
   window.addEventListener('resize', ()=>{ clearTimeout(window.__rsz); window.__rsz = setTimeout(()=>{ if(window.innerWidth!==lastVw){ lastVw = window.innerWidth; renderTrend(); renderBreakeven(); } }, 150); });
   function renderAll(){
-    renderSubCtl(); renderKpis(); renderTrend(); renderStatement(); renderChannelCosts(); renderBreakeven(); renderRoas(); renderAttribution(); renderKlaviyo(); renderTax(); renderSources(); renderAmazonGaps(); renderShipmonk(); renderShopifyRecon(); renderSnowball(); renderMetaCampaigns(); renderGoogleCampaigns();
+    renderSubCtl(); renderKpis(); renderTrend(); renderStatement(); renderChannelCosts(); renderBreakeven(); renderRoas(); renderAttribution(); renderKlaviyo(); renderTax(); renderSources(); renderOpexTable(); renderGaps(); renderAmazonGaps(); renderShipmonk(); renderShopifyRecon(); renderSnowball(); renderMetaCampaigns(); renderGoogleCampaigns();
   }
+  document.getElementById('mainTabs').addEventListener('click', (e)=>{
+    const btn = e.target.closest('button'); if(!btn) return;
+    const view = btn.dataset.view;
+    [...document.querySelectorAll('#mainTabs button')].forEach(b=>{ const on = b===btn; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+    ['dashboard','data','reports'].forEach(v=>{ const el = document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1)); if(el) el.hidden = (v!==view); });
+  });
   document.getElementById('modeSeg').addEventListener('click', (e)=>{
     const btn = e.target.closest('button'); if(!btn) return;
     mode = btn.dataset.mode;
@@ -1268,7 +1360,8 @@
     AD_UNCONNECTED.amazonads = false;
     const cov = AMAZON_ADS_LIVE_DATA.coverage || {};
     const via = AMAZON_ADS_LIVE_DATA.source==='sellerboard' ? 'qua Sellerboard' : 'Amazon Ads API';
-    setSource('amazonads', ageLevel(AMAZON_ADS_LIVE_DATA.generated_at), fmtAmazonAge(AMAZON_ADS_LIVE_DATA.generated_at)+' · '+via+(cov.first_day ? ' · từ '+cov.first_day.slice(8,10)+'/'+cov.first_day.slice(5,7)+'/'+cov.first_day.slice(0,4) : ''));
+    const auto = AMAZON_ADS_LIVE_DATA.meta && AMAZON_ADS_LIVE_DATA.meta.automation;
+    setSource('amazonads', ageLevel(AMAZON_ADS_LIVE_DATA.generated_at), fmtAmazonAge(AMAZON_ADS_LIVE_DATA.generated_at)+' · '+via+(cov.first_day ? ' · từ '+cov.first_day.slice(8,10)+'/'+cov.first_day.slice(5,7)+'/'+cov.first_day.slice(0,4) : '')+(auto && auto.fetched_last_day ? ' · export chốt đến '+auto.fetched_last_day.slice(8,10)+'/'+auto.fetched_last_day.slice(5,7) : ''));
     const cap = document.getElementById('adsCaptionAmazon');
     if(cap) cap.outerHTML = `<span id="adsCaptionAmazon">Amazon Ads: "Chi" và "DT quy về" trên thẻ = Total cost và Sales trong Amazon Ads console (SP+SB+SD, doanh thu Amazon gán cho quảng cáo trong cửa sổ 7/14 ngày, được cập nhật thêm vài ngày sau khi click) — ROAS = Sales ÷ Total cost, ACOS = Total cost ÷ Sales, TACOS = chi quảng cáo Amazon ÷ doanh thu gộp Amazon của kỳ. Khoản "Sponsored Television" Sellerboard ghi từ 31/08 không có trong Ads console nên không tính. </span>`;
   }
@@ -2152,6 +2245,9 @@
   function applyAmazonAdsRows(data){
     if(!data || !data.daily) return false;
     let matched = 0;
+    // Sellerboard's daily export (workflow sellerboard_ads.yml) is final for every day up to meta.automation.fetched_last_day;
+    // later days only carry the number Claude pulled from the PPC dashboard during the day -> provisional until the export catches up.
+    const exportLast = (data.meta && data.meta.automation && data.meta.automation.fetched_last_day) || null;
     Object.keys(data.daily).forEach(iso=>{
       const idx = days.findIndex(d=>d.iso===iso);
       if(idx<0) return;
@@ -2168,6 +2264,7 @@
         clicks: Math.round(parseFloat(r.clicks)||0), purchases: parseFloat(r.purchases)||0,   // purchases = ad-attributed orders (schema 2) or units (schema 1)
         impressions: Math.round(parseFloat(r.impressions)||0),
         consoleSpend: (r.ads_spend_console!=null) ? (parseFloat(r.ads_spend_console)||0) : ((parseFloat(r.sp)||0)+(parseFloat(r.sb)||0)+(parseFloat(r.sd)||0)),   // what the Amazon Ads console calls "Total cost" (SP+SB+SD, no Sponsored TV)
+        provisional: !!(exportLast && iso > exportLast && r.spend_src !== 'sellerboard_automation'),
       };
       matched++;
     });

@@ -140,7 +140,7 @@
     <div id="pane-forecast" hidden><div id="forecast"></div></div>
   </section>
 
-  <div class="foot">Nguồn: SP-API Orders — dòng hàng có <b>AmazonPrograms = SUBSCRIBE_AND_SAVE</b> (giống bộ lọc Subscribe &amp; Save trên Seller Central, chỉ FBA, bỏ đơn MCF) và SP-API Replenishment (chỉ số tổng hợp, tuần theo lịch Amazon). Doanh thu = giá sản phẩm trước thuế, trước khuyến mãi; đơn Pending chưa có giá; đơn huỷ không tính. Workflow <code>amazon_sns.yml</code> chạy 6 giờ/lần.</div>
+  <div class="foot">Nguồn: SP-API Orders — dòng hàng có <b>AmazonPrograms = SUBSCRIBE_AND_SAVE</b> (giống bộ lọc Subscribe &amp; Save trên Seller Central, chỉ FBA, bỏ đơn MCF) và SP-API Replenishment (chỉ số tổng hợp, tuần theo lịch Amazon). Doanh thu = giá sản phẩm trước thuế, trước khuyến mãi; đơn Pending chưa có giá; đơn huỷ không tính. Workflow <code>amazon_sns.yml</code> chạy 4 giờ/lần.</div>
 </div>
 
 <div id="siteLoad" role="status" aria-live="polite"><img class="wm" src="/img/logo-h-pine.png" alt="Cattasaurus" width="1000" height="327"><img class="mascot" id="siteLoadImg" src="/img/mascot-bag.png" alt="" aria-hidden="true" width="515" height="720"><div class="fun" aria-hidden="true">meow… đang đếm khách quen</div><div id="siteLoadMsg">Đang tải số liệu…</div></div>
@@ -183,7 +183,7 @@
 
   function renderWarn(){
     var m = (D && D.meta) || {}, msgs = [];
-    if(m.queue && m.queue.length && m.complete === false) msgs.push('Đang nạp dữ liệu lần đầu: còn ' + m.queue.length + ' đơn chưa kiểm tra — số các tuần cũ sẽ đủ sau vài lần chạy (6 giờ/lần).');
+    if(m.queue && m.queue.length && m.complete === false) msgs.push('Đang nạp dữ liệu lần đầu: còn ' + m.queue.length + ' đơn chưa kiểm tra — số các tuần cũ sẽ đủ sau lần chạy kế tiếp (4 giờ/lần).');
     if(m.replenishment && m.replenishment.ok === false) msgs.push('Chưa lấy được chỉ số Replenishment API: ' + esc(m.replenishment.error || '') );
     $('warnBox').innerHTML = msgs.join('<br>'); $('warnBox').hidden = !msgs.length;
   }
