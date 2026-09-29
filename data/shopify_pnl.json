@@ -76,12 +76,12 @@
         "sales": 134979.14
       },
       "meta_organic": {
-        "orders": 230,
-        "sales": 27958.27
+        "orders": 231,
+        "sales": 28067.27
       },
       "meta_paid": {
-        "orders": 3806,
-        "sales": 457121.17
+        "orders": 3807,
+        "sales": 457220.17
       },
       "meta_shop": {
         "orders": 3,
@@ -191742,8 +191742,8 @@
             "sales": 454.0
           },
           "meta_paid": {
-            "orders": 65,
-            "sales": 8103.99
+            "orders": 67,
+            "sales": 8311.99
           },
           "organic_search": {
             "orders": 9,
@@ -191820,12 +191820,12 @@
             "sales": 248.0
           },
           "meta_paid>meta_organic": {
-            "orders": 2,
-            "sales": 279.0
+            "orders": 3,
+            "sales": 388.0
           },
           "meta_paid>meta_paid": {
-            "orders": 58,
-            "sales": 7229.99
+            "orders": 59,
+            "sales": 7328.99
           },
           "meta_paid>organic_search": {
             "orders": 2,
@@ -191906,18 +191906,18 @@
             "sales": 1482.69
           },
           "meta_organic": {
-            "new": 5,
-            "orders": 5,
-            "paid_first": 2,
+            "new": 6,
+            "orders": 6,
+            "paid_first": 3,
             "returning": 0,
-            "sales": 624.0
+            "sales": 733.0
           },
           "meta_paid": {
-            "new": 59,
-            "orders": 62,
-            "paid_first": 58,
+            "new": 60,
+            "orders": 63,
+            "paid_first": 59,
             "returning": 3,
-            "sales": 7692.99
+            "sales": 7791.99
           },
           "organic_search": {
             "new": 8,
@@ -191971,7 +191971,7 @@
         },
         "no_journey": 0,
         "orders": 125,
-        "pending": 2
+        "pending": 0
       },
       "discounts": 11377.23,
       "fees_missing_orders": 12,
@@ -192024,9 +192024,9 @@
       "total_sales": 15438.91
     }
   },
-  "generated_at": "2026-09-29T05:48:35Z",
+  "generated_at": "2026-09-29T06:27:34Z",
   "meta": {
-    "api_cost_actual": 35937,
+    "api_cost_actual": 35940,
     "api_cost_requested_max": 354,
     "api_requests": 402,
     "auth_mode": "client_credentials",
@@ -192039,8 +192039,8 @@
       "journeys_missing": 0,
       "journeys_moments_truncated": 2,
       "journeys_no_session": 1086,
-      "journeys_pending": 2,
-      "journeys_ready": 8406,
+      "journeys_pending": 0,
+      "journeys_ready": 8408,
       "journeys_resolved_by_moments": 563,
       "journeys_unresolved": 0,
       "late_orders_scanned": 3186,
@@ -192167,7 +192167,6 @@
     "script_version": "1.9",
     "throttled_waits": 0,
     "warnings": [
-      "2 orders not attributed by Shopify yet (customerJourneySummary.ready=false, normal for the newest orders) - counted as pending, refetched next run",
       "41 orders carry the __snowball attribute but no 'Referral - SS - *' tag (Snowball rejected/untracked them) - not counted as referrals",
       "no rate known for Snowball program 'asher_fitfeline_partner' - using SNOWBALL_DEFAULT_RATE=0",
       "rate for Snowball program '20 % Commision No Discou' inferred from its name (20%) - set SNOWBALL_PROGRAM_RATES to pin it",
