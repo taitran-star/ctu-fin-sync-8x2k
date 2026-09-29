@@ -313,9 +313,11 @@
 
   /* P&L statement with history columns (6 kỳ liền trước — mỗi dòng có `hget` trong pnl.js sẽ hiện
      giá trị lịch sử; chỉ vài dòng phụ có cấu trúc thay đổi theo kỳ (mix phí, breakdown kho ShipMonk,
-     dòng đối chiếu) để trống). "grpstart" vẽ 1 đường phân cách
-     trước mỗi kỳ; cột kỳ đang xem ("cur") là 2 cột cuối, giữ nguyên style gốc của .stmt — không tô
-     nền riêng, đúng bảng màu ban ngày của site. Cột đầu (nhãn dòng) cố định khi cuộn ngang. */
+     dòng đối chiếu) để trống). "grpstart" vẽ 1 đường phân cách trước mỗi kỳ; cột kỳ đang xem ("cur")
+     là 2 cột cuối — header của cột này giờ có ngày/nhãn kỳ + "— đang xem" và nền tô nhẹ theo màu
+     accent, để không bị lẫn với các cột lịch sử bên trái (user report 28/09: chọn 1 kỳ nhưng tưởng
+     nhầm số của kỳ trước đó vì cột "kỳ đang xem" trước đây chỉ ghi chung chung "Số tiền", không có
+     ngày). Cột đầu (nhãn dòng) cố định khi cuộn ngang. */
   table.stmt.multihist td.label,table.stmt.multihist th:first-child{position:sticky;left:0;z-index:1;box-shadow:1px 0 0 var(--gridline);}
   table.stmt th.hist,table.stmt td.hist{color:var(--ink-muted);}
   table.stmt th.num.hist{font-family:var(--font-mono);font-weight:600;font-size:10.5px;text-transform:none;letter-spacing:0;white-space:nowrap;}
@@ -324,6 +326,10 @@
   table.stmt th .sub{display:block;font-weight:500;font-size:9.5px;text-transform:none;letter-spacing:0;margin-top:2px;}
   table.stmt th.grpstart,table.stmt td.grpstart{border-left:1px solid var(--gridline);}
   table.stmt td.num.hist.neg{color:var(--status-critical);}
+  table.stmt.multihist th.cur{background:color-mix(in srgb, var(--accent) 14%, transparent);white-space:nowrap;font-family:var(--font-mono);font-weight:700;font-size:10.5px;text-transform:none;letter-spacing:0;}
+  table.stmt.multihist th.cur.grpstart{border-left:2px solid var(--accent);}
+  table.stmt.multihist th.cur .cur-tag{color:var(--accent);font-weight:700;}
+  table.stmt.multihist td.cur.grpstart{border-left:2px solid var(--accent);}
   .subhead{font-size:13px;font-weight:600;color:var(--brand-forest, var(--ink-primary));margin:12px 0 6px;font-family:var(--font-head);font-size:12px;text-transform:uppercase;letter-spacing:.06em;}
 
   /* phones: everything that is not a table must fit the viewport (tables scroll inside their own wrapper) */
@@ -648,7 +654,7 @@
     return load(k, 1).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=38fa47d88d';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=e15f0734d2';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');

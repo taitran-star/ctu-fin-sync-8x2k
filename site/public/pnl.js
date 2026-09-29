@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 38fa47d88d).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build e15f0734d2).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -884,14 +884,22 @@
     const a = aggregate(rows);
     const built = buildRows(a);
     // [] in range mode (no "kỳ trước" concept there) - see the `hget` note above SECTION_DEFAULT_OPEN.
-    const hist = trailingPeriods(7).slice(0, -1).map(p=>({label:p.label, sub:p.sub, a: aggregate(p.rows)}));
+    // Full array so the CURRENT period (last entry, current:true) also gets its own date/label in the
+    // header - a bare "Số tiền" column with no date next to 6 clearly-dated history columns reads as
+    // "just a total", not "the period you picked", and gets missed for the history beside it (28/09 bug report).
+    const trailFull = trailingPeriods(7);
+    const hist = trailFull.slice(0, -1).map(p=>({label:p.label, sub:p.sub, a: aggregate(p.rows)}));
+    const curP = trailFull.length ? trailFull[trailFull.length-1] : null;
     const totalCols = 1 + (hist.length+1)*2;
     const table = document.getElementById('stmtTable');
     table.classList.toggle('multihist', hist.length>0);
     table.style.minWidth = hist.length>0 ? (480 + hist.length*120)+'px' : '';
     const wrap = table.closest('.stmt-wrap'); if(wrap) wrap.classList.toggle('has-hist', hist.length>0);
     const histHeadCells = hist.map(h=>`<th class="num hist grpstart">${h.label}${h.sub?`<br><span class="sub">${h.sub}</span>`:''}</th><th class="pct hist">%</th>`).join('');
-    let html = `<thead><tr><th>Khoản mục</th>${histHeadCells}<th class="num cur grpstart">Số tiền</th><th class="pct cur">% DT thuần</th></tr></thead><tbody>`;
+    const curHead = curP
+      ? `<th class="num cur grpstart">${curP.label}${curP.sub?`<br><span class="sub">${curP.sub}</span>`:''}<br><span class="sub cur-tag">— đang xem</span></th><th class="pct cur">%</th>`
+      : `<th class="num cur grpstart">Số tiền</th><th class="pct cur">% DT thuần</th>`;
+    let html = `<thead><tr><th>Khoản mục</th>${histHeadCells}${curHead}</tr></thead><tbody>`;
     let curSection = null, sectionOpen = true;
     const histCells = r => {
       if(!hist.length) return '';
