@@ -16597,9 +16597,14 @@
     "2026-09-29": {
       "by_event_code": {
         "T0006": {
-          "amount": 613.74,
-          "count": 5,
-          "fee": -23.85
+          "amount": 1037.37,
+          "count": 8,
+          "fee": -42.98
+        },
+        "T0200": {
+          "amount": -55.55,
+          "count": 2,
+          "fee": 0.0
         },
         "T0400": {
           "amount": -1812.3,
@@ -16607,41 +16612,41 @@
           "fee": 0.0
         }
       },
-      "fees": 23.85,
+      "fees": 42.98,
       "fees_credited": 0,
-      "other": 0,
-      "payments": 613.74,
-      "payments_count": 5,
+      "other": -55.55,
+      "payments": 1037.37,
+      "payments_count": 8,
       "refunds": 0,
       "refunds_count": 0,
-      "transactions": 6,
+      "transactions": 11,
       "withdrawals": 1812.3
     }
   },
-  "generated_at": "2026-09-30T02:43:17Z",
+  "generated_at": "2026-09-30T03:14:47Z",
   "meta": {
     "api_requests": 4,
     "api_retries": 0,
     "counts": {
-      "transactions_counted": 947,
+      "transactions_counted": 952,
       "transactions_duplicate": 0,
       "transactions_not_success": 20,
       "transactions_outside_window": 29,
-      "transactions_seen": 996,
+      "transactions_seen": 1001,
       "transactions_without_date": 0
     },
     "currencies_seen": {
-      "CAD": 82,
-      "USD": 1720
+      "CAD": 85,
+      "USD": 1725
     },
     "event_codes_seen": {
       "T0000": 2,
       "T0001": 1,
       "T0003": 215,
-      "T0006": 623,
+      "T0006": 626,
       "T0011": 1,
       "T0114": 5,
-      "T0200": 58,
+      "T0200": 60,
       "T0300": 1,
       "T0400": 20,
       "T0403": 2,
@@ -16679,43 +16684,43 @@
     "script_version": "1.0",
     "slices": 2,
     "warnings": [
-      "transactions in currencies other than USD were summed as-is: {'USD': 1720, 'CAD': 82}"
+      "transactions in currencies other than USD were summed as-is: {'USD': 1725, 'CAD': 85}"
     ]
   },
   "source": "paypal_transaction_search",
   "timezone": "America/Los_Angeles",
   "totals": {
     "last_30d": {
-      "fees": 2490.74,
+      "fees": 2509.87,
       "fees_credited": 127.3,
-      "other": -2468.74,
-      "payments": 66444.66,
-      "payments_count": 493,
+      "other": -2524.29,
+      "payments": 66868.29,
+      "payments_count": 496,
       "refunds": 3525.14,
       "refunds_count": 37,
-      "transactions": 601,
+      "transactions": 606,
       "withdrawals": 82799.33
     },
     "mtd": {
-      "fees": 2298.0,
+      "fees": 2317.13,
       "fees_credited": 127.3,
-      "other": -2248.74,
-      "payments": 61736.17,
-      "payments_count": 458,
+      "other": -2304.29,
+      "payments": 62159.8,
+      "payments_count": 461,
       "refunds": 3525.14,
       "refunds_count": 37,
-      "transactions": 562,
+      "transactions": 567,
       "withdrawals": 82799.33
     },
     "today": {
-      "fees": 23.85,
+      "fees": 42.98,
       "fees_credited": 0,
-      "other": 0,
-      "payments": 613.74,
-      "payments_count": 5,
+      "other": -55.55,
+      "payments": 1037.37,
+      "payments_count": 8,
       "refunds": 0,
       "refunds_count": 0,
-      "transactions": 6,
+      "transactions": 11,
       "withdrawals": 1812.3
     }
   },
