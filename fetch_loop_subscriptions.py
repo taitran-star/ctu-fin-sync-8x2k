@@ -46,7 +46,7 @@ OUTPUT_PATH = os.environ.get("OUTPUT_PATH", "data/loop_subscriptions.json")
 TZ_NAME = os.environ.get("REPORT_TIMEZONE", "America/Los_Angeles")
 TZ = ZoneInfo(TZ_NAME)
 LOOKBACK_DAYS = int(os.environ.get("LOOKBACK_DAYS", "63"))
-SCRIPT_VERSION = "loop-1.0"
+SCRIPT_VERSION = "loop-1.1"
 
 INTERVAL_DAYS = {"DAY": 1, "WEEK": 7, "MONTH": 30.4368, "YEAR": 365.2422}
 
@@ -136,18 +136,28 @@ def main():
     )
     log(f"New subscriptions in window: {len(new_subs)}")
 
-    customer_cache = {}  # customer_id -> allSubscriptionsCount (None if lookup failed)
+    customer_cache = {}  # email -> allSubscriptionsCount (None if lookup failed)
+    customer_lookup_failures = 0
 
-    def customer_first_time(cust_id):
-        if cust_id in customer_cache:
-            return customer_cache[cust_id]
-        resp = api_get(f"/customer/{cust_id}")
+    def customer_first_time(email):
+        nonlocal customer_lookup_failures
+        if not email:
+            return None
+        if email in customer_cache:
+            return customer_cache[email]
+        # Use the confirmed-working LIST endpoint with the email filter, not a guessed
+        # single-customer detail path (GET /order taught us Loop's Admin API doesn't always
+        # have the detail endpoint you'd expect by analogy - verify, don't assume).
+        resp = api_get("/customer", {"email": email, "pageSize": 1})
         time.sleep(0.4)
         count = None
-        if resp:
-            body = resp.get("data") if isinstance(resp.get("data"), dict) else resp
-            count = (body or {}).get("allSubscriptionsCount")
-        customer_cache[cust_id] = count
+        items = (resp or {}).get("data") if isinstance((resp or {}).get("data"), list) else None
+        if items:
+            count = items[0].get("allSubscriptionsCount")
+        if count is None:
+            customer_lookup_failures += 1
+            log(f"customer lookup failed/empty for {email!r} (resp keys: {list((resp or {}).keys())})")
+        customer_cache[email] = count
         return count
 
     daily = {}
@@ -168,11 +178,10 @@ def main():
         b["new_subscriptions"] += 1
 
         cust = sub.get("customer") or {}
-        cust_id = cust.get("id")
-        if cust_id is not None:
-            cnt = customer_first_time(cust_id)
-            if cnt == 1:
-                b["new_subscribers"] += 1
+        cust_email = cust.get("email")
+        cnt = customer_first_time(cust_email)
+        if cnt == 1:
+            b["new_subscribers"] += 1
 
         sub_id = sub.get("id")
         if sub_id is not None:
@@ -261,6 +270,7 @@ def main():
             "window_days": LOOKBACK_DAYS,
             "new_subscriptions_in_window": len(new_subs),
             "customers_looked_up": len(customer_cache),
+            "customer_lookup_failures": customer_lookup_failures,
         },
     }
     os.makedirs(os.path.dirname(OUTPUT_PATH) or ".", exist_ok=True)
