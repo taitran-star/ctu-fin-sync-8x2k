@@ -76,12 +76,12 @@
         "sales": 129873.77
       },
       "meta_organic": {
-        "orders": 228,
-        "sales": 27734.3
+        "orders": 229,
+        "sales": 27843.3
       },
       "meta_paid": {
-        "orders": 3722,
-        "sales": 448907.19
+        "orders": 3723,
+        "sales": 449006.19
       },
       "meta_shop": {
         "orders": 3,
@@ -192351,12 +192351,12 @@
             "sales": 2003.99
           },
           "meta_organic": {
-            "orders": 1,
-            "sales": 89.0
+            "orders": 2,
+            "sales": 198.0
           },
           "meta_paid": {
-            "orders": 56,
-            "sales": 7098.32
+            "orders": 57,
+            "sales": 7197.32
           },
           "organic_search": {
             "orders": 10,
@@ -192405,8 +192405,8 @@
             "sales": 2003.99
           },
           "meta_organic>meta_organic": {
-            "orders": 1,
-            "sales": 89.0
+            "orders": 2,
+            "sales": 198.0
           },
           "meta_paid>email": {
             "orders": 2,
@@ -192421,8 +192421,8 @@
             "sales": 247.0
           },
           "meta_paid>meta_paid": {
-            "orders": 49,
-            "sales": 6269.05
+            "orders": 50,
+            "sales": 6368.05
           },
           "meta_paid>organic_search": {
             "orders": 1,
@@ -192483,18 +192483,18 @@
             "sales": 2379.99
           },
           "meta_organic": {
-            "new": 1,
-            "orders": 1,
+            "new": 2,
+            "orders": 2,
             "paid_first": 0,
             "returning": 0,
-            "sales": 89.0
+            "sales": 198.0
           },
           "meta_paid": {
-            "new": 49,
-            "orders": 51,
-            "paid_first": 49,
+            "new": 50,
+            "orders": 52,
+            "paid_first": 50,
             "returning": 2,
-            "sales": 6487.05
+            "sales": 6586.05
           },
           "organic_search": {
             "new": 11,
@@ -192534,7 +192534,7 @@
         },
         "no_journey": 0,
         "orders": 115,
-        "pending": 2
+        "pending": 0
       },
       "discounts": 12314.7,
       "fees_missing_orders": 20,
@@ -192583,11 +192583,11 @@
       "total_sales": 14267.02
     }
   },
-  "generated_at": "2026-10-01T02:24:12Z",
+  "generated_at": "2026-10-01T02:49:41Z",
   "meta": {
-    "api_cost_actual": 35085,
+    "api_cost_actual": 35099,
     "api_cost_requested_max": 354,
-    "api_requests": 392,
+    "api_requests": 393,
     "auth_mode": "client_credentials",
     "counts": {
       "edit_additions_moved": 1143,
@@ -192598,16 +192598,16 @@
       "journeys_missing": 0,
       "journeys_moments_truncated": 1,
       "journeys_no_session": 1108,
-      "journeys_pending": 2,
-      "journeys_ready": 8187,
+      "journeys_pending": 0,
+      "journeys_ready": 8189,
       "journeys_resolved_by_moments": 552,
       "journeys_unresolved": 0,
-      "late_orders_scanned": 2935,
+      "late_orders_scanned": 2940,
       "late_refund_orders": 261,
       "orders_counted": 8189,
       "orders_edited": 991,
       "orders_outside_window": 464,
-      "orders_seen": 11588,
+      "orders_seen": 11593,
       "orders_skipped_test": 0,
       "orders_skipped_voided": 0,
       "orders_with_shipping_discount": 17,
@@ -192719,14 +192719,13 @@
     "late_orders_mode": "all",
     "order_edits": "booked_on_edit_date",
     "orders_visibility": "all",
-    "pages": 390,
+    "pages": 391,
     "payment_fees_basis": "shopify_payments_transaction_fees_on_order_day",
     "returns_basis": "shopify_sales_reversals",
     "schema": 3,
     "script_version": "1.9",
     "throttled_waits": 0,
     "warnings": [
-      "2 orders not attributed by Shopify yet (customerJourneySummary.ready=false, normal for the newest orders) - counted as pending, refetched next run",
       "40 orders carry the __snowball attribute but no 'Referral - SS - *' tag (Snowball rejected/untracked them) - not counted as referrals",
       "no rate known for Snowball program 'asher_fitfeline_partner' - using SNOWBALL_DEFAULT_RATE=0",
       "rate for Snowball program '20 % Commision No Discou' inferred from its name (20%) - set SNOWBALL_PROGRAM_RATES to pin it",
