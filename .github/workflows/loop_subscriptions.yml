@@ -34,6 +34,9 @@ jobs:
         env:
           REPORT_TIMEZONE: America/Los_Angeles
           LOOP_API_TOKEN: ${{ secrets.LOOP_API_TOKEN }}
+          SHOPIFY_SHOP: ${{ secrets.SHOPIFY_SHOP }}
+          SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_CLIENT_ID }}
+          SHOPIFY_CLIENT_SECRET: ${{ secrets.SHOPIFY_CLIENT_SECRET }}
         run: python fetch_loop_subscriptions.py
 
       - name: Commit updated data file if changed
