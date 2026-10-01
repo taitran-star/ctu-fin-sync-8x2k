@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build e15f0734d2).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 596afd4539).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -122,6 +122,11 @@
   // Amazon Ads spend per day (SP / SB / SD). Today: exported from Sellerboard (which pulls the Amazon Ads API);
   // later: data/amazon_ads.json from the Amazon Ads API workflow once Amazon approves access. Same shape either way.
   const AMAZON_ADS_LIVE_DATA = (window.__LIVE && window.__LIVE["amazon_ads"]) || null; /*AMAZON_ADS_DATA_INJECT*/
+  // Loop Subscriptions (Shopify subscription app): new subscriptions/subscribers/checkout revenue per day (real,
+  // from Loop's Admin API) + mrr_estimate (run-rate from active subs' billing schedule, NOT period-actual
+  // recurring revenue - Loop has no endpoint to list orders store-wide) - data/loop_subscriptions.json.
+  const LOOP_LIVE_DATA = (window.__LIVE && window.__LIVE["loop_subscriptions"]) || null; /*LOOP_SUBSCRIPTIONS_INJECT*/
+  let loopMeta = null;
 
   // Last-touch channels (Shopify customer journey, sync v1.8+): fixed order, fixed colors.
   // Full-strength hues = one entity each; lighter mixes = the organic / untagged sibling of that hue.
@@ -194,7 +199,7 @@
   const days = [];
   for(let i=0;i<TOTAL_DAYS;i++){
     const d = dateAt(i);
-    const row = {date:d, iso:isoDate(d), channels:{}, refunds:{}, orders:{}, discounts:{}, ads:{}, adsAttr:{}, amazonReal:null, metaReal:null, googleReal:null, shopifyReal:null, snowballReal:null, shipmonkReal:null, shipmonkInv:null, paypalReal:null, shopifyAttr:null, klaviyoReal:null, klaviyoCost:null};
+    const row = {date:d, iso:isoDate(d), channels:{}, refunds:{}, orders:{}, discounts:{}, ads:{}, adsAttr:{}, amazonReal:null, metaReal:null, googleReal:null, shopifyReal:null, snowballReal:null, shipmonkReal:null, shipmonkInv:null, paypalReal:null, shopifyAttr:null, klaviyoReal:null, klaviyoCost:null, loopReal:null};
     CH_KEYS.forEach(k=>{ row.channels[k]=0; row.refunds[k]=0; row.orders[k]=0; row.discounts[k]=0; });
     AD_KEYS.forEach(k=>{ row.ads[k]=0; row.adsAttr[k]=0; });
     days.push(row);
@@ -221,6 +226,7 @@
     {key:'shipmonk_inv', name:'ShipMonk hoá đơn (lưu kho, receiving, hàng trả…)', age:'Chưa kết nối — $0', level:'c'},
     {key:'paypal', name:'PayPal (phí giao dịch)', age:'Chưa kết nối — $0', level:'c'},
     {key:'klaviyo', name:'Klaviyo (email & SMS marketing)', age:'Chưa kết nối', level:'c'},
+    {key:'loop', name:'Loop Subscriptions (đăng ký định kỳ)', age:'Chưa kết nối', level:'c'},
     {key:'ga', name:'Kế toán (G&A)', age:'Chưa kết nối — $0', level:'c'},
   ];
 
@@ -1387,7 +1393,7 @@
   let lastVw = window.innerWidth;
   window.addEventListener('resize', ()=>{ clearTimeout(window.__rsz); window.__rsz = setTimeout(()=>{ if(window.innerWidth!==lastVw){ lastVw = window.innerWidth; renderTrend(); renderBreakeven(); } }, 150); });
   function renderAll(){
-    renderSubCtl(); renderKpis(); renderTrend(); renderStatement(); renderChannelCosts(); renderBreakeven(); renderRoas(); renderAttribution(); renderKlaviyo(); renderTax(); renderSources(); renderOpexTable(); renderGaps(); renderAmazonGaps(); renderShipmonk(); renderShopifyRecon(); renderSnowball(); renderMetaCampaigns(); renderGoogleCampaigns();
+    renderSubCtl(); renderKpis(); renderTrend(); renderStatement(); renderChannelCosts(); renderBreakeven(); renderRoas(); renderAttribution(); renderKlaviyo(); renderLoopSubscriptions(); renderTax(); renderSources(); renderOpexTable(); renderGaps(); renderAmazonGaps(); renderShipmonk(); renderShopifyRecon(); renderSnowball(); renderMetaCampaigns(); renderGoogleCampaigns();
   }
   document.getElementById('mainTabs').addEventListener('click', (e)=>{
     const btn = e.target.closest('button'); if(!btn) return;
@@ -1438,6 +1444,12 @@
   const paypalMatched = PAYPAL_LIVE_DATA ? applyPaypalRows(PAYPAL_LIVE_DATA) : false;
   if(paypalMatched){
     setSource('paypal',ageLevel(PAYPAL_LIVE_DATA.generated_at), fmtAmazonAge(PAYPAL_LIVE_DATA.generated_at)+fmtCoverage(PAYPAL_LIVE_DATA));
+  }
+  const loopMatched = LOOP_LIVE_DATA ? applyLoopRows(LOOP_LIVE_DATA) : false;
+  if(loopMatched){
+    const lc = LOOP_LIVE_DATA.coverage || {};
+    const fmtD = k => k ? k.slice(8,10)+'/'+k.slice(5,7)+'/'+k.slice(0,4) : '';
+    setSource('loop', ageLevel(LOOP_LIVE_DATA.generated_at), fmtAmazonAge(LOOP_LIVE_DATA.generated_at)+(lc.first_day ? ' · từ '+fmtD(lc.first_day) : ''));
   }
   const shipmonkMatched = SHIPMONK_LIVE_DATA ? applyShipmonkRows(SHIPMONK_LIVE_DATA) : false;
   if(shipmonkMatched){
@@ -1534,6 +1546,25 @@
         paymentsCount: Math.round(parseFloat(r.payments_count)||0),
         refunds: parseFloat(r.refunds)||0,
         transactions: Math.round(parseFloat(r.transactions)||0),
+      };
+      matched++;
+    });
+    return matched>0;
+  }
+
+  function applyLoopRows(data){
+    if(!data || !data.daily) return false;
+    loopMeta = data;
+    let matched = 0;
+    Object.keys(data.daily).forEach(iso=>{
+      const idx = days.findIndex(d=>d.iso===iso);
+      if(idx<0) return;
+      const r = data.daily[iso] || {};
+      days[idx].loopReal = {
+        newSubscriptions: Math.round(parseFloat(r.new_subscriptions)||0),
+        newSubscribers: Math.round(parseFloat(r.new_subscribers)||0),
+        checkoutRevenue: parseFloat(r.checkout_revenue)||0,
+        recurringRevenueActual: r.recurring_revenue_actual==null ? null : parseFloat(r.recurring_revenue_actual),
       };
       matched++;
     });
@@ -1797,6 +1828,17 @@
     out.sales = sum(Object.values(out.last).map(v=>v.sales));
     return out;
   }
+  function loopAggregate(rows){
+    const ls = rows.filter(r=>r.loopReal).map(r=>r.loopReal);
+    return {
+      days: ls.length,
+      newSubscriptions: sum(ls.map(x=>x.newSubscriptions)),
+      newSubscribers: sum(ls.map(x=>x.newSubscribers)),
+      checkoutRevenue: sum(ls.map(x=>x.checkoutRevenue)),
+      recurringRevenueActual: ls.length && ls.every(x=>x.recurringRevenueActual!=null) ? sum(ls.map(x=>x.recurringRevenueActual)) : null,
+    };
+  }
+
   function klaviyoAggregate(rows){
     const ks = rows.filter(r=>r.klaviyoReal).map(r=>r.klaviyoReal);
     const g = k => sum(ks.map(x=>x[k]));
@@ -1891,6 +1933,24 @@
   }
 
   // ---------- Klaviyo card: its own attribution next to the last-touch view, campaigns of the period, flows ----------
+  function renderLoopSubscriptions(){
+    const card = document.getElementById('loopCard');
+    if(!loopMatched || !loopMeta){ card.style.display='none'; return; }
+    card.style.display='';
+    const rows = currentRows();
+    const l = loopAggregate(rows);
+    const mrr = loopMeta.mrr_estimate || {};
+    const note = document.getElementById('loopNote');
+    note.textContent = 'Loop Admin API (subscription + customer + order/history), theo ngày America/Los_Angeles · ' + fmtAmazonAge(loopMeta.generated_at) + (l.days<rows.length ? ` · ${rows.length-l.days} ngày trong kỳ chưa có dữ liệu Loop` : '');
+    const kp = document.getElementById('loopKpis');
+    kp.innerHTML = `
+      <div class="be-stat"><div class="l">Subscription mới (kỳ đang xem)</div><div class="v">${intFmt(l.newSubscriptions)}</div></div>
+      <div class="be-stat"><div class="l">Khách đăng ký lần đầu</div><div class="v">${intFmt(l.newSubscribers)}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${pct0(l.newSubscribers, l.newSubscriptions)} subscription mới là khách hoàn toàn mới</div></div>
+      <div class="be-stat"><div class="l">Checkout revenue (đơn đầu, kỳ đang xem)</div><div class="v">${money(l.checkoutRevenue)}</div></div>
+      <div class="be-stat"><div class="l">Recurring revenue — ước tính hiện tại</div><div class="v">${mrr.weekly_run_rate!=null ? money(mrr.weekly_run_rate)+'/tuần' : '—'}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${mrr.active_subscriptions!=null ? intFmt(mrr.active_subscriptions)+' subscription đang active · ' : ''}ước tính run-rate, KHÔNG theo kỳ đang chọn, KHÔNG phải số đã charge thật</div></div>`;
+    document.getElementById('loopCaption').innerHTML = `Nguồn: Loop Admin API. "Subscription mới" và "Checkout revenue" tính theo subscription có ngày tạo (<code>createdAt</code>) trong kỳ đang xem; "Khách đăng ký lần đầu" = khách có <code>allSubscriptionsCount == 1</code> (chưa từng có subscription nào trước đó). Loop không có endpoint liệt kê order toàn store nên <b>không tính được doanh thu tái diễn thực tế đã charge trong kỳ</b> — ô "Recurring revenue" chỉ là ước tính run-rate hiện tại (giá mỗi chu kỳ ÷ độ dài chu kỳ, cộng mọi subscription đang active), cố định theo thời điểm đồng bộ gần nhất, không đổi khi bạn đổi kỳ xem.`;
+  }
+
   function renderKlaviyo(){
     const card = document.getElementById('klaviyoCard');
     if(!klaviyoMatched || !klaviyoMeta){ card.style.display='none'; return; }
