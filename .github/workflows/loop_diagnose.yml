@@ -1,0 +1,43 @@
+name: Loop Subscriptions - diagnose API (one-off)
+
+# Run by hand (Actions > this workflow > Run workflow). Calls the Loop Admin API
+# with the LOOP_API_TOKEN secret and prints the REAL response for subscriptions /
+# customers / orders to this run's log, so we can read the exact field names
+# before writing the real hourly sync script. The token itself is never printed.
+# Safe to delete once loop_subscriptions.yml (the real sync) is working.
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Mask the token in logs
+        env:
+          TOKEN: ${{ secrets.LOOP_API_TOKEN }}
+        run: echo "::add-mask::$TOKEN"
+
+      - name: Call Loop Admin API (subscriptions / customers / orders)
+        env:
+          LOOP_API_TOKEN: ${{ secrets.LOOP_API_TOKEN }}
+        run: python loop_diagnose.py
+
+      - name: Upload raw samples as a run artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: loop-diagnose-output
+          path: data/loop_diagnose.json
+          retention-days: 7
