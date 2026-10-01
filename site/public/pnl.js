@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 596afd4539).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build d33a91e2b1).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -1941,14 +1941,18 @@
     const l = loopAggregate(rows);
     const mrr = loopMeta.mrr_estimate || {};
     const note = document.getElementById('loopNote');
-    note.textContent = 'Loop Admin API (subscription + customer + order/history), theo ngày America/Los_Angeles · ' + fmtAmazonAge(loopMeta.generated_at) + (l.days<rows.length ? ` · ${rows.length-l.days} ngày trong kỳ chưa có dữ liệu Loop` : '');
+    note.textContent = 'Loop Admin API + Shopify order feed, theo ngày America/Los_Angeles · ' + fmtAmazonAge(loopMeta.generated_at) + (l.days<rows.length ? ` · ${rows.length-l.days} ngày trong kỳ chưa có dữ liệu Loop` : '');
     const kp = document.getElementById('loopKpis');
+    const rrReal = l.recurringRevenueActual;
+    const rrTile = rrReal!=null
+      ? `<div class="be-stat"><div class="l">Recurring revenue (kỳ đang xem)</div><div class="v">${money(rrReal)}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${mrr.weekly_run_rate!=null ? 'run-rate hiện tại ~'+money(mrr.weekly_run_rate)+'/tuần' : ''}${mrr.active_subscriptions!=null ? ' · '+intFmt(mrr.active_subscriptions)+' sub active' : ''}</div></div>`
+      : `<div class="be-stat"><div class="l">Recurring revenue — ước tính hiện tại</div><div class="v">${mrr.weekly_run_rate!=null ? money(mrr.weekly_run_rate)+'/tuần' : '—'}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${mrr.active_subscriptions!=null ? intFmt(mrr.active_subscriptions)+' subscription đang active · ' : ''}chưa có số thật cho kỳ này — ước tính run-rate, KHÔNG phải số đã charge thật</div></div>`;
     kp.innerHTML = `
       <div class="be-stat"><div class="l">Subscription mới (kỳ đang xem)</div><div class="v">${intFmt(l.newSubscriptions)}</div></div>
       <div class="be-stat"><div class="l">Khách đăng ký lần đầu</div><div class="v">${intFmt(l.newSubscribers)}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${pct0(l.newSubscribers, l.newSubscriptions)} subscription mới là khách hoàn toàn mới</div></div>
       <div class="be-stat"><div class="l">Checkout revenue (đơn đầu, kỳ đang xem)</div><div class="v">${money(l.checkoutRevenue)}</div></div>
-      <div class="be-stat"><div class="l">Recurring revenue — ước tính hiện tại</div><div class="v">${mrr.weekly_run_rate!=null ? money(mrr.weekly_run_rate)+'/tuần' : '—'}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${mrr.active_subscriptions!=null ? intFmt(mrr.active_subscriptions)+' subscription đang active · ' : ''}ước tính run-rate, KHÔNG theo kỳ đang chọn, KHÔNG phải số đã charge thật</div></div>`;
-    document.getElementById('loopCaption').innerHTML = `Nguồn: Loop Admin API. "Subscription mới" và "Checkout revenue" tính theo subscription có ngày tạo (<code>createdAt</code>) trong kỳ đang xem; "Khách đăng ký lần đầu" = khách có <code>allSubscriptionsCount == 1</code> (chưa từng có subscription nào trước đó). Loop không có endpoint liệt kê order toàn store nên <b>không tính được doanh thu tái diễn thực tế đã charge trong kỳ</b> — ô "Recurring revenue" chỉ là ước tính run-rate hiện tại (giá mỗi chu kỳ ÷ độ dài chu kỳ, cộng mọi subscription đang active), cố định theo thời điểm đồng bộ gần nhất, không đổi khi bạn đổi kỳ xem.`;
+      ${rrTile}`;
+    document.getElementById('loopCaption').innerHTML = `Nguồn: Loop Admin API (subscription mới/khách mới/checkout revenue) + Shopify order feed (recurring revenue). "Subscription mới" và "Checkout revenue" tính theo subscription có ngày tạo (<code>createdAt</code>) trong kỳ đang xem; "Khách đăng ký lần đầu" = khách có <code>allSubscriptionsCount == 1</code> (chưa từng có subscription nào trước đó). "Recurring revenue" = SỐ THẬT đã charge trong kỳ — mỗi lần Loop charge lại một subscription, Loop tạo 1 đơn Shopify thật (tag <code>Subscription Recurring Order</code>, app <code>Loop Subscriptions</code>); cộng đúng các đơn đó theo ngày tạo ra số này, đã đối chiếu khớp tới từng cent với "Recurring revenue" Loop tự hiển thị trên Home dashboard của họ. Dòng nhỏ bên dưới là run-rate hiện tại (giá mỗi chu kỳ ÷ độ dài chu kỳ, cộng mọi subscription đang active) — không đổi khi bạn đổi kỳ xem, chỉ để so sánh.`;
   }
 
   function renderKlaviyo(){
