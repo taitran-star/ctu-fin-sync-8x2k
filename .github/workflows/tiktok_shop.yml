@@ -15,6 +15,10 @@ on:
         description: "Backfill to (YYYY-MM-DD, inclusive). Empty = today."
         required: false
         default: ""
+      auth_code:
+        description: "Only after re-authorizing the app: paste the redirect URL (or its code=... value). Otherwise leave empty."
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -36,6 +40,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install cryptography (encrypted token state)
+        run: pip install --quiet cryptography
+
       - name: Fetch TikTok Shop finance data
         env:
           REPORT_TIMEZONE: America/Los_Angeles
@@ -45,14 +52,21 @@ jobs:
           TIKTOK_APP_KEY: ${{ secrets.TIKTOK_APP_KEY }}
           TIKTOK_APP_SECRET: ${{ secrets.TIKTOK_APP_SECRET }}
           TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
+          # One-off authorization code (single-use, dead within minutes - harmless in the log).
+          TIKTOK_AUTH_CODE: ${{ github.event.inputs.auth_code }}
           # Optional override: WINDOW_DAYS (default 45)
         run: python fetch_tiktok_shop.py
 
-      - name: Commit updated data file if changed
+      # always(): TikTok rotates the refresh token on every refresh, so the encrypted state file
+      # must be saved even when a later step of the fetch failed.
+      - name: Commit updated data file and token state if changed
+        if: always()
         run: |
           git config user.name "cattasaurus-tiktok-shop-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/tiktok_shop.json
+          for f in data/tiktok_shop.json data/tiktok_shop_state.enc; do
+            if [ -f "$f" ]; then git add "$f"; fi
+          done
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
