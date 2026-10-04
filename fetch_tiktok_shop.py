@@ -56,7 +56,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "tiktok_shop-1.2"
+SCRIPT_VERSION = "tiktok_shop-1.3"
 SCHEMA = 1
 
 AUTH_HOST = "https://auth.tiktok-shops.com"
@@ -245,6 +245,10 @@ def obtain_access_token(state):
 
     if AUTH_CODE_INPUT:
         code = _auth_code_from_input(AUTH_CODE_INPUT)
+        # Enough to tell a truncated / mis-pasted value from a genuinely expired code (the code is
+        # single-use, so its first and last characters are harmless in a public log).
+        log(f"auth code received: {len(code)} chars, starts {code[:4]!r}, ends {code[-4:]!r} "
+            f"(input was {'a URL' if '://' in AUTH_CODE_INPUT else 'a bare value'}, {len(AUTH_CODE_INPUT)} chars)")
         data = _token_call("/api/v2/token/get", {"app_key": APP_KEY, "app_secret": APP_SECRET,
                                                  "auth_code": code, "grant_type": "authorized_code"},
                            "authorization-code exchange")
