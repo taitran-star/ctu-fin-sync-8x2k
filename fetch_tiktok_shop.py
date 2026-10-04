@@ -52,7 +52,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "tiktok_shop-1.0"
+SCRIPT_VERSION = "tiktok_shop-1.1"
 SCHEMA = 1
 
 AUTH_HOST = "https://auth.tiktok-shops.com"
@@ -89,7 +89,7 @@ def _sign(path, query_params, body_str=""):
 
 def api_call(method, path, query_params=None, body=None, access_token=None, host=API_HOST,
              signed=True, retries=5):
-    """Low-level call. signed=True adds app_key/timestamp(+version)/sign and the
+    """Low-level call. signed=True adds app_key/timestamp/sign and the
     x-tts-access-token header (TikTok rejects access_token as a query param - confirmed
     2026-10-04). signed=False is for the token/get and token/refresh bootstrap calls."""
     params = dict(query_params or {})
@@ -98,7 +98,6 @@ def api_call(method, path, query_params=None, body=None, access_token=None, host
     if signed:
         params["app_key"] = APP_KEY
         params["timestamp"] = str(int(time.time()))
-        params["version"] = API_VERSION
         params["sign"] = _sign(path, params, body_str)
         if access_token:
             headers["x-tts-access-token"] = access_token
@@ -125,6 +124,12 @@ def api_call(method, path, query_params=None, body=None, access_token=None, host
             if attempt < retries and e.code >= 500:
                 time.sleep(2 ** attempt)
                 continue
+            try:  # TikTok usually puts its own {code, message} in the error body - keep it
+                parsed = json.loads(err_body)
+                if isinstance(parsed, dict) and parsed.get("code") not in (0, None):
+                    return parsed
+            except ValueError:
+                pass
             return {"code": -1, "message": f"HTTP {e.code}", "data": None, "_raw": err_body[:500]}
         except Exception as e:  # noqa: BLE001
             if attempt < retries:
@@ -137,67 +142,35 @@ def api_call(method, path, query_params=None, body=None, access_token=None, host
 
 # ---------------------------------------------------------------- auth
 def refresh_access_token():
-    """Refresh the access token from TIKTOK_REFRESH_TOKEN. TikTok may or may not rotate the
-    refresh_token on each call; if it comes back different we log a loud warning (the secret
-    in GitHub cannot be updated by this script - would need the user to update it by hand) but
-    still use the new access_token for this run.
-
-    Tries GET /api/v2/token/get?...&grant_type=refresh_token first (same shape as the confirmed-
-    working auth-code exchange - TikTok's v2 token endpoint is documented to handle both grant
-    types on one path), and falls back to POST /api/v2/token/refresh with a form-encoded body
-    (client_id/client_secret/refresh_token/grant_type) if that first shape is rejected - third-
-    party SDK docs disagree on which of the two this API actually wants, so both are tried and
-    whichever works is logged for the record."""
+    """GET /api/v2/token/refresh?app_key&app_secret&refresh_token&grant_type=refresh_token - unsigned.
+    Confirmed by run #1 (2026-10-04): /api/v2/token/get rejects grant_type=refresh_token
+    (98001004 invalid params) and POST /api/v2/token/refresh is a 404 - the route is GET only.
+    If TikTok hands back a different refresh_token the GitHub secret must be updated by hand
+    (this script cannot write secrets); the token value itself is never logged."""
     if not (APP_KEY and APP_SECRET and REFRESH_TOKEN):
         log("FATAL: TIKTOK_APP_KEY / TIKTOK_APP_SECRET / TIKTOK_REFRESH_TOKEN missing")
         return None, None
-
-    # Attempt 1: GET /api/v2/token/get with grant_type=refresh_token (mirrors the confirmed
-    # working authorized_code exchange shape).
     params = {
         "app_key": APP_KEY, "app_secret": APP_SECRET,
         "refresh_token": REFRESH_TOKEN, "grant_type": "refresh_token",
     }
-    resp = api_call("GET", "/api/v2/token/get", query_params=params, host=AUTH_HOST, signed=False)
-    if isinstance(resp, dict) and resp.get("code") in (0, None) and (resp.get("data") or {}).get("access_token"):
-        log("token refresh OK via GET /api/v2/token/get (grant_type=refresh_token)")
-    else:
-        log(f"GET /api/v2/token/get refresh attempt failed ({resp}) - trying POST /api/v2/token/refresh")
-        body = urllib.parse.urlencode({
-            "client_id": APP_KEY, "client_secret": APP_SECRET,
-            "refresh_token": REFRESH_TOKEN, "grant_type": "refresh_token",
-        }).encode()
-        try:
-            req = urllib.request.Request(
-                f"{AUTH_HOST}/api/v2/token/refresh", data=body, method="POST",
-                headers={"Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json"},
-            )
-            with urllib.request.urlopen(req, timeout=30) as r:
-                resp = json.loads(r.read().decode("utf-8"))
-            log("token refresh OK via POST /api/v2/token/refresh")
-        except urllib.error.HTTPError as e:
-            err_body = e.read().decode("utf-8", errors="replace")
-            log(f"POST /api/v2/token/refresh also failed: HTTP {e.code}: {err_body[:500]}")
-            return None, None
-        except Exception as e:  # noqa: BLE001
-            log(f"POST /api/v2/token/refresh request error: {e}")
-            return None, None
-
+    resp = api_call("GET", "/api/v2/token/refresh", query_params=params, host=AUTH_HOST, signed=False)
     if not isinstance(resp, dict) or resp.get("code") not in (0, None):
-        log(f"token refresh failed: {resp}")
+        log(f"token refresh failed: code={resp.get('code') if isinstance(resp, dict) else None} "
+            f"message={resp.get('message') if isinstance(resp, dict) else resp}")
         return None, None
     data = resp.get("data") or {}
     access_token = data.get("access_token")
     new_refresh = data.get("refresh_token")
     if new_refresh and new_refresh != REFRESH_TOKEN:
-        log("WARNING: TikTok issued a NEW refresh_token different from TIKTOK_REFRESH_TOKEN. "
-            "Update the GitHub secret TIKTOK_REFRESH_TOKEN to this new value or future runs will "
-            "keep using the old (still valid for now, but TikTok may eventually invalidate it): "
-            f"...{new_refresh[-8:]}")
+        log("WARNING: TikTok issued a NEW refresh_token, different from the TIKTOK_REFRESH_TOKEN secret. "
+            "The secret needs updating by hand (re-authorize in Partner Center to get a fresh one) "
+            "if later runs start failing at the refresh step.")
     if not access_token:
-        log(f"token refresh response had no access_token: {resp}")
+        log("token refresh response had no access_token")
         return None, None
-    log(f"access_token refreshed OK (seller={data.get('seller_name')}, region={data.get('seller_base_region')})")
+    log(f"access_token refreshed OK (seller={data.get('seller_name')}, region={data.get('seller_base_region')}, "
+        f"refresh_token_rotated={bool(new_refresh and new_refresh != REFRESH_TOKEN)})")
     return access_token, new_refresh or REFRESH_TOKEN
 
 
@@ -213,7 +186,7 @@ def get_shop(access_token):
         log("get_shop: no authorized shops returned")
         return None
     s = shops[0]
-    log(f"shop: {s.get('name')} (id={s.get('id')}, region={s.get('region')}, cipher=...{(s.get('cipher') or '')[-6:]})")
+    log(f"shop: {s.get('name')} (id={s.get('id')}, region={s.get('region')}, seller_type={s.get('seller_type')})")
     return {"shop_id": s.get("id"), "shop_cipher": s.get("cipher"), "shop_name": s.get("name"), "region": s.get("region")}
 
 
@@ -254,13 +227,26 @@ def day_key(unix_ts):
     return datetime.fromtimestamp(int(unix_ts), tz=timezone.utc).astimezone(TZ).date().isoformat()
 
 
+def _num(row, *names):
+    """First of the candidate field names that is present and numeric (TikTok sends amounts as strings)."""
+    for n in names:
+        v = row.get(n)
+        if v in (None, ""):
+            continue
+        try:
+            return float(v)
+        except (TypeError, ValueError):
+            continue
+    return 0.0
+
+
 def bucket_statements(statements):
     daily = {}
 
     def b(d):
         return daily.setdefault(d, {
             "statements_count": 0, "gross_revenue": 0.0, "total_fees": 0.0,
-            "adjustment_amount": 0.0, "net_settlement_amount": 0.0,
+            "adjustment_amount": 0.0, "shipping_cost_amount": 0.0, "net_settlement_amount": 0.0,
         })
 
     for s in statements:
@@ -269,10 +255,11 @@ def bucket_statements(statements):
             continue
         d = b(day_key(ts))
         d["statements_count"] += 1
-        d["gross_revenue"] += float(s.get("revenue") or s.get("net_sales_amount") or 0)
-        d["total_fees"] += abs(float(s.get("fee_amount") or s.get("total_fees") or 0))
-        d["adjustment_amount"] += float(s.get("adjustment_amount") or 0)
-        d["net_settlement_amount"] += float(s.get("settlement_amount") or s.get("net_amount") or 0)
+        d["gross_revenue"] += _num(s, "revenue_amount", "revenue", "net_sales_amount")
+        d["total_fees"] += abs(_num(s, "fee_amount", "total_fees", "fees"))
+        d["adjustment_amount"] += _num(s, "adjustment_amount")
+        d["shipping_cost_amount"] += abs(_num(s, "shipping_cost_amount"))
+        d["net_settlement_amount"] += _num(s, "settlement_amount", "net_amount")
     for d in daily.values():
         for k in d:
             if isinstance(d[k], float):
@@ -326,6 +313,14 @@ def main():
 
     statements, api_status = fetch_statements(access_token, shop["shop_cipher"], shop["shop_id"], time_ge, time_lt)
     log(f"statements fetched: {len(statements)} ({fetched_start} -> {fetched_end}), status={api_status['status']}")
+    if api_status["status"] != "ok":
+        # Never write a fabricated zero: a failed fetch leaves the previous file exactly as it was.
+        log(f"FATAL: statements fetch failed - {api_status.get('detail')} - aborting without touching the output file")
+        sys.exit(1)
+    if statements:
+        log(f"statement field names (first record): {sorted(statements[0].keys())}")
+        currencies = sorted({str(x.get('currency')) for x in statements if x.get('currency')})
+        log(f"statement currencies: {currencies}")
 
     daily = bucket_statements(statements)
 
@@ -353,6 +348,8 @@ def main():
                             "3 khớp nhau, chưa tự xác nhận trực tiếp được do mạng bị chặn khi viết script này - xem "
                             "api_status bên dưới và claude/tiktok-shop-integration.md."),
             "api_status": api_status,
+            "statement_fields_seen": sorted(statements[0].keys()) if statements else [],
+            "statements_in_window": len(statements),
             "window_days": WINDOW_DAYS if not BACKFILL_START else None,
             "backfill": {"start": BACKFILL_START, "end": BACKFILL_END} if BACKFILL_START else None,
         },
