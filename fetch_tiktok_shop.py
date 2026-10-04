@@ -44,6 +44,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -56,7 +57,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "tiktok_shop-1.3"
+SCRIPT_VERSION = "tiktok_shop-1.4"
 SCHEMA = 1
 
 AUTH_HOST = "https://auth.tiktok-shops.com"
@@ -207,12 +208,18 @@ def _token_call(path, params, what):
 
 
 def _auth_code_from_input(raw):
-    """Accepts the bare code or the whole redirect URL (https://cattasaurus.com/?app_key=..&code=..)."""
+    """Pull the authorization code out of whatever was pasted: the whole redirect URL, a
+    'code=...' fragment, the code with the URL's trailing '&locale=..&shop_region=..' still
+    attached (run #4, 2026-10-04: that tail made TikTok answer 'invalid auth code'), or the bare code."""
+    raw = (raw or "").strip().strip('"').strip("'")
+    m = re.search(r"TTP_[A-Za-z0-9_\-]+", raw)
+    if m:
+        return m.group(0)
     if "code=" in raw:
-        q = urllib.parse.parse_qs(urllib.parse.urlsplit(raw).query or raw.split("?", 1)[-1])
+        q = urllib.parse.parse_qs(raw.split("?", 1)[-1])
         if q.get("code"):
             return q["code"][0].strip()
-    return raw.strip()
+    return raw.split("&", 1)[0].strip()
 
 
 def obtain_access_token(state):
