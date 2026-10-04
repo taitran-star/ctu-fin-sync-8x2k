@@ -1,0 +1,66 @@
+name: Cattasaurus TikTok Shop sync
+
+on:
+  schedule:
+    # Every 30 minutes at :07 and :37 UTC - unused offset (Amazon :00/:30, Shopify :05/:35,
+    # ShipMonk :10/:40, Meta :15/:45, Google :20/:50, Amazon Ads :25, PayPal :28/:58, Klaviyo :42).
+    - cron: "7,37 * * * *"
+  workflow_dispatch:   # "Run workflow" by hand; fill the two dates to backfill history in chunks
+    inputs:
+      backfill_start:
+        description: "Backfill from (YYYY-MM-DD). Leave empty for the normal rolling run."
+        required: false
+        default: ""
+      backfill_end:
+        description: "Backfill to (YYYY-MM-DD, inclusive). Empty = today."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tiktok-shop-sync
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch TikTok Shop finance data
+        env:
+          REPORT_TIMEZONE: America/Los_Angeles
+          HISTORY_START: "2025-01-01"
+          BACKFILL_START: ${{ github.event.inputs.backfill_start }}
+          BACKFILL_END: ${{ github.event.inputs.backfill_end }}
+          TIKTOK_APP_KEY: ${{ secrets.TIKTOK_APP_KEY }}
+          TIKTOK_APP_SECRET: ${{ secrets.TIKTOK_APP_SECRET }}
+          TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
+          # Optional override: WINDOW_DAYS (default 45)
+        run: python fetch_tiktok_shop.py
+
+      - name: Commit updated data file if changed
+        run: |
+          git config user.name "cattasaurus-tiktok-shop-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/tiktok_shop.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Update TikTok Shop data ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            echo "Push attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "Could not push after 5 attempts." && exit 1
