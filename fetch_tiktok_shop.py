@@ -17,7 +17,10 @@ Auth (2 tầng):
      với lỗi "x-tts-access-token header is invalid" - PHẢI là header).
 
 Required env (GitHub Actions Secrets):
-  TIKTOK_APP_KEY, TIKTOK_APP_SECRET, TIKTOK_REFRESH_TOKEN
+  TIKTOK_APP_KEY, TIKTOK_APP_SECRET; TIKTOK_REFRESH_TOKEN only seeds the very first run -
+  after that the newest (rotating) tokens live in data/tiktok_shop_state.enc, encrypted with a
+  key derived from TIKTOK_APP_SECRET. TIKTOK_AUTH_CODE (Run-workflow input) = one-off re-authorization.
+  Needs `pip install cryptography` (done in the workflow).
 Optional:
   REPORT_TIMEZONE   default America/Los_Angeles (chuẩn chung toàn dashboard)
   OUTPUT_PATH       default data/tiktok_shop.json
@@ -36,6 +39,7 @@ docs.datavirtuality.com) nhưng CHƯA test trực tiếp được (mạng của 
 chặn domain TikTok - xem claude/tiktok-shop-integration.md). Nếu GitHub Actions log báo lỗi 404 hay
 "path not found", đó là việc cần sửa đầu tiên - không phải lỗi auth/sign.
 """
+import base64
 import hashlib
 import hmac
 import json
@@ -52,7 +56,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "tiktok_shop-1.1"
+SCRIPT_VERSION = "tiktok_shop-1.2"
 SCHEMA = 1
 
 AUTH_HOST = "https://auth.tiktok-shops.com"
@@ -71,6 +75,17 @@ HISTORY_START = os.environ.get("HISTORY_START", "2025-01-01").strip() or "2025-0
 WINDOW_DAYS = int(os.environ.get("WINDOW_DAYS", "45"))
 BACKFILL_START = os.environ.get("BACKFILL_START", "").strip()
 BACKFILL_END = os.environ.get("BACKFILL_END", "").strip()
+
+# Token state. TikTok ROTATES the refresh_token on every refresh (confirmed by run #2, 2026-10-04),
+# and a GitHub Action cannot write a repo secret, so the newest tokens are kept in this file,
+# ENCRYPTED (Fernet = AES-128-CBC + HMAC-SHA256) with a key derived from TIKTOK_APP_SECRET. The
+# repo is public, the file is unreadable without the app secret. The access token (valid ~7 days)
+# is cached here too, so a refresh - and a rotation - happens about once a week, not every run.
+STATE_PATH = os.environ.get("STATE_PATH", "data/tiktok_shop_state.enc")
+# One-off: paste the code (or the whole redirect URL) from a fresh authorization into the
+# "Run workflow" form. The Action exchanges it itself, so no token is ever handled by hand.
+AUTH_CODE_INPUT = os.environ.get("TIKTOK_AUTH_CODE", "").strip()
+REFRESH_MARGIN_SEC = 24 * 3600
 
 
 def log(msg):
@@ -140,46 +155,132 @@ def api_call(method, path, query_params=None, body=None, access_token=None, host
     return {"code": -1, "message": "exhausted retries", "data": None}
 
 
+# ---------------------------------------------------------------- token state (encrypted file)
+def _fernet():
+    from cryptography.fernet import Fernet
+    key = base64.urlsafe_b64encode(hashlib.sha256(("ctu-tiktok-state:" + APP_SECRET).encode()).digest())
+    return Fernet(key)
+
+
+def load_state():
+    try:
+        with open(STATE_PATH, "rb") as f:
+            blob = f.read().strip()
+    except OSError:
+        return {}
+    try:
+        st = json.loads(_fernet().decrypt(blob).decode("utf-8"))
+        return st if isinstance(st, dict) else {}
+    except Exception:  # noqa: BLE001 - wrong key (app secret was reset) or a damaged file
+        log(f"{STATE_PATH} exists but cannot be decrypted with the current TIKTOK_APP_SECRET - ignoring it")
+        return {}
+
+
+def save_state(state):
+    os.makedirs(os.path.dirname(STATE_PATH) or ".", exist_ok=True)
+    with open(STATE_PATH, "wb") as f:
+        f.write(_fernet().encrypt(json.dumps(state, separators=(",", ":")).encode("utf-8")))
+
+
 # ---------------------------------------------------------------- auth
-def refresh_access_token():
-    """GET /api/v2/token/refresh?app_key&app_secret&refresh_token&grant_type=refresh_token - unsigned.
-    Confirmed by run #1 (2026-10-04): /api/v2/token/get rejects grant_type=refresh_token
-    (98001004 invalid params) and POST /api/v2/token/refresh is a 404 - the route is GET only.
-    If TikTok hands back a different refresh_token the GitHub secret must be updated by hand
-    (this script cannot write secrets); the token value itself is never logged."""
-    if not (APP_KEY and APP_SECRET and REFRESH_TOKEN):
-        log("FATAL: TIKTOK_APP_KEY / TIKTOK_APP_SECRET / TIKTOK_REFRESH_TOKEN missing")
-        return None, None
-    params = {
-        "app_key": APP_KEY, "app_secret": APP_SECRET,
-        "refresh_token": REFRESH_TOKEN, "grant_type": "refresh_token",
-    }
-    resp = api_call("GET", "/api/v2/token/refresh", query_params=params, host=AUTH_HOST, signed=False)
+def _expiry(value, now_ts):
+    """TikTok's *_expire_in fields are ABSOLUTE unix timestamps (seen 2026-10-04); tolerate a
+    plain number of seconds as well."""
+    try:
+        v = int(value)
+    except (TypeError, ValueError):
+        return 0
+    return v if v > 1_000_000_000 else now_ts + v
+
+
+def _token_call(path, params, what):
+    resp = api_call("GET", path, query_params=params, host=AUTH_HOST, signed=False)
     if not isinstance(resp, dict) or resp.get("code") not in (0, None):
-        log(f"token refresh failed: code={resp.get('code') if isinstance(resp, dict) else None} "
+        log(f"{what} failed: code={resp.get('code') if isinstance(resp, dict) else None} "
             f"message={resp.get('message') if isinstance(resp, dict) else resp}")
-        return None, None
+        return None
     data = resp.get("data") or {}
-    access_token = data.get("access_token")
-    new_refresh = data.get("refresh_token")
-    if new_refresh and new_refresh != REFRESH_TOKEN:
-        log("WARNING: TikTok issued a NEW refresh_token, different from the TIKTOK_REFRESH_TOKEN secret. "
-            "The secret needs updating by hand (re-authorize in Partner Center to get a fresh one) "
-            "if later runs start failing at the refresh step.")
-    if not access_token:
-        log("token refresh response had no access_token")
-        return None, None
-    log(f"access_token refreshed OK (seller={data.get('seller_name')}, region={data.get('seller_base_region')}, "
-        f"refresh_token_rotated={bool(new_refresh and new_refresh != REFRESH_TOKEN)})")
-    return access_token, new_refresh or REFRESH_TOKEN
+    if not data.get("access_token"):
+        log(f"{what}: response had no access_token")
+        return None
+    return data
+
+
+def _auth_code_from_input(raw):
+    """Accepts the bare code or the whole redirect URL (https://cattasaurus.com/?app_key=..&code=..)."""
+    if "code=" in raw:
+        q = urllib.parse.parse_qs(urllib.parse.urlsplit(raw).query or raw.split("?", 1)[-1])
+        if q.get("code"):
+            return q["code"][0].strip()
+    return raw.strip()
+
+
+def obtain_access_token(state):
+    """Order: (1) a fresh authorization code from the Run-workflow form, (2) the cached access
+    token while it has > 24h left, (3) refresh with the newest refresh_token (state file first,
+    then the TIKTOK_REFRESH_TOKEN secret). Every success is written to the state file at once,
+    so a later failure in the same run cannot lose a rotated refresh_token. Tokens are never logged."""
+    now_ts = int(time.time())
+    if not (APP_KEY and APP_SECRET):
+        log("FATAL: TIKTOK_APP_KEY / TIKTOK_APP_SECRET missing")
+        return None
+
+    def keep(data, how):
+        prev_granted = state.get("granted_scopes")
+        state.update({
+            "access_token": data["access_token"],
+            "access_token_expire": _expiry(data.get("access_token_expire_in"), now_ts),
+            "refresh_token": data.get("refresh_token") or state.get("refresh_token"),
+            "refresh_token_expire": _expiry(data.get("refresh_token_expire_in"), now_ts),
+            "seller_name": data.get("seller_name") or state.get("seller_name"),
+            "seller_base_region": data.get("seller_base_region") or state.get("seller_base_region"),
+            "granted_scopes": data.get("granted_scopes") or prev_granted,
+            "updated_at": now_ts,
+        })
+        save_state(state)
+        log(f"access token OK via {how} (seller={state.get('seller_name')}, region={state.get('seller_base_region')}, "
+            f"valid {round((state['access_token_expire'] - now_ts) / 86400, 1)} more days); state saved")
+        log(f"granted scopes: {state.get('granted_scopes')}")
+        return state["access_token"]
+
+    if AUTH_CODE_INPUT:
+        code = _auth_code_from_input(AUTH_CODE_INPUT)
+        data = _token_call("/api/v2/token/get", {"app_key": APP_KEY, "app_secret": APP_SECRET,
+                                                 "auth_code": code, "grant_type": "authorized_code"},
+                           "authorization-code exchange")
+        if data:
+            state.pop("shop", None)  # scopes may have changed: look the shop up again
+            return keep(data, "authorization code")
+        log("the authorization code was rejected (codes are single-use and expire within minutes) - "
+            "falling back to the stored tokens")
+
+    if state.get("access_token") and int(state.get("access_token_expire") or 0) - now_ts > REFRESH_MARGIN_SEC:
+        log(f"using cached access token (valid {round((state['access_token_expire'] - now_ts) / 86400, 1)} more days)")
+        return state["access_token"]
+
+    candidates = []
+    for label, tok in (("state file", state.get("refresh_token")), ("TIKTOK_REFRESH_TOKEN secret", REFRESH_TOKEN)):
+        if tok and tok not in [t for _, t in candidates]:
+            candidates.append((label, tok))
+    for label, tok in candidates:
+        data = _token_call("/api/v2/token/refresh", {"app_key": APP_KEY, "app_secret": APP_SECRET,
+                                                     "refresh_token": tok, "grant_type": "refresh_token"},
+                           f"refresh with the {label} token")
+        if data:
+            return keep(data, f"refresh ({label})")
+    log("FATAL: no usable token. Re-authorize: Partner Center > app > Authorization > Copy authorization link, "
+        "open it, approve, then paste the redirect URL into Run workflow > 'auth_code'.")
+    return None
 
 
 def get_shop(access_token):
     """GET /authorization/202309/shops (signed). Returns the first authorized shop's
-    {shop_id, shop_cipher, shop_name, region} or None."""
+    {shop_id, shop_cipher, shop_name, region} or None. Needs the app scope
+    'seller.authorization.info' - without it TikTok answers 105005 (seen in run #2)."""
     resp = api_call("GET", "/authorization/202309/shops", access_token=access_token)
     if not isinstance(resp, dict) or resp.get("code") not in (0, None):
-        log(f"get_shop failed: {resp}")
+        log(f"get_shop failed: code={resp.get('code') if isinstance(resp, dict) else None} "
+            f"message={str(resp.get('message') if isinstance(resp, dict) else resp)[:300]}")
         return None
     shops = ((resp.get("data") or {}).get("shops")) or []
     if not shops:
@@ -200,12 +301,13 @@ def fetch_statements(access_token, shop_cipher, shop_id, time_ge, time_lt):
     while True:
         page += 1
         params = {
-            "shop_cipher": shop_cipher,
             "page_size": 100,
             "sort_field": "statement_time",
             "statement_time_ge": time_ge,
             "statement_time_lt": time_lt,
         }
+        if shop_cipher:
+            params["shop_cipher"] = shop_cipher
         if page_token:
             params["page_token"] = page_token
         resp = api_call("GET", "/finance/202309/statements", query_params=params, access_token=access_token)
@@ -301,15 +403,23 @@ def main():
     time_ge = int(start_date.timestamp())
     time_lt = int((end_date + timedelta(days=1)).timestamp())
 
-    access_token, _ = refresh_access_token()
+    state = load_state()
+    access_token = obtain_access_token(state)
     if not access_token:
         log("FATAL: could not obtain access_token - aborting without touching the output file")
         sys.exit(1)
 
-    shop = get_shop(access_token)
-    if not shop or not shop.get("shop_cipher"):
-        log("FATAL: could not resolve shop_cipher - aborting without touching the output file")
-        sys.exit(1)
+    shop = state.get("shop") if (state.get("shop") or {}).get("shop_cipher") else None
+    if not shop:
+        shop = get_shop(access_token)
+        if shop and shop.get("shop_cipher"):
+            state["shop"] = shop
+            save_state(state)
+    if not shop:
+        # A single-shop local seller may be served without shop_cipher - try rather than stop here.
+        log("no shop_cipher (the app lacks the 'Authorization' scope) - trying the finance call without it")
+        shop = {"shop_id": None, "shop_cipher": None, "shop_name": state.get("seller_name"),
+                "region": state.get("seller_base_region")}
 
     statements, api_status = fetch_statements(access_token, shop["shop_cipher"], shop["shop_id"], time_ge, time_lt)
     log(f"statements fetched: {len(statements)} ({fetched_start} -> {fetched_end}), status={api_status['status']}")
