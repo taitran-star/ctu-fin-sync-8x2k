@@ -1544,7 +1544,7 @@
     const fmtDW = k => k ? k.slice(8,10)+'/'+k.slice(5,7)+'/'+k.slice(0,4) : '';
     const wErr = (wm.orders_status && !wm.orders_status.ok) || (wm.recon && (!wm.recon.ok || wm.recon.errors>0));
     const wl = wErr ? 'w' : ageLevel(WALMART_LIVE_DATA.generated_at);
-    setSource('walmart', wl, fmtAmazonAge(WALMART_LIVE_DATA.generated_at)+(wod.length ? ' · đơn từ '+fmtDW(wod[0]) : '')+' · '+(wm.orders_total||0)+' đơn bán ('+(wm.orders_settled||0)+' đã đối soát, phí thật; còn lại ước tính theo tỷ lệ)'+(wErr ? ' · Orders/Recon API báo lỗi — xem GitHub Actions' : ''));
+    setSource('walmart', wl, fmtAmazonAge(WALMART_LIVE_DATA.generated_at)+(wod.length ? ' · đơn từ '+fmtDW(wod[0]) : '')+' · '+(wm.orders_total||0)+' đơn bán ('+(wm.orders_settled||0)+' đã đối soát, phí thật; còn lại ước tính theo tỷ lệ)'+(wm.orders_from_recon>0 ? ' · '+wm.orders_from_recon+' đơn cũ (API chỉ giữ 180 ngày) dựng lại từ báo cáo đối soát, ngày ≈ ngày giao hàng/ghi sổ' : '')+(wErr ? ' · Orders/Recon API báo lỗi — xem GitHub Actions' : ''));
   }
   const shipmonkMatched = SHIPMONK_LIVE_DATA ? applyShipmonkRows(SHIPMONK_LIVE_DATA) : false;
   if(shipmonkMatched){
