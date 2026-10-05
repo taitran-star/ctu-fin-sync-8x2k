@@ -28,10 +28,14 @@ Optional:
   WINDOW_DAYS       default 45 - khoảng lùi lại mỗi lần chạy thường (không backfill)
   BACKFILL_START / BACKFILL_END   chạy tay (workflow_dispatch) cho 1 khoảng ngày quá khứ cụ thể
 
-Output: daily.<date> (America/Los_Angeles) tổng hợp từ TikTok Shop Finance "statements"
-(kỳ quyết toán - gross/fees/net_settlement), tương tự cách Amazon settlement report được dùng
-trong P&L này. CHƯA lấy doanh thu đơn hàng theo ngày thật (cần Orders API, scope seller.order.info
-đã có sẵn nhưng để version sau) - xem meta.limitation.
+Output (schema 2):
+  daily        theo ngày STATEMENT (dòng tiền quyết toán, như v1) - dùng để đối chiếu với Seller Center.
+  orders_daily theo ngày ĐẶT HÀNG (America/Los_Angeles) từ Orders API: orders/units/gross/seller
+               discount/net_sales + phí THẬT của các đơn đã quyết toán (referral, affiliate, khác).
+               Đây là số dùng cho P&L (dashboard tính theo ngày đặt - claude/pnl-accounting-rules.md).
+  refunds_daily hoàn tiền theo ngày statement chứa khoản hoàn (như Shopify/Amazon: ngày xử lý hoàn).
+  orders       từng đơn (chỉ số tiền + SKU, KHÔNG có thông tin khách - repo công khai).
+Phần Orders/phí đơn lỗi thì phần statements (daily) vẫn ghi bình thường - xem meta.orders_status.
 
 QUAN TRỌNG - việc tiếp theo cần làm nếu lần chạy đầu lỗi: TikTok Shop Finance API endpoint path
 chính xác (/finance/202309/statements) được suy ra từ nhiều SDK bên thứ 3 khớp nhau (laraditz/tiktok,
@@ -57,8 +61,8 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "tiktok_shop-1.5"
-SCHEMA = 1
+SCRIPT_VERSION = "tiktok_shop-2.0"
+SCHEMA = 2
 
 AUTH_HOST = "https://auth.tiktok-shops.com"
 API_HOST = "https://open-api.tiktokglobalshop.com"
@@ -410,6 +414,321 @@ def statements_merge(previous, fetched_rows, fetched_start, fetched_end):
     return dict(sorted(merged.items(), key=lambda kv: (kv[1].get("statement_time") or 0, kv[0])))
 
 
+# ---------------------------------------------------------------- orders (order-date basis, v2.0)
+ORDER_CHUNK_DAYS = 30
+FEE_CALL_CAP = 400           # max per-order finance calls per run
+
+
+def _f(v):
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def fetch_orders(access_token, shop_cipher, time_ge, time_lt):
+    """POST /order/202309/orders/search, paginated, in <=30-day chunks (a 21-month backfill in one
+    call risks a range limit). Returns (orders, api_status)."""
+    out, seen = [], set()
+    pages = 0
+    chunk = ORDER_CHUNK_DAYS * 86400
+    lo = time_ge
+    while lo < time_lt:
+        hi = min(lo + chunk, time_lt)
+        page_token = ""
+        while True:
+            pages += 1
+            q = {"page_size": 100, "sort_field": "create_time", "sort_order": "ASC"}
+            if shop_cipher:
+                q["shop_cipher"] = shop_cipher
+            if page_token:
+                q["page_token"] = page_token
+            resp = api_call("POST", "/order/202309/orders/search", query_params=q,
+                            body={"create_time_ge": lo, "create_time_lt": hi}, access_token=access_token)
+            if not isinstance(resp, dict) or resp.get("code") not in (0, None):
+                return out, {"status": "error", "detail": str(resp)[:500], "pages_fetched": pages - 1}
+            data = resp.get("data") or {}
+            for o in data.get("orders") or []:
+                if o.get("id") and o["id"] not in seen:
+                    seen.add(o["id"])
+                    out.append(o)
+            page_token = data.get("next_page_token") or ""
+            if not page_token or pages > 500:
+                break
+            time.sleep(0.3)
+        lo = hi
+    return out, {"status": "ok", "pages_fetched": pages}
+
+
+def order_row(o):
+    """Money + SKU only. No buyer, address, phone, e-mail - the repo is public."""
+    pay = o.get("payment") or {}
+    lines = []
+    for li in o.get("line_items") or []:
+        lines.append({
+            "sku_id": li.get("sku_id"),
+            "seller_sku": li.get("seller_sku") or None,
+            "orig": round(_f(li.get("original_price")), 2),
+            "sale": round(_f(li.get("sale_price")), 2),
+            "seller_disc": round(_f(li.get("seller_discount")), 2),
+            "plat_disc": round(_f(li.get("platform_discount")), 2),
+            "status": li.get("display_status"),
+        })
+    ts = o.get("create_time")
+    row = {
+        "create_time": ts,
+        "day": day_key(ts) if ts else None,
+        "status": o.get("status"),
+        "paid_time": o.get("paid_time") or None,
+        "delivery_time": o.get("delivery_time") or None,
+        "cancel_time": o.get("cancel_time") or None,
+        "is_sample": bool(o.get("is_sample_order")),
+        "currency": pay.get("currency"),
+        "payment": {k: pay.get(k) for k in ("original_total_product_price", "sub_total", "seller_discount",
+                                             "platform_discount", "shipping_fee", "tax", "total_amount")
+                    if pay.get(k) is not None},
+        "lines": lines,
+    }
+    return row
+
+
+def order_sales(row):
+    """(counts_as_sale, units, gross, seller_discount, platform_discount) for one order row.
+    Same convention as TikTok's own Shop Analytics and Seller Center Finance: an order that was PAID counts
+    as a sale on its order day even if it was cancelled later - the cancellation is booked as a refund on
+    the cancel day (see bucket_orders). UNPAID / never-paid cancelled orders and sample orders are not sales."""
+    st = row.get("status")
+    if row.get("is_sample") or st == "UNPAID" or (st == "CANCELLED" and not row.get("paid_time")):
+        return False, 0, 0.0, 0.0, 0.0
+    lines = row.get("lines") or []
+    live = lines if st == "CANCELLED" else [l for l in lines if str(l.get("status") or "").upper() != "CANCELLED"]
+    if live:
+        return (True, len(live), sum(l["orig"] for l in live), sum(l["seller_disc"] for l in live),
+                sum(l["plat_disc"] for l in live))
+    pay = row.get("payment") or {}   # no line items in the answer - fall back to the order totals
+    return (True, 0, _f(pay.get("original_total_product_price") or pay.get("sub_total")),
+            _f(pay.get("seller_discount")), _f(pay.get("platform_discount")))
+
+
+def _walk_fee(node, acc):
+    """Sum every numeric *_amount leaf under a fee dict - TikTok adds new fee types over time,
+    so nothing is hard-coded away."""
+    if isinstance(node, dict):
+        for k, v in node.items():
+            if isinstance(v, (dict, list)):
+                _walk_fee(v, acc)
+            else:
+                x = _f(v)
+                if x:
+                    acc[k] = round(acc.get(k, 0.0) + x, 2)
+    elif isinstance(node, list):
+        for v in node:
+            _walk_fee(v, acc)
+
+
+def fee_row(data):
+    """Parse /finance/202501/orders/{id}/statement_transactions. Tolerant of both the documented
+    sku_transactions layout and a flat statement_transactions layout (the exact shape is logged in
+    meta.txn_fields_seen so v2.1 can be pinned to it). Returns the compact fee record."""
+    txns = []
+    for key in ("sku_transactions", "statement_transactions", "transactions"):
+        if isinstance(data.get(key), list):
+            txns = data[key]
+            break
+    fee_parts, refund_gross, refund_seller_disc, sids = {}, 0.0, 0.0, []
+    for t in txns:
+        if not isinstance(t, dict):
+            continue
+        if t.get("statement_id"):
+            sids.append(str(t["statement_id"]))
+        fee = ((t.get("fee_tax_breakdown") or {}).get("fee")) or {}
+        _walk_fee(fee, fee_parts)
+        rb = t.get("revenue_breakdown") or {}
+        refund_gross += _f(rb.get("refund_subtotal_before_discount_amount"))
+        refund_seller_disc += _f(rb.get("seller_discount_refund_amount"))
+    rev = _f(data.get("revenue_amount"))
+    fee_tot = _f(data.get("fee_and_tax_amount"))
+    ship = _f(data.get("shipping_cost_amount"))
+    settle = _f(data.get("settlement_amount"))
+    # Sign convention check from the identity settlement = revenue + fee + shipping: Seller Center and the
+    # statements API report costs as NEGATIVE numbers; if an order answers the other way round the
+    # identity only closes with the opposite sign. cost_sign turns "cost" into a positive number.
+    cost_sign = -1.0
+    if fee_tot and abs(rev + fee_tot + ship - settle) > 0.011 and abs(rev - fee_tot + ship - settle) <= 0.011:
+        cost_sign = 1.0
+    return {
+        "settled": bool(txns) and len(sids) == len([t for t in txns if isinstance(t, dict)]),
+        "statement_ids": sorted(set(sids)),
+        "revenue_amount": round(rev, 2),
+        "fee_and_tax_amount": round(fee_tot, 2),
+        "shipping_cost_amount": round(ship, 2),
+        "settlement_amount": round(settle, 2),
+        "cost_sign": cost_sign,
+        "fee_cost": round(fee_tot * cost_sign, 2),
+        "fee_parts": {k: round(v * cost_sign, 2) for k, v in fee_parts.items()},   # positive = cost
+        "refund_gross": round(abs(refund_gross), 2),
+        "refund_seller_discount": round(abs(refund_seller_disc), 2),
+    }
+
+
+def fetch_order_fees(access_token, shop_cipher, order_ids, stat):
+    """Per-order finance breakdown. Errors are counted, never fatal."""
+    out = {}
+    for oid in order_ids[:FEE_CALL_CAP]:
+        q = {"shop_cipher": shop_cipher} if shop_cipher else {}
+        resp = api_call("GET", f"/finance/202501/orders/{oid}/statement_transactions",
+                        query_params=q, access_token=access_token)
+        if not isinstance(resp, dict) or resp.get("code") not in (0, None):
+            stat["errors"] += 1
+            stat.setdefault("first_error", str(resp)[:300])
+            continue
+        data = resp.get("data") or {}
+        if not stat.get("fields_seen"):
+            stat["fields_seen"] = sorted(data.keys())
+            for key in ("sku_transactions", "statement_transactions", "transactions"):
+                if isinstance(data.get(key), list) and data[key] and isinstance(data[key][0], dict):
+                    stat["txn_item_fields_seen"] = sorted(data[key][0].keys())
+                    fb = (data[key][0].get("fee_tax_breakdown") or {}).get("fee")
+                    if isinstance(fb, dict):
+                        stat["fee_fields_seen"] = sorted(fb.keys())
+                    break
+        out[oid] = fee_row(data)
+        stat["ok"] += 1
+        time.sleep(0.15)
+    return out
+
+
+def orders_merge(previous, fetched_rows, fetched_start, fetched_end):
+    """Previous orders outside the fetched day range are kept; orders in range are replaced but keep
+    their cached fee record (it is refreshed separately)."""
+    prev = (previous or {}).get("orders") or {}
+    merged = {}
+    for oid, row in prev.items():
+        day = (row or {}).get("day") or ""
+        if day >= HISTORY_START and (day < fetched_start or day > fetched_end):
+            merged[oid] = row
+    for oid, row in fetched_rows.items():
+        if oid in prev and prev[oid].get("fees"):
+            row["fees"] = prev[oid]["fees"]
+        merged[oid] = row
+    return dict(sorted(merged.items(), key=lambda kv: (kv[1].get("create_time") or 0, kv[0])))
+
+
+def _fee_groups(parts):
+    ref = aff = other = 0.0
+    refund_admin = 0.0
+    for k, v in parts.items():
+        kl = k.lower()
+        if kl in ("referral_fee_amount", "platform_commission_amount"):
+            ref += v
+        elif "affiliate" in kl or "creator_bonus" in kl:
+            aff += v
+        elif kl == "refund_administration_fee_amount":
+            refund_admin += v
+        else:
+            other += v
+    return ref, aff, refund_admin, other
+
+
+def order_fee_split(fees):
+    """(referral, affiliate, refund_admin, other, total) as positive costs. The TOTAL is TikTok's own
+    fee_and_tax_amount for the order whenever it is present; the named groups are best effort and any
+    remainder goes to 'other', so the daily total can never drift from what TikTok says it charged."""
+    ref, aff, radm, oth = _fee_groups(fees.get("fee_parts") or {})
+    parts_total = ref + aff + radm + oth
+    total = fees.get("fee_cost")
+    if total in (None, 0, 0.0) and parts_total:
+        total = parts_total
+    total = _f(total)
+    if abs(parts_total - total) > 0.011:
+        named = ref + aff + radm
+        if 0 <= named <= total + 0.011 and total >= 0:
+            oth = total - named
+        else:                      # named parts do not fit the total - do not guess a split
+            ref = aff = radm = 0.0
+            oth = total
+    return ref, aff, radm, oth, total
+
+
+def bucket_orders(orders, statement_days):
+    """Daily numbers from the merged order map. Sales + settled fees on the ORDER day; refunds on
+    the day of the statement that carries them (fallback: order day)."""
+    daily, refunds = {}, {}
+
+    def b(d):
+        return daily.setdefault(d, {
+            "orders_count": 0, "units": 0, "gross_sales": 0.0, "seller_discount": 0.0, "platform_discount": 0.0,
+            "net_sales": 0.0, "cancelled_orders": 0, "unpaid_orders": 0, "settled_orders": 0,
+            "unsettled_orders": 0, "fees_referral": 0.0, "fees_affiliate": 0.0, "fees_refund_admin": 0.0,
+            "fees_other": 0.0, "fees_total": 0.0, "gross_sales_settled": 0.0,
+        })
+
+    for oid, r in orders.items():
+        d = r.get("day")
+        if not d:
+            continue
+        row = b(d)
+        st = r.get("status")
+        if st == "CANCELLED":
+            row["cancelled_orders"] += 1
+        elif st == "UNPAID":
+            row["unpaid_orders"] += 1
+        sale, units, gross, sd, pd_ = order_sales(r)
+        fees = r.get("fees") or {}
+        if not sale:
+            # Unpaid / never-paid / sample order: no sale and no refund, but any fee TikTok charged is a real
+            # cost and stays on the order day.
+            if fees.get("settled"):
+                ref, aff, radm, oth, tot = order_fee_split(fees)
+                row["fees_referral"] += ref
+                row["fees_affiliate"] += aff
+                row["fees_refund_admin"] += radm
+                row["fees_other"] += oth
+                row["fees_total"] += tot
+            continue
+        row["orders_count"] += 1
+        row["units"] += units
+        row["gross_sales"] += gross
+        row["seller_discount"] += sd
+        row["platform_discount"] += pd_
+        row["net_sales"] += gross - sd
+        if fees.get("settled"):
+            row["settled_orders"] += 1
+            row["gross_sales_settled"] += gross
+            ref, aff, radm, oth, tot = order_fee_split(fees)
+            row["fees_referral"] += ref
+            row["fees_affiliate"] += aff
+            row["fees_refund_admin"] += radm
+            row["fees_other"] += oth
+            row["fees_total"] += tot
+        else:
+            row["unsettled_orders"] += 1
+        if st == "CANCELLED":
+            # paid, then cancelled: refund of the whole order on the cancel day
+            ct = r.get("cancel_time")
+            sids = fees.get("statement_ids") or []
+            rd = (day_key(ct) if ct else next((statement_days[s_] for s_ in sids if s_ in statement_days), d))
+            rf = refunds.setdefault(rd, {"refund_gross": 0.0, "refund_seller_discount": 0.0, "refund_orders": 0})
+            rf["refund_gross"] += gross
+            rf["refund_seller_discount"] += sd
+            rf["refund_orders"] += 1
+        elif fees.get("refund_gross") or fees.get("refund_seller_discount"):
+            # delivered, then returned/refunded: refund on the day of the statement that carries it
+            sids = fees.get("statement_ids") or []
+            rd = next((statement_days[s_] for s_ in sids if s_ in statement_days), d)
+            rf = refunds.setdefault(rd, {"refund_gross": 0.0, "refund_seller_discount": 0.0, "refund_orders": 0})
+            rf["refund_gross"] += _f(fees.get("refund_gross"))
+            rf["refund_seller_discount"] += _f(fees.get("refund_seller_discount"))
+            rf["refund_orders"] += 1
+    for dd in (daily, refunds):
+        for v in dd.values():
+            for k in v:
+                if isinstance(v[k], float):
+                    v[k] = round(v[k], 2)
+    return dict(sorted(daily.items())), dict(sorted(refunds.items()))
+
+
+
 def history_previous(path):
     try:
         with open(path, encoding="utf-8") as f:
@@ -502,6 +821,53 @@ def main():
     if mismatch:
         log(f"NOTE: revenue - fees + adjustment - shipping != settlement on {len(mismatch)} day(s): {mismatch[:10]}")
 
+    # ---- orders on the ORDER-DATE basis (v2.0). Never fatal: statements above are already safe.
+    statement_days = {sid: r.get("day") for sid, r in merged_rows.items() if r.get("day")}
+    orders_status = {"status": "skipped"}
+    fee_stat = {"ok": 0, "errors": 0}
+    merged_orders = dict((prev or {}).get("orders") or {})
+    orders_fetched = 0
+    order_fields = {}
+    try:
+        orders, orders_status = fetch_orders(access_token, shop["shop_cipher"], time_ge, time_lt)
+        orders_fetched = len(orders)
+        log(f"orders fetched: {len(orders)} ({fetched_start} -> {fetched_end}), status={orders_status['status']}")
+        if orders_status["status"] == "ok":
+            if orders:
+                order_fields = {"order": sorted(orders[0].keys()),
+                                "line_item": sorted((orders[0].get("line_items") or [{}])[0].keys()),
+                                "payment": sorted((orders[0].get("payment") or {}).keys())}
+                log(f"order field names (first record): {order_fields['order']}")
+            prev_orders_in_range = [o for o, r in merged_orders.items()
+                                    if fetched_start <= (r.get("day") or "") <= fetched_end]
+            if not orders and prev_orders_in_range:
+                log(f"WARNING: Orders API returned 0 orders for {fetched_start} -> {fetched_end} but the file has "
+                    f"{len(prev_orders_in_range)} there - keeping previous orders for this run")
+                orders_status = dict(orders_status, status="empty_kept_previous")
+            else:
+                merged_orders = orders_merge(prev, {str(o["id"]): order_row(o) for o in orders},
+                                             fetched_start, fetched_end)
+            # Per-order finance breakdown: every unsettled order + every order in the rolling window
+            # (a refund can land after settlement). Unsettled / newest first, capped per run.
+            todo = [oid for oid, r in merged_orders.items() if r.get("status") != "UNPAID"
+                    and not (r.get("status") == "CANCELLED" and not r.get("paid_time"))
+                    and (not (r.get("fees") or {}).get("settled") or (r.get("day") or "") >= fetched_start)]
+            todo.sort(key=lambda oid: ((merged_orders[oid].get("fees") or {}).get("settled") is True,
+                                       -(merged_orders[oid].get("create_time") or 0)))
+            fees = fetch_order_fees(access_token, shop["shop_cipher"], todo, fee_stat)
+            for oid, fr in fees.items():
+                merged_orders[oid]["fees"] = fr
+            log(f"order fee breakdowns: {fee_stat['ok']} ok, {fee_stat['errors']} errors, of {len(todo)} requested")
+            if fee_stat["errors"]:
+                log(f"first fee error: {fee_stat.get('first_error')}")
+        else:
+            log(f"WARNING: orders fetch failed - {orders_status.get('detail')} - keeping previous orders")
+    except Exception as e:  # noqa: BLE001
+        orders_status = {"status": "error", "detail": f"{type(e).__name__}: {e}"[:500]}
+        log(f"WARNING: orders step crashed - {orders_status['detail']} - keeping previous orders")
+    orders_daily, refunds_daily = bucket_orders(merged_orders, statement_days)
+    settled_n = sum(1 for r in merged_orders.values() if (r.get("fees") or {}).get("settled"))
+
     out = {
         "source": "tiktok_shop",
         "schema": SCHEMA,
@@ -511,18 +877,24 @@ def main():
         "shop": {"shop_id": shop["shop_id"], "shop_name": shop["shop_name"], "region": shop["region"]},
         "daily": {d: merged_daily[d] for d in days_sorted},
         "statements": merged_rows,
+        "orders_daily": orders_daily,
+        "refunds_daily": refunds_daily,
+        "orders": merged_orders,
         "coverage": {"first_day": days_sorted[0], "last_day": days_sorted[-1], "days": len(days_sorted)} if days_sorted else {},
         "meta": {
-            "note": ("Dữ liệu từ TikTok Shop Finance API (/finance/202309/statements) - mỗi 'statement' là 1 kỳ quyết "
-                     "toán (settlement period), KHÔNG phải 1 đơn hàng. gross_revenue/total_fees/net_settlement_amount "
-                     "gộp theo ngày statement_time. Đây là góc nhìn DÒNG TIỀN QUYẾT TOÁN thực tế (giống cách Amazon "
-                     "settlement report được dùng trong P&L này), không phải doanh thu đơn hàng theo ngày bán."),
-            "limitation": ("CHƯA lấy doanh thu/đơn hàng theo NGÀY BÁN thực (cần Orders API - scope seller.order.info "
-                            "đã có sẵn, để version sau nếu cần khớp với cách Shopify/Amazon đang tính theo ngày đặt "
-                            "hàng thay vì ngày quyết toán). Endpoint /finance/202309/statements suy ra từ SDK bên thứ "
-                            "3 khớp nhau, chưa tự xác nhận trực tiếp được do mạng bị chặn khi viết script này - xem "
-                            "api_status bên dưới và claude/tiktok-shop-integration.md."),
+            "note": ("daily = Finance API statements gộp theo ngày statement (dòng tiền quyết toán, để đối chiếu "
+                     "Seller Center). orders_daily = Orders API gộp theo NGÀY ĐẶT HÀNG (giờ LA) - số dùng cho P&L; "
+                     "phí (fees_*) chỉ có cho đơn ĐÃ quyết toán (settled_orders), đơn chưa quyết toán "
+                     "(unsettled_orders) chưa có phí thật - dashboard phải ước tính. net_sales = gross_sales - "
+                     "seller_discount (giống 'Net sales' của Seller Center; platform_discount do TikTok chịu). "
+                     "refunds_daily theo ngày statement chứa khoản hoàn."),
             "api_status": api_status,
+            "orders_status": orders_status,
+            "orders_in_window": orders_fetched,
+            "orders_total": len(merged_orders),
+            "orders_settled": settled_n,
+            "order_fields_seen": order_fields,
+            "order_fee_calls": {k: v for k, v in fee_stat.items()},
             "statement_fields_seen": sorted(statements[0].keys()) if statements else [],
             "statements_in_window": len(statements),
             "statements_total": len(merged_rows),
