@@ -130,6 +130,9 @@
   // TikTok Shop (Open API, data/tiktok_shop.json schema 2): orders by ORDER date (LA) + real fees of settled orders.
   const TIKTOK_SHOP_LIVE_DATA = (window.__LIVE && window.__LIVE["tiktok_shop"]) || null; /*TIKTOK_SHOP_INJECT*/
   let tiktokMeta = null;
+  // Walmart Marketplace (data/walmart.json schema 1): orders by ORDER date (LA) + real commission from the reconciliation report.
+  const WALMART_LIVE_DATA = (window.__LIVE && window.__LIVE["walmart"]) || null; /*WALMART_INJECT*/
+  let walmartMeta = null;
 
   // Last-touch channels (Shopify customer journey, sync v1.8+): fixed order, fixed colors.
   // Full-strength hues = one entity each; lighter mixes = the organic / untagged sibling of that hue.
@@ -202,7 +205,7 @@
   const days = [];
   for(let i=0;i<TOTAL_DAYS;i++){
     const d = dateAt(i);
-    const row = {date:d, iso:isoDate(d), channels:{}, refunds:{}, orders:{}, discounts:{}, ads:{}, adsAttr:{}, amazonReal:null, metaReal:null, googleReal:null, shopifyReal:null, snowballReal:null, shipmonkReal:null, shipmonkInv:null, paypalReal:null, shopifyAttr:null, klaviyoReal:null, klaviyoCost:null, loopReal:null, tiktokReal:null};
+    const row = {date:d, iso:isoDate(d), channels:{}, refunds:{}, orders:{}, discounts:{}, ads:{}, adsAttr:{}, amazonReal:null, metaReal:null, googleReal:null, shopifyReal:null, snowballReal:null, shipmonkReal:null, shipmonkInv:null, paypalReal:null, shopifyAttr:null, klaviyoReal:null, klaviyoCost:null, loopReal:null, tiktokReal:null, walmartReal:null};
     CH_KEYS.forEach(k=>{ row.channels[k]=0; row.refunds[k]=0; row.orders[k]=0; row.discounts[k]=0; });
     AD_KEYS.forEach(k=>{ row.ads[k]=0; row.adsAttr[k]=0; });
     days.push(row);
@@ -386,7 +389,14 @@
     // service fees (removal, returns processing, subscription) are logistics / operating costs below the contribution line.
     const amazonMarketplaceFeesReal = amazonReferralFeesReal + amazonOtherFeesReal + amazonOtherUnclassifiedCost;
     const amazonLogistics = amazonServiceFeesReal + amazonStorageAlloc;
-    const walmartFees = 0;                 // Walmart not connected
+    // Walmart: commission real for reconciled orders + estimate for the rest; non-order service fees too; Walmart ads -> marketing.
+    const walmartRows = rows.filter(r=>r.walmartReal);
+    const walmartDays = walmartRows.length;
+    const wk = k => sum(walmartRows.map(r=>r.walmartReal[k]||0));
+    const walmartFeesEst = wk('commissionEst');
+    const walmartFees = wk('commissionReal') + walmartFeesEst + wk('otherReal');
+    const walmartAds = wk('adsReal');
+    const walmartSettledOrders = wk('settledOrders'), walmartUnsettledOrders = wk('unsettledOrders');
     // TikTok Shop: selling fees (referral, refund admin) real for settled orders + estimate for unsettled ones;
     // creator/affiliate commission and Smart Promotion (in-marketplace advertising) go to marketing.
     const tiktokRows = rows.filter(r=>r.tiktokReal);
@@ -407,7 +417,7 @@
     const snowballRevenue = sum(rows.map(r=> r.snowballReal ? r.snowballReal.revenue : 0));
     const snowballCommission = sum(rows.map(r=> r.snowballReal ? r.snowballReal.commissionNet : 0));
     const feesTotal = paymentFeesAll + marketplaceFees;               // payment gateways + marketplace selling fees
-    const marketingTotal = adSpend + snowballCommission + tiktokAffiliate + tiktokSmart;               // paid ads + affiliate commissions
+    const marketingTotal = adSpend + snowballCommission + tiktokAffiliate + tiktokSmart + walmartAds;               // paid ads + affiliate commissions
     const otherVarTotal = feesTotal + marketingTotal;
     const cmBeforeMarketing = grossProfit - feesTotal;                 // CM2: what is left to pay for marketing
     const contributionProfit = cmBeforeMarketing - marketingTotal;     // CM3: after marketing
@@ -493,7 +503,7 @@
       opexDays, opexCarriedDays, opexNote, salaryEntered, depreciation, interest, depreciationEntered, interestEntered, taxEntered, taxRate, ebit, ebt, incomeTax, incomeTaxEstimated, netIncome, belowEbitdaEntered,
       variableTotal, variableRatio, cmRatio, breakEvenRevenue, blendedAOV, breakEvenOrders,
       merValue, attrRevenueSum,
-      amazonOrdersReal, amazonReferralFeesReal, amazonServiceFeesReal, amazonInboundFreightReal, amazonOtherFeesReal, amazonOtherUnclassifiedCost, amazonMarketplaceFeesEst, walmartFees, tiktokFees,
+      amazonOrdersReal, amazonReferralFeesReal, amazonServiceFeesReal, amazonInboundFreightReal, amazonOtherFeesReal, amazonOtherUnclassifiedCost, amazonMarketplaceFeesEst, walmartFees, walmartDays, walmartFeesEst, walmartAds, walmartSettledOrders, walmartUnsettledOrders, tiktokFees,
       tiktokDays, tiktokFeesEstSelling, tiktokAffiliate, tiktokAffiliateEst, tiktokSmart, tiktokSmartEst, tiktokSettledOrders, tiktokUnsettledOrders, tiktokNetUnsettled,
       amazonStorageAlloc, amazonStorageMissingDays, amazonStoragePosted, amazonStorageReportDays, amazonStorageEstDays, amazonStorageEstAmt, amazonRefundFeeAdj, amazonFeeOrderedDays, amazonFeeEstDays, amazonRefEst, amazonFbaEst, amazonPendSkuDays, amazonPendUnits,
       metaAdsRealDays, metaAdsPurchases, googleAdsRealDays, googleAdsPurchases, amazonAdsRealDays, amazonAdsPurchases, amazonAdsSplit, amazonAdsConsoleSpend, amazonAdsImpressions, amazonAdsClicks, amazonAcos, amazonTacos, amazonRoas, amazonAdsProvisionalDays, amazonAdsProvisionalAmt,
@@ -713,7 +723,12 @@
     } else {
       rows.push({...stLine('Phí sàn Amazon (khoảng này chưa có dữ liệu SP-API)', 0, nr, 'var', 'opvar'), neg:true, gap:true});
     }
-    rows.push({...stLine('Phí sàn Walmart — chưa kết nối', -a.walmartFees, nr, 'var', 'opvar'), neg:true, gap:true, hget: x=>-x.walmartFees});
+    if(a.walmartDays>0){
+      const estW = a.walmartFeesEst>0.005;
+      rows.push({...stLine('Phí sàn Walmart — hoa hồng · '+a.walmartSettledOrders.toLocaleString('en-US')+' đơn đã đối soát (phí thật)'+(estW ? ' + '+a.walmartUnsettledOrders.toLocaleString('en-US')+' đơn chưa đối soát (ước tính)' : ''), -a.walmartFees, nr, 'var', 'opvar'), neg: a.walmartFees>=0, live:true, est: estW, estTitle: estW ? 'Đơn chưa có trong báo cáo đối soát của Walmart chưa có phí thật. '+money(a.walmartFeesEst)+' là ước tính = doanh thu các đơn đó × tỷ lệ hoa hồng đo trên đơn đã đối soát; tự thay bằng phí thật khi Walmart đưa đơn vào báo cáo.' : '', hget: x=>-x.walmartFees});
+    } else {
+      rows.push({...stLine('Phí sàn Walmart — '+(walmartMatched ? 'khoảng này ngoài dữ liệu đơn Walmart' : 'chưa kết nối'), -a.walmartFees, nr, 'var', 'opvar'), neg:true, gap:true, hget: x=>-x.walmartFees});
+    }
     if(a.tiktokDays>0){
       const estS = a.tiktokFeesEstSelling>0.005;
       rows.push({...stLine('Phí sàn TikTok Shop — referral (6%) + phí xử lý hoàn tiền · '+a.tiktokSettledOrders.toLocaleString('en-US')+' đơn đã quyết toán (phí thật)'+(estS ? ' + '+a.tiktokUnsettledOrders.toLocaleString('en-US')+' đơn chưa quyết toán (ước tính)' : ''), -a.tiktokFees, nr, 'var', 'opvar'), neg: a.tiktokFees>=0, live:true, est: estS, estTitle: estS ? 'Đơn chưa quyết toán chưa có phí thật (TikTok chốt phí khoảng 8 ngày sau khi giao). '+money(a.tiktokFeesEstSelling)+' là ước tính = doanh thu thuần các đơn đó × tỷ lệ phí đo trên đơn đã quyết toán; tự thay bằng phí thật khi đơn quyết toán.' : '', hget: x=>-x.tiktokFees});
@@ -793,6 +808,9 @@
       const estA = a.tiktokAffiliateEst>0.005, estP = a.tiktokSmartEst>0.005;
       rows.push({...stLine('Hoa hồng creator/affiliate — TikTok Shop (phí thật đơn đã quyết toán'+(estA ? ' + ước tính đơn chưa quyết toán' : '')+')', -a.tiktokAffiliate, nr, 'var', 'mkt'), neg: a.tiktokAffiliate>=0, live:true, est: estA, estTitle: estA ? 'Hoa hồng creator thay đổi theo từng đơn (0–30%). '+money(a.tiktokAffiliateEst)+' là ước tính theo tỷ lệ trung bình của các đơn đã quyết toán.' : '', hget: x=>-x.tiktokAffiliate});
       rows.push({...stLine('Smart Promotion — TikTok Shop (quảng cáo trong sàn, tính theo doanh thu)'+(estP ? ' · đơn chưa quyết toán: ước tính' : ''), -a.tiktokSmart, nr, 'var', 'mkt'), neg: a.tiktokSmart>=0, live:true, est: estP, estTitle: estP ? money(a.tiktokSmartEst)+' là ước tính theo tỷ lệ của các đơn đã quyết toán.' : '', hget: x=>-x.tiktokSmart});
+    }
+    if(a.walmartDays>0 && a.walmartAds>0.005){
+      rows.push({...stLine('Quảng cáo Walmart Connect (khoản trừ trong báo cáo đối soát)', -a.walmartAds, nr, 'var', 'mkt'), neg:true, live:true, hget: x=>-x.walmartAds});
     }
     rows.push({...stSub('= Tổng marketing & bán hàng', -a.marketingTotal, nr, 'mkt_sub'), hget: x=>-x.marketingTotal});
     rows.push({...stSub('= Lợi nhuận đóng góp (Contribution Margin, sau marketing)', a.contributionProfit, nr, 'cm'), hget: x=>x.contributionProfit});
@@ -1016,7 +1034,13 @@
         {n:'Công cụ D2C: Klaviyo + gói Social Snowball', s:'trên P&L nằm ở G&A', v: a.klaviyoCost + snowballSub},
       ]},
     ]});
-    if(netOf('walmart') > 0.01) chans.push({key:'walmart', name:'Walmart', sub:'phí sàn chưa kết nối', net: netOf('walmart'), orders: a.orders.walmart, groups:[
+    if(a.walmartDays>0){
+      chans.push({key:'walmart', name:'Walmart', sub:'hoa hồng theo danh mục từ báo cáo đối soát; ShipMonk theo đơn', net: netOf('walmart'), orders: a.orders.walmart, groups:[
+        {label:'Phí bán hàng theo giao dịch', rows:[{n:'Hoa hồng + phí khác Walmart', s:'thật cho đơn đã đối soát, còn lại ước tính', v: a.walmartFees, est: a.walmartFeesEst>0.5}]},
+        {label:'Fulfillment & kho', rows:[{n:'ShipMonk theo đơn', v: smCh.walmart}]},
+        {label:'Marketing trên sàn', rows:[{n:'Quảng cáo Walmart Connect', v: a.walmartAds}]},
+      ]});
+    } else if(netOf('walmart') > 0.01) chans.push({key:'walmart', name:'Walmart', sub:'phí sàn chưa kết nối', net: netOf('walmart'), orders: a.orders.walmart, groups:[
       {label:'Phí bán hàng theo giao dịch', rows:[{n:'Phí sàn Walmart', v: a.walmartFees, gap:true}]},
       {label:'Fulfillment & kho', rows:[{n:'ShipMonk theo đơn', v: smCh.walmart}]},
     ]});
@@ -1274,13 +1298,21 @@
         <td class="num">$0</td>
         <td><span class="pill ok">Amazon nộp hộ</span></td>
       </tr>
+` + ((!walmartMatched || !tiktokMatched) ? `
       <tr>
-        <td class="name">${tiktokMatched ? 'Walmart' : 'Walmart / TikTok Shop'} <span class="tag gap"><span class="d"></span>Chưa kết nối ($0)</span></td>
+        <td class="name">${[!walmartMatched && 'Walmart', !tiktokMatched && 'TikTok Shop'].filter(Boolean).join(' / ')} <span class="tag gap"><span class="d"></span>Chưa kết nối ($0)</span></td>
         <td class="num">$0</td>
         <td class="num">—</td>
         <td class="num">—</td>
         <td><span class="pill warn">Chưa kết nối</span></td>
-      </tr>` + (tiktokMatched ? `
+      </tr>` : '') + (walmartMatched ? `
+      <tr>
+        <td class="name">Walmart — marketplace facilitator <span style="color:var(--ink-muted);font-size:11px;">(Walmart tự thu &amp; nộp hộ, không qua Cattasaurus)</span></td>
+        <td class="num">—</td>
+        <td class="num">—</td>
+        <td class="num">$0</td>
+        <td><span class="pill ok">Walmart nộp hộ</span></td>
+      </tr>` : '') + (tiktokMatched ? `
       <tr>
         <td class="name">TikTok Shop — marketplace facilitator <span style="color:var(--ink-muted);font-size:11px;">(TikTok tự thu &amp; nộp hộ, không qua Cattasaurus)</span></td>
         <td class="num">—</td>
@@ -1295,8 +1327,8 @@
   const GH_ACTIONS_BASE = 'https://github.com/taitran-star/ctu-fin-sync-8x2k/actions/workflows/';
   // Per-source: the per-day flag object set by that source's apply*Rows() (used to compute freshness below),
   // and the GitHub Actions workflow file that keeps it in sync (null = manual / no workflow).
-  const HEALTH_FLAG = {amazon:'amazonReal', amazonfin:'amazonReal', meta:'metaReal', google:'googleReal', amazonads:'amazonAdsReal', shopify:'shopifyReal', snowball:'shopifyReal', shipmonk:'shipmonkReal', shipmonk_inv:'shipmonkInv', paypal:'paypalReal', klaviyo:'klaviyoReal', tiktokshop:'tiktokReal'};
-  const HEALTH_WORKFLOW = {amazon:'amazon_pnl.yml', amazonfin:'amazon_pnl.yml', amazon_storage:'amazon_storage.yml', amazonads:'sellerboard_ads.yml', meta:'meta_ads.yml', google:'google_ads.yml', shopify:'shopify_pnl.yml', snowball:'shopify_pnl.yml', shipmonk:'shipmonk.yml', paypal:'paypal.yml', klaviyo:'klaviyo.yml', tiktokshop:'tiktok_shop.yml'};
+  const HEALTH_FLAG = {amazon:'amazonReal', amazonfin:'amazonReal', meta:'metaReal', google:'googleReal', amazonads:'amazonAdsReal', shopify:'shopifyReal', snowball:'shopifyReal', shipmonk:'shipmonkReal', shipmonk_inv:'shipmonkInv', paypal:'paypalReal', klaviyo:'klaviyoReal', tiktokshop:'tiktokReal', walmart:'walmartReal'};
+  const HEALTH_WORKFLOW = {amazon:'amazon_pnl.yml', amazonfin:'amazon_pnl.yml', amazon_storage:'amazon_storage.yml', amazonads:'sellerboard_ads.yml', meta:'meta_ads.yml', google:'google_ads.yml', shopify:'shopify_pnl.yml', snowball:'shopify_pnl.yml', shipmonk:'shipmonk.yml', paypal:'paypal.yml', klaviyo:'klaviyo.yml', tiktokshop:'tiktok_shop.yml', walmart:'walmart.yml'};
   // How many of the last WINDOW calendar days (today excluded - most sources aren't expected to have
   // closed it yet) actually have real data for this source, and the most recent day that does (scanning
   // back up to SCANMAX days so a longer stale gap still gets reported instead of showing nothing).
@@ -1504,6 +1536,16 @@
     const lvl = (tm.orders_status && tm.orders_status.status==='ok' && !feeErr) ? ageLevel(TIKTOK_SHOP_LIVE_DATA.generated_at) : 'w';
     setSource('tiktokshop', lvl, fmtAmazonAge(TIKTOK_SHOP_LIVE_DATA.generated_at)+(od.length ? ' · đơn từ '+fmtD(od[0]) : '')+' · '+(tm.orders_total||0)+' đơn bán ('+(tm.orders_settled||0)+' đã quyết toán, phí thật; còn lại ước tính theo tỷ lệ)'+(lvl==='w' ? ' · Orders/Finance API báo lỗi — xem GitHub Actions' : ''));
   }
+  const walmartMatched = WALMART_LIVE_DATA ? applyWalmartRows(WALMART_LIVE_DATA) : false;
+  if(walmartMatched){
+    CH_UNCONNECTED.walmart = false;
+    const wm = WALMART_LIVE_DATA.meta || {};
+    const wod = Object.keys(WALMART_LIVE_DATA.orders_daily||{}).sort();
+    const fmtDW = k => k ? k.slice(8,10)+'/'+k.slice(5,7)+'/'+k.slice(0,4) : '';
+    const wErr = (wm.orders_status && !wm.orders_status.ok) || (wm.recon && (!wm.recon.ok || wm.recon.errors>0));
+    const wl = wErr ? 'w' : ageLevel(WALMART_LIVE_DATA.generated_at);
+    setSource('walmart', wl, fmtAmazonAge(WALMART_LIVE_DATA.generated_at)+(wod.length ? ' · đơn từ '+fmtDW(wod[0]) : '')+' · '+(wm.orders_total||0)+' đơn bán ('+(wm.orders_settled||0)+' đã đối soát, phí thật; còn lại ước tính theo tỷ lệ)'+(wErr ? ' · Orders/Recon API báo lỗi — xem GitHub Actions' : ''));
+  }
   const shipmonkMatched = SHIPMONK_LIVE_DATA ? applyShipmonkRows(SHIPMONK_LIVE_DATA) : false;
   if(shipmonkMatched){
     setSource('shipmonk',ageLevel(SHIPMONK_LIVE_DATA.generated_at), fmtAmazonAge(SHIPMONK_LIVE_DATA.generated_at)+fmtCoverage(SHIPMONK_LIVE_DATA));
@@ -1551,6 +1593,7 @@
     if(shipmonkInvMatched) names.push('ShipMonk hoá đơn (lưu kho, receiving, hàng trả, bao bì)');
     if(paypalMatched) names.push('PayPal (API thật — phí giao dịch)');
     if(tiktokMatched) names.push('TikTok Shop (Open API thật — đơn theo ngày đặt, phí thật đơn đã quyết toán)');
+    if(walmartMatched) names.push('Walmart (Marketplace API thật — đơn theo ngày đặt, hoa hồng thật từ báo cáo đối soát)');
     if(klaviyoMatched) names.push('Klaviyo (API thật — email & SMS)');
     if(klaviyoInvMatched) names.push('hoá đơn Klaviyo (chi phí gói)');
     return names;
@@ -1602,6 +1645,46 @@
       if(idx<0) return;
       const r = data.refunds_daily[iso] || {};
       days[idx].refunds.tiktok += Math.max(0, num(r.refund_gross) - num(r.refund_seller_discount));
+    });
+    return matched>0;
+  }
+
+  // ---------- live data: Walmart Marketplace orders by order date + commission (GitHub Actions sync, data/walmart.json) ----------
+  // Sales / orders on the ORDER day (same rule as Shopify, Amazon, TikTok). Real commission comes from Walmart's
+  // reconciliation report once an order settles; the not-yet-settled sales get the commission rate measured on the
+  // settled ones (data.meta.fee_rates_settled.commission) and are tagged as estimates. Refunds: day of the refund.
+  // Fees that are not tied to an order (Walmart ads, service fees) land on the day they were posted.
+  function applyWalmartRows(data){
+    if(!data || !data.orders_daily) return false;
+    walmartMeta = data;
+    const rate = parseFloat(data.meta && data.meta.fee_rates_settled && data.meta.fee_rates_settled.commission)||0;
+    const num = v => parseFloat(v)||0;
+    const wr = idx => days[idx].walmartReal || (days[idx].walmartReal = {netSales:0, netSettled:0, netUnsettled:0, settledOrders:0, unsettledOrders:0, cancelled:0, commissionReal:0, commissionEst:0, otherReal:0, adsReal:0});
+    let matched = 0;
+    Object.keys(data.orders_daily).forEach(iso=>{
+      const idx = days.findIndex(d=>d.iso===iso);
+      if(idx<0) return;
+      const r = data.orders_daily[iso] || {};
+      days[idx].channels.walmart = num(r.gross_sales);
+      days[idx].orders.walmart = Math.round(num(r.orders_count));
+      const x = wr(idx);
+      x.netSales = num(r.net_sales); x.netSettled = num(r.net_sales_settled); x.netUnsettled = num(r.net_sales_unsettled);
+      x.settledOrders = Math.round(num(r.settled_orders)); x.unsettledOrders = Math.round(num(r.unsettled_orders)); x.cancelled = Math.round(num(r.cancelled_orders));
+      x.commissionReal = num(r.fees_commission); x.commissionEst = x.netUnsettled * rate;
+      matched++;
+    });
+    Object.keys(data.refunds_daily || {}).forEach(iso=>{
+      const idx = days.findIndex(d=>d.iso===iso);
+      if(idx<0) return;
+      days[idx].refunds.walmart += Math.max(0, num((data.refunds_daily[iso]||{}).refund_gross));
+      wr(idx);
+    });
+    Object.keys(data.other_fees_daily || {}).forEach(iso=>{
+      const idx = days.findIndex(d=>d.iso===iso);
+      if(idx<0) return;
+      const r = data.other_fees_daily[iso] || {}, x = wr(idx);
+      x.adsReal += num(r.ads);
+      x.otherReal += num(r.other_fee) + num(r.commission);
     });
     return matched>0;
   }
@@ -2581,7 +2664,7 @@
     const m = [];
     if(!shopifyMatched) m.push('Shopify');
     if(!amazonMatched) m.push('Amazon');
-    m.push('Walmart'); if(!tiktokMatched) m.push('TikTok Shop');
+    if(!walmartMatched) m.push('Walmart'); if(!tiktokMatched) m.push('TikTok Shop');
     if(!metaMatched) m.push('Meta Ads');
     if(!googleMatched) m.push('Google Ads');
     if(!shipmonkMatched) m.push('ShipMonk');

@@ -629,7 +629,7 @@
 <div id="siteRefresh" hidden><span id="siteLoadedAt" title="Giờ tải số liệu (giờ trên máy bạn)"></span><button type="button" id="siteReload" title="Tải lại số liệu mới nhất">↻ Cập nhật</button><a href="/?menu=1" title="Về trang chọn bảng">bảng khác</a><a href="/?menu=1#app" id="siteInstall" title="Cài như app lên máy / điện thoại" hidden>cài app</a><a href="/logout" title="Đăng xuất khỏi thiết bị này">thoát</a></div>
 <script>
 (function(){
-  var SOURCES = {"amazon": "amazon_pnl.json", "meta": "meta_ads.json", "shopify": "shopify_pnl.json", "google": "google_ads.json", "shipmonk": "shipmonk.json", "shipmonk_invoices": "shipmonk_invoices.json", "shipmonk_storage": "shipmonk_storage_daily.json", "paypal": "paypal.json", "klaviyo": "klaviyo.json", "klaviyo_invoices": "klaviyo_invoices.json", "amazon_ads": "amazon_ads.json", "opex": "opex_monthly.json", "amazon_storage": "amazon_storage.json", "loop_subscriptions": "loop_subscriptions.json", "tiktok_shop": "tiktok_shop.json"};
+  var SOURCES = {"amazon": "amazon_pnl.json", "meta": "meta_ads.json", "shopify": "shopify_pnl.json", "google": "google_ads.json", "shipmonk": "shipmonk.json", "shipmonk_invoices": "shipmonk_invoices.json", "shipmonk_storage": "shipmonk_storage_daily.json", "paypal": "paypal.json", "klaviyo": "klaviyo.json", "klaviyo_invoices": "klaviyo_invoices.json", "amazon_ads": "amazon_ads.json", "opex": "opex_monthly.json", "amazon_storage": "amazon_storage.json", "loop_subscriptions": "loop_subscriptions.json", "tiktok_shop": "tiktok_shop.json", "walmart": "walmart.json"};
   var keys = Object.keys(SOURCES), done = 0;
   window.__LIVE = {}; window.__LIVE_ERR = {}; window.__LOADED_AT = 0; window.__SAVED_AT = 0;
   try{ localStorage.setItem('ctu_last_dash', '/pnl'); }catch(e){}
