@@ -57,7 +57,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "tiktok_shop-1.4"
+SCRIPT_VERSION = "tiktok_shop-1.5"
 SCHEMA = 1
 
 AUTH_HOST = "https://auth.tiktok-shops.com"
@@ -380,6 +380,36 @@ def bucket_statements(statements):
     return daily
 
 
+STATEMENT_KEEP = ("statement_time", "revenue_amount", "fee_amount", "adjustment_amount", "shipping_cost_amount",
+                  "net_sales_amount", "settlement_amount", "currency", "payment_status", "payment_id", "payment_time")
+
+
+def statement_rows(statements):
+    """One row per statement, keyed by its id, exactly as TikTok returned it (amounts stay strings)
+    plus the report-timezone day it is bucketed on - so every daily number can be traced to
+    statements in Seller Center > Finance."""
+    rows = {}
+    for s in statements:
+        sid = str(s.get("id") or "")
+        ts = s.get("statement_time") or s.get("create_time") or s.get("settlement_time")
+        if not sid or not ts:
+            continue
+        row = {k: s.get(k) for k in STATEMENT_KEEP if s.get(k) is not None}
+        row["day"] = day_key(ts)
+        rows[sid] = row
+    return rows
+
+
+def statements_merge(previous, fetched_rows, fetched_start, fetched_end):
+    merged = {}
+    for sid, row in ((previous or {}).get("statements") or {}).items():
+        day = (row or {}).get("day") or ""
+        if day >= HISTORY_START and (day < fetched_start or day > fetched_end):
+            merged[sid] = row
+    merged.update(fetched_rows)
+    return dict(sorted(merged.items(), key=lambda kv: (kv[1].get("statement_time") or 0, kv[0])))
+
+
 def history_previous(path):
     try:
         with open(path, encoding="utf-8") as f:
@@ -407,7 +437,10 @@ def main():
                     if BACKFILL_END else now.astimezone(TZ))
     else:
         end_date = now.astimezone(TZ)
-        start_date = end_date - timedelta(days=WINDOW_DAYS)
+        # Whole days only: the merge below replaces every day from fetched_start on, so the fetch
+        # must start at that day's midnight (v1.4 started mid-day and could drop the part of the
+        # boundary day before the current time of day).
+        start_date = (end_date - timedelta(days=WINDOW_DAYS)).replace(hour=0, minute=0, second=0, microsecond=0)
 
     fetched_start = start_date.date().isoformat()
     fetched_end = end_date.date().isoformat()
@@ -444,10 +477,30 @@ def main():
         log(f"statement currencies: {currencies}")
 
     daily = bucket_statements(statements)
+    rows = statement_rows(statements)
 
     prev = history_previous(OUTPUT_PATH)
-    merged_daily = history_merge(prev, daily, fetched_start, fetched_end)
+    prev_in_range = [d for d in ((prev or {}).get("daily") or {}) if fetched_start <= d <= fetched_end]
+    if not statements and prev_in_range:
+        # Issued statements do not disappear. An empty answer for a range that had statements is a
+        # glitch on TikTok's side - keep what we have rather than blank the range to zero.
+        log(f"WARNING: TikTok returned 0 statements for {fetched_start} -> {fetched_end} but the file has "
+            f"{len(prev_in_range)} day(s) there - keeping the previous data for this run")
+        api_status = dict(api_status, status="empty_kept_previous")
+        merged_daily = dict(sorted(((prev or {}).get("daily") or {}).items()))
+        merged_rows = dict((prev or {}).get("statements") or {})
+    else:
+        merged_daily = history_merge(prev, daily, fetched_start, fetched_end)
+        merged_rows = statements_merge(prev, rows, fetched_start, fetched_end)
     days_sorted = sorted(merged_daily)
+    currencies = sorted({str(r.get("currency")) for r in merged_rows.values() if r.get("currency")})
+    if currencies and currencies != ["USD"]:
+        log(f"WARNING: statements are not all USD ({currencies}) - daily totals mix currencies")
+    mismatch = [d for d, r in merged_daily.items()
+                if abs(round(r.get("gross_revenue", 0) - r.get("total_fees", 0) + r.get("adjustment_amount", 0)
+                             - r.get("shipping_cost_amount", 0), 2) - r.get("net_settlement_amount", 0)) > 0.011]
+    if mismatch:
+        log(f"NOTE: revenue - fees + adjustment - shipping != settlement on {len(mismatch)} day(s): {mismatch[:10]}")
 
     out = {
         "source": "tiktok_shop",
@@ -457,6 +510,7 @@ def main():
         "timezone": TZ_NAME,
         "shop": {"shop_id": shop["shop_id"], "shop_name": shop["shop_name"], "region": shop["region"]},
         "daily": {d: merged_daily[d] for d in days_sorted},
+        "statements": merged_rows,
         "coverage": {"first_day": days_sorted[0], "last_day": days_sorted[-1], "days": len(days_sorted)} if days_sorted else {},
         "meta": {
             "note": ("Dữ liệu từ TikTok Shop Finance API (/finance/202309/statements) - mỗi 'statement' là 1 kỳ quyết "
@@ -471,6 +525,9 @@ def main():
             "api_status": api_status,
             "statement_fields_seen": sorted(statements[0].keys()) if statements else [],
             "statements_in_window": len(statements),
+            "statements_total": len(merged_rows),
+            "currencies": currencies,
+            "settlement_identity_mismatch_days": mismatch,
             "window_days": WINDOW_DAYS if not BACKFILL_START else None,
             "backfill": {"start": BACKFILL_START, "end": BACKFILL_END} if BACKFILL_START else None,
         },
