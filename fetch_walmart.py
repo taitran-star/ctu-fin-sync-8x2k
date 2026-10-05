@@ -21,7 +21,7 @@ import urllib.error, urllib.parse, urllib.request
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
-SCRIPT_VERSION = "walmart-1.1"
+SCRIPT_VERSION = "walmart-1.2"
 SCHEMA = 1
 BASE = "https://marketplace.walmartapis.com"
 CID = os.environ.get("WALMART_CLIENT_ID", "").strip()
@@ -194,8 +194,8 @@ def classify(tt, at):
     t, a = (tt or "").lower(), (at or "").lower()
     if "commission" in a or "commission" in t: return "commission"
     if "refund" in t or "return" in t:
-        if "product" in a or "item" in a or a in ("", "price"): return "refund_product"
         if "tax" in a or "shipping" in a or "shipment" in a: return "ignore"
+        if "product" in a or "item" in a or a in ("", "price"): return "refund_product"
     if "product price" in a or a in ("product", "item price", "price"): return "product"
     if "tax" in a or "shipping" in a or "shipment" in a: return "ignore"
     if re.search(r"advertis|sponsored|wpa|\bads?\b|marketing", a + " " + t): return "ads"
