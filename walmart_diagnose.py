@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Cattasaurus - Walmart Marketplace API DIAGNOSE (v0.1): chạy tay 1 lần để biết hình dạng dữ liệu thật trước khi viết fetch script.
+Cattasaurus - Walmart Marketplace API DIAGNOSE (v0.2): kiểm tra LỊCH SỬ bán hàng thật - báo cáo đối soát từng tuần từ 12/2025 + giới hạn 180 ngày của /v3/orders.
 Chỉ in CẤU TRÚC + số tổng (tên trường, đếm theo trạng thái/tháng, tổng tiền) - KHÔNG in mã đơn, tên, địa chỉ, SKU (repo & log công khai).
 Env: WALMART_CLIENT_ID, WALMART_CLIENT_SECRET (GitHub Secrets).
 """
@@ -46,115 +46,97 @@ def get_token():
 def iso(d): return d.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def orders_page(token, start, end, limit=200, cursor=None):
-    if cursor:
-        return call("GET", f"{BASE}/v3/orders{cursor}", token=token)
-    q = urllib.parse.urlencode({"createdStartDate": iso(start), "createdEndDate": iso(end), "limit": limit})
-    return call("GET", f"{BASE}/v3/orders?{q}", token=token)
+def num(v):
+    try: return float(str(v).replace(",", "").replace("$", "").strip() or 0)
+    except ValueError: return 0.0
 
 
-def elements(resp):
-    o = (((resp or {}).get("list") or {}).get("elements") or {}).get("order") or []
-    return o if isinstance(o, list) else [o]
+def colidx(h, *names):
+    low = [x.strip().lower() for x in h]
+    for n in names:
+        if n.lower() in low: return low.index(n.lower())
+    for n in names:
+        for i, x in enumerate(low):
+            if n.lower() in x: return i
+    return None
+
+
+def month_of(ts):
+    ts = (ts or "").strip()
+    import re
+    m = re.match(r"(\d{1,2})/(\d{1,2})/(\d{4})", ts)
+    if m: return f"{m.group(3)}-{int(m.group(1)):02d}"
+    m = re.match(r"(\d{4})-(\d{2})", ts)
+    return f"{m.group(1)}-{m.group(2)}" if m else "?"
 
 
 def main():
-    if not CID or not SEC:
-        log("missing WALMART_CLIENT_ID / WALMART_CLIENT_SECRET"); sys.exit(1)
+    if not CID or not SEC: log("missing secrets"); sys.exit(1)
     token = get_token()
     if not token: sys.exit(1)
     now = datetime.now(timezone.utc)
 
-    # 1) how much does the shop sell? orders per month since 2025-01 (meta.totalCount, limit=1 -> cheap)
-    log("--- orders per month (totalCount) ---")
-    m = datetime(2025, 1, 1, tzinfo=timezone.utc)
-    while m < now:
-        nxt = (m.replace(day=28) + timedelta(days=4)).replace(day=1)
-        st, r = orders_page(token, m, min(nxt, now), limit=1)
-        tc = ((r.get("list") or {}).get("meta") or {}).get("totalCount") if isinstance(r, dict) else None
-        log(f"{m:%Y-%m}: HTTP {st} totalCount={tc}")
-        if st == 401 or st == 403: log(f"  -> {r}"); break
-        m = nxt
-        time.sleep(0.5)
+    log("--- /v3/orders: oldest reachable date (180-day limit?) ---")
+    for d0 in ("2026-03-01", "2026-04-01", "2026-04-05", "2026-04-08", "2026-04-12"):
+        a = datetime.strptime(d0, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        st, r = call("GET", f"{BASE}/v3/orders?" + urllib.parse.urlencode({"createdStartDate": iso(a), "createdEndDate": iso(a + timedelta(days=3)), "limit": 1}), token=token)
+        tc = ((r.get("list") or {}).get("meta") or {}).get("totalCount") if isinstance(r, dict) else r
+        log(f"{d0} +3d: HTTP {st} totalCount={tc}")
+        time.sleep(0.4)
+    log(f"(today {now:%Y-%m-%d}; 180 days ago = {(now - timedelta(days=180)):%Y-%m-%d})")
 
-    # 2) shape of orders: last 45 days, all pages
-    log("--- order shape (last 45 days) ---")
-    start = now - timedelta(days=45)
-    st, r = orders_page(token, start, now)
-    if st != 200:
-        log(f"orders failed HTTP {st}: {r}"); sys.exit(1)
-    all_orders, pages = [], 0
-    while True:
-        pages += 1
-        all_orders += elements(r)
-        cur = ((r.get("list") or {}).get("meta") or {}).get("nextCursor")
-        if not cur or pages > 30: break
+    log("--- reconciliation reports: history ---")
+    st, r = call("GET", f"{BASE}/v3/report/reconreport/availableReconFiles?reportVersion=v1", token=token)
+    if st != 200: log(f"availableReconFiles HTTP {st}: {r}"); sys.exit(1)
+    dates = sorted(str(x) for x in (r.get("availableApReportDates") or []))
+    dates = sorted(dates, key=lambda d: (d[4:], d[:4]))
+    log(f"{len(dates)} report dates: first={dates[:1]} last={dates[-1:]}")
+    by_month = collections.defaultdict(lambda: {"po": set(), "product": 0.0, "commission": 0.0, "refund": 0.0, "other": 0.0, "rows": 0})
+    types = collections.defaultdict(lambda: [0, 0.0])
+    first_po_month = {}
+    for d in dates:
+        q = urllib.parse.urlencode({"reportDate": d, "reportVersion": "v1"})
+        st2, body = call("GET", f"{BASE}/v3/report/reconreport/reconFile?{q}", token=token, raw=True, headers={"Accept": "application/octet-stream"})
+        if st2 != 200 or not isinstance(body, (bytes, bytearray)):
+            log(f"  {d}: HTTP {st2}"); continue
+        text = body.decode("utf-8-sig", errors="replace")
+        rows = list(csv.reader(io.StringIO(text)))
+        if not rows: continue
+        h = rows[0]
+        i_tt, i_at, i_amt = colidx(h, "Transaction Type"), colidx(h, "Amount Type"), colidx(h, "Amount")
+        i_po = colidx(h, "Purchase Order #", "Purchase Order")
+        i_ts = colidx(h, "Transaction Posted Timestamp", "Transaction Date", "Posted")
+        i_ship = colidx(h, "Shipped Date Time", "Ship Date", "Shipped Date")
+        if i_tt is None or i_amt is None: log(f"  {d}: unexpected columns {h[:10]}"); continue
+        pos, tmin, tmax = set(), "9999", "0000"
+        for row in rows[1:]:
+            if len(row) <= i_amt: continue
+            tt = row[i_tt]; at = row[i_at] if i_at is not None else ""; amt = num(row[i_amt])
+            po = row[i_po].strip() if i_po is not None and len(row) > i_po else ""
+            ts = row[i_ts] if i_ts is not None and len(row) > i_ts else ""
+            mo = month_of(ts)
+            types[f"{tt}|{at}"][0] += 1; types[f"{tt}|{at}"][1] += amt
+            b = by_month[mo]; b["rows"] += 1
+            if po:
+                pos.add(po); b["po"].add(po)
+                sm = month_of(row[i_ship]) if i_ship is not None and len(row) > i_ship and row[i_ship].strip() else mo
+                if po not in first_po_month or sm < first_po_month[po]: first_po_month[po] = sm
+            al, tl = at.lower(), tt.lower()
+            if "commission" in al: b["commission"] += amt
+            elif ("product" in al) and ("refund" in tl or "return" in tl): b["refund"] += amt
+            elif "product price" in al or al == "product": b["product"] += amt
+            elif "tax" not in al and "shipping" not in al: b["other"] += amt
+        log(f"  report {d}: rows={len(rows)-1} distinctPO={len(pos)}")
         time.sleep(0.6)
-        st, r = orders_page(token, start, now, cursor=cur)
-        if st != 200: log(f"page {pages+1} failed HTTP {st}: {r}"); break
-    log(f"orders fetched: {len(all_orders)} in {pages} page(s)")
-    if all_orders:
-        o = all_orders[0]
-        log(f"order keys: {sorted(o.keys())}")
-        lines = ((o.get("orderLines") or {}).get("orderLine")) or []
-        if lines:
-            l = lines[0]
-            log(f"orderLine keys: {sorted(l.keys())}")
-            ch = ((l.get('charges') or {}).get('charge')) or []
-            if ch: log(f"charge keys: {sorted(ch[0].keys())}")
-            sts = ((l.get('orderLineStatuses') or {}).get('orderLineStatus')) or []
-            if sts: log(f"orderLineStatus keys: {sorted(sts[0].keys())}")
-            if l.get("refund"): log(f"refund keys: {json.dumps(l['refund'])[:300]}")
-        ts = [x.get("orderDate") for x in all_orders if x.get("orderDate")]
-        if ts: log(f"orderDate type={type(ts[0]).__name__} min={min(ts)} max={max(ts)}")
-        status_c, charge_c, units, prod_total, ship_total, tax_total = collections.Counter(), collections.Counter(), 0, 0.0, 0.0, 0.0
-        ship_method = collections.Counter(); refunds = 0
-        for x in all_orders:
-            for l in ((x.get("orderLines") or {}).get("orderLine")) or []:
-                for s in ((l.get("orderLineStatuses") or {}).get("orderLineStatus")) or []:
-                    status_c[s.get("status")] += 1
-                units += int(float(((l.get("orderLineQuantity") or {}).get("amount")) or 0))
-                if l.get("refund"): refunds += 1
-                for c in ((l.get("charges") or {}).get("charge")) or []:
-                    t = c.get("chargeType"); charge_c[t] += 1
-                    a = float(((c.get("chargeAmount") or {}).get("amount")) or 0)
-                    tx = float(((c.get("tax") or {}).get("taxAmount") or {}).get("amount") or 0) if isinstance((c.get("tax") or {}).get("taxAmount"), dict) else 0.0
-                    if t == "PRODUCT": prod_total += a
-                    elif t == "SHIPPING": ship_total += a
-                    tax_total += tx
-            ship_method[((x.get("shippingInfo") or {}).get("methodCode"))] += 1
-        log(f"line statuses: {dict(status_c)}"); log(f"charge types: {dict(charge_c)}")
-        log(f"units={units} PRODUCT charges=${prod_total:,.2f} SHIPPING=${ship_total:,.2f} tax=${tax_total:,.2f} lines-with-refund={refunds}")
-        log(f"shipping methodCodes: {dict(ship_method)}")
-
-    # 3) fees: reconciliation report availability + column names
-    log("--- reconciliation report ---")
-    for ver in ("v1",):
-        st, r = call("GET", f"{BASE}/v3/report/reconreport/availableReconFiles?reportVersion={ver}", token=token)
-        log(f"availableReconFiles {ver}: HTTP {st}")
-        if st == 200 and isinstance(r, dict):
-            log(f"  keys: {sorted(r.keys())}")
-            dates = r.get("availableApReportDates") or r.get("availableDates") or []
-            log(f"  dates: {len(dates)} first={dates[:2]} last={dates[-2:]}")
-            if dates:
-                d = dates[0] if isinstance(dates[0], str) else str(dates[0])
-                q = urllib.parse.urlencode({"reportDate": d, "reportVersion": ver})
-                st2, body = call("GET", f"{BASE}/v3/report/reconreport/reconFile?{q}", token=token, raw=True, headers={"Accept": "application/octet-stream"})
-                log(f"  reconFile {d}: HTTP {st2} bytes={len(body) if isinstance(body,(bytes,bytearray)) else body}")
-                if st2 == 200 and isinstance(body, (bytes, bytearray)):
-                    try:
-                        z = zipfile.ZipFile(io.BytesIO(body))
-                        for name in z.namelist()[:2]:
-                            txt = z.read(name).decode("utf-8", errors="replace")
-                            rows = list(csv.reader(io.StringIO(txt)))
-                            log(f"  file {len(name)}ch name: columns={rows[0] if rows else None} data_rows={max(0,len(rows)-1)}")
-                            if len(rows) > 1:
-                                tt = collections.Counter(r2[rows[0].index('Transaction Type')] for r2 in rows[1:] if 'Transaction Type' in rows[0])
-                                log(f"  transaction types: {dict(tt)}")
-                    except Exception as e:  # noqa: BLE001
-                        log(f"  not a zip ({e}); first 200 bytes keys-only skipped")
-        elif st != 200:
-            log(f"  -> {r}")
+    log("--- by posted month (all reports) ---")
+    for mo in sorted(by_month):
+        b = by_month[mo]
+        log(f"{mo}: rows={b['rows']} distinctPO={len(b['po'])} product=${b['product']:,.2f} refunds=${b['refund']:,.2f} commission=${b['commission']:,.2f} otherFees=${b['other']:,.2f}")
+    fm = collections.Counter(first_po_month.values())
+    log(f"--- PO first sale/ship month (distinct POs): {sorted(fm.items())}")
+    log("--- Transaction Type | Amount Type (count, sum) ---")
+    for k, v in sorted(types.items(), key=lambda kv: -kv[1][0])[:40]:
+        log(f"  {k}: n={v[0]} sum={v[1]:,.2f}")
     log("done")
 
 
