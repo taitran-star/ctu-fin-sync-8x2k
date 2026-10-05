@@ -1,0 +1,22 @@
+name: Cattasaurus Walmart diagnose
+
+on:
+  workflow_dispatch:   # chạy tay 1 lần: Run workflow
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Probe Walmart Marketplace API (structure only)
+        env:
+          WALMART_CLIENT_ID: ${{ secrets.WALMART_CLIENT_ID }}
+          WALMART_CLIENT_SECRET: ${{ secrets.WALMART_CLIENT_SECRET }}
+        run: python walmart_diagnose.py
