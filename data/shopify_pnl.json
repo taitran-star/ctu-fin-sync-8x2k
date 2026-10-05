@@ -64,8 +64,8 @@
         "sales": 53116.12
       },
       "email": {
-        "orders": 786,
-        "sales": 100468.24
+        "orders": 787,
+        "sales": 100590.23
       },
       "email_other": {
         "orders": 8,
@@ -193711,6 +193711,11 @@
             "orders": 2,
             "sales": 167.0
           },
+          "Email #1B: Shy and anxious cats": {
+            "medium": "email",
+            "orders": 1,
+            "sales": 121.99
+          },
           "Email #1C: Messy cardboard scratchers": {
             "medium": "email",
             "orders": 1,
@@ -193719,8 +193724,8 @@
         },
         "first_touch": {
           "email": {
-            "orders": 3,
-            "sales": 592.5
+            "orders": 4,
+            "sales": 714.49
           },
           "google_ads": {
             "orders": 3,
@@ -193765,8 +193770,8 @@
         },
         "journeys": {
           "email>email": {
-            "orders": 3,
-            "sales": 592.5
+            "orders": 4,
+            "sales": 714.49
           },
           "google_ads>google_ads": {
             "orders": 3,
@@ -193831,11 +193836,11 @@
         },
         "last_touch": {
           "email": {
-            "new": 6,
-            "orders": 8,
+            "new": 7,
+            "orders": 9,
             "paid_first": 4,
             "returning": 2,
-            "sales": 1356.1
+            "sales": 1478.09
           },
           "google_ads": {
             "new": 4,
@@ -193903,7 +193908,7 @@
         },
         "no_journey": 0,
         "orders": 68,
-        "pending": 1
+        "pending": 0
       },
       "discounts": 8086.24,
       "fees_missing_orders": 14,
@@ -193947,9 +193952,9 @@
       "total_sales": 8919.29
     }
   },
-  "generated_at": "2026-10-05T21:31:43Z",
+  "generated_at": "2026-10-05T21:50:22Z",
   "meta": {
-    "api_cost_actual": 34407,
+    "api_cost_actual": 34423,
     "api_cost_requested_max": 354,
     "api_requests": 383,
     "auth_mode": "client_credentials",
@@ -193962,8 +193967,8 @@
       "journeys_missing": 0,
       "journeys_moments_truncated": 1,
       "journeys_no_session": 625,
-      "journeys_pending": 1,
-      "journeys_ready": 7491,
+      "journeys_pending": 0,
+      "journeys_ready": 7492,
       "journeys_resolved_by_moments": 522,
       "journeys_unresolved": 0,
       "late_orders_scanned": 3261,
@@ -194090,7 +194095,6 @@
     "script_version": "1.9",
     "throttled_waits": 0,
     "warnings": [
-      "1 orders not attributed by Shopify yet (customerJourneySummary.ready=false, normal for the newest orders) - counted as pending, refetched next run",
       "34 orders carry the __snowball attribute but no 'Referral - SS - *' tag (Snowball rejected/untracked them) - not counted as referrals",
       "no rate known for Snowball program 'asher_fitfeline_partner' - using SNOWBALL_DEFAULT_RATE=0",
       "rate for Snowball program '20 % Commision No Discou' inferred from its name (20%) - set SNOWBALL_PROGRAM_RATES to pin it",
