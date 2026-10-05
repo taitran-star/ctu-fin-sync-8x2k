@@ -592,6 +592,7 @@ def fetch_order_fees(access_token, shop_cipher, order_ids, stat):
         data = resp.get("data") or {}
         if not stat.get("fields_seen"):
             stat["fields_seen"] = sorted(data.keys())
+        if not stat.get("txn_item_fields_seen"):
             for key in ("sku_transactions", "statement_transactions", "transactions"):
                 if isinstance(data.get(key), list) and data[key] and isinstance(data[key][0], dict):
                     stat["txn_item_fields_seen"] = sorted(data[key][0].keys())
@@ -622,39 +623,46 @@ def orders_merge(previous, fetched_rows, fetched_start, fetched_end):
 
 
 def _fee_groups(parts):
-    ref = aff = other = 0.0
-    refund_admin = 0.0
+    """(referral, affiliate, refund_admin, smart_promo, other) from a fee_parts dict (positive = cost).
+    Real TikTok keys seen 2026-10-05: referral_fee_amount, affiliate_commission_amount,
+    affiliate_commission_amount_before_pit (a pre-tax DUPLICATE of the previous one - never add it),
+    smart_promotion_fee_amount, campaign_period_fee_sp_amount, refund_administration_fee_amount."""
+    ref = aff = radm = smart = other = 0.0
     for k, v in parts.items():
         kl = k.lower()
+        if kl.endswith("_before_pit"):
+            continue
         if kl in ("referral_fee_amount", "platform_commission_amount"):
             ref += v
         elif "affiliate" in kl or "creator_bonus" in kl:
             aff += v
         elif kl == "refund_administration_fee_amount":
-            refund_admin += v
+            radm += v
+        elif "smart_promotion" in kl or kl.endswith("_sp_amount"):
+            smart += v
         else:
             other += v
-    return ref, aff, refund_admin, other
+    return ref, aff, radm, smart, other
 
 
 def order_fee_split(fees):
-    """(referral, affiliate, refund_admin, other, total) as positive costs. The TOTAL is TikTok's own
-    fee_and_tax_amount for the order whenever it is present; the named groups are best effort and any
-    remainder goes to 'other', so the daily total can never drift from what TikTok says it charged."""
-    ref, aff, radm, oth = _fee_groups(fees.get("fee_parts") or {})
-    parts_total = ref + aff + radm + oth
+    """(referral, affiliate, refund_admin, smart_promo, other, total) as positive costs. The TOTAL is
+    TikTok's own fee_and_tax_amount for the order whenever it is present; the named groups are best effort
+    and any remainder goes to 'other', so the daily total can never drift from what TikTok charged."""
+    ref, aff, radm, smart, oth = _fee_groups(fees.get("fee_parts") or {})
+    parts_total = ref + aff + radm + smart + oth
     total = fees.get("fee_cost")
     if total in (None, 0, 0.0) and parts_total:
         total = parts_total
     total = _f(total)
     if abs(parts_total - total) > 0.011:
-        named = ref + aff + radm
+        named = ref + aff + radm + smart
         if 0 <= named <= total + 0.011 and total >= 0:
             oth = total - named
         else:                      # named parts do not fit the total - do not guess a split
-            ref = aff = radm = 0.0
+            ref = aff = radm = smart = 0.0
             oth = total
-    return ref, aff, radm, oth, total
+    return ref, aff, radm, smart, oth, total
 
 
 def bucket_orders(orders, statement_days):
@@ -667,7 +675,8 @@ def bucket_orders(orders, statement_days):
             "orders_count": 0, "units": 0, "gross_sales": 0.0, "seller_discount": 0.0, "platform_discount": 0.0,
             "net_sales": 0.0, "cancelled_orders": 0, "unpaid_orders": 0, "settled_orders": 0,
             "unsettled_orders": 0, "fees_referral": 0.0, "fees_affiliate": 0.0, "fees_refund_admin": 0.0,
-            "fees_other": 0.0, "fees_total": 0.0, "gross_sales_settled": 0.0,
+            "fees_smart_promo": 0.0, "fees_other": 0.0, "fees_total": 0.0, "gross_sales_settled": 0.0,
+            "net_sales_settled": 0.0,
         })
 
     for oid, r in orders.items():
@@ -686,10 +695,11 @@ def bucket_orders(orders, statement_days):
             # Unpaid / never-paid / sample order: no sale and no refund, but any fee TikTok charged is a real
             # cost and stays on the order day.
             if fees.get("settled"):
-                ref, aff, radm, oth, tot = order_fee_split(fees)
+                ref, aff, radm, smart, oth, tot = order_fee_split(fees)
                 row["fees_referral"] += ref
                 row["fees_affiliate"] += aff
                 row["fees_refund_admin"] += radm
+                row["fees_smart_promo"] += smart
                 row["fees_other"] += oth
                 row["fees_total"] += tot
             continue
@@ -702,10 +712,13 @@ def bucket_orders(orders, statement_days):
         if fees.get("settled"):
             row["settled_orders"] += 1
             row["gross_sales_settled"] += gross
-            ref, aff, radm, oth, tot = order_fee_split(fees)
+            if st != "CANCELLED":      # rate base = sales that stay sales; cancellation fees stay in the numerator
+                row["net_sales_settled"] += gross - sd
+            ref, aff, radm, smart, oth, tot = order_fee_split(fees)
             row["fees_referral"] += ref
             row["fees_affiliate"] += aff
             row["fees_refund_admin"] += radm
+            row["fees_smart_promo"] += smart
             row["fees_other"] += oth
             row["fees_total"] += tot
         else:
@@ -856,7 +869,7 @@ def main():
                                              fetched_start, fetched_end)
             # Per-order finance breakdown: every unsettled order + every order in the rolling window
             # (a refund can land after settlement). Unsettled / newest first, capped per run.
-            todo = [oid for oid, r in merged_orders.items() if r.get("status") != "UNPAID"
+            todo = [oid for oid, r in merged_orders.items() if r.get("status") != "UNPAID" and not r.get("is_sample")
                     and not (r.get("status") == "CANCELLED" and not r.get("paid_time"))
                     and (not (r.get("fees") or {}).get("settled") or (r.get("day") or "") >= fetched_start)]
             todo.sort(key=lambda oid: ((merged_orders[oid].get("fees") or {}).get("settled") is True,
@@ -874,6 +887,10 @@ def main():
         log(f"WARNING: orders step crashed - {orders_status['detail']} - keeping previous orders")
     orders_daily, refunds_daily = bucket_orders(merged_orders, statement_days)
     settled_n = sum(1 for r in merged_orders.values() if (r.get("fees") or {}).get("settled"))
+    _ns = sum(v["net_sales_settled"] for v in orders_daily.values())
+    fee_rates = ({k: round(sum(v[f"fees_{k}"] for v in orders_daily.values()) / _ns, 4)
+                  for k in ("referral", "affiliate", "smart_promo", "refund_admin", "other", "total")}
+                 if _ns > 0 else {})
 
     out = {
         "source": "tiktok_shop",
@@ -900,6 +917,8 @@ def main():
             "orders_in_window": orders_fetched,
             "orders_total": len(merged_orders),
             "orders_settled": settled_n,
+            "fee_rates_settled": {"basis": "fees / net_sales of settled sold orders", "n_orders": settled_n,
+                                  "net_sales": round(_ns, 2), **fee_rates},
             "order_fields_seen": order_fields,
             "order_fee_calls": {k: v for k, v in fee_stat.items()},
             "statement_fields_seen": sorted(statements[0].keys()) if statements else [],
