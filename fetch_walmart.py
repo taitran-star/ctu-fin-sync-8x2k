@@ -4,6 +4,8 @@ Cattasaurus - Walmart Marketplace sync (v1.0) -> data/walmart.json (schema 1)
 
 Doanh thu theo NGAY DAT HANG (gio America/Los_Angeles) - cung quy tac Shopify/Amazon/TikTok:
   * /v3/orders  : don, so luong, doanh thu (PRODUCT charges) theo ngay dat; dong bi Cancelled khong tinh.
+                  API chi tra ~180 ngay gan nhat -> don cu hon duoc DUNG LAI tu bao cao doi soat (recon): ma don, doanh thu =
+                  "Product Price", ngay = cot ngay dat (neu co) > ngay giao/van chuyen > ngay ghi so (meta.recon_orders_basis).
   * Reconciliation report (CSV, /v3/report/reconreport): phi that cua tung don (Commission on Product ...) ->
     ghi vao NGAY DAT cua don goc; hoan tien -> NGAY HOAN; phi khong gan don (quang cao, dich vu...) -> ngay ghi so.
   * Don chua co trong recon (chua quyet toan) -> phi hoa hong UOC TINH theo ty le do tren cac don da quyet toan
@@ -11,7 +13,7 @@ Doanh thu theo NGAY DAT HANG (gio America/Los_Angeles) - cung quy tac Shopify/Am
 Khong luu ten/dia chi khach; chi ma don Walmart (PO), ngay, so tien.
 
 Env: WALMART_CLIENT_ID, WALMART_CLIENT_SECRET (GitHub Secrets), REPORT_TIMEZONE (default America/Los_Angeles),
-     HISTORY_START (default 2026-04-01; Walmart bat dau ban 04/2026), WINDOW_DAYS (default 45),
+     HISTORY_START (default 2025-01-01; recon bao cao di xa hon /v3/orders), WINDOW_DAYS (default 45),
      BACKFILL_START / BACKFILL_END (tuy chon, YYYY-MM-DD), DATA_FILE (default data/walmart.json).
 """
 import base64, collections, csv, io, json, os, re, sys, time, uuid
@@ -19,7 +21,7 @@ import urllib.error, urllib.parse, urllib.request
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
-SCRIPT_VERSION = "walmart-1.0"
+SCRIPT_VERSION = "walmart-1.1"
 SCHEMA = 1
 BASE = "https://marketplace.walmartapis.com"
 CID = os.environ.get("WALMART_CLIENT_ID", "").strip()
@@ -39,7 +41,8 @@ def _clean_date(s, default=None):
     except ValueError: return default
 
 
-HISTORY_START = _clean_date(os.environ.get("HISTORY_START"), date(2026, 4, 1))
+HISTORY_START = _clean_date(os.environ.get("HISTORY_START"), date(2025, 1, 1))
+API_MAX_DAYS = 175  # /v3/orders chi tra don trong ~180 ngay gan nhat; cu hon -> dung bao cao doi soat (recon)
 WINDOW_DAYS = int(re.sub(r"\D", "", os.environ.get("WINDOW_DAYS", "") or "") or 45)
 BACKFILL_START = _clean_date(os.environ.get("BACKFILL_START"))
 BACKFILL_END = _clean_date(os.environ.get("BACKFILL_END"))
@@ -208,10 +211,14 @@ def parse_recon(text, report_date):
     i_po = col(header, "Purchase Order #", "Purchase Order", "PO #")
     i_ts = col(header, "Transaction Posted Timestamp", "Transaction Date", "Posted")
     i_rate = col(header, "Commission Rate")
+    i_ord = col(header, "Order Date", "Order Placed", "Purchase Order Date", "Order Created", "Order Time")
+    i_ship = col(header, "Shipped Date Time", "Shipped Date", "Ship Date")
+    i_qty = col(header, "Ship Qty", "Shipped Qty", "Quantity")
     if i_tt is None or i_amt is None:
         return {"error": f"unexpected columns: {header[:12]}"}
     po_fees = collections.defaultdict(lambda: {"commission": 0.0, "rate": None})
     refunds, nonorder, product_by_po = [], [], collections.defaultdict(float)
+    sales_by_po = {}   # PO -> {"g": product price total, "u": units, "d": earliest date, "b": date basis}
     types = collections.defaultdict(lambda: [0, 0.0])
     n = 0
     for row in rd[1:]:
@@ -233,11 +240,20 @@ def parse_recon(text, report_date):
             else: nonorder.append((ts, "commission", -amt))
         elif k == "product":
             if po and amt > 0: product_by_po[po] += amt
+            if po:
+                cell = lambda i: row[i] if i is not None and len(row) > i else ""
+                cands = [(parse_ts(cell(i_ord), ""), "order_date"), (parse_ts(cell(i_ship), ""), "shipped"), (ts, "posted")]
+                d, basis = next(((dd, b) for dd, b in cands if dd), ("", "posted"))
+                e = sales_by_po.setdefault(po, {"g": 0.0, "u": 0, "d": d or ts, "b": basis})
+                e["g"] += amt
+                if amt > 0: e["u"] += max(1, int(num(cell(i_qty), 1))) if cell(i_qty).strip() else 1
+                if d and (not e["d"] or d < e["d"]): e["d"], e["b"] = d, basis
         elif k == "refund_product":
             refunds.append((po, ts, abs(amt)))  # refund rows carry negative amounts -> positive refund
         else:
             nonorder.append((ts, k, -amt, po))
-    return {"po_fees": po_fees, "refunds": refunds, "nonorder": nonorder, "product_by_po": product_by_po, "types": types, "rows": n}
+    return {"po_fees": po_fees, "refunds": refunds, "nonorder": nonorder, "product_by_po": product_by_po, "sales_by_po": sales_by_po,
+            "types": types, "rows": n, "columns": [h.strip() for h in header]}
 
 
 def fetch_recon(w, state, force_all=False):
@@ -295,6 +311,14 @@ def merge_state(state, orders_raw, new_recon, now_la):
         for it in p["nonorder"]:
             ts, kind, cost = it[0], it[1], it[2]; po = it[3] if len(it) > 3 else ""
             nonorder.append([ts or p["report_date"], kind, r2(cost), po])
+        ro = state.setdefault("recon_orders", {})
+        for po, e in p["sales_by_po"].items():
+            if e["g"] <= 0: continue
+            cur = ro.get(po)
+            if cur is None: ro[po] = {"d": e["d"], "g": r2(e["g"]), "u": e["u"], "b": e["b"]}
+            else:
+                cur["g"] = r2(cur["g"] + e["g"]); cur["u"] += e["u"]
+                if e["d"] and (not cur["d"] or e["d"] < cur["d"]): cur["d"], cur["b"] = e["d"], e["b"]
         for po, amt in p["product_by_po"].items():
             o = orders.get(po)
             if o and o["u"] > 1:
@@ -305,7 +329,15 @@ def merge_state(state, orders_raw, new_recon, now_la):
 
 
 def build_output(state, status, recon_info, charge_types, calib, now):
-    orders = state["orders"]; fees = state.get("fees_by_po", {})
+    api_orders = state["orders"]; fees = state.get("fees_by_po", {})
+    orders = {}
+    basis = collections.Counter()
+    for po, e in state.get("recon_orders", {}).items():   # orders older than the API window, rebuilt from the recon report
+        if po in api_orders or not e.get("d"): continue
+        orders[po] = {"d": e["d"], "ms": 0, "g": e["g"], "sh": 0.0, "tx": 0.0, "u": max(1, e["u"]), "ln": 1, "cx": 0, "rf": 0, "st": "recon", "sold": True}
+        basis[e.get("b", "posted")] += 1
+    n_recon = len(orders)
+    orders.update(api_orders)
     per_unit = state.get("calib", {}).get("per_unit", 0) > state.get("calib", {}).get("line_total", 0)
     # fee rate measured on settled orders (those with a commission line in recon), net-sales weighted
     s_net = s_fee = 0.0
@@ -363,6 +395,9 @@ def build_output(state, status, recon_info, charge_types, calib, now):
             "charge_types": dict(charge_types), "product_charge_is_per_unit": per_unit, "calib": state.get("calib", {}),
             "recon_types": {k: [v[0], r2(v[1])] for k, v in sorted(state.get("recon_types", {}).items())},
             "recon_files_ingested": len(state.get("recon_done", {})),
+            "orders_from_api": sum(1 for o in api_orders.values() if o["sold"]), "orders_from_recon": n_recon, "recon_orders_basis": dict(basis),
+            "recon_columns": state.get("recon_columns", []),
+            "first_order_date": min((o["d"] for o in orders.values() if o["sold"]), default=None),
         },
     }
 
@@ -380,6 +415,9 @@ def main():
         log("missing WALMART_CLIENT_ID / WALMART_CLIENT_SECRET"); sys.exit(1)
     now = datetime.now(timezone.utc)
     state = load_state()
+    if state.get("ver") != SCRIPT_VERSION:   # new script version: re-ingest everything so old and new logic never mix
+        keep = {k: state[k] for k in () if k in state}
+        state = {"ver": SCRIPT_VERSION, **keep}
     w = Walmart()
     try: w.auth()
     except RuntimeError as e:
@@ -388,11 +426,11 @@ def main():
 
     first = not state.get("orders")
     if BACKFILL_START:
-        start = datetime.combine(BACKFILL_START, datetime.min.time(), tzinfo=timezone.utc)
+        start = max(datetime.combine(BACKFILL_START, datetime.min.time(), tzinfo=timezone.utc), now - timedelta(days=API_MAX_DAYS))
         end = datetime.combine(BACKFILL_END or now.date(), datetime.max.time(), tzinfo=timezone.utc).replace(microsecond=0)
         end = min(end, now)
     elif first:
-        start, end = datetime.combine(HISTORY_START, datetime.min.time(), tzinfo=timezone.utc), now
+        start, end = max(datetime.combine(HISTORY_START, datetime.min.time(), tzinfo=timezone.utc), now - timedelta(days=API_MAX_DAYS)), now
     else:
         start, end = now - timedelta(days=WINDOW_DAYS), now
     orders_raw, ost = fetch_orders(w, start, end)
@@ -404,6 +442,7 @@ def main():
     charge_types, calib = merge_state(state, orders_raw, new_recon, now)
     rt = state.setdefault("recon_types", {})
     for p in new_recon:
+        if p.get("columns") and not state.get("recon_columns"): state["recon_columns"] = p["columns"]
         for k, v in p["types"].items():
             e = rt.setdefault(k, [0, 0.0]); e[0] += v[0]; e[1] += v[1]
     c = state.setdefault("calib", {})
@@ -418,7 +457,9 @@ def main():
     with open(tmp, "w", encoding="utf-8") as f: json.dump(out, f, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
     os.replace(tmp, DATA_FILE)
     m = out["meta"]
-    log(f"wrote {DATA_FILE}: {m['orders_total']} sold orders, {m['orders_settled']} with real fees, commission rate {m['fee_rates_settled']['commission']*100:.2f}%")
+    log(f"wrote {DATA_FILE}: {m['orders_total']} sold orders ({m['orders_from_api']} API + {m['orders_from_recon']} rebuilt from recon, first {m['first_order_date']}), {m['orders_settled']} with real fees, commission rate {m['fee_rates_settled']['commission']*100:.2f}%")
+    log(f"recon columns: {m['recon_columns']}")
+    log(f"recon order date basis: {m['recon_orders_basis']}")
     for k, v in list(m["recon_types"].items())[:25]: log(f"  recon type {k}: n={v[0]} sum={v[1]}")
     if not ost["ok"]: sys.exit(2)
 
