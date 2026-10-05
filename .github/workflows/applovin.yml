@@ -1,0 +1,57 @@
+name: Cattasaurus AppLovin sync
+
+on:
+  schedule:
+    # :03 and :33 UTC - unused offset (Amazon :00/:30, Shopify :05/:35, TikTok :07/:37, ShipMonk :10/:40, Meta :15/:45,
+    # Walmart :17/:47, Google :20/:50, Amazon Ads :25/:41, PayPal :28/:58, Klaviyo :42).
+    - cron: "3,33 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: applovin-sync
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Sync to the latest main
+        run: |
+          git fetch --depth=1 origin main
+          git reset --hard origin/main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch AppLovin advertiser report
+        env:
+          REPORT_TIMEZONE: America/Los_Angeles
+          APPLOVIN_REPORT_KEY: ${{ secrets.APPLOVIN_REPORT_KEY }}
+        run: python fetch_applovin.py
+
+      - name: Commit updated data file if changed
+        if: always()
+        run: |
+          git config user.name "cattasaurus-applovin-bot"
+          git config user.email "actions@users.noreply.github.com"
+          if [ -f data/applovin.json ]; then git add data/applovin.json; fi
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Update AppLovin data ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            echo "Push attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "Could not push after 5 attempts." && exit 1
