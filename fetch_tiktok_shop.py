@@ -61,7 +61,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "tiktok_shop-2.0"
+SCRIPT_VERSION = "tiktok_shop-2.2"
 SCHEMA = 2
 
 AUTH_HOST = "https://auth.tiktok-shops.com"
@@ -676,7 +676,7 @@ def bucket_orders(orders, statement_days):
             "net_sales": 0.0, "cancelled_orders": 0, "unpaid_orders": 0, "settled_orders": 0,
             "unsettled_orders": 0, "fees_referral": 0.0, "fees_affiliate": 0.0, "fees_refund_admin": 0.0,
             "fees_smart_promo": 0.0, "fees_other": 0.0, "fees_total": 0.0, "gross_sales_settled": 0.0,
-            "net_sales_settled": 0.0,
+            "net_sales_settled": 0.0, "net_sales_unsettled": 0.0,
         })
 
     for oid, r in orders.items():
@@ -723,6 +723,8 @@ def bucket_orders(orders, statement_days):
             row["fees_total"] += tot
         else:
             row["unsettled_orders"] += 1
+            if st != "CANCELLED":
+                row["net_sales_unsettled"] += gross - sd     # sales whose real fees TikTok has not booked yet
         if st == "CANCELLED":
             # paid, then cancelled: refund of the whole order on the cancel day
             ct = r.get("cancel_time")
@@ -845,7 +847,9 @@ def main():
     statement_days = {sid: r.get("day") for sid, r in merged_rows.items() if r.get("day")}
     orders_status = {"status": "skipped"}
     fee_stat = {"ok": 0, "errors": 0}
-    merged_orders = dict((prev or {}).get("orders") or {})
+    merged_orders = {o: r for o, r in ((prev or {}).get("orders") or {}).items() if not r.get("is_sample")}
+    merged_samples = dict((prev or {}).get("samples_daily") or {})
+    samples_new = {}
     orders_fetched = 0
     order_fields = {}
     try:
@@ -865,8 +869,16 @@ def main():
                     f"{len(prev_orders_in_range)} there - keeping previous orders for this run")
                 orders_status = dict(orders_status, status="empty_kept_previous")
             else:
-                merged_orders = orders_merge(prev, {str(o["id"]): order_row(o) for o in orders},
+                real_orders = [o for o in orders if not o.get("is_sample_order")]
+                for o in orders:
+                    if o.get("is_sample_order") and o.get("create_time"):
+                        k = day_key(o["create_time"])
+                        samples_new[k] = samples_new.get(k, 0) + 1
+                merged_orders = orders_merge(prev, {str(o["id"]): order_row(o) for o in real_orders},
                                              fetched_start, fetched_end)
+                merged_samples = {d: n for d, n in ((prev or {}).get("samples_daily") or {}).items()
+                                  if d >= HISTORY_START and (d < fetched_start or d > fetched_end)}
+                merged_samples.update(samples_new)
             # Per-order finance breakdown: every unsettled order + every order in the rolling window
             # (a refund can land after settlement). Unsettled / newest first, capped per run.
             todo = [oid for oid, r in merged_orders.items() if r.get("status") != "UNPAID" and not r.get("is_sample")
@@ -903,6 +915,7 @@ def main():
         "statements": merged_rows,
         "orders_daily": orders_daily,
         "refunds_daily": refunds_daily,
+        "samples_daily": dict(sorted(merged_samples.items())),
         "orders": merged_orders,
         "coverage": {"first_day": days_sorted[0], "last_day": days_sorted[-1], "days": len(days_sorted)} if days_sorted else {},
         "meta": {
