@@ -1,0 +1,65 @@
+name: Cattasaurus Walmart sync
+
+on:
+  schedule:
+    # Every 30 minutes at :17 and :47 UTC - unused offset (Amazon :00/:30, Shopify :05/:35, TikTok :07/:37,
+    # ShipMonk :10/:40, Meta :15/:45, Google :20/:50, Amazon Ads :25, PayPal :28/:58, Klaviyo :42).
+    - cron: "17,47 * * * *"
+  workflow_dispatch:   # "Run workflow" by hand; fill the two dates to re-pull a past range of orders
+    inputs:
+      backfill_start:
+        description: "Re-pull orders from (YYYY-MM-DD). Leave empty for the normal rolling run."
+        required: false
+        default: ""
+      backfill_end:
+        description: "Re-pull orders to (YYYY-MM-DD, inclusive). Empty = today."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: walmart-sync
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch Walmart Marketplace orders + reconciliation fees
+        env:
+          REPORT_TIMEZONE: America/Los_Angeles
+          HISTORY_START: "2026-04-01"
+          BACKFILL_START: ${{ github.event.inputs.backfill_start }}
+          BACKFILL_END: ${{ github.event.inputs.backfill_end }}
+          WALMART_CLIENT_ID: ${{ secrets.WALMART_CLIENT_ID }}
+          WALMART_CLIENT_SECRET: ${{ secrets.WALMART_CLIENT_SECRET }}
+        run: python fetch_walmart.py
+
+      - name: Commit updated data file if changed
+        if: always()
+        run: |
+          git config user.name "cattasaurus-walmart-bot"
+          git config user.email "actions@users.noreply.github.com"
+          if [ -f data/walmart.json ]; then git add data/walmart.json; fi
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Update Walmart data ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            echo "Push attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "Could not push after 5 attempts." && exit 1
