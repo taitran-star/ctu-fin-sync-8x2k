@@ -78,8 +78,15 @@ TZ = ZoneInfo(TZ_NAME) if ZoneInfo else timezone.utc
 
 HISTORY_START = os.environ.get("HISTORY_START", "2025-01-01").strip() or "2025-01-01"
 WINDOW_DAYS = int(os.environ.get("WINDOW_DAYS", "45"))
-BACKFILL_START = os.environ.get("BACKFILL_START", "").strip()
-BACKFILL_END = os.environ.get("BACKFILL_END", "").strip()
+def _clean_date(raw):
+    """Run-workflow inputs are typed by hand ("2026-07-01." with a trailing dot broke run #23): take the
+    first YYYY-MM-DD found (also accepts YYYY/MM/DD), ignore anything else around it."""
+    m = re.search(r"(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})", raw or "")
+    return f"{int(m.group(1)):04d}-{int(m.group(2)):02d}-{int(m.group(3)):02d}" if m else ""
+
+
+BACKFILL_START = _clean_date(os.environ.get("BACKFILL_START", ""))
+BACKFILL_END = _clean_date(os.environ.get("BACKFILL_END", ""))
 
 # Token state. TikTok ROTATES the refresh_token on every refresh (confirmed by run #2, 2026-10-04),
 # and a GitHub Action cannot write a repo secret, so the newest tokens are kept in this file,
