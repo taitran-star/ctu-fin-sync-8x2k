@@ -68,8 +68,8 @@
         "sales": 929.58
       },
       "google_ads": {
-        "orders": 975,
-        "sales": 122717.23
+        "orders": 976,
+        "sales": 122826.23
       },
       "meta_organic": {
         "orders": 213,
@@ -88,8 +88,8 @@
         "sales": 62258.93
       },
       "other_channel": {
-        "orders": 453,
-        "sales": 24875.0
+        "orders": 454,
+        "sales": 24932.0
       },
       "other_paid": {
         "orders": 6,
@@ -194001,8 +194001,8 @@
             "sales": 129.0
           },
           "google_ads": {
-            "orders": 5,
-            "sales": 863.0
+            "orders": 6,
+            "sales": 972.0
           },
           "meta_organic": {
             "orders": 2,
@@ -194017,8 +194017,8 @@
             "sales": 603.0
           },
           "other_channel": {
-            "orders": 7,
-            "sales": 380.0
+            "orders": 8,
+            "sales": 437.0
           }
         },
         "journeys": {
@@ -194035,8 +194035,8 @@
             "sales": 129.0
           },
           "google_ads>google_ads": {
-            "orders": 5,
-            "sales": 863.0
+            "orders": 6,
+            "sales": 972.0
           },
           "meta_organic>meta_organic": {
             "orders": 2,
@@ -194071,8 +194071,8 @@
             "sales": 365.0
           },
           "other_channel>other_channel": {
-            "orders": 7,
-            "sales": 380.0
+            "orders": 8,
+            "sales": 437.0
           }
         },
         "last_touch": {
@@ -194084,11 +194084,11 @@
             "sales": 151.67
           },
           "google_ads": {
-            "new": 5,
-            "orders": 7,
-            "paid_first": 5,
+            "new": 6,
+            "orders": 8,
+            "paid_first": 6,
             "returning": 2,
-            "sales": 1101.0
+            "sales": 1210.0
           },
           "meta_organic": {
             "new": 2,
@@ -194113,10 +194113,10 @@
           },
           "other_channel": {
             "new": 0,
-            "orders": 7,
+            "orders": 8,
             "paid_first": 0,
-            "returning": 7,
-            "sales": 380.0
+            "returning": 8,
+            "sales": 437.0
           },
           "snowball": {
             "new": 1,
@@ -194128,7 +194128,7 @@
         },
         "no_journey": 0,
         "orders": 53,
-        "pending": 2
+        "pending": 0
       },
       "discounts": 6237.07,
       "fees_missing_orders": 6,
@@ -194167,9 +194167,9 @@
       "total_sales": 6848.96
     }
   },
-  "generated_at": "2026-10-06T22:21:59Z",
+  "generated_at": "2026-10-06T22:47:34Z",
   "meta": {
-    "api_cost_actual": 35132,
+    "api_cost_actual": 35139,
     "api_cost_requested_max": 354,
     "api_requests": 388,
     "auth_mode": "client_credentials",
@@ -194181,9 +194181,9 @@
       "journeys_deferred": 650,
       "journeys_missing": 0,
       "journeys_moments_truncated": 1,
-      "journeys_no_session": 624,
-      "journeys_pending": 2,
-      "journeys_ready": 7427,
+      "journeys_no_session": 625,
+      "journeys_pending": 0,
+      "journeys_ready": 7429,
       "journeys_resolved_by_moments": 522,
       "journeys_unresolved": 0,
       "late_orders_scanned": 3077,
@@ -194310,7 +194310,6 @@
     "script_version": "1.9",
     "throttled_waits": 0,
     "warnings": [
-      "2 orders not attributed by Shopify yet (customerJourneySummary.ready=false, normal for the newest orders) - counted as pending, refetched next run",
       "34 orders carry the __snowball attribute but no 'Referral - SS - *' tag (Snowball rejected/untracked them) - not counted as referrals",
       "no rate known for Snowball program 'asher_fitfeline_partner' - using SNOWBALL_DEFAULT_RATE=0",
       "rate for Snowball program '20 % Commision No Discou' inferred from its name (20%) - set SNOWBALL_PROGRAM_RATES to pin it",
