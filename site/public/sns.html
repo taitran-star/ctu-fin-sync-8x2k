@@ -88,12 +88,37 @@
   #siteRefresh a{color:var(--ink-muted);text-decoration:none;padding:0 4px;}
   @media (max-width:640px){body{padding-inline:14px;} .band{padding:16px 110px 16px 16px;margin-top:14px;} .band .mascot{height:104px;right:10px;} input[type=search]{width:100%;}}
   @media (max-width:520px){#siteRefresh{left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));justify-content:space-between;gap:6px;padding:6px 6px 6px 10px;font-size:11.5px;} #siteRefresh a{padding:0 2px;}}
+
+  /* --- period picker (date range + grouping), v2 --- */
+  .pbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;}
+  .pwrap{position:relative;display:flex;align-items:center;gap:6px;min-width:0;}
+  .rangebtn{display:inline-flex;align-items:center;gap:8px;background:var(--surface-card);color:var(--ink-primary);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:13.5px;font-weight:500;max-width:100%;text-align:left;}
+  .rangebtn b{font-weight:600;} .dim{color:var(--ink-muted);}
+  .rangebtn svg{flex:none;}
+  .navbtn{background:var(--surface-card);color:var(--ink-primary);border:1px solid var(--border);border-radius:10px;padding:8px 11px;font-size:14px;line-height:1;}
+  .seg{display:flex;background:var(--surface-card-2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:2px;flex:none;}
+  .seg button{border:0;background:transparent;color:var(--ink-secondary);font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:7px;}
+  .seg button[aria-pressed="true"]{background:var(--accent-solid);color:var(--accent-solid-ink);}
+  .cmp{font-size:12.5px;color:var(--ink-muted);}
+  .pop{position:absolute;z-index:30;top:calc(100% + 8px);left:0;width:min(560px,calc(100vw - 28px));background:var(--surface-card);border:1px solid var(--border);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.22);display:grid;grid-template-columns:170px minmax(0,1fr);overflow:hidden;}
+  .pop .presets{display:flex;flex-direction:column;padding:8px;gap:2px;border-right:1px solid var(--border);background:var(--surface-card-2);}
+  .pop .presets button{background:transparent;border:0;color:var(--ink-primary);text-align:left;font-weight:500;font-size:13px;padding:7px 10px;border-radius:8px;}
+  .pop .presets button:hover{background:color-mix(in srgb,var(--accent) 12%,transparent);}
+  .pop .presets button[aria-pressed="true"]{background:var(--accent-solid);color:var(--accent-solid-ink);font-weight:600;}
+  .pop .custom{padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0;}
+  .pop .custom h3{margin:0;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);}
+  .pop .dates{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .pop label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;font-weight:600;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.06em;min-width:0;}
+  .pop input[type=date]{font:inherit;font-size:14px;font-weight:400;letter-spacing:0;color:var(--ink-primary);background:var(--surface-card-2);border:1px solid var(--border);border-radius:9px;padding:8px 10px;width:100%;min-width:0;}
+  .pop .err{color:var(--status-critical);font-size:12.5px;min-height:18px;}
+  .pop .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:auto;}
+  @media (max-width:560px){.pop{grid-template-columns:1fr;} .pop .presets{flex-direction:row;flex-wrap:wrap;border-right:0;border-bottom:1px solid var(--border);max-height:none;} .pop .presets button{padding:7px 10px;border:1px solid var(--border);} .pbar{gap:8px;} .rangebtn{flex:1 1 auto;}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="band">
-    <div class="eyebrow">Amazon US · FBA · theo tuần (thứ Hai → Chủ nhật, giờ LA)</div>
+    <div class="eyebrow">Amazon US · FBA · ngày theo giờ Los Angeles</div>
     <h1>Subscribe &amp; Save</h1>
     <div class="tag">khách quen, giao đều đặn.</div>
     <div class="sub" id="bandSub">Đơn có cờ Subscribe &amp; Save từ SP-API Orders + chỉ số Replenishment API.</div>
@@ -102,12 +127,43 @@
 
   <div class="card warn" id="warnBox" hidden></div>
 
-  <section class="kpis" id="kpis" aria-label="Tuần gần nhất"></section>
+  <div class="pbar" id="pbar">
+    <div class="pwrap">
+      <button type="button" class="navbtn" id="prevP" title="Kỳ liền trước" aria-label="Kỳ liền trước">‹</button>
+      <button type="button" class="rangebtn" id="rangeBtn" aria-haspopup="dialog" aria-expanded="false">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="3" width="13" height="11.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M1.5 6.5h13M5 1.5v3M11 1.5v3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <span id="rangeTxt">…</span>
+      </button>
+      <button type="button" class="navbtn" id="nextP" title="Kỳ liền sau" aria-label="Kỳ liền sau">›</button>
+      <div class="pop" id="rangePop" role="dialog" aria-label="Chọn khoảng thời gian" hidden>
+        <div class="presets" id="presets"></div>
+        <div class="custom">
+          <h3>Tuỳ chọn</h3>
+          <div class="dates">
+            <label for="fromIn">Từ ngày<input type="date" id="fromIn"></label>
+            <label for="toIn">Đến ngày<input type="date" id="toIn"></label>
+          </div>
+          <div class="note" id="dataNote"></div>
+          <div class="err" id="popErr" role="alert"></div>
+          <div class="acts"><button type="button" class="ghost" id="popCancel">Huỷ</button><button type="button" id="popApply">Áp dụng</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="seg" role="group" aria-label="Nhóm theo" id="granSeg">
+      <button type="button" data-g="day">Ngày</button><button type="button" data-g="week">Tuần</button><button type="button" data-g="month">Tháng</button>
+    </div>
+    <span class="cmp" id="cmpNote"></span>
+  </div>
+
+  <section class="kpis" id="kpis" aria-label="Tóm tắt kỳ đang xem"></section>
 
   <div class="row">
     <section class="card">
-      <div class="card-head"><h2>Đơn S&amp;S mỗi tuần</h2><span class="note">12 tuần gần nhất · tuần hiện tại tô đậm (chưa hết tuần)</span></div>
+      <div class="card-head"><h2 id="chartTitle">Đơn S&amp;S</h2>
+        <div class="seg" role="group" aria-label="Chỉ số trên biểu đồ" id="cmSeg"><button type="button" data-m="orders">Đơn</button><button type="button" data-m="units">Units</button><button type="button" data-m="revenue">Doanh thu</button></div>
+      </div>
       <div id="chart"></div>
+      <div class="note" id="chartNote" style="margin-top:6px"></div>
     </section>
     <section class="card">
       <div class="card-head"><h2>Theo SKU</h2><span class="note" id="skuNote"></span></div>
@@ -118,29 +174,33 @@
   <section class="card">
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" id="tab-orders" aria-selected="true">Danh sách đơn</button>
+      <button class="tab" role="tab" id="tab-periods" aria-selected="false">Bảng theo kỳ</button>
       <button class="tab" role="tab" id="tab-metrics" aria-selected="false">Chỉ số subscription</button>
       <button class="tab" role="tab" id="tab-forecast" aria-selected="false">Dự báo 30/60/90 ngày</button>
     </div>
     <div id="pane-orders">
       <div class="card-head">
         <div class="controls">
-          <select id="weekSel" aria-label="Tuần"></select>
           <select id="statusSel" aria-label="Trạng thái"></select>
           <input type="search" id="q" placeholder="Mã đơn, SKU, ASIN, tên…" aria-label="Tìm đơn">
         </div>
-        <div class="controls"><button class="ghost" id="dlWeek">CSV tuần đang xem</button><button id="dlAll">CSV tất cả</button></div>
+        <div class="controls"><button class="ghost" id="dlRange">CSV kỳ đang xem</button><button id="dlAll">CSV tất cả</button></div>
       </div>
       <div class="tbl" id="orders"></div>
       <div class="more" id="moreWrap" hidden><button class="ghost" id="more">Xem thêm</button></div>
     </div>
+    <div id="pane-periods" hidden>
+      <div class="card-head"><span class="note" id="periodsNote"></span><button class="ghost" id="dlPeriods">CSV bảng này</button></div>
+      <div class="tbl" id="periods"></div>
+    </div>
     <div id="pane-metrics" hidden>
-      <div class="card-head"><div class="controls"><select id="mWeekSel" aria-label="Tuần"></select></div><button class="ghost" id="dlMetrics">CSV chỉ số theo ASIN</button></div>
+      <div class="card-head"><div class="controls"><select id="mWeekSel" aria-label="Tuần"></select><span class="note">Amazon chỉ cung cấp chỉ số này theo tuần (Chủ nhật → thứ Bảy).</span></div><button class="ghost" id="dlMetrics">CSV chỉ số theo ASIN</button></div>
       <div id="metrics"></div>
     </div>
     <div id="pane-forecast" hidden><div id="forecast"></div></div>
   </section>
 
-  <div class="foot">Nguồn: SP-API Orders — dòng hàng có <b>AmazonPrograms = SUBSCRIBE_AND_SAVE</b> (giống bộ lọc Subscribe &amp; Save trên Seller Central, chỉ FBA, bỏ đơn MCF) và SP-API Replenishment (chỉ số tổng hợp, tuần theo lịch Amazon). Doanh thu = giá sản phẩm trước thuế, trước khuyến mãi; đơn Pending chưa có giá; đơn huỷ không tính. Workflow <code>amazon_sns.yml</code> chạy 4 giờ/lần.</div>
+  <div class="foot">Nguồn: SP-API Orders — dòng hàng có <b>AmazonPrograms = SUBSCRIBE_AND_SAVE</b> (giống bộ lọc Subscribe &amp; Save trên Seller Central, chỉ FBA, bỏ đơn MCF) và SP-API Replenishment (chỉ số tổng hợp, tuần theo lịch Amazon). Doanh thu = giá sản phẩm trước thuế, trước khuyến mãi; đơn Pending chưa có giá; đơn huỷ không tính. Ngày tính theo giờ Los Angeles; tuần = thứ Hai → Chủ nhật. Workflow <code>amazon_sns.yml</code> chạy 4 giờ/lần.</div>
 </div>
 
 <div id="siteLoad" role="status" aria-live="polite"><img class="wm" src="/img/logo-h-pine.png" alt="Cattasaurus" width="1000" height="327"><img class="mascot" id="siteLoadImg" src="/img/mascot-bag.png" alt="" aria-hidden="true" width="515" height="720"><div class="fun" aria-hidden="true">meow… đang đếm khách quen</div><div id="siteLoadMsg">Đang tải số liệu…</div></div>
@@ -155,7 +215,8 @@
   var money = function(n, c){ return n == null || isNaN(n) ? '—' : ((c && c !== 'USD') ? c + ' ' : '$') + Number(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); };
   var int = function(n){ return n == null || isNaN(n) ? '—' : Number(n).toLocaleString('en-US', {maximumFractionDigits:0}); };
   var num = function(v){ return typeof v === 'number' ? (Number.isInteger(v) ? int(v) : v.toLocaleString('en-US', {maximumFractionDigits:2})) : esc(v); };
-  var D = null, weeks = [], metrics = [], shown = 150, loadedAt = 0;
+  var D = null, ALL = [], metrics = [], shown = 150, loadedAt = 0, TODAY = '', DATA_START = '';
+  var S = {preset:'30d', from:'', to:'', gran:'auto', cm:'orders'};   // the period being viewed
 
   var LABELS = {activeSubscriptions:'Subscription đang chạy', totalSubscriptionsRevenue:'Doanh thu S&S', shippedSubscriptionUnits:'Units S&S đã ship',
     notDeliveredDueToOOS:'Không giao được do hết hàng (%)', lostRevenueDueToOOS:'Doanh thu mất do hết hàng', revenuePenetration:'Tỷ trọng doanh thu S&S (%)',
@@ -170,84 +231,178 @@
     fulfillmentChannelType:'Kênh', brandName:'Brand', productGroup:'Nhóm', currencyCode:'Tiền tệ'};
   var TOP = ['activeSubscriptions','totalSubscriptionsRevenue','shippedSubscriptionUnits','revenuePenetration','subscriberRetentionFor90Days','notDeliveredDueToOOS','lostRevenueDueToOOS','couponsRevenuePenetration'];
 
-  function lines(w){ return (w && w.orders) || []; }
-  function cancelled(o){ return /cancel/i.test(o.status || ''); }
-  function sum(w){
-    var L = lines(w).filter(function(o){ return !cancelled(o); }), ids = {}, cx = {}, u = 0, r = 0;
-    L.forEach(function(o){ ids[o.id] = 1; u += +o.qty || 0; r += +o.price || 0; });
-    lines(w).filter(cancelled).forEach(function(o){ cx[o.id] = 1; });
-    return {orders:Object.keys(ids).length, units:u, revenue:r, cancelled:Object.keys(cx).length};
-  }
-  function delta(a, b){ if(!b) return ''; var p = (a - b) / b * 100; if(!isFinite(p)) return ''; return '<span class="' + (p >= 0 ? 'up' : 'down') + '">' + (p >= 0 ? '▲' : '▼') + ' ' + Math.abs(p).toFixed(0) + '%</span> so với tuần trước'; }
-  function todayLA(){ return new Intl.DateTimeFormat('en-CA', {timeZone:'America/Los_Angeles'}).format(new Date()); }
 
+  // ---------- dates (plain YYYY-MM-DD strings, Los Angeles calendar) ----------
+  function todayLA(){ return new Intl.DateTimeFormat('en-CA', {timeZone:'America/Los_Angeles'}).format(new Date()); }
+  function d2(s){ var p = s.split('-'); return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])); }
+  function ds(d){ return d.toISOString().slice(0, 10); }
+  function addDays(s, n){ var d = d2(s); d.setUTCDate(d.getUTCDate() + n); return ds(d); }
+  function diffDays(a, b){ return Math.round((d2(b) - d2(a)) / 864e5); }
+  function monday(s){ return addDays(s, -((d2(s).getUTCDay() + 6) % 7)); }
+  function monthStart(s){ return s.slice(0, 8) + '01'; }
+  function monthEnd(s){ var d = d2(monthStart(s)); d.setUTCMonth(d.getUTCMonth() + 1); d.setUTCDate(0); return ds(d); }
+  function addMonths(s, n){ var d = d2(monthStart(s)); d.setUTCMonth(d.getUTCMonth() + n); return ds(d); }
+  function dm(s){ return s.slice(8, 10) + '/' + s.slice(5, 7); }
+  function dmy(s){ return dm(s) + '/' + s.slice(0, 4); }
+  function span(a, b){ return a === b ? dmy(a) : (a.slice(0, 4) === b.slice(0, 4) ? dm(a) : dmy(a)) + ' – ' + dmy(b); }
+  function isDate(s){ return /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(d2(s)) && ds(d2(s)) === s; }
+
+  var PRESETS = [
+    ['today', 'Hôm nay', function(t){ return [t, t]; }],
+    ['yesterday', 'Hôm qua', function(t){ return [addDays(t, -1), addDays(t, -1)]; }],
+    ['7d', '7 ngày qua', function(t){ return [addDays(t, -6), t]; }],
+    ['30d', '30 ngày qua', function(t){ return [addDays(t, -29), t]; }],
+    ['90d', '90 ngày qua', function(t){ return [addDays(t, -89), t]; }],
+    ['wtd', 'Tuần này', function(t){ return [monday(t), t]; }],
+    ['lastweek', 'Tuần trước', function(t){ var m = monday(t); return [addDays(m, -7), addDays(m, -1)]; }],
+    ['mtd', 'Tháng này', function(t){ return [monthStart(t), t]; }],
+    ['lastmonth', 'Tháng trước', function(t){ var m = addMonths(t, -1); return [m, monthEnd(m)]; }],
+    ['all', 'Tất cả', function(t){ return [DATA_START || t, t]; }]
+  ];
+  function presetName(k){ for(var i = 0; i < PRESETS.length; i++) if(PRESETS[i][0] === k) return PRESETS[i][1]; return 'Tuỳ chọn'; }
+  function applyPreset(k){ for(var i = 0; i < PRESETS.length; i++) if(PRESETS[i][0] === k){ var r = PRESETS[i][2](TODAY); S.preset = k; S.from = r[0]; S.to = r[1]; return true; } return false; }
+  function setCustom(a, b){ S.preset = 'custom'; S.from = a; S.to = b; }
+  function saveState(){ try{ localStorage.setItem('ctu_sns_period', JSON.stringify(S)); }catch(e){} }
+  function loadState(){
+    try{ var o = JSON.parse(localStorage.getItem('ctu_sns_period') || 'null');
+      if(o && typeof o === 'object'){
+        if(['auto','day','week','month'].indexOf(o.gran) >= 0) S.gran = o.gran;
+        if(['orders','units','revenue'].indexOf(o.cm) >= 0) S.cm = o.cm;
+        if(o.preset === 'custom' && isDate(o.from) && isDate(o.to) && o.from <= o.to){ setCustom(o.from, o.to); return; }
+        if(applyPreset(o.preset)) return;
+      } }catch(e){}
+    applyPreset('30d');
+  }
+  function gran(){
+    var n = diffDays(S.from, S.to) + 1, g = S.gran;
+    if(g === 'auto') g = n <= 31 ? 'day' : (n <= 182 ? 'week' : 'month');
+    if(g === 'day' && n > 120) g = 'week';      // too many bars to read
+    if(g === 'week' && n > 740) g = 'month';
+    return g;
+  }
+
+  // ---------- data ----------
+  function cancelled(o){ return /cancel/i.test(o.status || ''); }
+  function inRange(a, b){ return ALL.filter(function(o){ return o.date >= a && o.date <= b; }); }
+  function agg(L){
+    var ids = {}, cx = {}, u = 0, r = 0, pend = {};
+    L.forEach(function(o){
+      if(cancelled(o)){ cx[o.id] = 1; return; }
+      ids[o.id] = 1; u += +o.qty || 0; r += +o.price || 0; if(o.price == null) pend[o.id] = 1;
+    });
+    var n = Object.keys(ids).length;
+    return {orders:n, units:u, revenue:r, cancelled:Object.keys(cx).length, pending:Object.keys(pend).length, aov:n ? r / n : null};
+  }
+  function prevRange(){
+    // whole calendar month -> the month before; month to date -> same days of the month before; otherwise the same number of days just before
+    if(S.from === monthStart(S.from) && S.from.slice(0, 7) === S.to.slice(0, 7) && (S.to === monthEnd(S.from) || S.preset === 'mtd')){
+      var pm = addMonths(S.from, -1), pe = monthEnd(pm);
+      if(S.to === monthEnd(S.from)) return [pm, pe];
+      var same = pm.slice(0, 8) + S.to.slice(8, 10); return [pm, same > pe ? pe : same];
+    }
+    var n = diffDays(S.from, S.to) + 1; var b = addDays(S.from, -1); return [addDays(b, -(n - 1)), b];
+  }
+  function delta(a, b, hasPrev){
+    if(S.preset === 'all') return '<span class="dim">toàn bộ dữ liệu đã lưu</span>';
+    if(!hasPrev) return '<span class="dim">kỳ trước chưa đủ dữ liệu</span>';
+    if(!b) return a ? '<span class="up">mới</span> · kỳ trước 0' : 'kỳ trước 0';
+    var p = (a - b) / b * 100; if(!isFinite(p)) return '';
+    if(Math.abs(p) < 0.5) return 'bằng kỳ trước';
+    return '<span class="' + (p >= 0 ? 'up' : 'down') + '">' + (p >= 0 ? '▲' : '▼') + ' ' + Math.abs(p).toFixed(0) + '%</span> so với kỳ trước';
+  }
+  function buckets(){
+    var g = gran(), out = [], a, b, cur;
+    if(g === 'day'){ for(cur = S.from; cur <= S.to; cur = addDays(cur, 1)) out.push({a:cur, b:cur, label:dm(cur), title:dmy(cur)}); }
+    else if(g === 'week'){ for(cur = monday(S.from); cur <= S.to; cur = addDays(cur, 7)){ a = cur < S.from ? S.from : cur; b = addDays(cur, 6) > S.to ? S.to : addDays(cur, 6); out.push({a:a, b:b, label:dm(a), title:'Tuần ' + span(a, b), partial:a !== cur || b !== addDays(cur, 6)}); } }
+    else { for(cur = monthStart(S.from); cur <= S.to; cur = addMonths(cur, 1)){ a = cur < S.from ? S.from : cur; b = monthEnd(cur) > S.to ? S.to : monthEnd(cur); out.push({a:a, b:b, label:'T' + (+cur.slice(5, 7)) + '/' + cur.slice(2, 4), title:'Tháng ' + (+cur.slice(5, 7)) + '/' + cur.slice(0, 4) + ' (' + span(a, b) + ')', partial:a !== cur || b !== monthEnd(cur)}); } }
+    out.forEach(function(k){ k.s = agg(inRange(k.a, k.b)); k.open = k.b >= TODAY; });
+    return out;
+  }
+
+  // ---------- render ----------
   function renderWarn(){
     var m = (D && D.meta) || {}, msgs = [];
-    if(m.queue && m.queue.length && m.complete === false) msgs.push('Đang nạp dữ liệu lần đầu: còn ' + m.queue.length + ' đơn chưa kiểm tra — số các tuần cũ sẽ đủ sau lần chạy kế tiếp (4 giờ/lần).');
-    if(m.replenishment && m.replenishment.ok === false) msgs.push('Chưa lấy được chỉ số Replenishment API: ' + esc(m.replenishment.error || '') );
+    if(m.complete === false && m.backfill_done === false && m.queue && m.queue.length) msgs.push('Đang nạp dữ liệu lần đầu: còn ' + m.queue.length + ' đơn chưa kiểm tra — số các ngày cũ sẽ đủ sau lần chạy kế tiếp (4 giờ/lần).');
+    if(m.replenishment && m.replenishment.ok === false) msgs.push('Chưa lấy được chỉ số Replenishment API: ' + esc(m.replenishment.error || ''));
     $('warnBox').innerHTML = msgs.join('<br>'); $('warnBox').hidden = !msgs.length;
   }
-
+  function renderBar(){
+    $('rangeTxt').innerHTML = '<b>' + esc(presetName(S.preset)) + '</b> <span class="dim">· ' + esc(span(S.from, S.to)) + '</span>';
+    var g = gran();
+    [].forEach.call($('granSeg').children, function(b){ b.setAttribute('aria-pressed', String(b.dataset.g === g)); });
+    [].forEach.call($('cmSeg').children, function(b){ b.setAttribute('aria-pressed', String(b.dataset.m === S.cm)); });
+    var p = prevRange();
+    $('cmpNote').textContent = S.preset === 'all' ? '' : 'So với kỳ trước: ' + span(p[0], p[1]) + (DATA_START && p[0] < DATA_START ? ' (dữ liệu chỉ có từ ' + dmy(DATA_START) + ')' : '');
+    $('nextP').disabled = S.to >= TODAY; $('prevP').disabled = !!DATA_START && S.to < DATA_START;
+  }
   function renderKpis(){
-    var today = todayLA(), cur = weeks[0], full = weeks.find(function(w){ return w.end < today; }) || cur;
-    if(!cur){ $('kpis').innerHTML = '<div class="kpi"><span class="k">Tuần gần nhất</span><span class="v">—</span><span class="d">Chưa có dữ liệu</span></div>'; return; }
-    var i = weeks.indexOf(full), s = sum(full), p = weeks[i + 1] ? sum(weeks[i + 1]) : null, c = sum(cur);
-    var mm = metrics.find(function(x){ return x.totals; }), subs = mm ? mm.totals.activeSubscriptions : null;
+    var s = agg(inRange(S.from, S.to)), p = prevRange(), q = agg(inRange(p[0], p[1]));
+    var hasPrev = S.preset !== 'all' && (!DATA_START || p[0] >= DATA_START);   // only compare when the whole previous period is covered
+    var mm = metrics.filter(function(x){ return x.totals && x.totals.activeSubscriptions != null; })[0];
     var cards = [
-      ['Đơn S&S · ' + full.week, int(s.orders), p ? delta(s.orders, p.orders) : esc(full.start + ' → ' + full.end)],
-      ['Units', int(s.units), p ? delta(s.units, p.units) : ''],
-      ['Doanh thu S&S', money(s.revenue), p ? delta(s.revenue, p.revenue) : ''],
-      ['Tuần này (đang chạy)', int(c.orders) + ' đơn', cur !== full ? money(c.revenue) + ' · ' + esc(cur.start) + ' → nay' : 'tuần gần nhất đã đủ ngày'],
-      ['Subscription đang chạy', subs == null ? '—' : int(subs), subs == null ? 'chờ Replenishment API' : 'Replenishment API · ' + esc(mm.week)]
+      ['Đơn S&S', int(s.orders), delta(s.orders, q.orders, hasPrev)],
+      ['Units', int(s.units), delta(s.units, q.units, hasPrev)],
+      ['Doanh thu S&S', money(s.revenue), (s.pending ? s.pending + ' đơn chờ giá (Pending) · ' : '') + delta(s.revenue, q.revenue, hasPrev)],
+      ['Giá trị TB / đơn', s.aov == null ? '—' : money(s.aov), s.cancelled ? s.cancelled + ' đơn huỷ (không tính)' : 'không có đơn huỷ'],
+      ['Subscription đang chạy', mm ? int(mm.totals.activeSubscriptions) : '—', mm ? 'theo Amazon · tuần ' + esc(span(mm.amazon_interval ? mm.amazon_interval[0] : mm.start, mm.amazon_interval ? mm.amazon_interval[1] : mm.end)) : 'chờ Replenishment API']
     ];
     $('kpis').innerHTML = cards.map(function(k){ return '<div class="kpi"><span class="k">' + esc(k[0]) + '</span><span class="v">' + k[1] + '</span><span class="d">' + (k[2] || '&nbsp;') + '</span></div>'; }).join('');
   }
-
-  function renderChart(){
-    var data = weeks.slice(0, 12).reverse().map(function(w){ return {k:w.week, v:sum(w).orders, u:sum(w).units}; });
-    if(!data.length){ $('chart').innerHTML = '<div class="empty">Biểu đồ hiện khi có dữ liệu.</div>'; return; }
-    var W = 640, H = 230, pl = 40, pr = 8, pt = 18, pb = 28, iw = W - pl - pr, ih = H - pt - pb;
-    var max = Math.max.apply(null, [1].concat(data.map(function(d){ return d.v; })));
-    var mag = Math.pow(10, Math.floor(Math.log10(max))), top = Math.ceil(max / mag) * mag; if(top / mag <= 2) top = Math.ceil(max / (mag / 2)) * (mag / 2);
-    var bw = iw / data.length, g = '';
-    [0, top / 2, top].forEach(function(t){ var y = pt + ih - t / top * ih; g += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + y + '" y2="' + y + '" stroke="var(--gridline)"/><text x="' + (pl - 6) + '" y="' + (y + 4) + '" text-anchor="end">' + int(t) + '</text>'; });
-    data.forEach(function(d, i){
-      var h = d.v / top * ih, x = pl + i * bw + bw * .17, y = pt + ih - h, last = i === data.length - 1, cx = x + bw * .33;
-      g += '<rect x="' + x + '" y="' + y + '" width="' + (bw * .66) + '" height="' + h + '" rx="3" fill="' + (last ? 'var(--bar-now)' : 'var(--bar)') + '"><title>' + d.k + ': ' + d.v + ' đơn · ' + d.u + ' units</title></rect>';
-      if(last || i === data.length - 2) g += '<text x="' + cx + '" y="' + (y - 5) + '" text-anchor="middle" style="fill:var(--ink-primary);font-weight:600">' + d.v + '</text>';
-      g += '<text x="' + cx + '" y="' + (H - 9) + '" text-anchor="middle">' + d.k.slice(5) + '</text>';
+  var CM = {orders:['Đơn S&S', function(s){ return s.orders; }, int], units:['Units S&S', function(s){ return s.units; }, int], revenue:['Doanh thu S&S', function(s){ return s.revenue; }, function(v){ return money(v); }]};
+  var GN = {day:'ngày', week:'tuần', month:'tháng'};
+  function renderChart(B){
+    var g = gran(), cm = CM[S.cm], n = B.length;
+    $('chartTitle').textContent = cm[0] + ' theo ' + GN[g];
+    var forced = S.gran !== 'auto' && S.gran !== g;
+    $('chartNote').textContent = (forced ? 'Khoảng quá dài để xem theo ' + GN[S.gran] + ' — đang gộp theo ' + GN[g] + '. ' : '') + (B.some(function(k){ return k.open; }) ? 'Cột đậm = kỳ chưa kết thúc.' : '');
+    if(!n){ $('chart').innerHTML = '<div class="empty">Không có dữ liệu.</div>'; return; }
+    var W = 640, H = 240, pl = 46, pr = 8, pt = 18, pb = 28, iw = W - pl - pr, ih = H - pt - pb;
+    var vals = B.map(function(k){ return cm[1](k.s); }), max = Math.max.apply(null, [0].concat(vals));
+    var top;
+    if(max <= 0) top = 1; else { var mag = Math.pow(10, Math.floor(Math.log10(max))); top = Math.ceil(max / mag) * mag; if(top / mag <= 2) top = Math.ceil(max / (mag / 2)) * (mag / 2); if(S.cm !== 'revenue' && top < 2) top = 2; }
+    var bw = iw / n, every = Math.ceil(n / 12), svg = '';
+    [0, top / 2, top].forEach(function(t){ var y = pt + ih - t / top * ih; svg += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + y + '" y2="' + y + '" stroke="var(--gridline)"/><text x="' + (pl - 6) + '" y="' + (y + 4) + '" text-anchor="end">' + (S.cm === 'revenue' ? '$' + int(t) : (Number.isInteger(t) ? int(t) : t.toFixed(1))) + '</text>'; });
+    B.forEach(function(k, i){
+      var v = vals[i], h = v / top * ih, pad = Math.min(bw * .17, 14), x = pl + i * bw + pad, w = Math.max(bw - 2 * pad, 1.5), y = pt + ih - h, cx = x + w / 2;
+      svg += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + Math.min(3, w / 2) + '" fill="' + (k.open ? 'var(--bar-now)' : 'var(--bar)') + '"><title>' + esc(k.title) + ': ' + k.s.orders + ' đơn · ' + k.s.units + ' units · ' + money(k.s.revenue) + '</title></rect>';
+      svg += '<rect x="' + (pl + i * bw) + '" y="' + pt + '" width="' + bw + '" height="' + ih + '" fill="transparent"><title>' + esc(k.title) + ': ' + k.s.orders + ' đơn · ' + k.s.units + ' units · ' + money(k.s.revenue) + '</title></rect>';
+      if(v > 0 && n <= 16) svg += '<text x="' + cx + '" y="' + (y - 5) + '" text-anchor="middle" style="fill:var(--ink-primary);font-weight:600">' + (S.cm === 'revenue' ? '$' + int(v) : int(v)) + '</text>';
+      if(i % every === 0) svg += '<text x="' + (pl + i * bw + bw / 2) + '" y="' + (H - 9) + '" text-anchor="middle">' + esc(k.label) + '</text>';
     });
-    g += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + (pt + ih) + '" y2="' + (pt + ih) + '" stroke="var(--baseline)"/>';
-    $('chart').innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Số đơn Subscribe & Save theo tuần">' + g + '</svg>';
+    svg += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + (pt + ih) + '" y2="' + (pt + ih) + '" stroke="var(--baseline)"/>';
+    $('chart').innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="' + esc(cm[0]) + ' theo ' + GN[g] + ', ' + esc(span(S.from, S.to)) + '">' + svg + '</svg>';
   }
-
-  function selWeek(){ var v = $('weekSel').value; return v === 'all' ? null : weeks.find(function(w){ return w.week === v; }); }
   function renderSkus(){
-    var w = selWeek(), L = w ? lines(w) : weeks.flatMap(lines), map = {};
-    $('skuNote').textContent = w ? w.week + ' · ' + w.start + ' → ' + w.end : 'tất cả tuần đã lưu';
-    L.filter(function(o){ return !cancelled(o); }).forEach(function(o){ var k = o.sku || o.asin || '?'; var r = map[k] || (map[k] = {sku:k, asin:o.asin, title:o.title, u:0, r:0, ids:{}}); r.u += +o.qty || 0; r.r += +o.price || 0; r.ids[o.id] = 1; });
-    var rows = Object.keys(map).map(function(k){ return map[k]; }).sort(function(a, b){ return b.u - a.u; }), mx = Math.max.apply(null, [1].concat(rows.map(function(r){ return r.u; })));
+    var map = {};
+    $('skuNote').textContent = span(S.from, S.to);
+    inRange(S.from, S.to).filter(function(o){ return !cancelled(o); }).forEach(function(o){ var k = o.sku || o.asin || '?'; var r = map[k] || (map[k] = {sku:k, asin:o.asin, title:o.title, u:0, r:0, ids:{}}); r.u += +o.qty || 0; r.r += +o.price || 0; r.ids[o.id] = 1; });
+    var rows = Object.keys(map).map(function(k){ return map[k]; }).sort(function(a, b){ return b.u - a.u || b.r - a.r; }), mx = Math.max.apply(null, [1].concat(rows.map(function(r){ return r.u; })));
     $('skus').innerHTML = rows.length ? '<table><thead><tr><th>SKU</th><th class="n">Đơn</th><th class="n">Units</th><th class="n">Doanh thu</th></tr></thead><tbody>' + rows.map(function(r){
-      return '<tr><td>' + esc(r.sku) + '<span class="s">' + esc(r.asin || '') + '</span><span class="meter" style="width:' + (r.u / mx * 100) + '%"></span></td><td class="n">' + Object.keys(r.ids).length + '</td><td class="n">' + int(r.u) + '</td><td class="n">' + money(r.r) + '</td></tr>'; }).join('') + '</tbody></table>' : '<div class="empty">Không có đơn.</div>';
+      return '<tr><td title="' + esc(r.title || '') + '">' + esc(r.sku) + '<span class="s">' + esc(r.asin || '') + '</span><span class="meter" style="width:' + (r.u / mx * 100) + '%"></span></td><td class="n">' + Object.keys(r.ids).length + '</td><td class="n">' + int(r.u) + '</td><td class="n">' + money(r.r) + '</td></tr>'; }).join('') + '</tbody></table>' : '<div class="empty">Không có đơn S&amp;S trong kỳ này.</div>';
   }
-
   function filtered(){
-    var w = selWeek(), st = $('statusSel').value, q = $('q').value.trim().toLowerCase();
-    var L = w ? lines(w) : weeks.flatMap(lines);
+    var st = $('statusSel').value, q = $('q').value.trim().toLowerCase(), L = inRange(S.from, S.to);
     if(st) L = L.filter(function(o){ return o.status === st; });
     if(q) L = L.filter(function(o){ return [o.id, o.sku, o.asin, o.title].join(' ').toLowerCase().indexOf(q) >= 0; });
     return L.slice().sort(function(a, b){ return String(b.purchase_date).localeCompare(String(a.purchase_date)); });
   }
   function renderOrders(){
-    if(!weeks.length){ $('orders').innerHTML = '<div class="empty"><b>Chưa có đơn nào</b><span>Lần chạy đầu của workflow amazon_sns.yml sẽ nạp đơn S&amp;S 30 ngày gần nhất.</span></div>'; $('moreWrap').hidden = true; return; }
+    if(!ALL.length){ $('orders').innerHTML = '<div class="empty"><b>Chưa có đơn nào</b><span>Workflow amazon_sns.yml chưa có dữ liệu.</span></div>'; $('moreWrap').hidden = true; return; }
     var L = filtered();
-    if(!L.length){ $('orders').innerHTML = '<div class="empty">Không có đơn khớp bộ lọc.</div>'; $('moreWrap').hidden = true; return; }
+    if(!L.length){ $('orders').innerHTML = '<div class="empty"><b>Không có đơn S&amp;S</b><span>trong ' + esc(span(S.from, S.to)) + ($('statusSel').value || $('q').value ? ' khớp bộ lọc' : '') + '. Thử chọn khoảng dài hơn.</span></div>'; $('moreWrap').hidden = true; return; }
     $('orders').innerHTML = '<table><thead><tr><th>Mã đơn</th><th>Ngày đặt (LA)</th><th>Sản phẩm</th><th class="n">SL</th><th class="n">Giá</th><th>Trạng thái</th></tr></thead><tbody>' + L.slice(0, shown).map(function(o){
-      return '<tr><td class="id">' + esc(o.id) + '</td><td class="id">' + esc(o.date) + '<span class="s">' + esc(o.time || '') + '</span></td><td class="t">' + esc(o.title || '') + '<span class="s">' + esc(o.sku || '') + (o.asin ? ' · ' + esc(o.asin) : '') + '</span></td><td class="n">' + int(o.qty) + '</td><td class="n">' + money(o.price, o.currency) + (o.promo ? '<span class="s">KM −' + money(o.promo) + '</span>' : '') + '</td><td><span class="pill ' + esc(String(o.status || '').replace(/\W/g, '')) + '">' + esc(o.status || '—') + '</span></td></tr>'; }).join('') + '</tbody></table>';
+      return '<tr><td class="id">' + esc(o.id) + '</td><td class="id">' + esc(dmy(o.date)) + '<span class="s">' + esc(o.time || '') + '</span></td><td class="t">' + esc(o.title || '') + '<span class="s">' + esc(o.sku || '') + (o.asin ? ' · ' + esc(o.asin) : '') + '</span></td><td class="n">' + int(o.qty) + '</td><td class="n">' + money(o.price, o.currency) + (o.promo ? '<span class="s">KM −' + money(o.promo) + '</span>' : '') + '</td><td><span class="pill ' + esc(String(o.status || '').replace(/\W/g, '')) + '">' + esc(o.status || '—') + '</span></td></tr>'; }).join('') + '</tbody></table>';
     $('moreWrap').hidden = L.length <= shown;
   }
+  function renderPeriods(B){
+    var g = gran(), tot = agg(inRange(S.from, S.to));
+    $('periodsNote').textContent = 'Mỗi dòng một ' + GN[g] + ' · ' + span(S.from, S.to);
+    var rows = B.slice().reverse();
+    $('periods').innerHTML = '<table><thead><tr><th>' + (g === 'day' ? 'Ngày' : g === 'week' ? 'Tuần' : 'Tháng') + '</th><th class="n">Đơn</th><th class="n">Units</th><th class="n">Doanh thu</th><th class="n">TB / đơn</th><th class="n">Đơn huỷ</th></tr></thead><tbody>' + rows.map(function(k){
+      return '<tr><td class="id">' + esc(g === 'day' ? k.title : k.title.replace(/^Tuần |^Tháng /, '')) + (k.open ? '<span class="s">chưa kết thúc</span>' : (k.partial ? '<span class="s">không trọn ' + GN[g] + '</span>' : '')) + '</td><td class="n">' + int(k.s.orders) + '</td><td class="n">' + int(k.s.units) + '</td><td class="n">' + money(k.s.revenue) + '</td><td class="n">' + (k.s.aov == null ? '—' : money(k.s.aov)) + '</td><td class="n">' + int(k.s.cancelled) + '</td></tr>'; }).join('') +
+      '<tr style="font-weight:600"><td>Tổng</td><td class="n">' + int(tot.orders) + '</td><td class="n">' + int(tot.units) + '</td><td class="n">' + money(tot.revenue) + '</td><td class="n">' + (tot.aov == null ? '—' : money(tot.aov)) + '</td><td class="n">' + int(tot.cancelled) + '</td></tr></tbody></table>';
+  }
 
-  function mWeek(){ var v = $('mWeekSel').value; return metrics.find(function(m){ return m.week === v; }) || metrics[0]; }
   function kvCards(obj){
     var keys = Object.keys(obj || {}).filter(function(k){ return typeof obj[k] === 'number'; });
     keys.sort(function(a, b){ var ia = TOP.indexOf(a), ib = TOP.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); });
@@ -260,47 +415,92 @@
     return '<div class="tbl" style="margin-top:14px"><table><thead><tr><th>ASIN / SKU</th>' + cols.map(function(c){ return '<th class="n">' + esc(LABELS[c] || c) + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.map(function(r){
       return '<tr><td class="id">' + esc(r.asin || '') + '<span class="s">' + esc(r.sku || '') + '</span></td>' + cols.map(function(c){ return '<td class="n">' + (/Revenue/.test(c) && !/Penetration/.test(c) ? money(r[c]) : num(r[c])) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
   }
+
+  function mWeek(){ var v = $('mWeekSel').value; return metrics.filter(function(m){ return m.week === v; })[0] || metrics[0]; }
   function renderMetrics(){
     var m = mWeek();
-    if(!m){ $('metrics').innerHTML = '<div class="empty"><b>Chưa có chỉ số</b><span>Điền từ Replenishment API sau lần chạy đầu' + ((D && D.meta && D.meta.replenishment && D.meta.replenishment.ok === false) ? ' — hiện API đang báo lỗi (xem khung cảnh báo phía trên).' : '.') + '</span></div>'; return; }
+    if(!m){ $('metrics').innerHTML = '<div class="empty"><b>Chưa có chỉ số</b><span>Điền từ Replenishment API sau lần chạy kế tiếp.</span></div>'; return; }
     $('metrics').innerHTML = (m.totals ? kvCards(m.totals) : '<div class="note">Tuần này chưa có số tổng.</div>') + asinTable(m.by_asin) +
-      '<p class="note" style="margin:10px 0 0">Tuần Amazon: ' + esc((m.amazon_interval || [m.start, m.end]).join(' → ')) + ' · lấy lúc ' + esc(m.fetched_at || '') + '</p>';
+      '<p class="note" style="margin:10px 0 0">Tuần Amazon: ' + esc((m.amazon_interval || [m.start, m.end]).map(dmy).join(' → ')) + ' · lấy lúc ' + esc(m.fetched_at || '') + '</p>';
   }
   function renderForecast(){
     var f = D && D.forecast;
     if(!f || !f.by_asin || !f.by_asin.length){ $('forecast').innerHTML = '<div class="empty"><b>Chưa có dự báo</b><span>Replenishment API trả doanh thu và units S&amp;S dự kiến cho 30/60/90 ngày tới theo từng ASIN.</span></div>'; return; }
     var tot = {}; f.by_asin.forEach(function(r){ Object.keys(r).forEach(function(k){ if(/^next\d+Day/.test(k) && typeof r[k] === 'number') tot[k] = (tot[k] || 0) + r[k]; }); });
-    $('forecast').innerHTML = kvCards(tot) + asinTable(f.by_asin) + '<p class="note" style="margin:10px 0 0">Lấy lúc ' + esc(f.fetched_at || '') + '</p>';
+    $('forecast').innerHTML = kvCards(tot) + asinTable(f.by_asin) + '<p class="note" style="margin:10px 0 0">Dự báo của Amazon tính từ hôm nay, không theo kỳ đang chọn · lấy lúc ' + esc(f.fetched_at || '') + '</p>';
   }
-
   function fillSelects(){
-    var cur = $('weekSel').value;
-    $('weekSel').innerHTML = '<option value="all">Tất cả tuần</option>' + weeks.map(function(w){ var s = sum(w); return '<option value="' + esc(w.week) + '">' + esc(w.week) + ' · ' + esc(w.start.slice(5)) + '→' + esc(w.end.slice(5)) + ' · ' + s.orders + ' đơn</option>'; }).join('');
-    $('weekSel').value = cur && weeks.some(function(w){ return w.week === cur; }) ? cur : (weeks[0] ? weeks[0].week : 'all');
-    var sts = []; weeks.flatMap(lines).forEach(function(o){ if(o.status && sts.indexOf(o.status) < 0) sts.push(o.status); }); sts.sort();
+    var sts = []; ALL.forEach(function(o){ if(o.status && sts.indexOf(o.status) < 0) sts.push(o.status); }); sts.sort();
+    var cur = $('statusSel').value;
     $('statusSel').innerHTML = '<option value="">Mọi trạng thái</option>' + sts.map(function(s){ return '<option>' + esc(s) + '</option>'; }).join('');
-    $('mWeekSel').innerHTML = metrics.map(function(m){ return '<option value="' + esc(m.week) + '">' + esc(m.week) + ' · ' + esc(m.start) + '</option>'; }).join('') || '<option value="">—</option>';
+    if(sts.indexOf(cur) >= 0) $('statusSel').value = cur;
+    $('mWeekSel').innerHTML = metrics.map(function(m){ var iv = m.amazon_interval || [m.start, m.end]; return '<option value="' + esc(m.week) + '">' + esc(span(iv[0], iv[1])) + '</option>'; }).join('') || '<option value="">—</option>';
+    var hit = metrics.filter(function(m){ var iv = m.amazon_interval || [m.start, m.end]; return iv[0] <= S.to && iv[1] >= S.from; })[0];   // newest Amazon week that overlaps the period
+    if(hit) $('mWeekSel').value = hit.week;
   }
 
-  var OCOLS = ['week','id','date','time','purchase_date','status','sku','asin','title','qty','price','promo','currency'];
+  // ---------- period picker ----------
+  function openPop(){
+    $('presets').innerHTML = PRESETS.map(function(p){ return '<button type="button" data-p="' + p[0] + '" aria-pressed="' + (S.preset === p[0]) + '">' + esc(p[1]) + '</button>'; }).join('') + '<button type="button" data-p="custom" aria-pressed="' + (S.preset === 'custom') + '">Tuỳ chọn</button>';
+    $('fromIn').value = S.from; $('toIn').value = S.to; $('fromIn').max = $('toIn').max = TODAY;
+    $('dataNote').textContent = DATA_START ? 'Dữ liệu S&S có từ ' + dmy(DATA_START) + ' đến hôm nay (' + dmy(TODAY) + ', giờ LA).' : '';
+    $('popErr').textContent = ''; $('rangePop').hidden = false; $('rangeBtn').setAttribute('aria-expanded', 'true');
+  }
+  function closePop(){ $('rangePop').hidden = true; $('rangeBtn').setAttribute('aria-expanded', 'false'); }
+  function commit(){ shown = 150; saveState(); renderPeriod(); }
+  $('rangeBtn').onclick = function(){ if($('rangePop').hidden) openPop(); else closePop(); };
+  $('presets').onclick = function(e){ var b = e.target.closest('button'); if(!b) return; if(b.dataset.p === 'custom'){ $('fromIn').focus(); [].forEach.call($('presets').children, function(x){ x.setAttribute('aria-pressed', String(x === b)); }); return; } applyPreset(b.dataset.p); closePop(); commit(); };
+  $('popCancel').onclick = closePop;
+  $('popApply').onclick = function(){
+    var a = $('fromIn').value, b = $('toIn').value;
+    if(!isDate(a) || !isDate(b)){ $('popErr').textContent = 'Chọn đủ ngày bắt đầu và ngày kết thúc.'; return; }
+    if(a > b){ $('popErr').textContent = 'Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.'; return; }
+    if(b > TODAY) b = TODAY; if(a > b) a = b;
+    setCustom(a, b); closePop(); commit();
+  };
+  $('fromIn').onkeydown = $('toIn').onkeydown = function(e){ if(e.key === 'Enter') $('popApply').onclick(); };
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && !$('rangePop').hidden){ closePop(); $('rangeBtn').focus(); } });
+  document.addEventListener('click', function(e){ if(!$('rangePop').hidden && !e.target.closest('#rangePop') && !e.target.closest('#rangeBtn')) closePop(); });
+  function shift(dir){
+    var a, b;
+    if(S.preset === 'mtd' || S.preset === 'lastmonth' || (S.from === monthStart(S.from) && S.to === monthEnd(S.from))){ a = addMonths(S.from, dir); b = monthEnd(a); }
+    else { var n = diffDays(S.from, S.to) + 1; a = addDays(S.from, dir * n); b = addDays(S.to, dir * n); }
+    if(b > TODAY) b = TODAY; if(a > b) return;
+    setCustom(a, b); commit();
+  }
+  $('prevP').onclick = function(){ shift(-1); }; $('nextP').onclick = function(){ shift(1); };
+  $('granSeg').onclick = function(e){ var b = e.target.closest('button'); if(!b) return; S.gran = b.dataset.g; commit(); };
+  $('cmSeg').onclick = function(e){ var b = e.target.closest('button'); if(!b) return; S.cm = b.dataset.m; saveState(); renderBar(); renderChart(buckets()); };
+
+  // ---------- CSV ----------
+  var OCOLS = ['id','date','time','purchase_date','status','sku','asin','title','qty','price','promo','currency'];
   function cell(v){ v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
   function csv(rows, cols){ return '﻿' + [cols.join(',')].concat(rows.map(function(r){ return cols.map(function(c){ return cell(r[c]); }).join(','); })).join('\n'); }
   function save(name, text){ var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], {type:'text/csv;charset=utf-8'})); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000); }
-  function withWeek(w){ return lines(w).map(function(o){ var r = {week:w.week}; for(var k in o) r[k] = o[k]; return r; }); }
-  $('dlAll').onclick = function(){ save('amazon_sns_orders_' + todayLA() + '.csv', csv(weeks.flatMap(withWeek), OCOLS)); };
-  $('dlWeek').onclick = function(){ var w = selWeek(); if(!w) return $('dlAll').onclick(); save('amazon_sns_orders_' + w.week + '.csv', csv(withWeek(w), OCOLS)); };
-  $('dlMetrics').onclick = function(){ var rows = []; metrics.forEach(function(m){ (m.by_asin || []).forEach(function(r){ var o = {week:m.week}; for(var k in r) o[k] = r[k]; rows.push(o); }); }); var cols = ['week']; rows.forEach(function(r){ Object.keys(r).forEach(function(k){ if(cols.indexOf(k) < 0) cols.push(k); }); }); save('amazon_sns_metrics_' + todayLA() + '.csv', csv(rows, cols)); };
-  $('weekSel').onchange = function(){ shown = 150; renderSkus(); renderOrders(); };
+  var byDate = function(a, b){ return String(a.purchase_date).localeCompare(String(b.purchase_date)); };
+  $('dlAll').onclick = function(){ save('amazon_sns_orders_all_' + TODAY + '.csv', csv(ALL.slice().sort(byDate), OCOLS)); };
+  $('dlRange').onclick = function(){ save('amazon_sns_orders_' + S.from + '_' + S.to + '.csv', csv(inRange(S.from, S.to).sort(byDate), OCOLS)); };
+  $('dlPeriods').onclick = function(){ var g = gran(); save('amazon_sns_by_' + g + '_' + S.from + '_' + S.to + '.csv', csv(buckets().map(function(k){ return {from:k.a, to:k.b, orders:k.s.orders, units:k.s.units, revenue:k.s.revenue.toFixed(2), avg_order_value:k.s.aov == null ? '' : k.s.aov.toFixed(2), cancelled_orders:k.s.cancelled, pending_no_price:k.s.pending}; }), ['from','to','orders','units','revenue','avg_order_value','cancelled_orders','pending_no_price'])); };
+  $('dlMetrics').onclick = function(){ var rows = []; metrics.forEach(function(m){ (m.by_asin || []).forEach(function(r){ var o = {week:m.week, amazon_from:(m.amazon_interval || [])[0], amazon_to:(m.amazon_interval || [])[1]}; for(var k in r) o[k] = r[k]; rows.push(o); }); }); var cols = ['week','amazon_from','amazon_to']; rows.forEach(function(r){ Object.keys(r).forEach(function(k){ if(cols.indexOf(k) < 0) cols.push(k); }); }); save('amazon_sns_metrics_' + TODAY + '.csv', csv(rows, cols)); };
   $('statusSel').onchange = $('q').oninput = function(){ shown = 150; renderOrders(); };
   $('mWeekSel').onchange = renderMetrics;
   $('more').onclick = function(){ shown += 300; renderOrders(); };
-  ['orders','metrics','forecast'].forEach(function(t){ $('tab-' + t).onclick = function(){ ['orders','metrics','forecast'].forEach(function(x){ $('tab-' + x).setAttribute('aria-selected', x === t); $('pane-' + x).hidden = x !== t; }); }; });
+  var TABS = ['orders','periods','metrics','forecast'];
+  TABS.forEach(function(t){ $('tab-' + t).onclick = function(){ TABS.forEach(function(x){ $('tab-' + x).setAttribute('aria-selected', x === t); $('pane-' + x).hidden = x !== t; }); }; });
 
+  function renderPeriod(){
+    var B = buckets();
+    renderBar(); renderKpis(); renderChart(B); renderSkus(); renderOrders(); renderPeriods(B); fillSelects(); renderMetrics();
+    $('dlRange').disabled = !inRange(S.from, S.to).length;
+  }
   function renderAll(){
-    weeks = Object.keys((D && D.weeks) || {}).map(function(k){ return D.weeks[k]; }).sort(function(a, b){ return b.week.localeCompare(a.week); });
+    TODAY = todayLA();
+    ALL = []; Object.keys((D && D.weeks) || {}).forEach(function(k){ (D.weeks[k].orders || []).forEach(function(o){ if(isDate(o.date)) ALL.push(o); }); });
     metrics = Object.keys((D && D.metrics) || {}).map(function(k){ return D.metrics[k]; }).sort(function(a, b){ return b.week.localeCompare(a.week); });
-    fillSelects(); renderWarn(); renderKpis(); renderChart(); renderSkus(); renderOrders(); renderMetrics(); renderForecast();
-    $('dlAll').disabled = $('dlWeek').disabled = !weeks.length; $('dlMetrics').disabled = !metrics.some(function(m){ return m.by_asin && m.by_asin.length; });
+    var bs = D && D.meta && D.meta.backfill_start; DATA_START = isDate(bs || '') ? bs : (ALL.length ? ALL.map(function(o){ return o.date; }).sort()[0] : '');
+    loadState();
+    renderWarn(); renderForecast(); renderPeriod();
+    $('dlAll').disabled = !ALL.length; $('dlMetrics').disabled = !metrics.some(function(m){ return m.by_asin && m.by_asin.length; });
     if(D && D.generated_at){ var g = new Date(D.generated_at); $('bandSub').textContent = 'Đơn có cờ Subscribe & Save từ SP-API Orders + chỉ số Replenishment API · đồng bộ lần cuối ' + g.toLocaleString('vi-VN', {dateStyle:'medium', timeStyle:'short'}) + '.'; }
   }
 
