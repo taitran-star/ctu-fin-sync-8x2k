@@ -16621,6 +16621,11 @@
           "count": 2,
           "fee": 0.0
         },
+        "T0300": {
+          "amount": 26.87,
+          "count": 1,
+          "fee": 0.0
+        },
         "T0400": {
           "amount": -1812.3,
           "count": 1,
@@ -16634,8 +16639,8 @@
       "payments_count": 9,
       "refunds": 0,
       "refunds_count": 0,
-      "transactions": 12,
-      "withdrawals": 1812.3
+      "transactions": 13,
+      "withdrawals": 1785.43
     },
     "2026-09-30": {
       "by_event_code": {
@@ -16834,21 +16839,21 @@
       "withdrawals": 1494.65
     }
   },
-  "generated_at": "2026-10-06T15:14:49Z",
+  "generated_at": "2026-10-06T15:44:55Z",
   "meta": {
     "api_requests": 4,
     "api_retries": 0,
     "counts": {
-      "transactions_counted": 894,
+      "transactions_counted": 895,
       "transactions_duplicate": 0,
-      "transactions_not_success": 22,
+      "transactions_not_success": 23,
       "transactions_outside_window": 11,
-      "transactions_seen": 927,
+      "transactions_seen": 929,
       "transactions_without_date": 0
     },
     "currencies_seen": {
       "CAD": 76,
-      "USD": 1620
+      "USD": 1621
     },
     "event_codes_seen": {
       "T0000": 1,
@@ -16858,11 +16863,11 @@
       "T0011": 1,
       "T0114": 5,
       "T0200": 52,
-      "T0300": 3,
+      "T0300": 4,
       "T0400": 21,
       "T0403": 2,
       "T1106": 2,
-      "T1107": 42,
+      "T1107": 43,
       "T1110": 9,
       "T1111": 10,
       "T1201": 3,
@@ -16895,7 +16900,7 @@
     "script_version": "1.0",
     "slices": 2,
     "warnings": [
-      "transactions in currencies other than USD were summed as-is: {'USD': 1620, 'CAD': 76}"
+      "transactions in currencies other than USD were summed as-is: {'USD': 1621, 'CAD': 76}"
     ]
   },
   "source": "paypal_transaction_search",
@@ -16909,8 +16914,8 @@
       "payments_count": 425,
       "refunds": 4091.24,
       "refunds_count": 42,
-      "transactions": 546,
-      "withdrawals": 92846.12
+      "transactions": 547,
+      "withdrawals": 92819.25
     },
     "mtd": {
       "fees": 339.33,
