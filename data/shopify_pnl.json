@@ -76,8 +76,8 @@
         "sales": 25688.65
       },
       "meta_paid": {
-        "orders": 3547,
-        "sales": 433101.1
+        "orders": 3548,
+        "sales": 433190.1
       },
       "meta_shop": {
         "orders": 3,
@@ -194227,8 +194227,8 @@
             "sales": 245.0
           },
           "meta_paid": {
-            "orders": 2,
-            "sales": 238.0
+            "orders": 3,
+            "sales": 327.0
           },
           "other_channel": {
             "orders": 4,
@@ -194241,8 +194241,8 @@
             "sales": 245.0
           },
           "meta_paid>meta_paid": {
-            "orders": 2,
-            "sales": 238.0
+            "orders": 3,
+            "sales": 327.0
           },
           "other_channel>other_channel": {
             "orders": 4,
@@ -194258,11 +194258,11 @@
             "sales": 245.0
           },
           "meta_paid": {
-            "new": 2,
-            "orders": 2,
-            "paid_first": 2,
+            "new": 3,
+            "orders": 3,
+            "paid_first": 3,
             "returning": 0,
-            "sales": 238.0
+            "sales": 327.0
           },
           "other_channel": {
             "new": 0,
@@ -194274,7 +194274,7 @@
         },
         "no_journey": 0,
         "orders": 9,
-        "pending": 1
+        "pending": 0
       },
       "discounts": 724.0,
       "fees_missing_orders": 1,
@@ -194311,7 +194311,7 @@
       "total_sales": 532.19
     }
   },
-  "generated_at": "2026-10-07T12:30:33Z",
+  "generated_at": "2026-10-07T12:58:39Z",
   "meta": {
     "api_cost_actual": 33293,
     "api_cost_requested_max": 354,
@@ -194326,8 +194326,8 @@
       "journeys_missing": 0,
       "journeys_moments_truncated": 1,
       "journeys_no_session": 621,
-      "journeys_pending": 1,
-      "journeys_ready": 7198,
+      "journeys_pending": 0,
+      "journeys_ready": 7199,
       "journeys_resolved_by_moments": 515,
       "journeys_unresolved": 0,
       "late_orders_scanned": 3439,
@@ -194454,7 +194454,6 @@
     "script_version": "1.9",
     "throttled_waits": 0,
     "warnings": [
-      "1 orders not attributed by Shopify yet (customerJourneySummary.ready=false, normal for the newest orders) - counted as pending, refetched next run",
       "34 orders carry the __snowball attribute but no 'Referral - SS - *' tag (Snowball rejected/untracked them) - not counted as referrals",
       "no rate known for Snowball program 'asher_fitfeline_partner' - using SNOWBALL_DEFAULT_RATE=0",
       "rate for Snowball program '20 % Commision No Discou' inferred from its name (20%) - set SNOWBALL_PROGRAM_RATES to pin it",
