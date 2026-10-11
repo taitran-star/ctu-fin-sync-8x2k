@@ -60,8 +60,8 @@
         "sales": 49416.57
       },
       "email": {
-        "orders": 713,
-        "sales": 94434.49
+        "orders": 714,
+        "sales": 94592.49
       },
       "email_other": {
         "orders": 8,
@@ -76,8 +76,8 @@
         "sales": 25157.57
       },
       "meta_paid": {
-        "orders": 3475,
-        "sales": 429322.27
+        "orders": 3476,
+        "sales": 429451.27
       },
       "meta_shop": {
         "orders": 4,
@@ -195098,6 +195098,11 @@
             "orders": 2,
             "sales": 238.0
           },
+          "Email #1\u2014 Offer Reveal": {
+            "medium": "email",
+            "orders": 1,
+            "sales": 158.0
+          },
           "Email #3A | Peekaboo | Offer 10% OFF": {
             "medium": "email",
             "orders": 1,
@@ -195122,8 +195127,8 @@
             "sales": 851.0
           },
           "meta_paid": {
-            "orders": 54,
-            "sales": 6695.17
+            "orders": 56,
+            "sales": 6982.17
           },
           "organic_search": {
             "orders": 5,
@@ -195180,16 +195185,16 @@
             "sales": 119.0
           },
           "meta_paid>email": {
-            "orders": 4,
-            "sales": 580.99
+            "orders": 5,
+            "sales": 738.99
           },
           "meta_paid>meta_organic": {
             "orders": 1,
             "sales": 109.0
           },
           "meta_paid>meta_paid": {
-            "orders": 49,
-            "sales": 6005.18
+            "orders": 50,
+            "sales": 6134.18
           },
           "organic_search>email": {
             "orders": 1,
@@ -195217,11 +195222,11 @@
             "sales": 536.5
           },
           "email": {
-            "new": 10,
-            "orders": 20,
-            "paid_first": 4,
+            "new": 11,
+            "orders": 21,
+            "paid_first": 5,
             "returning": 10,
-            "sales": 2948.95
+            "sales": 3106.95
           },
           "google_ads": {
             "new": 16,
@@ -195238,11 +195243,11 @@
             "sales": 317.0
           },
           "meta_paid": {
-            "new": 46,
-            "orders": 51,
-            "paid_first": 50,
+            "new": 47,
+            "orders": 52,
+            "paid_first": 51,
             "returning": 5,
-            "sales": 6253.18
+            "sales": 6382.18
           },
           "organic_search": {
             "new": 3,
@@ -195268,7 +195273,7 @@
         },
         "no_journey": 0,
         "orders": 107,
-        "pending": 2
+        "pending": 0
       },
       "discounts": 11028.4,
       "fees_missing_orders": 18,
@@ -195307,7 +195312,7 @@
       "total_sales": 14387.39
     }
   },
-  "generated_at": "2026-10-11T04:51:20Z",
+  "generated_at": "2026-10-11T05:22:11Z",
   "meta": {
     "api_cost_actual": 32756,
     "api_cost_requested_max": 354,
@@ -195322,8 +195327,8 @@
       "journeys_missing": 0,
       "journeys_moments_truncated": 1,
       "journeys_no_session": 611,
-      "journeys_pending": 2,
-      "journeys_ready": 7001,
+      "journeys_pending": 0,
+      "journeys_ready": 7003,
       "journeys_resolved_by_moments": 498,
       "journeys_unresolved": 0,
       "late_orders_scanned": 3565,
@@ -195450,7 +195455,6 @@
     "script_version": "1.9",
     "throttled_waits": 0,
     "warnings": [
-      "2 orders not attributed by Shopify yet (customerJourneySummary.ready=false, normal for the newest orders) - counted as pending, refetched next run",
       "33 orders carry the __snowball attribute but no 'Referral - SS - *' tag (Snowball rejected/untracked them) - not counted as referrals",
       "no rate known for Snowball program 'asher_fitfeline_partner' - using SNOWBALL_DEFAULT_RATE=0",
       "rate for Snowball program '20 % Commision No Discou' inferred from its name (20%) - set SNOWBALL_PROGRAM_RATES to pin it",
