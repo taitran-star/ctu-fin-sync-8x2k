@@ -226,6 +226,7 @@
   .mer-band{display:flex;justify-content:space-between;align-items:center;gap:14px;background:var(--surface-card-3);border-radius:12px;padding:14px 16px;margin-top:12px;flex-wrap:wrap;}
   .mer-band .m-label{font-size:12.5px;color:var(--ink-secondary);max-width:480px;}
   .mer-band .m-value{font-family:var(--font-display);font-size:42px;font-weight:500;color:var(--accent);}
+  .mer-note{font-size:12.5px;color:var(--ink-secondary);margin:8px 2px 0;line-height:1.45;}
 
   /* cost to sell through each channel (take rate) */
   .chan-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}
@@ -489,10 +490,11 @@
     <div class="card-head"><h2>ROAS theo kênh &amp; MER toàn marketing</h2><div class="note">ROAS = doanh thu quy về kênh ÷ chi phí kênh đó (có thể trùng lặp do đa chạm)</div></div>
     <div class="roas-grid" id="roasGrid"></div>
     <div class="mer-band">
-      <div class="m-label"><b>MER (Marketing Efficiency Ratio)</b> = Doanh thu thuần toàn bộ ÷ Tổng chi tiêu quảng cáo. Khác ROAS ở chỗ dùng doanh thu thật (kể cả organic/halo), nên MER thường thấp hơn tổng ROAS cộng dồn từng kênh — dùng MER để đánh giá hiệu quả marketing tổng thể, dùng ROAS để tối ưu từng kênh.</div>
+      <div class="m-label"><b>MER (Marketing Efficiency Ratio)</b> = Doanh thu thuần toàn bộ ÷ Tổng chi tiêu quảng cáo (Meta, Google, Amazon Ads, TikTok Ads, AppLovin, Walmart Connect). Chỉ tính những ngày mọi nguồn quảng cáo đã có số. Khác ROAS ở chỗ dùng doanh thu thật (kể cả organic/halo), nên MER thường thấp hơn tổng ROAS cộng dồn từng kênh — dùng MER để đánh giá hiệu quả marketing tổng thể, dùng ROAS để tối ưu từng kênh.</div>
       <div class="m-value" id="merValue"></div>
     </div>
-    <div class="caption" style="padding-left:2px;"><span id="adsCaptionAmazon">* Amazon Ads chờ Amazon duyệt quyền Advertising API → chi $0 và không tính vào MER. </span>TikTok Ads và AppLovin chưa kết nối → chi $0 và không tính vào MER. Amazon Ads (khi có số): chi phí Sponsored Products / Brands / Display theo ngày, "DT quy về" là doanh thu Amazon gán cho quảng cáo (không cộng vào doanh thu).</div>
+    <div class="mer-note" id="merNote" hidden></div>
+    <div class="caption" style="padding-left:2px;"><span id="adsCaptionAmazon">* Amazon Ads chờ Amazon duyệt quyền Advertising API → chi $0 và không tính vào MER. </span>TikTok Ads = GMV Max của TikTok Shop ("DT quy về" là doanh thu TikTok Shop mà GMV Max tự nhận). Amazon Ads (khi có số): chi phí Sponsored Products / Brands / Display theo ngày, "DT quy về" là doanh thu Amazon gán cho quảng cáo (không cộng vào doanh thu).</div>
   </div>
 
   <div class="card" id="attrCard" style="display:none;">
@@ -629,7 +631,7 @@
 <div id="siteRefresh" hidden><span id="siteLoadedAt" title="Giờ tải số liệu (giờ trên máy bạn)"></span><button type="button" id="siteReload" title="Tải lại số liệu mới nhất">↻ Cập nhật</button><a href="/?menu=1" title="Về trang chọn bảng">bảng khác</a><a href="/?menu=1#app" id="siteInstall" title="Cài như app lên máy / điện thoại" hidden>cài app</a><a href="/logout" title="Đăng xuất khỏi thiết bị này">thoát</a></div>
 <script>
 (function(){
-  var SOURCES = {"amazon": "amazon_pnl.json", "meta": "meta_ads.json", "shopify": "shopify_pnl.json", "google": "google_ads.json", "shipmonk": "shipmonk.json", "shipmonk_invoices": "shipmonk_invoices.json", "shipmonk_storage": "shipmonk_storage_daily.json", "paypal": "paypal.json", "klaviyo": "klaviyo.json", "klaviyo_invoices": "klaviyo_invoices.json", "amazon_ads": "amazon_ads.json", "opex": "opex_monthly.json", "amazon_storage": "amazon_storage.json", "loop_subscriptions": "loop_subscriptions.json", "tiktok_shop": "tiktok_shop.json", "walmart": "walmart.json"};
+  var SOURCES = {"amazon": "amazon_pnl.json", "meta": "meta_ads.json", "shopify": "shopify_pnl.json", "google": "google_ads.json", "shipmonk": "shipmonk.json", "shipmonk_invoices": "shipmonk_invoices.json", "shipmonk_storage": "shipmonk_storage_daily.json", "paypal": "paypal.json", "klaviyo": "klaviyo.json", "klaviyo_invoices": "klaviyo_invoices.json", "amazon_ads": "amazon_ads.json", "opex": "opex_monthly.json", "amazon_storage": "amazon_storage.json", "loop_subscriptions": "loop_subscriptions.json", "tiktok_shop": "tiktok_shop.json", "walmart": "walmart.json", "applovin": "applovin.json", "tiktok_ads": "tiktok_ads.json"};
   var keys = Object.keys(SOURCES), done = 0;
   window.__LIVE = {}; window.__LIVE_ERR = {}; window.__LOADED_AT = 0; window.__SAVED_AT = 0;
   try{ localStorage.setItem('ctu_last_dash', '/pnl'); }catch(e){}
@@ -663,7 +665,7 @@
     return load(k, 1).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=d33a91e2b1';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=b28e2c7065';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');

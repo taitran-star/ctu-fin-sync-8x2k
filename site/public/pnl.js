@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build d33a91e2b1).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build b28e2c7065).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -127,12 +127,20 @@
   // recurring revenue - Loop has no endpoint to list orders store-wide) - data/loop_subscriptions.json.
   const LOOP_LIVE_DATA = (window.__LIVE && window.__LIVE["loop_subscriptions"]) || null; /*LOOP_SUBSCRIPTIONS_INJECT*/
   let loopMeta = null;
+  // Afterpay merchant fee: Shopify exposes no fee for the Afterpay gateway, so it is ESTIMATED = captured amount x pct + orders x fixed.
+  // Assumed US list rate 6% + $0.30 per order - replace with the rate in the Afterpay merchant agreement / settlement report.
+  const AFTERPAY_FEE = {pct:0.06, fixed:0.30};
   // TikTok Shop (Open API, data/tiktok_shop.json schema 2): orders by ORDER date (LA) + real fees of settled orders.
   const TIKTOK_SHOP_LIVE_DATA = (window.__LIVE && window.__LIVE["tiktok_shop"]) || null; /*TIKTOK_SHOP_INJECT*/
   let tiktokMeta = null;
   // Walmart Marketplace (data/walmart.json schema 1): orders by ORDER date (LA) + real commission from the reconciliation report.
   const WALMART_LIVE_DATA = (window.__LIVE && window.__LIVE["walmart"]) || null; /*WALMART_INJECT*/
   let walmartMeta = null;
+  // AppLovin (Reporting API, data/applovin.json schema 1): daily advertiser cost + platform-attributed sales.
+  const APPLOVIN_LIVE_DATA = (window.__LIVE && window.__LIVE["applovin"]) || null; /*APPLOVIN_INJECT*/
+  // TikTok Ads (Marketing API v1.3, data/tiktok_ads.json schema 1): daily cost of GMV Max (TikTok Shop) + other auction ads,
+  // with the orders / gross revenue GMV Max attributes to itself (platform-reported, never added to revenue).
+  const TIKTOK_ADS_LIVE_DATA = (window.__LIVE && window.__LIVE["tiktok_ads"]) || null;
 
   // Last-touch channels (Shopify customer journey, sync v1.8+): fixed order, fixed colors.
   // Full-strength hues = one entity each; lighter mixes = the organic / untagged sibling of that hue.
@@ -205,7 +213,7 @@
   const days = [];
   for(let i=0;i<TOTAL_DAYS;i++){
     const d = dateAt(i);
-    const row = {date:d, iso:isoDate(d), channels:{}, refunds:{}, orders:{}, discounts:{}, ads:{}, adsAttr:{}, amazonReal:null, metaReal:null, googleReal:null, shopifyReal:null, snowballReal:null, shipmonkReal:null, shipmonkInv:null, paypalReal:null, shopifyAttr:null, klaviyoReal:null, klaviyoCost:null, loopReal:null, tiktokReal:null, walmartReal:null};
+    const row = {date:d, iso:isoDate(d), channels:{}, refunds:{}, orders:{}, discounts:{}, ads:{}, adsAttr:{}, amazonReal:null, metaReal:null, googleReal:null, shopifyReal:null, snowballReal:null, shipmonkReal:null, shipmonkInv:null, paypalReal:null, shopifyAttr:null, klaviyoReal:null, klaviyoCost:null, loopReal:null, tiktokReal:null, walmartReal:null, applovinReal:null};
     CH_KEYS.forEach(k=>{ row.channels[k]=0; row.refunds[k]=0; row.orders[k]=0; row.discounts[k]=0; });
     AD_KEYS.forEach(k=>{ row.ads[k]=0; row.adsAttr[k]=0; });
     days.push(row);
@@ -372,7 +380,11 @@
     const paypalFees = sum(rows.map(r=> r.paypalReal ? r.paypalReal.fees : 0));
     const paypalPayments = sum(rows.map(r=> r.paypalReal ? r.paypalReal.payments : 0));
     const paypalPaymentsCount = sum(rows.map(r=> r.paypalReal ? r.paypalReal.paymentsCount : 0));
-    const paymentFeesAll = paymentFees + paypalFees;
+    // Afterpay (estimate): gateways named afterpay / clearpay
+    let afterpayAmount = 0, afterpayOrders = 0;
+    Object.entries(gatewayMix).forEach(([g,v])=>{ if(/afterpay|clearpay/i.test(g)){ afterpayAmount += v.amount||0; afterpayOrders += v.orders||0; } });
+    const afterpayFees = afterpayAmount*AFTERPAY_FEE.pct + afterpayOrders*AFTERPAY_FEE.fixed;
+    const paymentFeesAll = paymentFees + paypalFees + afterpayFees;
     // Cross-check PayPal against Shopify on the days both are live: Shopify's "paypal" gateway
     // captures vs PayPal's own payments. The gap = PayPal payments on cancelled / non-Shopify orders.
     const ppCmpDays = feeDays.filter(r=>r.paypalReal);
@@ -466,7 +478,8 @@
     const blendedAOV = totalOrders>0 ? netRevenue/totalOrders : 0;
     const breakEvenOrders = blendedAOV>0 ? breakEvenRevenue/blendedAOV : 0;
 
-    const merValue = adSpend>0 ? netRevenue/adSpend : 0;
+    const merSpend = adSpend + walmartAds;   // every paid-ads dollar whose sales are in netRevenue (ad platforms + Walmart Connect)
+    const merValue = merSpend>0 ? netRevenue/merSpend : 0;
     const attrRevenueSum = sum(AD_KEYS.map(k=>adsAttr[k]));
 
     // Meta Ads: how many of the selected days carry real Marketing API numbers
@@ -474,6 +487,10 @@
     const metaAdsRealDays = rows.filter(r=>r.metaReal).length;
     const metaAdsPurchases = sum(rows.map(r=> r.metaReal ? r.metaReal.purchases : 0));
     const googleAdsRealDays = rows.filter(r=>r.googleReal).length;
+    const applovinRealDays = rows.filter(r=>r.applovinReal).length;
+    const tiktokAdsRealDays = rows.filter(r=>r.tiktokAdsReal).length;
+    const tiktokAdsOrders = sum(rows.map(r=> r.tiktokAdsReal ? r.tiktokAdsReal.orders : 0));
+    const applovinPurchases = sum(rows.map(r=> r.applovinReal ? r.applovinReal.conversions : 0));
     const googleAdsPurchases = sum(rows.map(r=> r.googleReal ? r.googleReal.conversions : 0));
     const amazonAdsRealDays = rows.filter(r=>r.amazonAdsReal).length;
     const amazonAdsPurchases = sum(rows.map(r=> r.amazonAdsReal ? r.amazonAdsReal.purchases : 0));
@@ -485,9 +502,13 @@
     const amazonAdsProvisionalDays = rows.filter(r=> r.amazonAdsReal && r.amazonAdsReal.provisional).length;   // days the Sellerboard export has not reached yet
     const amazonAdsProvisionalAmt = sum(rows.map(r=> (r.amazonAdsReal && r.amazonAdsReal.provisional) ? r.amazonAdsReal.consoleSpend : 0));
     // Amazon-only ratios (definitions as in the Amazon Ads console / Sellerboard): ACOS = ad spend ÷ ad-attributed sales; TACOS = ALL Amazon ad spend ÷ Amazon gross sales of the period
-    const amazonAcos = adsAttr.amazonads>0 ? amazonAdsConsoleSpend/adsAttr.amazonads : 0;
+    // Console "Sales" exist only for days pulled from the PPC dashboard -> ROAS / ACOS use the spend of those same days
+    // (spend of days without Sales would drag ROAS down for no reason).
+    const amazonAdsSalesDays = rows.filter(r=> r.amazonAdsReal && r.amazonAdsReal.hasSales).length;
+    const amazonAdsSalesSpend = sum(rows.map(r=> (r.amazonAdsReal && r.amazonAdsReal.hasSales) ? r.amazonAdsReal.consoleSpend : 0));
+    const amazonAcos = adsAttr.amazonads>0 ? amazonAdsSalesSpend/adsAttr.amazonads : 0;
     const amazonTacos = gross.amazon>0 ? ads.amazonads/gross.amazon : 0;
-    const amazonRoas = amazonAdsConsoleSpend>0 ? adsAttr.amazonads/amazonAdsConsoleSpend : 0;
+    const amazonRoas = amazonAdsSalesSpend>0 ? adsAttr.amazonads/amazonAdsSalesSpend : 0;
 
     // tax collected net of tax refunded to customers = Shopify Analytics "Taxes"
     const shopifyTax = sum(rows.map(r=> r.shopifyReal ? r.shopifyReal.tax - r.shopifyReal.refundedTax : 0));
@@ -498,15 +519,15 @@
       productCost, packaging, fulfillment, postage, cogs, grossProfit, nonAmazonOrders, shopifyTax, shopifyRealDays, amazonRealDays,
       shipmonkRealDays, shipmonkOrders, shipmonkUnshipped, shipmonkUnits, shipmonkPickPack, shipmonkByStore, shipmonkByChannel,
       smInvDays, smInv, smInvOther, smInvAdjCredits, smStorageOpen, smStorageOpenDays, smStorageCarryDays, smStorageReportDays, smInvShipCmp, smApiShipCmp, smCmpDays, smCmpMissingDays, smTrueUp, shipmonkInvoiceExtras, shipmonkLogistics, amazonLogistics, logisticsTotal, feesTotal, marketingTotal, cmBeforeMarketing,
-      paymentFees, paymentFeeDays, paymentFeeOrders, feesMissingOrders, gatewayMix, feeTypeMix, paypalDays, paypalFees, paypalPayments, paypalPaymentsCount, paypalCompare, paymentFeesAll, marketplaceFees, adSpend, otherVarTotal, contributionProfit,
+      paymentFees, afterpayFees, afterpayAmount, afterpayOrders, paymentFeeDays, paymentFeeOrders, feesMissingOrders, gatewayMix, feeTypeMix, paypalDays, paypalFees, paypalPayments, paypalPaymentsCount, paypalCompare, paymentFeesAll, marketplaceFees, adSpend, otherVarTotal, contributionProfit,
       gaItems, gaTotal, inventoryHolding, fixedTotal, netProfit, klaviyoCost, klaviyoCostDays, klaviyoCostParts,
       opexDays, opexCarriedDays, opexNote, salaryEntered, depreciation, interest, depreciationEntered, interestEntered, taxEntered, taxRate, ebit, ebt, incomeTax, incomeTaxEstimated, netIncome, belowEbitdaEntered,
       variableTotal, variableRatio, cmRatio, breakEvenRevenue, blendedAOV, breakEvenOrders,
-      merValue, attrRevenueSum,
+      merValue, merSpend, attrRevenueSum,
       amazonOrdersReal, amazonReferralFeesReal, amazonServiceFeesReal, amazonInboundFreightReal, amazonOtherFeesReal, amazonOtherUnclassifiedCost, amazonMarketplaceFeesEst, walmartFees, walmartDays, walmartFeesEst, walmartAds, walmartSettledOrders, walmartUnsettledOrders, tiktokFees,
       tiktokDays, tiktokFeesEstSelling, tiktokAffiliate, tiktokAffiliateEst, tiktokSmart, tiktokSmartEst, tiktokSettledOrders, tiktokUnsettledOrders, tiktokNetUnsettled,
       amazonStorageAlloc, amazonStorageMissingDays, amazonStoragePosted, amazonStorageReportDays, amazonStorageEstDays, amazonStorageEstAmt, amazonRefundFeeAdj, amazonFeeOrderedDays, amazonFeeEstDays, amazonRefEst, amazonFbaEst, amazonPendSkuDays, amazonPendUnits,
-      metaAdsRealDays, metaAdsPurchases, googleAdsRealDays, googleAdsPurchases, amazonAdsRealDays, amazonAdsPurchases, amazonAdsSplit, amazonAdsConsoleSpend, amazonAdsImpressions, amazonAdsClicks, amazonAcos, amazonTacos, amazonRoas, amazonAdsProvisionalDays, amazonAdsProvisionalAmt,
+      metaAdsRealDays, metaAdsPurchases, googleAdsRealDays, applovinRealDays, applovinPurchases, tiktokAdsRealDays, tiktokAdsOrders, googleAdsPurchases, amazonAdsRealDays, amazonAdsPurchases, amazonAdsSalesDays, amazonAdsSalesSpend, amazonAdsSplit, amazonAdsConsoleSpend, amazonAdsImpressions, amazonAdsClicks, amazonAcos, amazonTacos, amazonRoas, amazonAdsProvisionalDays, amazonAdsProvisionalAmt,
       snowballRealDays, snowballOrders, snowballRevenue, snowballCommission};
   }
 
@@ -747,11 +768,14 @@
         const FT = {domestic_card_not_present:'thẻ nội địa 2.25% + $0.30', premium_domestic_card_not_present:'thẻ premium 2.95% + $0.30', amex_card_not_present:'Amex 2.95% + $0.30', international_card_not_present:'thẻ quốc tế 3.25% + $0.42', foreign_exchange_fee:'phí quy đổi ngoại tệ 1.5%', amazon_pay_base:'Amazon Pay', amex_international_card_not_present:'Amex quốc tế', premium_international_card_not_present:'thẻ premium quốc tế', shop_pay_installments:'Shop Pay Installments'};
         rows.push({...stLine((FT[k]||k), -v, nr, null, 'opvar'), detail:true, neg:true, live:true});
       });
-      Object.entries(a.gatewayMix).filter(([g])=>g!=='shopify_payments' && !(g==='paypal' && a.paypalDays>0)).sort((x,y)=>y[1].amount-x[1].amount).forEach(([g,v])=>{
+      Object.entries(a.gatewayMix).filter(([g])=>g!=='shopify_payments' && !(g==='paypal' && a.paypalDays>0) && !/afterpay|clearpay/i.test(g)).sort((x,y)=>y[1].amount-x[1].amount).forEach(([g,v])=>{
         const base = (GW_LABEL[g]||g)+' — '+v.orders.toLocaleString('en-US')+' đơn, '+money(v.amount)+' thu qua cổng này';
         if(GW_NO_FEE.has(g)) rows.push({...stLine(base+' — cổng này không thu phí giao dịch', 0, nr, null, 'opvar'), detail:true, live:true});
         else rows.push({...stLine(base+' — phí chưa kết nối', 0, nr, null, 'opvar'), detail:true, neg:true, gap:true});
       });
+      if(a.afterpayOrders>0){
+        rows.push({...stLine('Afterpay (trả góp) — '+a.afterpayOrders.toLocaleString('en-US')+' đơn, '+money(a.afterpayAmount)+' thu qua cổng này — phí ước tính '+(AFTERPAY_FEE.pct*100).toFixed(0)+'% + $'+AFTERPAY_FEE.fixed.toFixed(2)+'/đơn', -a.afterpayFees, nr, null, 'opvar'), detail:true, neg:true, live:true, est:true, estTitle:'Shopify không lộ phí Afterpay. Ước tính = số thu qua Afterpay × '+(AFTERPAY_FEE.pct*100).toFixed(1)+'% + $'+AFTERPAY_FEE.fixed.toFixed(2)+' × số đơn (biểu phí công khai, chưa phải phí thật). Sẽ thay bằng phí thật khi có báo cáo settlement của Afterpay.', hget: x=>-x.afterpayFees});
+      }
     } else if(a.paypalDays===0){
       rows.push({...stLine('Phí cổng thanh toán (Shopify Payments / PayPal / ShopPay) — chưa kết nối', -a.paymentFees, nr, 'var', 'opvar'), neg:true, gap:true});
     }
@@ -788,6 +812,17 @@
         if(a.googleAdsRealDays===a.n){ live = true; }
         else if(a.googleAdsRealDays>0){ live = true; label += ' ('+(a.n-a.googleAdsRealDays)+' ngày ngoài cửa sổ Google Ads API = $0)'; }
         else { label += googleMatched ? ' (khoảng này ngoài cửa sổ Google Ads API)' : ' — chưa kết nối'; gap = true; }
+      }
+      if(k==='applovin' && applovinMatched){
+        if(a.applovinRealDays===a.n){ live = true; }
+        else if(a.applovinRealDays>0){ live = true; label += ' ('+(a.n-a.applovinRealDays)+' ngày chưa có số = $0 — API chỉ giữ 45 ngày; nạp file export để có lịch sử)'; }
+        else { label += ' (khoảng này chưa có số — API chỉ giữ 45 ngày; nạp file export để có lịch sử)'; gap = true; }
+      }
+      if(k==='tiktokads' && tiktokAdsMatched){
+        label += ' (GMV Max — quảng cáo TikTok Shop)';
+        if(a.tiktokAdsRealDays===a.n){ live = true; }
+        else if(a.tiktokAdsRealDays>0){ live = true; label += ' ('+(a.n-a.tiktokAdsRealDays)+' ngày chưa có số = $0)'; }
+        else { label += ' (khoảng này chưa có số)'; gap = true; }
       }
       let est = false, estTitle = '';
       if(k==='amazonads' && a.amazonAdsProvisionalDays>0){
@@ -1022,7 +1057,7 @@
     ]});
     chans.push({key:'shopify', name:'Shopify (D2C)', sub:'cổng thanh toán, ShipMonk, quảng cáo, affiliate, công cụ D2C', net: netOf('shopify'), orders: a.orders.shopify, groups:[
       {label:'Phí bán hàng theo giao dịch', rows:[
-        {n:'Cổng thanh toán (Shopify Payments, PayPal)', v: a.paymentFeesAll, gap: a.paymentFeeDays===0 && a.paypalDays===0},
+        {n:'Cổng thanh toán (Shopify Payments, PayPal, Afterpay ước tính)', v: a.paymentFeesAll, gap: a.paymentFeeDays===0 && a.paypalDays===0},
       ]},
       {label:'Fulfillment & kho', rows:[
         {n:'ShipMonk theo đơn (cước, pick & pack, bao bì)', s:'gồm bao bì mua sỉ, credit và chênh lệch hoá đơn', v: smCh.shopify + a.shipmonkInvoiceExtras},
@@ -1251,6 +1286,35 @@
   }
 
   // ---------- ROAS / MER ----------
+  // The ad sources report on different clocks: Meta / Google / AppLovin / TikTok sync every 30 min (today included),
+  // while the Sellerboard export behind Amazon Ads lands once a day, some hours after the LA day has closed.
+  // A day only counts toward MER once EVERY connected ad source has reported it - otherwise MER divides the full
+  // revenue by part of the spend and looks better than it is (e.g. 05/10: 2.22x shown vs ~1.9x once Amazon Ads arrived).
+  const AD_REAL_FLAG = {meta:'metaReal', google:'googleReal', applovin:'applovinReal', tiktokads:'tiktokAdsReal', amazonads:'amazonAdsReal'};
+  function adMatched(k){
+    return k==='meta' ? metaMatched : k==='google' ? googleMatched : k==='applovin' ? applovinMatched : k==='tiktokads' ? tiktokAdsMatched : k==='amazonads' ? amazonAdsMatched : false;
+  }
+  function adLastDay(k){
+    if(!adMatched(k)) return null;
+    const src = {meta: META_ADS_LIVE_DATA, google: GOOGLE_ADS_LIVE_DATA, applovin: APPLOVIN_LIVE_DATA, tiktokads: TIKTOK_ADS_LIVE_DATA, amazonads: AMAZON_ADS_LIVE_DATA}[k];
+    if(!src || !src.daily) return null;
+    if(k==='amazonads'){ const au = src.meta && src.meta.automation; if(au && au.fetched_last_day) return au.fetched_last_day; }
+    const ks = Object.keys(src.daily).filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(x)).sort();
+    return ks.length ? ks[ks.length-1] : null;
+  }
+  const dmShort = iso => iso ? iso.slice(8,10)+'/'+iso.slice(5,7) : '';
+  function dmRange(list){ if(!list.length) return ''; const a0 = list[0], a1 = list[list.length-1]; return a0===a1 ? dmShort(a0) : dmShort(a0)+'–'+dmShort(a1); }
+  // ad sources still missing a day (connected, but their data does not reach it yet)
+  function adPendingKeys(r){ return AD_KEYS.filter(k=>{ const l = adLastDay(k); return l && r.iso > l; }); }
+  function elapsedShareOfDay(tz){
+    try{
+      const parts = new Intl.DateTimeFormat('en-GB',{timeZone:tz,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date());
+      const g = t => parseInt(parts.find(x=>x.type===t).value,10);
+      return Math.min(1, Math.max(0.02, (g('hour')*60 + g('minute'))/1440));
+    }catch(e){ return 1; }
+  }
+  function merOf(rowsSet){ const x = aggregate(rowsSet); return {mer: x.merSpend>0 ? x.netRevenue/x.merSpend : 0, spend: x.merSpend, revenue: x.netRevenue}; }
+
   function renderRoas(){
     const rows = currentRows();
     const a = aggregate(rows);
@@ -1258,23 +1322,70 @@
     document.getElementById('roasGrid').innerHTML = AD_KEYS.map((k,i)=>{
       const roas = k==='amazonads' && a.amazonAdsConsoleSpend>0 ? a.amazonRoas : (a.ads[k]>0 ? a.adsAttr[k]/a.ads[k] : 0);   // Amazon: same maths as the Ads console (Sales ÷ Total cost)
       const noteStar = (k==='amazonads' && !amazonAdsMatched) ? ' *' : '';
-      const realDays = k==='meta' ? a.metaAdsRealDays : k==='google' ? a.googleAdsRealDays : k==='amazonads' ? a.amazonAdsRealDays : 0;
-      const realPurch = k==='meta' ? a.metaAdsPurchases : k==='google' ? a.googleAdsPurchases : k==='amazonads' ? a.amazonAdsPurchases : 0;
-      const unconnected = !!AD_UNCONNECTED[k] || (k==='meta' && !metaMatched) || (k==='google' && !googleMatched) || (k==='amazonads' && !amazonAdsMatched);
-      const liveTag = unconnected
-        ? `<span class="tag gap" style="margin-left:6px;"><span class="d"></span>Chưa kết nối</span>`
-        : realDays>0 ? `<span class="tag live" style="margin-left:6px;"><span class="d"></span>${realDays===a.n?'Live':'Live một phần'}</span>`
-        : `<span class="tag info" style="margin-left:6px;"><span class="d"></span>Ngoài cửa sổ</span>`;
+      const last = adLastDay(k);
+      const flag = AD_REAL_FLAG[k];
+      const okDays = flag ? rows.filter(r=> r[flag] && !(last && r.iso > last)).length : 0;   // days with final numbers
+      const pendDays = last ? rows.filter(r=> r.iso > last).length : 0;                        // days the source has not reported yet
+      const realPurch = k==='meta' ? a.metaAdsPurchases : k==='google' ? a.googleAdsPurchases : k==='amazonads' ? a.amazonAdsPurchases : k==='applovin' ? a.applovinPurchases : k==='tiktokads' ? a.tiktokAdsOrders : 0;
+      const unconnected = !!AD_UNCONNECTED[k] || !adMatched(k);
+      const tag = (cls, txt, tit) => `<span class="tag ${cls}" style="margin-left:6px;"${tit ? ` title="${tit}"` : ''}><span class="d"></span>${txt}</span>`;
+      const liveTag = unconnected ? tag('gap', 'Chưa kết nối')
+        : okDays===0 && pendDays>0 ? tag('info', 'Chờ số · có đến '+dmShort(last), k==='amazonads' ? 'Sellerboard xuất số Amazon Ads 1 lần/ngày, vài giờ sau khi ngày (giờ LA) kết thúc — ngày này chưa có trong file' : 'Nguồn chưa đồng bộ tới ngày này')
+        : okDays===0 ? tag('info', 'Ngoài cửa sổ')
+        : okDays===a.n ? tag('live', 'Live')
+        : okDays+pendDays>=a.n ? tag('live', 'Live · số đến '+dmShort(last), (pendDays)+' ngày cuối kỳ chưa có số — không tính vào MER')
+        : tag('live', 'Live một phần', (a.n-okDays-pendDays)+' ngày nằm ngoài lịch sử nguồn này');
       const unit = k==='google' ? 'conv. quy về' : 'đơn quy về';
-      const extra = realDays>0 ? ` · ${Math.round(realPurch).toLocaleString('en-US')} ${unit}` : '';
+      const extra = okDays>0 && realPurch>0 ? ` · ${Math.round(realPurch).toLocaleString('en-US')} ${unit}` : '';
+      const idle = !unconnected && okDays>0 && a.ads[k]<0.005 ? ' · không chạy trong kỳ' : '';
+      const amzSalesNote = (k==='amazonads' && a.amazonAdsConsoleSpend>0 && a.amazonAdsSalesDays<a.amazonAdsRealDays)
+        ? `<div class="kv"><span title="Sales khớp Amazon Ads console chỉ có cho các ngày đã kéo từ PPC dashboard của Sellerboard; ROAS/ACOS ở đây chỉ tính trên chi phí của đúng những ngày đó">ROAS/ACOS tính trên ${a.amazonAdsSalesDays}/${a.amazonAdsRealDays} ngày có Sales${AMAZON_ADS_LIVE_DATA && AMAZON_ADS_LIVE_DATA.meta && AMAZON_ADS_LIVE_DATA.meta.ppc_last_day ? ' (đến '+dmShort(AMAZON_ADS_LIVE_DATA.meta.ppc_last_day)+')' : ''}</span></div>` : '';
+      const roasTxt = k==='amazonads' && a.amazonAdsConsoleSpend>0 && a.amazonAdsSalesDays===0 ? '—' : (a.ads[k]>0 ? roas.toFixed(2)+'x' : '—');
       return `<div class="roas-card" style="--c:${colors[i]}">
         <div class="p">${AD_LABEL[k]}${noteStar}${liveTag}</div>
-        <div class="roas">${a.ads[k]>0 ? roas.toFixed(2)+'x' : '—'}</div>
-        <div class="sub">Chi: ${money(k==='amazonads' && a.amazonAdsConsoleSpend>0 ? a.amazonAdsConsoleSpend : a.ads[k])} · DT quy về: ${money(a.adsAttr[k])}${extra}</div>
+        <div class="roas">${roasTxt}</div>
+        <div class="sub">Chi: ${money(k==='amazonads' && a.amazonAdsConsoleSpend>0 ? a.amazonAdsConsoleSpend : a.ads[k])}${idle} · DT quy về: ${k==='amazonads' && a.amazonAdsConsoleSpend>0 && a.amazonAdsSalesDays===0 ? 'chưa có số' : money(a.adsAttr[k])}${extra}</div>
         ${k==='amazonads' && a.amazonAdsConsoleSpend>0 ? `<div class="kv"><span title="ACOS = chi SP+SB+SD ÷ doanh thu Amazon gán cho quảng cáo (cùng cách tính với Amazon Ads console)"><b>ACOS</b> ${a.adsAttr[k]>0 ? (a.amazonAcos*100).toFixed(1)+'%' : '—'}</span><span title="TACOS = chi quảng cáo Amazon (SP+SB+SD) ÷ doanh thu gộp Amazon của kỳ"><b>TACOS</b> ${a.amazonTacos>0 ? (a.amazonTacos*100).toFixed(1)+'%' : '—'}</span>${a.amazonAdsImpressions>0 ? `<span title="CTR = clicks ÷ impressions">CTR ${(a.amazonAdsClicks/a.amazonAdsImpressions*100).toFixed(2)}%</span>` : ''}${a.amazonAdsSplit.stv>0.005 ? `<span title="Sellerboard ghi thêm khoản 'Sponsored Television' này nhưng Amazon Ads console không có chiến dịch nào — không tính vào P&L">Sellerboard +${money(a.amazonAdsSplit.stv)} STV (bỏ qua)</span>` : ''}</div>` : ''}
+        ${amzSalesNote}
       </div>`;
     }).join('');
-    document.getElementById('merValue').textContent = a.adSpend>0 ? a.merValue.toFixed(2)+'x' : '—';
+
+    // MER on the days every connected ad source has reported
+    const pendingByDay = rows.map(r=>({iso: r.iso, keys: adPendingKeys(r)}));
+    const completeRows = rows.filter((r,i)=> pendingByDay[i].keys.length===0);
+    const pendingRows = rows.filter((r,i)=> pendingByDay[i].keys.length>0);
+    const missing = {};   // source -> days it has not reported
+    pendingByDay.forEach(p=> p.keys.forEach(k=>{ (missing[k] = missing[k] || []).push(p.iso); }));
+    const missTxt = Object.keys(missing).map(k=> AD_LABEL[k]+' '+dmRange(missing[k])).join(', ');
+    const whyAmz = missing.amazonads ? ' (Sellerboard xuất số Amazon Ads 1 lần/ngày — thường có số ngày hôm qua sau ~18h giờ VN)' : '';
+    const valEl = document.getElementById('merValue'), noteEl = document.getElementById('merNote');
+    const spendParts = 'Meta, Google, Amazon Ads, TikTok Ads, AppLovin' + (a.walmartAds>0.005 ? ' + Walmart Connect' : '');
+    let val = '—', note = '';
+    if(!pendingRows.length){
+      val = a.merSpend>0 ? a.merValue.toFixed(2)+'x' : '—';
+      note = a.merSpend>0 ? `Doanh thu thuần ${money(a.netRevenue)} ÷ chi quảng cáo ${money(a.merSpend)} (${spendParts}) · đủ số tất cả nguồn.` : '';
+    } else if(completeRows.length){
+      const m = merOf(completeRows);
+      const lastOk = completeRows[completeRows.length-1].iso;
+      val = m.spend>0 ? m.mer.toFixed(2)+'x' : '—';
+      note = `Tính trên ${completeRows.length}/${rows.length} ngày đủ số (đến ${dmShort(lastOk)}): doanh thu ${money(m.revenue)} ÷ chi ${money(m.spend)}. Chưa tính ${dmRange(pendingRows.map(r=>r.iso))} vì chưa có ${missTxt}${whyAmz}.`;
+    } else {
+      // nothing complete yet (e.g. "today" / "yesterday" before the export): provisional, missing spend at the source's last-7-day run rate
+      let estSpend = 0; const estParts = [];
+      const todayIso = days[TOTAL_DAYS-1].iso, dayShare = elapsedShareOfDay(REPORT_TZ);   // today is still running: count only the elapsed part
+      Object.keys(missing).forEach(k=>{
+        const last = adLastDay(k); if(!last) return;
+        const ref = days.filter(r=> r.iso<=last && r[AD_REAL_FLAG[k]]).slice(-7);
+        const avg = ref.length ? sum(ref.map(r=>r.ads[k]))/ref.length : 0;
+        estSpend += sum(missing[k].map(iso=> avg*(iso===todayIso ? dayShare : 1)));
+        estParts.push(AD_LABEL[k]+' ≈ '+money(avg)+'/ngày'+(missing[k].includes(todayIso) ? ' — hôm nay tính '+Math.round(dayShare*100)+'% ngày đã qua' : ''));
+      });
+      const tot = a.merSpend + estSpend;
+      val = tot>0 ? '≈ '+(a.netRevenue/tot).toFixed(2)+'x' : '—';
+      note = `Tạm tính: chưa có ${missTxt}${whyAmz} — phần thiếu ước theo trung bình 7 ngày gần nhất (${estParts.join(', ')}). Số thật sẽ thay khi nguồn cập nhật. Nếu bỏ qua phần thiếu, MER sẽ hiện ${a.merSpend>0 ? a.merValue.toFixed(2)+'x' : '—'} (cao ảo).`;
+    }
+    valEl.textContent = val;
+    if(noteEl){ noteEl.textContent = note; noteEl.hidden = !note; }
   }
 
   // ---------- tax ----------
@@ -1327,8 +1438,8 @@
   const GH_ACTIONS_BASE = 'https://github.com/taitran-star/ctu-fin-sync-8x2k/actions/workflows/';
   // Per-source: the per-day flag object set by that source's apply*Rows() (used to compute freshness below),
   // and the GitHub Actions workflow file that keeps it in sync (null = manual / no workflow).
-  const HEALTH_FLAG = {amazon:'amazonReal', amazonfin:'amazonReal', meta:'metaReal', google:'googleReal', amazonads:'amazonAdsReal', shopify:'shopifyReal', snowball:'shopifyReal', shipmonk:'shipmonkReal', shipmonk_inv:'shipmonkInv', paypal:'paypalReal', klaviyo:'klaviyoReal', tiktokshop:'tiktokReal', walmart:'walmartReal'};
-  const HEALTH_WORKFLOW = {amazon:'amazon_pnl.yml', amazonfin:'amazon_pnl.yml', amazon_storage:'amazon_storage.yml', amazonads:'sellerboard_ads.yml', meta:'meta_ads.yml', google:'google_ads.yml', shopify:'shopify_pnl.yml', snowball:'shopify_pnl.yml', shipmonk:'shipmonk.yml', paypal:'paypal.yml', klaviyo:'klaviyo.yml', tiktokshop:'tiktok_shop.yml', walmart:'walmart.yml'};
+  const HEALTH_FLAG = {amazon:'amazonReal', amazonfin:'amazonReal', meta:'metaReal', google:'googleReal', amazonads:'amazonAdsReal', shopify:'shopifyReal', snowball:'shopifyReal', shipmonk:'shipmonkReal', shipmonk_inv:'shipmonkInv', paypal:'paypalReal', klaviyo:'klaviyoReal', tiktokshop:'tiktokReal', walmart:'walmartReal', applovin:'applovinReal', tiktokads:'tiktokAdsReal'};
+  const HEALTH_WORKFLOW = {amazon:'amazon_pnl.yml', amazonfin:'amazon_pnl.yml', amazon_storage:'amazon_storage.yml', amazonads:'sellerboard_ads.yml', meta:'meta_ads.yml', google:'google_ads.yml', shopify:'shopify_pnl.yml', snowball:'shopify_pnl.yml', shipmonk:'shipmonk.yml', paypal:'paypal.yml', klaviyo:'klaviyo.yml', tiktokshop:'tiktok_shop.yml', walmart:'walmart.yml', applovin:'applovin.yml', tiktokads:'tiktok_ads.yml'};
   // How many of the last WINDOW calendar days (today excluded - most sources aren't expected to have
   // closed it yet) actually have real data for this source, and the most recent day that does (scanning
   // back up to SCANMAX days so a longer stale gap still gets reported instead of showing nothing).
@@ -1398,7 +1509,7 @@
   // ---------- "còn thiếu gì" gaps list (tab "Quản lý dữ liệu") ----------
   const STATIC_GAPS = [
     {name:'Giá vốn hàng bán (COGS) theo SKU', note:'Cần bảng landed cost theo SKU — ảnh hưởng lớn nhất còn lại tới lợi nhuận gộp'},
-    {name:'Phí Afterpay', note:'Chưa có nguồn — hiện $0 trong phí cổng thanh toán'},
+    {name:'Phí Afterpay (đang ước tính 6% + $0,30/đơn)', note:'Shopify không lộ phí Afterpay — cần báo cáo settlement của Afterpay (hoặc tỷ lệ trong hợp đồng) để thay bằng số thật'},
     {name:'G&A chi tiết (ngoài Snowball $350/tháng + Klaviyo hoá đơn + OpEx nhập tay)', note:'Nhập tay khi có, hoặc nối QuickBooks/Xero'},
   ];
   function renderGaps(){
@@ -1505,6 +1616,21 @@
   if(googleMatched){
     setSource('google',ageLevel(GOOGLE_ADS_LIVE_DATA.generated_at), fmtAmazonAge(GOOGLE_ADS_LIVE_DATA.generated_at)+fmtCoverage(GOOGLE_ADS_LIVE_DATA));
   }
+  const applovinMatched = APPLOVIN_LIVE_DATA ? applyApplovinRows(APPLOVIN_LIVE_DATA) : false;
+  if(applovinMatched){
+    AD_UNCONNECTED.applovin = false;
+    const acov = APPLOVIN_LIVE_DATA.coverage || {}, am = APPLOVIN_LIVE_DATA.meta || {};
+    const aFmt = k => k ? k.slice(8,10)+'/'+k.slice(5,7)+'/'+k.slice(0,4) : '';
+    const aErr = am.api_errors && am.api_errors.length && am.time_basis!=='utc_day';
+    setSource('applovin', aErr ? 'w' : ageLevel(APPLOVIN_LIVE_DATA.generated_at), fmtAmazonAge(APPLOVIN_LIVE_DATA.generated_at)+(acov.first_day ? ' · từ '+aFmt(acov.first_day) : '')+' · '+(am.time_basis==='hour_to_la' ? 'ngày theo giờ LA' : 'ngày theo UTC (API không trả giờ — lệch tối đa vài giờ so với giờ LA)')+' · API chỉ giữ 45 ngày, cũ hơn lấy từ file export');
+  }
+  const tiktokAdsMatched = TIKTOK_ADS_LIVE_DATA ? applyTiktokAdsRows(TIKTOK_ADS_LIVE_DATA) : false;
+  if(tiktokAdsMatched){
+    AD_UNCONNECTED.tiktokads = false;
+    const tm = TIKTOK_ADS_LIVE_DATA.meta || {};
+    const tErr = tm.api_errors && tm.api_errors.length;
+    setSource('tiktokads', tErr ? 'w' : ageLevel(TIKTOK_ADS_LIVE_DATA.generated_at), fmtAmazonAge(TIKTOK_ADS_LIVE_DATA.generated_at)+fmtCoverage(TIKTOK_ADS_LIVE_DATA)+' · GMV Max (TikTok Shop) + quảng cáo thường · ngày theo giờ tài khoản (UTC−8)'+(tErr ? ' · lỗi lần chạy gần nhất: '+tm.api_errors[tm.api_errors.length-1] : ''));
+  }
   const amazonAdsMatched = AMAZON_ADS_LIVE_DATA ? applyAmazonAdsRows(AMAZON_ADS_LIVE_DATA) : false;
   if(amazonAdsMatched){
     AD_UNCONNECTED.amazonads = false;
@@ -1588,6 +1714,8 @@
     if(amazonStorageMatched) names.push('Amazon FBA tồn kho & phí lưu kho (Inventory API + report tháng)');
     if(metaMatched) names.push('Meta Ads (Marketing API thật)');
     if(googleMatched) names.push('Google Ads (Google Ads API thật)');
+    if(applovinMatched) names.push('AppLovin (Reporting API thật — chi phí quảng cáo)');
+    if(tiktokAdsMatched) names.push('TikTok Ads (Marketing API — GMV Max cho TikTok Shop)');
     if(amazonAdsMatched) names.push(AMAZON_ADS_LIVE_DATA.source==='sellerboard' ? 'Amazon Ads (chi phí SP/SB/SD qua Sellerboard)' : 'Amazon Ads (Ads API thật)');
     if(shipmonkMatched) names.push('ShipMonk (API thật — phí fulfillment theo đơn)');
     if(shipmonkInvMatched) names.push('ShipMonk hoá đơn (lưu kho, receiving, hàng trả, bao bì)');
@@ -2530,6 +2658,38 @@
     });
     return matched>0;
   }
+  // ---------- live data: AppLovin advertiser spend per day (GitHub Actions sync, data/applovin.json) ----------
+  function applyApplovinRows(data){
+    if(!data || !data.daily) return false;
+    let matched = 0;
+    Object.keys(data.daily).forEach(iso=>{
+      const idx = days.findIndex(d=>d.iso===iso);
+      if(idx<0) return;
+      const r = data.daily[iso] || {};
+      days[idx].ads.applovin = Math.max(0, parseFloat(r.spend)||0);
+      days[idx].adsAttr.applovin = Math.max(0, parseFloat(r.sales)||0);   // revenue AppLovin attributes to its ads (platform-reported)
+      days[idx].applovinReal = {conversions: parseFloat(r.conversions)||0, impressions: Math.round(parseFloat(r.impressions)||0), clicks: Math.round(parseFloat(r.clicks)||0)};
+      matched++;
+    });
+    return matched>0;
+  }
+
+  // ---------- live data: TikTok Ads (GMV Max + other ads) per day (GitHub Actions sync, data/tiktok_ads.json) ----------
+  function applyTiktokAdsRows(data){
+    if(!data || !data.daily) return false;
+    let matched = 0;
+    Object.keys(data.daily).forEach(iso=>{
+      const idx = days.findIndex(d=>d.iso===iso);
+      if(idx<0) return;
+      const r = data.daily[iso] || {};
+      days[idx].ads.tiktokads = Math.max(0, parseFloat(r.spend)||0);
+      days[idx].adsAttr.tiktokads = Math.max(0, parseFloat(r.gross_revenue)||0);   // TikTok Shop revenue GMV Max attributes to itself (platform-reported)
+      days[idx].tiktokAdsReal = {orders: parseFloat(r.orders)||0, gmvMax: parseFloat(r.gmv_max_spend)||0, other: parseFloat(r.other_spend)||0};
+      matched++;
+    });
+    return matched>0;
+  }
+
   function applyGoogleAdsRows(data){
     if(!data || !data.daily) return false;
     let matched = 0;
@@ -2575,6 +2735,7 @@
         impressions: Math.round(parseFloat(r.impressions)||0),
         consoleSpend: (r.ads_spend_console!=null) ? (parseFloat(r.ads_spend_console)||0) : ((parseFloat(r.sp)||0)+(parseFloat(r.sb)||0)+(parseFloat(r.sd)||0)),   // what the Amazon Ads console calls "Total cost" (SP+SB+SD, no Sponsored TV)
         provisional: !!(exportLast && iso > exportLast && r.spend_src !== 'sellerboard_automation'),
+        hasSales: r.purchase_value!=null,   // console Sales pulled from the PPC dashboard for this day
       };
       matched++;
     });
@@ -2670,7 +2831,7 @@
     if(!shipmonkMatched) m.push('ShipMonk');
     if(!shipmonkInvMatched) m.push('hoá đơn ShipMonk (lưu kho, receiving, hàng trả)');
     if(!amazonAdsMatched) m.push('Amazon Ads (chờ duyệt)');
-    m.push('TikTok/AppLovin Ads', 'giá vốn theo SKU');
+    if(!tiktokAdsMatched) m.push('TikTok Ads'); if(!applovinMatched) m.push('AppLovin'); m.push('giá vốn theo SKU');
     if(!(shopifyMeta && shopifyMeta.meta && shopifyMeta.meta.payment_fees_basis)) m.push('phí cổng thanh toán'); else if(!paypalMatched) m.push('phí PayPal (Shopify Payments đã có)');
     if(!klaviyoMatched) m.push('Klaviyo');
     m.push('G&A (trừ Snowball, Klaviyo)');
