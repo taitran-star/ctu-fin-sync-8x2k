@@ -207,8 +207,9 @@
   .legend .sw{width:9px;height:9px;border-radius:2px;flex:none;}
 
   /* break-even */
-  .be-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
-  @media (max-width:900px){.be-grid{grid-template-columns:repeat(2,1fr);}}
+  .be-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px;}
+  .be-grid>*{min-width:0;}
+  @media (max-width:900px){.be-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
   .be-stat{background:var(--surface-card-2);border-radius:10px;padding:10px 12px;}
   .be-stat .l{font-size:11px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.03em;}
   .be-stat .v{font-family:var(--font-display);font-size:24px;font-weight:500;margin-top:2px;white-space:nowrap;}
@@ -271,19 +272,21 @@
   .dot.g{background:var(--status-good);} .dot.w{background:var(--status-warning);} .dot.c{background:var(--status-critical);}
 
   /* --- 7-page layout (V5) --- */
-  .exec-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
-  @media (max-width:1100px){.exec-kpis{grid-template-columns:repeat(2,1fr);}}
-  @media (max-width:520px){.exec-kpis{grid-template-columns:1fr;}}
+  .exec-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;}
+  .exec-kpis>*{min-width:0;}
+  @media (max-width:1100px){.exec-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  @media (max-width:520px){.exec-kpis{grid-template-columns:minmax(0,1fr);}}
   .kpi .deltas{display:flex;flex-direction:column;gap:2px;}
   .kpi .delta .k{color:var(--ink-muted);font-family:var(--font-body);}
   .kpi .foot{font-size:11px;color:var(--ink-muted);line-height:1.35;}
   .kpi.alert{border-color:color-mix(in srgb, var(--status-warning) 55%, var(--border));}
   .exec-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:18px;align-items:start;}
-  @media (max-width:1500px){.exec-grid{grid-template-columns:1fr;}}
+  .exec-grid>*{min-width:0;}
+  @media (max-width:1500px){.exec-grid{grid-template-columns:minmax(0,1fr);}}
   #paceKpis .kpi .value{font-size:22px;} #paceKpis .kpi{padding:12px 14px;}
   .kpi .foot{text-align:left;}
-  .be-grid.three{grid-template-columns:repeat(3,1fr);}
-  @media (max-width:900px){.be-grid.three{grid-template-columns:1fr;}}
+  .be-grid.three{grid-template-columns:repeat(3,minmax(0,1fr));}
+  @media (max-width:900px){.be-grid.three{grid-template-columns:minmax(0,1fr);}}
   table.matrix th,table.matrix td{white-space:nowrap;}
   table.matrix td.name{font-weight:600;color:var(--ink-primary);}
   .d-up{color:var(--success-text);} .d-down{color:var(--status-critical);} .d-flat{color:var(--ink-muted);}
@@ -504,7 +507,7 @@
     <summary>Định nghĩa dùng trên trang này</summary>
     <div class="defs-body">
       <div><b>Doanh thu thuần</b> = doanh thu gộp − giảm giá − hoàn tiền, không gồm thuế. Theo ngày đặt hàng, giờ Los Angeles.</div>
-      <div><b>Giá vốn sản phẩm (ước tính)</b> = doanh thu thuần × tỷ lệ trong <code>data/targets_monthly.json</code> (<span id="defCogs"></span>) — thay bằng COGS theo SKU khi có.</div>
+      <div><b>Giá vốn sản phẩm</b> = số thật theo tháng/kênh trong <code>data/cogs_monthly.json</code> (từ báo cáo tồn kho kế toán) nếu đã điền; tháng/kênh nào chưa điền thì = doanh thu thuần × tỷ lệ ước tính trong <code>data/targets_monthly.json</code>. Hiện: <span id="defCogs"></span>.</div>
       <div><b>Lợi nhuận gộp</b> = doanh thu thuần − giá vốn sản phẩm − fulfillment (FBA, ShipMonk, cước, bao bì).</div>
       <div><b>CM2</b> = lợi nhuận gộp − hoa hồng sàn − phí cổng thanh toán. <b>CM3 (LN đóng góp)</b> = CM2 − toàn bộ marketing (quảng cáo, affiliate, creator).</div>
       <div><b>EBITDA</b> = CM3 − chi phí hoạt động (kho bãi, G&amp;A nhập tay, Klaviyo, Snowball).</div>
@@ -723,7 +726,7 @@
 <div id="siteRefresh" hidden><span id="siteLoadedAt" title="Giờ tải số liệu (giờ trên máy bạn)"></span><button type="button" id="siteReload" title="Tải lại số liệu mới nhất">↻ Cập nhật</button><a href="/?menu=1" title="Về trang chọn bảng">bảng khác</a><a href="/?menu=1#app" id="siteInstall" title="Cài như app lên máy / điện thoại" hidden>cài app</a><a href="/logout" title="Đăng xuất khỏi thiết bị này">thoát</a></div>
 <script>
 (function(){
-  var SOURCES = {"amazon": "amazon_pnl.json", "meta": "meta_ads.json", "shopify": "shopify_pnl.json", "google": "google_ads.json", "shipmonk": "shipmonk.json", "shipmonk_invoices": "shipmonk_invoices.json", "shipmonk_storage": "shipmonk_storage_daily.json", "paypal": "paypal.json", "klaviyo": "klaviyo.json", "klaviyo_invoices": "klaviyo_invoices.json", "amazon_ads": "amazon_ads.json", "opex": "opex_monthly.json", "amazon_storage": "amazon_storage.json", "loop_subscriptions": "loop_subscriptions.json", "tiktok_shop": "tiktok_shop.json", "walmart": "walmart.json", "applovin": "applovin.json", "tiktok_ads": "tiktok_ads.json", "targets": "targets_monthly.json"};
+  var SOURCES = {"amazon": "amazon_pnl.json", "meta": "meta_ads.json", "shopify": "shopify_pnl.json", "google": "google_ads.json", "shipmonk": "shipmonk.json", "shipmonk_invoices": "shipmonk_invoices.json", "shipmonk_storage": "shipmonk_storage_daily.json", "paypal": "paypal.json", "klaviyo": "klaviyo.json", "klaviyo_invoices": "klaviyo_invoices.json", "amazon_ads": "amazon_ads.json", "opex": "opex_monthly.json", "amazon_storage": "amazon_storage.json", "loop_subscriptions": "loop_subscriptions.json", "tiktok_shop": "tiktok_shop.json", "walmart": "walmart.json", "applovin": "applovin.json", "tiktok_ads": "tiktok_ads.json", "targets": "targets_monthly.json", "cogs": "cogs_monthly.json"};
   var keys = Object.keys(SOURCES), done = 0;
   window.__LIVE = {}; window.__LIVE_ERR = {}; window.__LOADED_AT = 0; window.__SAVED_AT = 0;
   try{ localStorage.setItem('ctu_last_dash', '/pnl'); }catch(e){}
@@ -757,7 +760,7 @@
     return load(k, 1).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=528d5f2c3c';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=aa758a3122';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');

@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 528d5f2c3c).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build aa758a3122).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -137,6 +137,59 @@
     return Object.keys(months).length>0 || !!COGS_EST;
   }
   const daysInMonth = m => new Date(Date.UTC(+m.slice(0,4), +m.slice(5,7), 0)).getUTCDate();
+  // ---- real product cost per month per channel (data/cogs_monthly.json, from the accountant's inventory report) ----
+  // A month+channel with a number here REPLACES the estimate: the monthly figure is spread over the days in
+  // proportion to that channel's net revenue, so day / week / custom ranges stay meaningful.
+  const COGS_LIVE_DATA = (window.__LIVE && window.__LIVE["cogs"]) || null;
+  let COGS_ACTUAL = {months:{}, updated_at:null};
+  function applyCogsActual(data){
+    if(!data || typeof data!=='object') return false;
+    const num = v => (v===null || v===undefined || v==='') ? null : (isFinite(parseFloat(v)) ? parseFloat(v) : null);
+    const months = {};
+    Object.keys(data.months||{}).forEach(m=>{
+      if(!/^\d{4}-\d{2}$/.test(m) || !data.months[m] || typeof data.months[m]!=='object') return;
+      const v = data.months[m], ch = {};
+      CH_KEYS.forEach(k=>{ const x = num(v[k]); if(x!==null && x>=0) ch[k] = x; });
+      if(Object.keys(ch).length) months[m] = {channels: ch, note: v.note||''};
+    });
+    COGS_ACTUAL = {months, updated_at: data.updated_at||null};
+    return Object.keys(months).length>0;
+  }
+  // whole-month net revenue of one channel (denominator when spreading a monthly COGS figure over days)
+  const _monthNetCache = {};
+  function monthChannelNet(m, k){
+    const ck = m+'|'+k;
+    if(_monthNetCache[ck]===undefined){
+      const rs = monthMap[m] || [];
+      _monthNetCache[ck] = rs.reduce((t,r)=> t + (r.channels[k]||0) - (r.discounts[k]||0) - (r.refunds[k]||0), 0);
+    }
+    return _monthNetCache[ck];
+  }
+  // product cost for a set of day rows, per channel: real where the month+channel is filled in, else the estimate
+  function productCostFor(rows, estRate){
+    const by = {}; CH_KEYS.forEach(k=>by[k]=0);
+    let actual = 0, estimated = 0, anyEst = false, anyActual = false;
+    const byMonth = {};
+    rows.forEach(r=>{ const m = r.iso.slice(0,7); (byMonth[m] = byMonth[m] || []).push(r); });
+    Object.keys(byMonth).forEach(m=>{
+      const rs = byMonth[m], am = COGS_ACTUAL.months[m];
+      CH_KEYS.forEach(k=>{
+        const net = rs.reduce((t,r)=> t + (r.channels[k]||0) - (r.discounts[k]||0) - (r.refunds[k]||0), 0);
+        const real = am && am.channels[k]!==undefined ? am.channels[k] : null;
+        let v;
+        if(real!==null){
+          const whole = monthChannelNet(m, k);
+          v = whole>0.005 ? real * (net/whole) : real * (rs.length/daysInMonth(m));
+          actual += v; anyActual = true;
+        } else {
+          v = estRate>0 ? Math.max(0, net)*estRate : 0;
+          estimated += v; if(estRate>0) anyEst = true;
+        }
+        by[k] += v;
+      });
+    });
+    return {by, total: actual+estimated, actual, estimated, anyEst, anyActual};
+  }
   // plan prorated over a set of day rows: null when any month touched has no number for that field
   function planForRows(rows, getter){
     let total = 0, any = false;
@@ -343,8 +396,13 @@
     // day. Amazon's own FBAPerUnitFulfillmentFee (pick/pack + ship, real) covers the FBA orders.
     // Product cost: an ESTIMATE (net revenue x rate from data/targets_monthly.json) until COGS per SKU is connected; $0 when no rate.
     const cogsEstRate = (COGS_EST && COGS_EST.rate>0) ? COGS_EST.rate : 0;
-    const productCost = cogsEstRate>0 ? Math.max(0, netRevenue)*cogsEstRate : 0;
-    const productCostEst = cogsEstRate>0;
+    const pc = productCostFor(rows, cogsEstRate);
+    const productCost = pc.total;
+    const productCostBy = pc.by;
+    const productCostEst = pc.anyEst;              // some (or all) of it is the % estimate
+    const productCostActual = pc.actual;           // the part that comes from the accountant's book
+    const productCostEstAmount = pc.estimated;
+    const productCostHasActual = pc.anyActual;
     const shipmonkRealDays = rows.filter(r=>r.shipmonkReal).length;
     const shipmonkOrders = sum(rows.map(r=> r.shipmonkReal ? r.shipmonkReal.orders : 0));
     const shipmonkUnshipped = sum(rows.map(r=> r.shipmonkReal ? r.shipmonkReal.unshipped : 0));
@@ -551,7 +609,7 @@
     const amazonRealDays = rows.filter(r=>r.amazonReal).length;
 
     return {n, gross, refund, discountBy, orders, ads, adsAttr, grossSales, discount, refundsTotal, netRevenue, totalOrders,
-      productCost, productCostEst, cogsEstRate, packaging, fulfillment, postage, cogs, grossProfit, nonAmazonOrders, shopifyTax, shopifyRealDays, amazonRealDays,
+      productCost, productCostEst, cogsEstRate, productCostBy, productCostActual, productCostEstAmount, productCostHasActual, packaging, fulfillment, postage, cogs, grossProfit, nonAmazonOrders, shopifyTax, shopifyRealDays, amazonRealDays,
       shipmonkRealDays, shipmonkOrders, shipmonkUnshipped, shipmonkUnits, shipmonkPickPack, shipmonkByStore, shipmonkByChannel,
       smInvDays, smInv, smInvOther, smInvAdjCredits, smStorageOpen, smStorageOpenDays, smStorageCarryDays, smStorageReportDays, smInvShipCmp, smApiShipCmp, smCmpDays, smCmpMissingDays, smTrueUp, shipmonkInvoiceExtras, shipmonkLogistics, amazonLogistics, logisticsTotal, feesTotal, marketingTotal, cmBeforeMarketing,
       paymentFees, afterpayFees, afterpayAmount, afterpayOrders, paymentFeeDays, paymentFeeOrders, feesMissingOrders, gatewayMix, feeTypeMix, paypalDays, paypalFees, paypalPayments, paypalPaymentsCount, paypalCompare, paymentFeesAll, marketplaceFees, adSpend, otherVarTotal, contributionProfit,
@@ -718,8 +776,12 @@
     });
 
     rows.push(stSection('Giá vốn hàng bán — COGS (giá vốn sản phẩm + fulfillment)','cogs'));
-    if(a.productCostEst){
-      rows.push({...stLine('Giá vốn sản phẩm — ƯỚC TÍNH '+(a.cogsEstRate*100).toFixed(0)+'% doanh thu thuần (chưa có COGS theo SKU; tỷ lệ trong data/targets_monthly.json)', -a.productCost, nr, 'var', 'cogs'), neg:true, est:true, estTitle: COGS_EST.basis, hget: x=>-x.productCost});
+    if(a.productCostHasActual && !a.productCostEst){
+      rows.push({...stLine('Giá vốn sản phẩm — theo sổ kho kế toán (data/cogs_monthly.json), rải theo doanh thu thuần từng ngày', -a.productCost, nr, 'var', 'cogs'), neg:true, hget: x=>-x.productCost});
+    } else if(a.productCostHasActual && a.productCostEst){
+      rows.push({...stLine('Giá vốn sản phẩm — '+money(a.productCostActual,{compact:true})+' theo sổ kho kế toán + '+money(a.productCostEstAmount,{compact:true})+' ƯỚC TÍNH '+(a.cogsEstRate*100).toFixed(0)+'% (kênh/tháng chưa có số trong data/cogs_monthly.json)', -a.productCost, nr, 'var', 'cogs'), neg:true, est:true, estTitle: (COGS_EST&&COGS_EST.basis)||'', hget: x=>-x.productCost});
+    } else if(a.productCostEst){
+      rows.push({...stLine('Giá vốn sản phẩm — ƯỚC TÍNH '+(a.cogsEstRate*100).toFixed(0)+'% doanh thu thuần (chưa có số thật; điền số kế toán vào data/cogs_monthly.json để thay)', -a.productCost, nr, 'var', 'cogs'), neg:true, est:true, estTitle: (COGS_EST&&COGS_EST.basis)||'', hget: x=>-x.productCost});
     } else {
       rows.push({...stLine('Giá vốn sản phẩm (chưa có bảng giá vốn theo SKU)', -a.productCost, nr, 'var', 'cogs'), neg:true, gap:true, hget: x=>-x.productCost});
     }
@@ -1548,7 +1610,9 @@
 
   // ---------- "còn thiếu gì" gaps list (tab "Quản lý dữ liệu") ----------
   const staticGaps = () => [
-    {name:'Giá vốn hàng bán (COGS) theo SKU', note: COGS_EST ? 'Đang ƯỚC TÍNH '+(COGS_EST.rate*100).toFixed(0)+'% doanh thu thuần ('+COGS_EST.basis+') — cần landed cost theo SKU × số lượng bán để thay bằng số thật' : 'Cần bảng landed cost theo SKU — ảnh hưởng lớn nhất còn lại tới lợi nhuận gộp'},
+    {name:'Giá vốn hàng bán (COGS)', note: (Object.keys(COGS_ACTUAL.months).length
+        ? 'Đã có số kế toán cho tháng: '+Object.keys(COGS_ACTUAL.months).sort().join(', ')+' — các tháng khác vẫn ' + (COGS_EST ? 'ước '+(COGS_EST.rate*100).toFixed(0)+'%' : '$0') + '. Điền thêm vào data/cogs_monthly.json'
+        : (COGS_EST ? 'Đang ƯỚC TÍNH '+(COGS_EST.rate*100).toFixed(0)+'% doanh thu thuần ('+COGS_EST.basis+') — điền số kế toán theo tháng vào data/cogs_monthly.json để thay bằng số thật' : 'Cần giá vốn thật — ảnh hưởng lớn nhất còn lại tới lợi nhuận gộp'))},
     {name:'Phí Afterpay (đang ước tính 6% + $0,30/đơn)', note:'Shopify không lộ phí Afterpay — cần báo cáo settlement của Afterpay (hoặc tỷ lệ trong hợp đồng) để thay bằng số thật'},
     {name:'G&A chi tiết (ngoài Snowball $350/tháng + Klaviyo hoá đơn + OpEx nhập tay)', note:'Nhập tay khi có, hoặc nối QuickBooks/Xero'},
   ];
@@ -1702,16 +1766,16 @@
         foot: newC!==null ? intFmt(newC)+' khách mới Shopify · quảng cáo D2C '+money(d2cAdsOf(a),{compact:true}) : 'Chưa có hành trình đơn Shopify cho kỳ này'},
       {label:'CM3 — LN đóng góp', value: money(a.contributionProfit, {compact:true}), title: money(a.contributionProfit),
         deltas:[deltaLine(lk, p && dAbs(a.contributionProfit, p.contributionProfit)), deltaLine('năm trước', ly && dAbs(a.contributionProfit, ly.contributionProfit)), deltaLine('kế hoạch', planCm3!==null ? dAbs(a.contributionProfit, planCm3) : null)],
-        foot: (a.netRevenue>0 ? (a.contributionProfit/a.netRevenue*100).toFixed(1)+'% doanh thu thuần' : '') + (a.productCostEst ? ' · giá vốn ước '+(a.cogsEstRate*100).toFixed(0)+'%' : ' · chưa trừ giá vốn')},
+        foot: (a.netRevenue>0 ? (a.contributionProfit/a.netRevenue*100).toFixed(1)+'% doanh thu thuần' : '') + (a.productCostHasActual ? (a.productCostEst ? ' · giá vốn phần lớn theo sổ kho' : ' · giá vốn theo sổ kho') : (a.productCostEst ? ' · giá vốn ước '+(a.cogsEstRate*100).toFixed(0)+'%' : ' · chưa trừ giá vốn'))},
       {label:'EBITDA', value: money(a.netProfit, {compact:true}), title: money(a.netProfit),
         deltas:[deltaLine(lk, p && dAbs(a.netProfit, p.netProfit)), deltaLine('năm trước', ly && dAbs(a.netProfit, ly.netProfit)), deltaLine('biên', a.netRevenue>0 && p && p.netRevenue>0 ? (a.netProfit/a.netRevenue - p.netProfit/p.netRevenue)*100 : null, {pts:true})],
-        foot: (a.netRevenue>0 ? 'Biên '+(a.netProfit/a.netRevenue*100).toFixed(1)+'%' : '') + (a.opexDays>0 ? ' · G&A nhập tay' : ' · chưa có G&A') + (a.productCostEst ? '' : ' · chưa trừ giá vốn')},
+        foot: (a.netRevenue>0 ? 'Biên '+(a.netProfit/a.netRevenue*100).toFixed(1)+'%' : '') + (a.opexDays>0 ? ' · G&A nhập tay' : ' · chưa có G&A') + ((a.productCostEst||a.productCostHasActual) ? '' : ' · chưa trừ giá vốn')},
       {label:'Hoàn tiền', value: refundPct(a)!==null ? refundPct(a).toFixed(1)+'%' : '—',
         deltas:[deltaLine(lk, (p && refundPct(p)!==null) ? refundPct(a)-refundPct(p) : null, {pts:true, lowerIsBetter:true}), deltaLine('năm trước', (ly && refundPct(ly)!==null) ? refundPct(a)-refundPct(ly) : null, {pts:true, lowerIsBetter:true})],
         foot: money(sum(CH_KEYS.map(k=>a.refund[k])),{compact:true})+' trên doanh thu gộp · '+CH_KEYS.filter(k=>a.gross[k]>0).map(k=>CH_LABEL[k]+' '+(a.refund[k]/a.gross[k]*100).toFixed(1)+'%').join(' · '), alert: refundPct(a)!==null && refundPct(a)>8},
     ];
     el.innerHTML = tiles.map(t=>`<div class="kpi${t.alert?' alert':''}"><div class="label">${t.label}</div><div class="value" title="${t.title||''}">${t.value}</div><div class="deltas">${t.deltas.join('')}</div>${t.foot ? `<div class="foot">${t.foot}</div>` : ''}</div>`).join('');
-    const defCogs = document.getElementById('defCogs'); if(defCogs) defCogs.textContent = COGS_EST ? 'hiện '+(COGS_EST.rate*100).toFixed(0)+'% — '+COGS_EST.basis : 'chưa bật — giá vốn $0';
+    const defCogs = document.getElementById('defCogs'); if(defCogs) defCogs.textContent = (Object.keys(COGS_ACTUAL.months).length ? 'số thật từ sổ kho kế toán cho '+Object.keys(COGS_ACTUAL.months).sort().join(', ')+'; các tháng còn lại ' : '') + (COGS_EST ? 'ước '+(COGS_EST.rate*100).toFixed(0)+'% — '+COGS_EST.basis : 'chưa bật — giá vốn $0');
     renderPace(rows, a);
     renderMatrix(rows, a, prevRows, lyRows);
     renderAlerts(rows, a, merNow);
@@ -1775,7 +1839,7 @@
     const smAll = a.postage + a.shipmonkPickPack + a.packaging;
     if((smCh.shopify||0) + (smCh.amazon||0) + (smCh.walmart||0) < 0.01 && smAll > 0.01) smCh.shopify = smAll;
     const netOf = k => a.gross[k] - a.discountBy[k] - a.refund[k];
-    const cogsOf = k => a.cogsEstRate>0 ? Math.max(0, netOf(k))*a.cogsEstRate : 0;
+    const cogsOf = k => (a.productCostBy && a.productCostBy[k]) || 0;
     const out = {};
     // same cost lines as the P&L down to CM3 (warehousing / storage stay below CM3 as OpEx, so the channel total = the CM3 tile)
     out.amazon = {net: netOf('amazon'), orders: a.orders.amazon, fees: a.amazonMarketplaceFeesReal + a.amazonMarketplaceFeesEst, fulfil: a.fulfillment + (smCh.amazon||0), ads: a.ads.amazonads, aff: 0};
@@ -1809,7 +1873,7 @@
     const tot = keys.reduce((s,k)=>({net:s.net+cur[k].net, ads:s.ads+cur[k].adsAll, cm:s.cm+cur[k].cm}), {net:0, ads:0, cm:0});
     const foot = `<tr style="font-weight:700;"><td class="name">Tổng</td><td class="num">${money(tot.net,{compact:true})}</td><td class="num">100%</td>${dcell(p ? dAbs(a.netRevenue, p.netRevenue) : null)}${dcell(ly ? dAbs(a.netRevenue, ly.netRevenue) : null)}<td class="num"></td><td class="num">${a.grossSales>0 ? (sum(CH_KEYS.map(k=>a.refund[k]))/a.grossSales*100).toFixed(1)+'%' : '—'}</td><td class="num">${money(tot.ads,{compact:true})}</td><td class="num">${tot.net>0 ? (tot.ads/tot.net*100).toFixed(0)+'%' : '—'}</td><td class="num">${money(tot.cm,{compact:true})}</td><td class="num">${tot.net>0 ? (tot.cm/tot.net*100).toFixed(0)+'%' : '—'}</td></tr>`;
     t.innerHTML = head + '<tbody>' + body + foot + '</tbody>';
-    document.getElementById('matrixCaption').innerHTML = 'Ads gắn kênh: Meta + Google + AppLovin → Shopify; Amazon Ads → Amazon; GMV Max → TikTok Shop; Walmart Connect → Walmart. CM3 = doanh thu thuần − giá vốn' + (a.productCostEst ? ' (*ước '+(a.cogsEstRate*100).toFixed(0)+'%)' : ' ($0, chưa có)') + ' − fulfillment theo đơn (FBA, ShipMonk) − phí sàn/cổng − ads − affiliate; chưa trừ lưu kho và G&amp;A (tổng cột = CM3 trên ô chỉ số). Kế hoạch: % = doanh thu gộp kỳ này ÷ kế hoạch rải đều theo ngày.';
+    document.getElementById('matrixCaption').innerHTML = 'Ads gắn kênh: Meta + Google + AppLovin → Shopify; Amazon Ads → Amazon; GMV Max → TikTok Shop; Walmart Connect → Walmart. CM3 = doanh thu thuần − giá vốn' + (a.productCostEst ? ' (*ước '+(a.cogsEstRate*100).toFixed(0)+'%'+(a.productCostHasActual?', một phần theo sổ kho kế toán':'')+')' : (a.productCostHasActual ? ' (theo sổ kho kế toán)' : ' ($0, chưa có)')) + ' − fulfillment theo đơn (FBA, ShipMonk) − phí sàn/cổng − ads − affiliate; chưa trừ lưu kho và G&amp;A (tổng cột = CM3 trên ô chỉ số). Kế hoạch: % = doanh thu gộp kỳ này ÷ kế hoạch rải đều theo ngày.';
   }
 
   // ---------- alerts ----------
@@ -1834,7 +1898,9 @@
     if(discPct>40) items.push({lvl:'warn', name:'Giảm giá Shopify '+discPct.toFixed(0)+'% doanh thu gộp Shopify', note:'Ngưỡng 40% · mã giảm giá, KM tự động, B1G2F — xem trang Lãi lỗ'});
     if(a.amazonAdsProvisionalDays>0 || merNow.days<merNow.of) items.push({lvl:'warn', name:'Amazon Ads chưa có số cho '+(merNow.of-merNow.days)+' ngày cuối kỳ', note:'Sellerboard xuất 1 lần/ngày (~18h giờ VN) — MER và chi marketing kỳ này sẽ tăng khi số về'});
     SOURCES.filter(s=> s.level==='w' || s.level==='c').forEach(s=>{ if(s.level==='c' && !HEALTH_FLAG[s.key]) return; items.push({lvl: s.level==='c'?'crit':'warn', name:'Nguồn '+s.name, note: s.age}); });
-    if(!a.productCostEst) items.push({lvl:'warn', name:'Chưa trừ giá vốn sản phẩm', note:'CM3 và EBITDA đang cao hơn thực tế — bật cogs_estimate trong data/targets_monthly.json hoặc nối COGS theo SKU'});
+    if(!a.productCostEst && !a.productCostHasActual) items.push({lvl:'warn', name:'Chưa trừ giá vốn sản phẩm', note:'CM3 và EBITDA đang cao hơn thực tế — điền data/cogs_monthly.json (số kế toán) hoặc bật cogs_estimate trong data/targets_monthly.json'});
+    else if(a.productCostEst && a.productCostHasActual) items.push({lvl:'ok', name:'Giá vốn: một phần còn ước tính', note:money(a.productCostActual,{compact:true})+' theo sổ kho kế toán, '+money(a.productCostEstAmount,{compact:true})+' còn ước '+(a.cogsEstRate*100).toFixed(0)+'% — điền nốt các kênh/tháng còn trống trong data/cogs_monthly.json'});
+    else if(a.productCostEst) items.push({lvl:'warn', name:'Giá vốn còn là ước tính '+(a.cogsEstRate*100).toFixed(0)+'%', note:'Chưa có số kế toán tháng này — CM3, EBITDA và biên theo kênh chỉ là xấp xỉ. Điền data/cogs_monthly.json khi có báo cáo tồn kho.'});
     if(a.opexDays===0) items.push({lvl:'warn', name:'Chưa có G&A kỳ này', note:'EBITDA chưa trừ lương/văn phòng — điền data/opex_monthly.json'});
     if(!items.length) items.push({lvl:'ok', name:'Không có cảnh báo', note:'MER trên hoà vốn, nhịp độ trong kế hoạch, mọi nguồn đủ số'});
     const order = {crit:0, warn:1, ok:2};
@@ -2045,6 +2111,7 @@
   // Monthly OpEx entered by hand in the repo (data/opex_monthly.json).
   const opexMatched = OPEX_MONTHLY_LIVE_DATA ? applyOpexRows(OPEX_MONTHLY_LIVE_DATA) : false;
   const targetsMatched = TARGETS_LIVE_DATA ? applyTargets(TARGETS_LIVE_DATA) : false;
+  const cogsMatched = COGS_LIVE_DATA ? applyCogsActual(COGS_LIVE_DATA) : false;
   if(opexMatched){
     const e = opexMeta.entered;
     const fmtM = m => m.slice(5,7)+'/'+m.slice(0,4);
