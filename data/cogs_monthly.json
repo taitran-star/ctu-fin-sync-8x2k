@@ -1,0 +1,17 @@
+{
+ "schema": 1,
+ "currency": "USD",
+ "updated_at": "2026-10-15",
+ "note": "GIÁ VỐN SẢN PHẨM THẬT theo tháng, theo từng kênh (USD). Nguồn: báo cáo tồn kho của kế toán — cột xuất kho theo kênh (AMZ / WEB / Walmart / TikTok). Tháng nào có số ở đây thì dashboard DÙNG SỐ NÀY (ghi 'theo sổ kho kế toán') và rải theo ngày tỷ lệ với doanh thu thuần của kênh đó trong tháng; tháng nào để null thì vẫn dùng ước tính % trong data/targets_monthly.json. Có thể điền từng kênh riêng lẻ: kênh nào null thì kênh đó dùng ước tính.",
+ "scope": "CHỈ giá vốn sản phẩm = landed cost (giá EXW + thuế nhập + cước về kho). KHÔNG điền phí fulfillment/FBA/ShipMonk/lưu kho vào đây — dashboard đã lấy tự động từ API, điền vào sẽ bị tính 2 lần.",
+ "how_to": "Mỗi tháng mở file này trên GitHub (Edit), thêm một dòng \"YYYY-MM\" với số giá vốn từng kênh. Ví dụ: \"2026-09\": {\"shopify\": 95000, \"amazon\": 72000, \"walmart\": 350, \"tiktok\": 400, \"note\": \"BAO CAO TON KHO 09.2026\"}. Dấu phẩy giữa các dòng, dòng cuối không có dấu phẩy.",
+ "months": {
+  "2026-09": {
+   "shopify": null,
+   "amazon": null,
+   "walmart": null,
+   "tiktok": null,
+   "note": "CHƯA ĐIỀN — mẫu để copy. Kế toán chỉ gửi 1 tuần 31/8–6/9 (Shopify $21.984 · Amazon $16.222 · Walmart $80,74 · SAT web $613,57), chưa đủ cả tháng nên để null."
+  }
+ }
+}
