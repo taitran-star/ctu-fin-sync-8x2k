@@ -256,7 +256,7 @@
   table.simple th{text-align:left;color:var(--ink-muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.03em;padding:6px 10px;border-bottom:1px solid var(--gridline);}
   table.simple td{padding:8px 10px;border-bottom:1px solid var(--gridline);font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--ink-secondary);}
   table.simple td.name{font-family:var(--font-body);color:var(--ink-primary);font-weight:500;}
-  table.simple td.num{text-align:right;}
+  table.simple td.num{text-align:right;} table.simple th.num{text-align:right;}
   table.simple tr:last-child td{border-bottom:none;}
   table.simple th:first-child,table.simple td:first-child{position:sticky;left:0;z-index:1;background:var(--surface-card);box-shadow:1px 0 0 var(--gridline);}
   .pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-body);font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;}
@@ -270,6 +270,30 @@
   .dot{width:7px;height:7px;border-radius:50%;flex:none;}
   .dot.g{background:var(--status-good);} .dot.w{background:var(--status-warning);} .dot.c{background:var(--status-critical);}
 
+  /* --- 7-page layout (V5) --- */
+  .exec-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  @media (max-width:1100px){.exec-kpis{grid-template-columns:repeat(2,1fr);}}
+  @media (max-width:520px){.exec-kpis{grid-template-columns:1fr;}}
+  .kpi .deltas{display:flex;flex-direction:column;gap:2px;}
+  .kpi .delta .k{color:var(--ink-muted);font-family:var(--font-body);}
+  .kpi .foot{font-size:11px;color:var(--ink-muted);line-height:1.35;}
+  .kpi.alert{border-color:color-mix(in srgb, var(--status-warning) 55%, var(--border));}
+  .exec-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:18px;align-items:start;}
+  @media (max-width:1500px){.exec-grid{grid-template-columns:1fr;}}
+  #paceKpis .kpi .value{font-size:22px;} #paceKpis .kpi{padding:12px 14px;}
+  .kpi .foot{text-align:left;}
+  .be-grid.three{grid-template-columns:repeat(3,1fr);}
+  @media (max-width:900px){.be-grid.three{grid-template-columns:1fr;}}
+  table.matrix th,table.matrix td{white-space:nowrap;}
+  table.matrix td.name{font-weight:600;color:var(--ink-primary);}
+  .d-up{color:var(--success-text);} .d-down{color:var(--status-critical);} .d-flat{color:var(--ink-muted);}
+  details.defs summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--brand-forest, var(--ink-primary));}
+  details.defs summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px;}
+  .defs-body{display:flex;flex-direction:column;gap:6px;margin-top:10px;font-size:12.5px;color:var(--ink-secondary);line-height:1.5;}
+  .defs-body b{color:var(--ink-primary);}
+  .gapslist .gap-row.crit{background:color-mix(in srgb, var(--status-critical) 9%, var(--surface-card-2));}
+  .gapslist .gap-row.warn{background:color-mix(in srgb, var(--status-warning) 12%, var(--surface-card-2));}
+  .gapslist .gap-row.ok{background:color-mix(in srgb, var(--status-good) 9%, var(--surface-card-2));}
   .maintabs{display:flex;gap:4px;background:var(--surface-card-2);border-radius:12px;padding:4px;width:fit-content;}
   .maintabs button{font:inherit;font-weight:600;font-size:13px;border:0;background:transparent;color:var(--ink-secondary);padding:8px 16px;border-radius:9px;cursor:pointer;}
   .maintabs button.active{background:var(--surface-card);color:var(--ink-primary);box-shadow:0 1px 3px rgba(0,0,0,.08);}
@@ -429,12 +453,15 @@
   </div>
 
   <div class="maintabs" id="mainTabs" role="tablist">
-    <button type="button" data-view="dashboard" class="active" role="tab" aria-selected="true">Dashboard</button>
-    <button type="button" data-view="data" role="tab" aria-selected="false">Quản lý dữ liệu</button>
-    <button type="button" data-view="reports" role="tab" aria-selected="false">Báo cáo</button>
+    <button type="button" data-view="exec" class="active" role="tab" aria-selected="true">Điều hành</button>
+    <button type="button" data-view="sales" role="tab" aria-selected="false">Bán hàng &amp; khách</button>
+    <button type="button" data-view="marketing" role="tab" aria-selected="false">Marketing</button>
+    <button type="button" data-view="pnl" role="tab" aria-selected="false">Lãi lỗ (P&amp;L)</button>
+    <button type="button" data-view="inventory" role="tab" aria-selected="false">Sản phẩm &amp; tồn kho</button>
+    <button type="button" data-view="opex" role="tab" aria-selected="false">Chi phí cố định &amp; tiền</button>
+    <button type="button" data-view="data" role="tab" aria-selected="false">Dữ liệu</button>
   </div>
 
-  <div id="viewDashboard" class="view">
   <div class="modebar">
     <div class="seg" id="modeSeg">
       <button data-mode="day" class="active">Theo ngày</button>
@@ -450,8 +477,45 @@
 
   <div class="banner" id="syncBanner"><i data-icon="clock"></i><span><b>Lưu ý ngày gần nhất:</b> khoảng xem gồm ngày hôm nay (giờ LA) nên số ngày đó chưa chốt — Amazon ghi nhận phí/settlement muộn 24–48h, các nguồn khác cập nhật mỗi 30 phút.</span></div>
 
-  <div class="kpis" id="kpiRow"></div>
+  <div id="viewExec" class="view">
+  <div class="exec-kpis" id="execKpis"></div>
 
+  <div class="exec-grid">
+    <div class="card" id="paceCard">
+      <div class="card-head"><h2 id="paceTitle">Nhịp độ tháng vs kế hoạch</h2><div class="note" id="paceNote"></div></div>
+      <div class="be-grid three" id="paceKpis"></div>
+      <div style="position:relative;"><svg id="paceChart" style="width:100%;display:block;"></svg></div>
+      <div class="legend" id="paceLegend" style="margin-top:6px;"></div>
+      <div class="caption" id="paceCaption" style="padding-left:2px;margin-top:6px;"></div>
+    </div>
+    <div class="card" id="matrixCard">
+      <div class="card-head"><h2>Kênh bán</h2><div class="note">Doanh thu thuần theo ngày đặt · so cùng số ngày kỳ trước &amp; năm trước · kế hoạch = doanh thu gộp theo ngày đặt</div></div>
+      <div style="overflow-x:auto;"><table class="simple matrix" id="matrixTable" style="min-width:760px;"></table></div>
+      <div class="caption" id="matrixCaption" style="padding-left:2px;margin-top:8px;"></div>
+    </div>
+  </div>
+
+  <div class="card" id="alertCard">
+    <div class="card-head"><h2>Cảnh báo</h2><div class="note">Tự tính từ kỳ đang xem · ngưỡng ghi cạnh mỗi dòng</div></div>
+    <div id="alertList" class="gapslist"></div>
+  </div>
+
+  <details class="card defs" id="execDefs">
+    <summary>Định nghĩa dùng trên trang này</summary>
+    <div class="defs-body">
+      <div><b>Doanh thu thuần</b> = doanh thu gộp − giảm giá − hoàn tiền, không gồm thuế. Theo ngày đặt hàng, giờ Los Angeles.</div>
+      <div><b>Giá vốn sản phẩm (ước tính)</b> = doanh thu thuần × tỷ lệ trong <code>data/targets_monthly.json</code> (<span id="defCogs"></span>) — thay bằng COGS theo SKU khi có.</div>
+      <div><b>Lợi nhuận gộp</b> = doanh thu thuần − giá vốn sản phẩm − fulfillment (FBA, ShipMonk, cước, bao bì).</div>
+      <div><b>CM2</b> = lợi nhuận gộp − hoa hồng sàn − phí cổng thanh toán. <b>CM3 (LN đóng góp)</b> = CM2 − toàn bộ marketing (quảng cáo, affiliate, creator).</div>
+      <div><b>EBITDA</b> = CM3 − chi phí hoạt động (kho bãi, G&amp;A nhập tay, Klaviyo, Snowball).</div>
+      <div><b>MER</b> = doanh thu thuần ÷ tổng chi quảng cáo (Meta, Google, Amazon Ads, TikTok Ads, AppLovin, Walmart Connect), chỉ tính ngày mọi nguồn đã có số. <b>MER hoà vốn</b> = 1 ÷ (CM2 ÷ doanh thu thuần).</div>
+      <div><b>nCAC (Shopify)</b> = quảng cáo D2C (Meta + Google + AppLovin) ÷ số khách mới Shopify theo hành trình đơn. Sàn không cho biết khách mới nên không tính cho Amazon/Walmart/TikTok.</div>
+      <div><b>So kỳ trước</b> = cùng số ngày của tháng/tuần liền trước (tháng 1–15 so với tháng trước 1–15). <b>So năm trước</b> = cùng khoảng ngày năm 2025 (tuần/ngày lùi 52 tuần để cùng thứ).</div>
+    </div>
+  </details>
+  </div><!-- /viewExec -->
+
+  <div id="viewSales" class="view" hidden>
   <div class="card" id="trendCard" style="display:none;">
     <div class="card-head">
       <h2 id="trendTitle">Xu hướng theo tuần</h2>
@@ -461,6 +525,96 @@
     <div id="trendWrap" style="position:relative;"><svg id="trendChart" style="width:100%;display:block;"></svg><div class="tooltip" id="trendTip"></div></div>
     <div class="caption" id="trendCaption" style="padding-left:2px;margin-top:6px;">Doanh thu thuần, <b>chi phí biến đổi</b> (giá vốn + fulfillment + phí giao dịch + quảng cáo + hoa hồng… — tăng giảm theo doanh thu), <b>chi phí hoạt động</b> (kho bãi & logistics + G&amp;A, đường đứt nét — lương, văn phòng… chưa nhập nên đường này còn thấp) và lợi nhuận hoạt động (EBITDA) của từng kỳ, cùng định nghĩa với bảng P&amp;L. Bấm tên trong chú giải để ẩn/hiện một đường (ẩn doanh thu để nhìn rõ chi phí). Kỳ đang xem được tô nền; kỳ chưa kết thúc vẽ điểm rỗng. Rê chuột để xem số và tỷ lệ chi phí trên doanh thu.</div>
   </div>
+
+  <div class="card" id="attrCard" style="display:none;">
+    <div class="card-head">
+      <h2>Kênh bán theo điểm chạm cuối — đơn Shopify</h2>
+      <div class="note" id="attrNote">Hành trình khách Shopify lưu cho từng đơn (các lượt ghé trong 30 ngày trước đơn) · kênh = lượt ghé cuối không kể direct · doanh thu thuần theo ngày đặt</div>
+    </div>
+    <div class="be-grid" id="attrKpis"></div>
+    <div class="share-bar" id="attrBar"></div>
+    <div class="legend" id="attrLegend" style="margin-bottom:10px;"></div>
+    <div style="overflow-x:auto;"><table class="simple" id="attrTable" style="min-width:980px;"></table></div>
+    <div id="attrJourneys" style="margin-top:10px;font-size:12.5px;color:var(--ink-secondary);line-height:1.5;"></div>
+    <div id="attrEmailWrap"></div>
+    <div class="caption" id="attrCaption" style="padding-left:2px;margin-top:8px;"></div>
+  </div>
+
+  <div class="card" id="loopCard" style="display:none;">
+    <div class="card-head">
+      <h2>Đăng ký định kỳ — Loop Subscriptions</h2>
+      <div class="note" id="loopNote"></div>
+    </div>
+    <div class="be-grid" id="loopKpis"></div>
+    <div class="caption" id="loopCaption" style="padding-left:2px;margin-top:8px;"></div>
+  </div>
+
+  <div class="card" id="shopifyReconCard" style="display:none;">
+    <div class="card-head">
+      <h2>Shopify — đối chiếu với Shopify Analytics</h2>
+      <div class="note">Cùng định nghĩa với báo cáo "Sales over time" của Shopify · ngày theo giờ cửa hàng (LA)</div>
+    </div>
+    <div style="overflow-x:auto;"><table class="simple" id="shopifyReconTable" style="min-width:520px;"></table></div>
+    <div class="caption" style="padding-left:2px;margin-top:8px;">Dòng "Shopify" trong bảng P&amp;L ở trên là <b>Gross sales</b> (giá niêm yết × số lượng, trước giảm giá) — đúng như Shopify định nghĩa, nên lớn hơn nhiều so với "Total sales" trên trang Analytics vì cửa hàng giảm giá sâu (B1G2F, mã affiliate…). Doanh thu thuần của dashboard = Net sales = Gross − Discounts − Returns. Xem trong Shopify: Analytics → Reports → "Sales over time" (có đủ các cột này).</div>
+  </div>
+
+  </div><!-- /viewSales -->
+
+  <div id="viewMarketing" class="view" hidden>
+  <div class="card">
+    <div class="card-head"><h2>ROAS theo kênh &amp; MER toàn marketing</h2><div class="note">ROAS = doanh thu quy về kênh ÷ chi phí kênh đó (có thể trùng lặp do đa chạm)</div></div>
+    <div class="roas-grid" id="roasGrid"></div>
+    <div class="mer-band">
+      <div class="m-label"><b>MER (Marketing Efficiency Ratio)</b> = Doanh thu thuần toàn bộ ÷ Tổng chi tiêu quảng cáo (Meta, Google, Amazon Ads, TikTok Ads, AppLovin, Walmart Connect). Chỉ tính những ngày mọi nguồn quảng cáo đã có số. Khác ROAS ở chỗ dùng doanh thu thật (kể cả organic/halo), nên MER thường thấp hơn tổng ROAS cộng dồn từng kênh — dùng MER để đánh giá hiệu quả marketing tổng thể, dùng ROAS để tối ưu từng kênh.</div>
+      <div class="m-value" id="merValue"></div>
+    </div>
+    <div class="mer-note" id="merNote" hidden></div>
+    <div class="caption" style="padding-left:2px;"><span id="adsCaptionAmazon">* Amazon Ads chờ Amazon duyệt quyền Advertising API → chi $0 và không tính vào MER. </span>TikTok Ads = GMV Max của TikTok Shop ("DT quy về" là doanh thu TikTok Shop mà GMV Max tự nhận). Amazon Ads (khi có số): chi phí Sponsored Products / Brands / Display theo ngày, "DT quy về" là doanh thu Amazon gán cho quảng cáo (không cộng vào doanh thu).</div>
+  </div>
+
+  <div class="card" id="metaCampaignCard" style="display:none;">
+    <div class="card-head">
+      <h2>Meta Ads theo sản phẩm &amp; chiến dịch</h2>
+      <div class="note" id="metaCampaignNote">Marketing API · attribution theo cài đặt ad account · sắp theo chi tiêu trong khoảng đang xem</div>
+    </div>
+    <div style="overflow-x:auto;"><table class="simple" id="metaCampaignTable" style="min-width:900px;"></table></div>
+    <div class="caption" style="padding-left:2px;margin-top:8px;">Sản phẩm / thị trường / giai đoạn tách từ tên campaign ("Peekaboo - Bidcap - Control - Low Bid - CA"). Frequency ≈ impressions ÷ tổng reach theo ngày (thấp hơn Ads Manager một chút khi xem nhiều ngày). CPA = chi ÷ đơn quy về; ROAS = doanh thu quy về ÷ chi. Ngưỡng cảnh báo: ROAS &lt; 1.5 hoặc CPA &gt; $90.</div>
+  </div>
+
+  <div class="card" id="googleCampaignCard" style="display:none;">
+    <div class="card-head">
+      <h2>Google Ads theo sản phẩm &amp; chiến dịch</h2>
+      <div class="note" id="googleCampaignNote">Google Ads API · sắp theo chi tiêu trong khoảng đang xem</div>
+    </div>
+    <div style="overflow-x:auto;"><table class="simple" id="googleCampaignTable" style="min-width:860px;"></table></div>
+    <div class="caption" style="padding-left:2px;margin-top:8px;">Loại campaign (Search / Shopping / Performance Max / Demand Gen) lấy từ Google; sản phẩm tách từ tên campaign hoặc bảng alias trong workflow ("PKC" = Peekaboo). "Conv." là conversions theo cài đặt tài khoản Google Ads (mặc định gồm mua hàng đã tính vào cột conversions), DT quy về = conversions_value. Cùng ngưỡng cảnh báo với Meta: ROAS &lt; 1.5 hoặc CPA &gt; $90.</div>
+  </div>
+
+  <div class="card" id="klaviyoCard" style="display:none;">
+    <div class="card-head">
+      <h2>Email &amp; SMS marketing — Klaviyo</h2>
+      <div class="note" id="klaviyoNote"></div>
+    </div>
+    <div class="be-grid" id="klaviyoKpis"></div>
+    <div id="klaviyoCompare" style="margin:2px 0 6px;font-size:12.5px;color:var(--ink-secondary);line-height:1.5;"></div>
+    <div class="subhead" id="klaviyoCampaignHead">Campaign gửi trong kỳ</div>
+    <div style="overflow-x:auto;"><table class="simple" id="klaviyoCampaignTable" style="min-width:960px;"></table></div>
+    <div class="subhead" id="klaviyoFlowHead">Flow (tự động) — cửa sổ đồng bộ</div>
+    <div style="overflow-x:auto;"><table class="simple" id="klaviyoFlowTable" style="min-width:900px;"></table></div>
+    <div class="caption" id="klaviyoCaption" style="padding-left:2px;margin-top:8px;"></div>
+  </div>
+
+  <div class="card" id="snowballCard" style="display:none;">
+    <div class="card-head">
+      <h2>Snowball — hoa hồng influencer/affiliate</h2>
+      <div class="note">Tính từ đơn Shopify được Snowball gắn tag "Referral - SS - &lt;program&gt;" · cửa sổ đồng bộ 45 ngày · hoa hồng = giá trị đơn × % program, trừ lại khi hoàn tiền</div>
+    </div>
+    <div id="snowballBody"></div>
+  </div>
+  </div><!-- /viewMarketing -->
+
+  <div id="viewPnl" class="view" hidden>
+  <div class="kpis" id="kpiRow"></div>
 
   <div class="card">
     <div class="card-head">
@@ -487,72 +641,6 @@
   </div>
 
   <div class="card">
-    <div class="card-head"><h2>ROAS theo kênh &amp; MER toàn marketing</h2><div class="note">ROAS = doanh thu quy về kênh ÷ chi phí kênh đó (có thể trùng lặp do đa chạm)</div></div>
-    <div class="roas-grid" id="roasGrid"></div>
-    <div class="mer-band">
-      <div class="m-label"><b>MER (Marketing Efficiency Ratio)</b> = Doanh thu thuần toàn bộ ÷ Tổng chi tiêu quảng cáo (Meta, Google, Amazon Ads, TikTok Ads, AppLovin, Walmart Connect). Chỉ tính những ngày mọi nguồn quảng cáo đã có số. Khác ROAS ở chỗ dùng doanh thu thật (kể cả organic/halo), nên MER thường thấp hơn tổng ROAS cộng dồn từng kênh — dùng MER để đánh giá hiệu quả marketing tổng thể, dùng ROAS để tối ưu từng kênh.</div>
-      <div class="m-value" id="merValue"></div>
-    </div>
-    <div class="mer-note" id="merNote" hidden></div>
-    <div class="caption" style="padding-left:2px;"><span id="adsCaptionAmazon">* Amazon Ads chờ Amazon duyệt quyền Advertising API → chi $0 và không tính vào MER. </span>TikTok Ads = GMV Max của TikTok Shop ("DT quy về" là doanh thu TikTok Shop mà GMV Max tự nhận). Amazon Ads (khi có số): chi phí Sponsored Products / Brands / Display theo ngày, "DT quy về" là doanh thu Amazon gán cho quảng cáo (không cộng vào doanh thu).</div>
-  </div>
-
-  <div class="card" id="attrCard" style="display:none;">
-    <div class="card-head">
-      <h2>Kênh bán theo điểm chạm cuối — đơn Shopify</h2>
-      <div class="note" id="attrNote">Hành trình khách Shopify lưu cho từng đơn (các lượt ghé trong 30 ngày trước đơn) · kênh = lượt ghé cuối không kể direct · doanh thu thuần theo ngày đặt</div>
-    </div>
-    <div class="be-grid" id="attrKpis"></div>
-    <div class="share-bar" id="attrBar"></div>
-    <div class="legend" id="attrLegend" style="margin-bottom:10px;"></div>
-    <div style="overflow-x:auto;"><table class="simple" id="attrTable" style="min-width:980px;"></table></div>
-    <div id="attrJourneys" style="margin-top:10px;font-size:12.5px;color:var(--ink-secondary);line-height:1.5;"></div>
-    <div id="attrEmailWrap"></div>
-    <div class="caption" id="attrCaption" style="padding-left:2px;margin-top:8px;"></div>
-  </div>
-
-  <div class="card" id="klaviyoCard" style="display:none;">
-    <div class="card-head">
-      <h2>Email &amp; SMS marketing — Klaviyo</h2>
-      <div class="note" id="klaviyoNote"></div>
-    </div>
-    <div class="be-grid" id="klaviyoKpis"></div>
-    <div id="klaviyoCompare" style="margin:2px 0 6px;font-size:12.5px;color:var(--ink-secondary);line-height:1.5;"></div>
-    <div class="subhead" id="klaviyoCampaignHead">Campaign gửi trong kỳ</div>
-    <div style="overflow-x:auto;"><table class="simple" id="klaviyoCampaignTable" style="min-width:960px;"></table></div>
-    <div class="subhead" id="klaviyoFlowHead">Flow (tự động) — cửa sổ đồng bộ</div>
-    <div style="overflow-x:auto;"><table class="simple" id="klaviyoFlowTable" style="min-width:900px;"></table></div>
-    <div class="caption" id="klaviyoCaption" style="padding-left:2px;margin-top:8px;"></div>
-  </div>
-
-  <div class="card" id="loopCard" style="display:none;">
-    <div class="card-head">
-      <h2>Đăng ký định kỳ — Loop Subscriptions</h2>
-      <div class="note" id="loopNote"></div>
-    </div>
-    <div class="be-grid" id="loopKpis"></div>
-    <div class="caption" id="loopCaption" style="padding-left:2px;margin-top:8px;"></div>
-  </div>
-
-  <div class="card" id="metaCampaignCard" style="display:none;">
-    <div class="card-head">
-      <h2>Meta Ads theo sản phẩm &amp; chiến dịch</h2>
-      <div class="note" id="metaCampaignNote">Marketing API · attribution theo cài đặt ad account · sắp theo chi tiêu trong khoảng đang xem</div>
-    </div>
-    <div style="overflow-x:auto;"><table class="simple" id="metaCampaignTable" style="min-width:900px;"></table></div>
-    <div class="caption" style="padding-left:2px;margin-top:8px;">Sản phẩm / thị trường / giai đoạn tách từ tên campaign ("Peekaboo - Bidcap - Control - Low Bid - CA"). Frequency ≈ impressions ÷ tổng reach theo ngày (thấp hơn Ads Manager một chút khi xem nhiều ngày). CPA = chi ÷ đơn quy về; ROAS = doanh thu quy về ÷ chi. Ngưỡng cảnh báo: ROAS &lt; 1.5 hoặc CPA &gt; $90.</div>
-  </div>
-
-  <div class="card" id="googleCampaignCard" style="display:none;">
-    <div class="card-head">
-      <h2>Google Ads theo sản phẩm &amp; chiến dịch</h2>
-      <div class="note" id="googleCampaignNote">Google Ads API · sắp theo chi tiêu trong khoảng đang xem</div>
-    </div>
-    <div style="overflow-x:auto;"><table class="simple" id="googleCampaignTable" style="min-width:860px;"></table></div>
-    <div class="caption" style="padding-left:2px;margin-top:8px;">Loại campaign (Search / Shopping / Performance Max / Demand Gen) lấy từ Google; sản phẩm tách từ tên campaign hoặc bảng alias trong workflow ("PKC" = Peekaboo). "Conv." là conversions theo cài đặt tài khoản Google Ads (mặc định gồm mua hàng đã tính vào cột conversions), DT quy về = conversions_value. Cùng ngưỡng cảnh báo với Meta: ROAS &lt; 1.5 hoặc CPA &gt; $90.</div>
-  </div>
-
-  <div class="card">
     <div class="card-head">
       <h2>Sales tax thu hộ</h2>
       <div class="note">Khoản thu hộ (pass-through liability) — không nằm trong P&amp;L ở trên · số thật từ Shopify; chưa tách theo bang (cần nối nguồn nộp thuế)</div>
@@ -573,6 +661,15 @@
     <div id="amazonGapsBody"></div>
   </div>
 
+  </div><!-- /viewPnl -->
+
+  <div id="viewInventory" class="view" hidden>
+  <div class="card" id="invCard">
+    <div class="card-head"><h2>Tồn kho Amazon FBA theo SKU</h2><div class="note" id="invNote"></div></div>
+    <div class="be-grid" id="invKpis"></div>
+    <div style="overflow-x:auto;"><table class="simple" id="invTable" style="min-width:980px;"></table></div>
+    <div class="caption" id="invCaption" style="padding-left:2px;margin-top:8px;"></div>
+  </div>
   <div class="card" id="shipmonkCard" style="display:none;">
     <div class="card-head">
       <h2>ShipMonk — chi phí fulfillment theo từng đơn</h2>
@@ -583,23 +680,29 @@
     <div class="caption" id="shipmonkCaption" style="padding-left:2px;margin-top:8px;">Số lấy từ ShipMonk API (<code>order_costs</code>: estimated shipping / pick &amp; pack / packaging) cho mọi đơn ShipMonk nhận — store Shopify lẫn Amazon FBM. Đơn chưa ship dùng ước tính của ShipMonk và được cập nhật lại mỗi 30 phút khi ship. Hoá đơn tuần của ShipMonk có thể lệch nhỏ (điều chỉnh cước, surcharge). <b>Chưa gồm</b> phí lưu kho, receiving, xử lý hàng trả và các khoản chỉ có trên hoá đơn — sẽ thêm khi có file hoá đơn.</div>
   </div>
 
-  <div class="card" id="shopifyReconCard" style="display:none;">
-    <div class="card-head">
-      <h2>Shopify — đối chiếu với Shopify Analytics</h2>
-      <div class="note">Cùng định nghĩa với báo cáo "Sales over time" của Shopify · ngày theo giờ cửa hàng (LA)</div>
-    </div>
-    <div style="overflow-x:auto;"><table class="simple" id="shopifyReconTable" style="min-width:520px;"></table></div>
-    <div class="caption" style="padding-left:2px;margin-top:8px;">Dòng "Shopify" trong bảng P&amp;L ở trên là <b>Gross sales</b> (giá niêm yết × số lượng, trước giảm giá) — đúng như Shopify định nghĩa, nên lớn hơn nhiều so với "Total sales" trên trang Analytics vì cửa hàng giảm giá sâu (B1G2F, mã affiliate…). Doanh thu thuần của dashboard = Net sales = Gross − Discounts − Returns. Xem trong Shopify: Analytics → Reports → "Sales over time" (có đủ các cột này).</div>
+  <div class="card">
+    <div class="card-head"><h2>Chưa có trên trang này</h2><div class="note">Cần thêm nguồn</div></div>
+    <div id="invGaps" class="gapslist"></div>
   </div>
+  </div><!-- /viewInventory -->
 
-  <div class="card" id="snowballCard" style="display:none;">
-    <div class="card-head">
-      <h2>Snowball — hoa hồng influencer/affiliate</h2>
-      <div class="note">Tính từ đơn Shopify được Snowball gắn tag "Referral - SS - &lt;program&gt;" · cửa sổ đồng bộ 45 ngày · hoa hồng = giá trị đơn × % program, trừ lại khi hoàn tiền</div>
-    </div>
-    <div id="snowballBody"></div>
+  <div id="viewOpex" class="view" hidden>
+  <div class="card" id="opexSummaryCard">
+    <div class="card-head"><h2>Chi phí hoạt động (OpEx) kỳ đang xem</h2><div class="note">Kho bãi (ShipMonk, FBA lưu kho &amp; dịch vụ) + G&amp;A (nhập tay, Klaviyo, Snowball) · dưới lợi nhuận đóng góp</div></div>
+    <div class="be-grid" id="opexKpis"></div>
+    <div style="overflow-x:auto;"><table class="simple" id="opexMonthsTable" style="min-width:760px;"></table></div>
+    <div class="caption" id="opexMonthsCaption" style="padding-left:2px;margin-top:8px;"></div>
   </div>
-  </div><!-- /viewDashboard -->
+  <div class="card">
+      <div class="card-head"><h2>Chi phí nhập tay (OpEx theo tháng)</h2><div class="note">Không có API — điền theo tháng vào <code>data/opex_monthly.json</code> trên GitHub; tháng chưa điền lấy theo tháng gần nhất đã điền</div></div>
+      <div style="overflow-x:auto;"><table class="simple" id="opexTable" style="min-width:760px;"></table></div>
+    </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Tiền mặt &amp; runway</h2><div class="note">Chưa có nguồn</div></div>
+    <div id="cashGaps" class="gapslist"></div>
+  </div>
+  </div><!-- /viewOpex -->
 
   <div id="viewData" class="view" hidden>
     <div class="card">
@@ -608,22 +711,11 @@
     </div>
 
     <div class="card">
-      <div class="card-head"><h2>Chi phí nhập tay (OpEx theo tháng)</h2><div class="note">Không có API — điền theo tháng vào <code>data/opex_monthly.json</code> trên GitHub; tháng chưa điền lấy theo tháng gần nhất đã điền</div></div>
-      <div style="overflow-x:auto;"><table class="simple" id="opexTable" style="min-width:760px;"></table></div>
-    </div>
-
-    <div class="card">
       <div class="card-head"><h2>Còn thiếu gì trên P&amp;L</h2><div class="note">Gom lại từ các dòng "Chưa kết nối/Chưa nhập ($0)" đang rải rác trong bảng P&amp;L và ROAS — để biết cần nối gì tiếp theo</div></div>
       <div id="gapsList" class="gapslist"></div>
     </div>
   </div><!-- /viewData -->
 
-  <div id="viewReports" class="view" hidden>
-    <div class="card">
-      <div class="card-head"><h2>Báo cáo</h2><div class="note">Sắp ra mắt</div></div>
-      <div class="caption" style="padding-left:2px;">Bảng chi tiết theo ngày/tháng/kênh (Profit theo ngày, Ad spend theo ngày theo nền tảng, ShipMonk theo đơn, Shopify last-touch, Snowball, Klaviyo…) kèm Export CSV — đang được xây, xem thứ tự dự kiến trong kế hoạch dự án.</div>
-    </div>
-  </div><!-- /viewReports -->
 
   <div class="foot">Mọi nguồn được đồng bộ về cùng một lịch ngày: múi giờ America/Los_Angeles (Shopify, Amazon, Amazon Ads báo cáo sẵn theo giờ này; Meta &amp; Google được quy đổi từ dữ liệu theo giờ) · Cattasaurus Finance</div>
 </div>
@@ -631,7 +723,7 @@
 <div id="siteRefresh" hidden><span id="siteLoadedAt" title="Giờ tải số liệu (giờ trên máy bạn)"></span><button type="button" id="siteReload" title="Tải lại số liệu mới nhất">↻ Cập nhật</button><a href="/?menu=1" title="Về trang chọn bảng">bảng khác</a><a href="/?menu=1#app" id="siteInstall" title="Cài như app lên máy / điện thoại" hidden>cài app</a><a href="/logout" title="Đăng xuất khỏi thiết bị này">thoát</a></div>
 <script>
 (function(){
-  var SOURCES = {"amazon": "amazon_pnl.json", "meta": "meta_ads.json", "shopify": "shopify_pnl.json", "google": "google_ads.json", "shipmonk": "shipmonk.json", "shipmonk_invoices": "shipmonk_invoices.json", "shipmonk_storage": "shipmonk_storage_daily.json", "paypal": "paypal.json", "klaviyo": "klaviyo.json", "klaviyo_invoices": "klaviyo_invoices.json", "amazon_ads": "amazon_ads.json", "opex": "opex_monthly.json", "amazon_storage": "amazon_storage.json", "loop_subscriptions": "loop_subscriptions.json", "tiktok_shop": "tiktok_shop.json", "walmart": "walmart.json", "applovin": "applovin.json", "tiktok_ads": "tiktok_ads.json"};
+  var SOURCES = {"amazon": "amazon_pnl.json", "meta": "meta_ads.json", "shopify": "shopify_pnl.json", "google": "google_ads.json", "shipmonk": "shipmonk.json", "shipmonk_invoices": "shipmonk_invoices.json", "shipmonk_storage": "shipmonk_storage_daily.json", "paypal": "paypal.json", "klaviyo": "klaviyo.json", "klaviyo_invoices": "klaviyo_invoices.json", "amazon_ads": "amazon_ads.json", "opex": "opex_monthly.json", "amazon_storage": "amazon_storage.json", "loop_subscriptions": "loop_subscriptions.json", "tiktok_shop": "tiktok_shop.json", "walmart": "walmart.json", "applovin": "applovin.json", "tiktok_ads": "tiktok_ads.json", "targets": "targets_monthly.json"};
   var keys = Object.keys(SOURCES), done = 0;
   window.__LIVE = {}; window.__LIVE_ERR = {}; window.__LOADED_AT = 0; window.__SAVED_AT = 0;
   try{ localStorage.setItem('ctu_last_dash', '/pnl'); }catch(e){}
@@ -665,7 +757,7 @@
     return load(k, 1).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=b28e2c7065';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=528d5f2c3c';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');
