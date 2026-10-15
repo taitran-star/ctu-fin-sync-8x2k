@@ -1,0 +1,79 @@
+name: Cattasaurus TikTok Ads sync
+
+on:
+  schedule:
+    # :23 and :53 UTC - unused offset (Amazon :00/:30, AppLovin :03/:33, Shopify :05/:35, TikTok Shop :07/:37,
+    # ShipMonk :10/:40, Meta :15/:45, Walmart :17/:47, Google :20/:50, PayPal :28/:58, Amazon Ads :41, Klaviyo :42).
+    - cron: "23,53 * * * *"
+  workflow_dispatch:
+    inputs:
+      auth_code:
+        description: "Only once (or after re-authorizing): paste the redirect URL after approving the app (or its auth_code value)."
+        required: false
+        default: ""
+      backfill_start:
+        description: "Re-pull from (YYYY-MM-DD). Empty = normal rolling 30 days."
+        required: false
+        default: ""
+      backfill_end:
+        description: "Re-pull to (YYYY-MM-DD, inclusive). Empty = today."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tiktok-ads-sync
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Sync to the latest main
+        run: |
+          git fetch --depth=1 origin main
+          git reset --hard origin/main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install cryptography
+
+      - name: Fetch TikTok Ads (GMV Max + other ads) report
+        env:
+          TIKTOK_ADS_APP_ID: ${{ secrets.TIKTOK_ADS_APP_ID }}
+          TIKTOK_ADS_APP_SECRET: ${{ secrets.TIKTOK_ADS_APP_SECRET }}
+          TIKTOK_ADS_ACCESS_TOKEN: ${{ secrets.TIKTOK_ADS_ACCESS_TOKEN }}
+          TIKTOK_ADS_ADVERTISER_IDS: "7672960210930565141,7662672665825493000"
+          TIKTOK_ADS_AUTH_CODE: ${{ github.event.inputs.auth_code }}
+          BACKFILL_START: ${{ github.event.inputs.backfill_start }}
+          BACKFILL_END: ${{ github.event.inputs.backfill_end }}
+        run: python fetch_tiktok_ads.py
+
+      - name: Commit updated data file if changed
+        if: always()
+        run: |
+          git config user.name "cattasaurus-tiktok-ads-bot"
+          git config user.email "actions@users.noreply.github.com"
+          if [ -f data/tiktok_ads.json ]; then git add data/tiktok_ads.json; fi
+          if [ -f data/tiktok_ads_state.enc ]; then git add data/tiktok_ads_state.enc; fi
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Update TikTok Ads data ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            echo "Push attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "Could not push after 5 attempts." && exit 1
