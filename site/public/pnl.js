@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build e33db7bdb8).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 3c70985cc3).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -126,7 +126,7 @@
   // ---------- V10 dictionary, part A: static text of pnl.html (data-i18n="h.*"); VI values = the original innerHTML byte for byte ----------
   Object.assign(L.en, {
     'h.matrixTitle':'Sales channels',
-    'h.matrixNote':'Net revenue by order date · vs the same days of the previous period &amp; last year · plan = gross sales by order date',
+    'h.matrixNote':'Net revenue by order date · vs the same days of the previous period &amp; last year · plan = each channel\'s plan on its own basis (Shopify net sales, Amazon gross/ordered sales)',
     'h.bridgeTitle':'Profit bridge — what moved CM3',
     'h.alertTitle':'Alerts',
     'h.alertNote':'Computed from the selected period · threshold shown next to each line',
@@ -202,7 +202,7 @@
   });
   Object.assign(L.vi, {
     'h.matrixTitle':'Kênh bán',
-    'h.matrixNote':'Doanh thu thuần theo ngày đặt · so cùng số ngày kỳ trước &amp; năm trước · kế hoạch = doanh thu gộp theo ngày đặt',
+    'h.matrixNote':'Doanh thu thuần theo ngày đặt · so cùng số ngày kỳ trước &amp; năm trước · kế hoạch = theo cơ sở của từng kênh (Shopify doanh thu thuần, Amazon doanh thu gộp)',
     'h.bridgeTitle':'Cầu lợi nhuận — CM3 đổi vì đâu',
     'h.alertTitle':'Cảnh báo',
     'h.alertNote':'Tự tính từ kỳ đang xem · ngưỡng ghi cạnh mỗi dòng',
@@ -392,7 +392,7 @@
     Object.keys(data.months||{}).forEach(m=>{
       if(!/^\d{4}-\d{2}$/.test(m) || !data.months[m] || typeof data.months[m]!=='object') return;
       const v = data.months[m], ch = {};
-      Object.keys(v.channels||{}).forEach(k=>{ if(CH_KEYS.includes(k) && v.channels[k]) ch[k] = {gross: num(v.channels[k].gross_sales), grossLY: num(v.channels[k].gross_sales_2025)}; });
+      Object.keys(v.channels||{}).forEach(k=>{ if(CH_KEYS.includes(k) && v.channels[k]) ch[k] = {gross: num(v.channels[k].gross_sales), grossLY: num(v.channels[k].gross_sales_2025), net: num(v.channels[k].net_sales)}; });
       months[m] = {net_revenue: num(v.net_revenue), marketing: num(v.marketing), orders: num(v.orders), cm3: num(v.cm3), channels: ch, note: v.note||''};
     });
     PLAN = {months, note: data.plans_note||data.note||'', updated_at: data.updated_at||null};
@@ -2718,10 +2718,20 @@
     const plan = PLAN.months[m] || null;
     // what to pace: company net revenue vs total plan; else Amazon gross vs the Amazon plan; else actual only
     let series = 'net', planTotal = plan ? plan.net_revenue : null, label = tv('Company net revenue','Doanh thu thuần toàn công ty');
-    const amazonOnly = CH_MASK.amazon && CH_KEYS.every(k=> k==='amazon' || !CH_MASK[k]);
-    if(maskPartial()){ planTotal = null; label = tv('Net revenue — ','Doanh thu thuần — ')+maskLabel()+tv(' (company plan not compared while filtering channels)',' (kế hoạch tổng không so khi lọc kênh)'); }
-    if(planTotal===null && plan && plan.channels.amazon && plan.channels.amazon.gross!==null && (!maskPartial() || amazonOnly)){ series = 'amazon'; planTotal = plan.channels.amazon.gross; label = tv('Amazon — gross sales by order date (company plan not entered)','Amazon — doanh thu gộp theo ngày đặt (kế hoạch tổng chưa nhập)'); }
-    const valOf = r => series==='amazon' ? r.channels.amazon : (r.channels.shopify+r.channels.amazon+r.channels.walmart+r.channels.tiktok) - sum(CH_KEYS.map(k=>r.discounts[k])) - sum(CH_KEYS.map(k=>r.refunds[k]));
+    if(maskPartial()){ planTotal = null; label = tv('Net revenue — ','Doanh thu thuần — ')+maskLabel()+tv(' (company plan not compared while filtering)',' (kế hoạch tổng không so khi đang lọc)'); }
+    // V10.2: no company plan -> pace the channels that have a plan, each on its own basis (Shopify plan = net sales, Amazon plan = gross/ordered sales)
+    const basisOf = k => plan && plan.channels[k] ? (plan.channels[k].net!==null ? 'net' : (plan.channels[k].gross!==null ? 'gross' : null)) : null;
+    const planned = CH_KEYS.filter(k=>basisOf(k));
+    const active = CH_KEYS.filter(k=>CH_MASK[k]);
+    let paceCh = null;
+    if(planTotal===null && planned.length && (!maskPartial() || (FILTER.market==='all' && FILTER.product==='all' && active.every(k=>planned.includes(k))))){
+      paceCh = maskPartial() ? active : planned; series = 'channels';
+      planTotal = sum(paceCh.map(k=> basisOf(k)==='net' ? plan.channels[k].net : plan.channels[k].gross));
+      const parts = paceCh.map(k=> CH_LABEL[k]+' ('+(basisOf(k)==='net' ? tv('net','thuần') : tv('gross','gộp'))+')').join(' + ');
+      label = parts + (paceCh.length>1 ? tv(' — sum of the channel plans',' — tổng kế hoạch các kênh') : tv(' — by order date',' — theo ngày đặt')) + tv(' (company plan not entered)',' (kế hoạch tổng chưa nhập)');
+    }
+    const chVal = (r,k) => basisOf(k)==='net' ? r.channels[k]-r.discounts[k]-r.refunds[k] : r.channels[k];
+    const valOf = r => series==='channels' ? sum(paceCh.map(k=>chVal(r,k))) : (r.channels.shopify+r.channels.amazon+r.channels.walmart+r.channels.tiktok) - sum(CH_KEYS.map(k=>r.discounts[k])) - sum(CH_KEYS.map(k=>r.refunds[k]));
     const closed = mrows.filter(r=>!r._syncing);
     const actualByDom = new Array(dim+1).fill(null); let cum = 0;
     closed.forEach(r=>{ cum += valOf(r); actualByDom[r.date.getDate()] = cum; });
@@ -2784,13 +2794,14 @@
     const pe = p ? channelEcon(p) : null, le = ly ? channelEcon(ly) : null;
     const totalNet = a.netRevenue;
     const planGross = k => planForRows(rows, x=> x.channels[k] ? x.channels[k].gross : null, true);
+    const planNet = k => planForRows(rows, x=> x.channels[k] ? x.channels[k].net : null, true);   // V10.2: Shopify plan is on net sales
     const dcell = d => d===null ? '<td class="num d-flat">—</td>' : `<td class="num ${Math.abs(d)<0.05?'d-flat':(d>=0?'d-up':'d-down')}">${d>=0?'+':''}${d.toFixed(1)}%</td>`;
     const keys = CH_KEYS.filter(k=> cur[k].net>0.005 || a.gross[k]>0.005 || (pe && pe[k].net>0.005)).sort((x,y)=>cur[y].net-cur[x].net);
-    const head = `<thead><tr><th>${tx('f.channel')}</th><th class="num">${tx('u.netRev')}</th><th class="num">Mix</th><th class="num">${likeLabel()}</th><th class="num">${tv('Last year','Năm trước')}</th><th class="num">${tv('Plan (gross)','Kế hoạch (gộp)')}</th><th class="num">${tv('Refunds','Hoàn tiền')}</th><th class="num">Ads + affiliate</th><th class="num">${tv('Ads/revenue','Ads/DT')}</th><th class="num">CM3${a.productCostEst?'*':''}</th><th class="num">CM3 %</th></tr></thead>`;
+    const head = `<thead><tr><th>${tx('f.channel')}</th><th class="num">${tx('u.netRev')}</th><th class="num">Mix</th><th class="num">${likeLabel()}</th><th class="num">${tv('Last year','Năm trước')}</th><th class="num">${tv('Plan','Kế hoạch')}</th><th class="num">${tv('Refunds','Hoàn tiền')}</th><th class="num">Ads + affiliate</th><th class="num">${tv('Ads/revenue','Ads/DT')}</th><th class="num">CM3${a.productCostEst?'*':''}</th><th class="num">CM3 %</th></tr></thead>`;
     const body = keys.map(k=>{
       const c = cur[k];
-      const pg = planGross(k);
-      const planTxt = pg!==null ? `${money(pg,{compact:true})} · ${a.gross[k]>0 ? '<span class="'+(a.gross[k]>=pg?'d-up':'d-down')+'">'+(a.gross[k]/pg*100).toFixed(0)+'%</span>' : '—'}` : '<span class="d-flat">'+tx('u.none')+'</span>';
+      const pn = planNet(k), pg = pn===null ? planGross(k) : null, pv = pn!==null ? pn : pg, pact = pn!==null ? c.net : a.gross[k];
+      const planTxt = pv!==null ? `${money(pv,{compact:true})} <small style="color:var(--ink-muted)">${pn!==null ? tv('net','thuần') : tv('gross','gộp')}</small> · ${pact>0 ? '<span class="'+(pact>=pv?'d-up':'d-down')+'">'+(pact/pv*100).toFixed(0)+'%</span>' : '—'}` : '<span class="d-flat">'+tx('u.none')+'</span>';
       return `<tr><td class="name">${CH_LABEL[k]}<small style="display:block;font-weight:400;color:var(--ink-muted);">${intFmt(c.orders)} ${tx('u.orders')} · AOV ${c.orders>0 ? money(c.net/c.orders) : '—'}</small></td>
         <td class="num">${money(c.net,{compact:true})}</td><td class="num">${totalNet>0 ? (c.net/totalNet*100).toFixed(0)+'%' : '—'}</td>
         ${dcell(pe ? dAbs(c.net, pe[k].net) : null)}${dcell(le ? dAbs(c.net, le[k].net) : null)}
@@ -2802,7 +2813,7 @@
     const tot = keys.reduce((s,k)=>({net:s.net+cur[k].net, ads:s.ads+cur[k].adsAll, cm:s.cm+cur[k].cm}), {net:0, ads:0, cm:0});
     const foot = `<tr style="font-weight:700;"><td class="name">${tx('u.total')}</td><td class="num">${money(tot.net,{compact:true})}</td><td class="num">100%</td>${dcell(p ? dAbs(a.netRevenue, p.netRevenue) : null)}${dcell(ly ? dAbs(a.netRevenue, ly.netRevenue) : null)}<td class="num"></td><td class="num">${a.grossSales>0 ? (sum(CH_KEYS.map(k=>a.refund[k]))/a.grossSales*100).toFixed(1)+'%' : '—'}</td><td class="num">${money(tot.ads,{compact:true})}</td><td class="num">${tot.net>0 ? (tot.ads/tot.net*100).toFixed(0)+'%' : '—'}</td><td class="num">${money(tot.cm,{compact:true})}</td><td class="num">${tot.net>0 ? (tot.cm/tot.net*100).toFixed(0)+'%' : '—'}</td></tr>`;
     t.innerHTML = head + '<tbody>' + body + foot + '</tbody>';
-    document.getElementById('matrixCaption').innerHTML = tv('Ads by channel: Meta + Google + AppLovin → Shopify; Amazon Ads → Amazon; GMV Max → TikTok Shop; Walmart Connect → Walmart. CM3 = net revenue − product cost','Ads gắn kênh: Meta + Google + AppLovin → Shopify; Amazon Ads → Amazon; GMV Max → TikTok Shop; Walmart Connect → Walmart. CM3 = doanh thu thuần − giá vốn') + (a.productCostEst ? tv(' (*estimated at ',' (*ước ')+(a.cogsEstRate*100).toFixed(0)+'%'+(a.productCostHasActual?tv(', partly from the accounting inventory ledger',', một phần theo sổ kho kế toán'):'')+')' : (a.productCostHasActual ? tv(' (from the accounting inventory ledger)',' (theo sổ kho kế toán)') : tv(' ($0, not available)',' ($0, chưa có)'))) + tv(' − per-order fulfillment (FBA, ShipMonk) − marketplace/payment fees − ads − affiliate; storage and G&amp;A not deducted (column total = the CM3 tile). Plan: % = gross sales this period ÷ plan spread evenly by day.',' − fulfillment theo đơn (FBA, ShipMonk) − phí sàn/cổng − ads − affiliate; chưa trừ lưu kho và G&amp;A (tổng cột = CM3 trên ô chỉ số). Kế hoạch: % = doanh thu gộp kỳ này ÷ kế hoạch rải đều theo ngày.');
+    document.getElementById('matrixCaption').innerHTML = tv('Ads by channel: Meta + Google + AppLovin → Shopify; Amazon Ads → Amazon; GMV Max → TikTok Shop; Walmart Connect → Walmart. CM3 = net revenue − product cost','Ads gắn kênh: Meta + Google + AppLovin → Shopify; Amazon Ads → Amazon; GMV Max → TikTok Shop; Walmart Connect → Walmart. CM3 = doanh thu thuần − giá vốn') + (a.productCostEst ? tv(' (*estimated at ',' (*ước ')+(a.cogsEstRate*100).toFixed(0)+'%'+(a.productCostHasActual?tv(', partly from the accounting inventory ledger',', một phần theo sổ kho kế toán'):'')+')' : (a.productCostHasActual ? tv(' (from the accounting inventory ledger)',' (theo sổ kho kế toán)') : tv(' ($0, not available)',' ($0, chưa có)'))) + tv(' − per-order fulfillment (FBA, ShipMonk) − marketplace/payment fees − ads − affiliate; storage and G&amp;A not deducted (column total = the CM3 tile). Plan: % = this period\'s actual (net for Shopify, gross for Amazon) ÷ plan spread evenly by day.',' − fulfillment theo đơn (FBA, ShipMonk) − phí sàn/cổng − ads − affiliate; chưa trừ lưu kho và G&amp;A (tổng cột = CM3 trên ô chỉ số). Kế hoạch: % = số thực kỳ này (Shopify thuần, Amazon gộp) ÷ kế hoạch rải đều theo ngày.');
   }
 
   // ---------- alerts ----------
@@ -2819,7 +2830,7 @@
       const closed = (monthMap[m]||[]).filter(r=>!r._syncing), lastDom = closed.length ? closed[closed.length-1].date.getDate() : 0, dim = daysInMonth(m);
       const check = (label, actual, planV) => { if(planV===null || !lastDom) return; const exp = planV*lastDom/dim; const d = (actual/exp-1)*100; if(d < -10) items.push({lvl: d<-25?'crit':'warn', name: label+tv(' through day ',' đến ngày ')+lastDom+tv(' is below plan by ',' thấp hơn kế hoạch ')+Math.abs(d).toFixed(0)+'%', note: money(actual,{compact:true})+tv(' vs ',' so với ')+money(exp,{compact:true})+tv(' plan spread evenly',' kế hoạch rải đều'), stake: exp-actual, action:tv('Short ','Thiếu ')+money(exp-actual,{compact:true})+tv(' vs the evenly spread plan — decide to push or lower the plan',' so kế hoạch rải đều — quyết thúc đẩy hay hạ kế hoạch')}); };
       check(tv('Net revenue','Doanh thu thuần'), sum(closed.map(r=> sum(CH_KEYS.map(k=>r.channels[k]-r.discounts[k]-r.refunds[k])))), plan.net_revenue);
-      if(plan.channels.amazon) check(tv('Amazon (gross sales)','Amazon (doanh thu gộp)'), sum(closed.map(r=>r.channels.amazon)), plan.channels.amazon.gross);
+      CH_KEYS.forEach(k=>{ const cp = plan.channels[k]; if(!cp) return; if(cp.net!==null) check(CH_LABEL[k]+tv(' (net revenue)',' (doanh thu thuần)'), sum(closed.map(r=>r.channels[k]-r.discounts[k]-r.refunds[k])), cp.net); else if(cp.gross!==null) check(CH_LABEL[k]+tv(' (gross sales)',' (doanh thu gộp)'), sum(closed.map(r=>r.channels[k])), cp.gross); });
     } else items.push({lvl:'warn', name:tv('No plan for ','Chưa có kế hoạch tháng ')+(LANG==='vi' ? parseInt(m.slice(5,7),10)+'/'+m.slice(0,4) : MONTHS_EN[parseInt(m.slice(5,7),10)-1]+' '+m.slice(0,4)), note:tv('Fill in data/targets_monthly.json to get the "vs plan" column and pacing alerts','Điền data/targets_monthly.json để có cột "so kế hoạch" và cảnh báo nhịp độ'), stake:null});
     const refundPct = a.grossSales>0 ? sum(CH_KEYS.map(k=>a.refund[k]))/a.grossSales*100 : 0;
     if(refundPct>8) items.push({lvl: refundPct>12?'crit':'warn', name:tv('Refunds ','Hoàn tiền ')+refundPct.toFixed(1)+tv('% of gross sales','% doanh thu gộp'), note:tv('Alert threshold 8% · ','Ngưỡng cảnh báo 8% · ')+CH_KEYS.filter(k=>a.gross[k]>0).map(k=>CH_LABEL[k]+' '+(a.refund[k]/a.gross[k]*100).toFixed(1)+'%').join(', '), stake:(refundPct-8)/100*a.grossSales, action:tv('Excess over the 8% threshold = ','Phần vượt ngưỡng 8% = ')+money((refundPct-8)/100*a.grossSales,{compact:true})+tv(' — review return reasons by channel/product',' — xem lý do trả theo kênh/sản phẩm')});
