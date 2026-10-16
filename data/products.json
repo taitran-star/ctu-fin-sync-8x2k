@@ -1,6 +1,6 @@
 {
  "updated_at": "2026-10-16",
- "note": "Product lines for the Product filter. A SKU belongs to the FIRST line that matches: exact entry in `skus`, else a regex in `match` (tested against the SKU, case-insensitive), else a substring in `names` against the Amazon listing title. Amazon virtual bundles (amzn.gr.<SKU>-...) follow their parent SKU. Unmatched SKUs show as 'Other'. Review: the ids sslb / clmdnt need real names; G0-XFD9-2HZE and Z9-1GVT-BATX have no listing title - move them if they belong elsewhere.",
+ "note": "Product lines for the Product filter. A SKU belongs to the FIRST line that matches: exact entry in `skus`, else a regex in `match` (tested against the SKU, case-insensitive), else a substring in `names` against the Amazon listing title. Amazon virtual bundles (amzn.gr.<SKU>-...) follow their parent SKU. Unmatched SKUs show as 'Other'. Names checked against the Shopify catalog 16/10/2026: SSLB = Oversized 304 Stainless Steel Litter Box, CLMDNT = Calming Donut (the Shopify SKUs PKCTCV2Z-* are the Calming Donut listings, so they are excluded from the cave line), Coffin = The Gothic Coffin (a cave), NOF = Nails on Felt scratchers + Play Box, PKBKBD = Peekaboo Bunk Bed. G0-XFD9-2HZE and Z9-1GVT-BATX have no listing title - move them if they belong elsewhere.",
  "lines": [
   {
    "id": "cave",
@@ -9,7 +9,10 @@
     "vi": "Hang mèo Peekaboo"
    },
    "match": [
-    "^PKCTCV"
+    "^PKCTCV(?!2Z)",
+    "^PKTCV-",
+    "^NEW-PKCTCV",
+    "^Coffin$"
    ],
    "names": [
     "Peekaboo Cat Cave"
@@ -89,20 +92,22 @@
   {
    "id": "bed",
    "name": {
-    "en": "Cat Bed",
-    "vi": "Đệm mèo"
+    "en": "Bunk Bed",
+    "vi": "Giường tầng Peekaboo"
    },
    "match": [
     "^PKBKBD"
    ],
    "names": [],
-   "skus": []
+   "skus": [
+    "1B-NNLH-5EA6"
+   ]
   },
   {
    "id": "playbox",
    "name": {
-    "en": "Play Box",
-    "vi": "Hộp chơi"
+    "en": "Play Box & Scratchers",
+    "vi": "Hộp chơi & bàn cào"
    },
    "match": [
     "^NOF"
@@ -113,8 +118,8 @@
   {
    "id": "sslb",
    "name": {
-    "en": "SSLB (review name)",
-    "vi": "SSLB (cần đặt tên)"
+    "en": "Stainless Steel Litter Box",
+    "vi": "Khay vệ sinh inox"
    },
    "match": [
     "^SSLB"
@@ -125,11 +130,12 @@
   {
    "id": "clmdnt",
    "name": {
-    "en": "CLMDNT (review name)",
-    "vi": "CLMDNT (cần đặt tên)"
+    "en": "Calming Donut",
+    "vi": "Đệm Calming Donut"
    },
    "match": [
-    "^CLMDNT"
+    "^CLMDNT",
+    "^PKCTCV2Z"
    ],
    "names": [],
    "skus": []
@@ -148,7 +154,7 @@
     "^FCNT01",
     "^SLFRLL",
     "^EMRCRD",
-    "^Coffin$"
+    "^CNS$"
    ],
    "names": [],
    "skus": [
