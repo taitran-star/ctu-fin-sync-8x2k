@@ -1,8 +1,8 @@
 {
  "schema": 1,
  "currency": "USD",
- "updated_at": "2026-10-15",
- "note": "Ke hoach theo thang cho trang Dieu hanh (USD). Muc tong: net_revenue = doanh thu thuan muc tieu toan cong ty; marketing = tong chi quang cao muc tieu; orders, cm3 tuy chon. channels.<kenh>.gross_sales = doanh thu gop muc tieu cua kenh theo ngay dat hang (Amazon = 'Ordered product sales' nhu Seller Central). Thang/kenh chua dien = trang hien 'chua co ke hoach'. Them thang moi = them dong \"YYYY-MM\". cogs_estimate = gia von san pham UOC TINH theo % doanh thu thuan, dung cho den khi co COGS theo SKU; enabled=false de tat.",
+ "updated_at": "2026-10-16",
+ "note": "Ke hoach theo thang cho trang Dieu hanh (USD). Muc tong: net_revenue = doanh thu thuan muc tieu toan cong ty; marketing = tong chi quang cao muc tieu; orders, cm3 tuy chon. channels.<kenh>.gross_sales = doanh thu gop muc tieu cua kenh theo ngay dat hang (Amazon = 'Ordered product sales' nhu Seller Central); channels.<kenh>.net_sales = doanh thu THUAN muc tieu (gop - giam gia - hoan tien) - dung cho Shopify vi ke hoach Shopify lap tren doanh thu thuan (giam gia Shopify 40-50% nen khong so voi gop duoc). Moi kenh chi dien MOT trong hai; dashboard so theo dung co so do (cot 'Ke hoach' o ma tran kenh, nhip do thang, canh bao cham ke hoach). Thang/kenh chua dien = trang hien 'chua co ke hoach'. Them thang moi = them dong \"YYYY-MM\". cogs_estimate = gia von san pham UOC TINH theo % doanh thu thuan, dung cho den khi co COGS theo SKU; enabled=false de tat.",
  "cogs_estimate": {
   "enabled": true,
   "rate": 0.19,
@@ -21,7 +21,8 @@
      "gross_sales_2025": 309147
     },
     "shopify": {
-     "gross_sales": null
+     "gross_sales": null,
+     "net_sales": 510445
     },
     "walmart": {
      "gross_sales": null
@@ -43,7 +44,8 @@
      "gross_sales_2025": 178108
     },
     "shopify": {
-     "gross_sales": null
+     "gross_sales": null,
+     "net_sales": 466033
     },
     "walmart": {
      "gross_sales": null
@@ -65,7 +67,8 @@
      "gross_sales_2025": 185273
     },
     "shopify": {
-     "gross_sales": null
+     "gross_sales": null,
+     "net_sales": 508400
     },
     "walmart": {
      "gross_sales": null
@@ -87,7 +90,8 @@
      "gross_sales_2025": 190685
     },
     "shopify": {
-     "gross_sales": null
+     "gross_sales": null,
+     "net_sales": 571950
     },
     "walmart": {
      "gross_sales": null
@@ -109,7 +113,8 @@
      "gross_sales_2025": 178705
     },
     "shopify": {
-     "gross_sales": null
+     "gross_sales": null,
+     "net_sales": 402487
     },
     "walmart": {
      "gross_sales": null
@@ -131,7 +136,8 @@
      "gross_sales_2025": 156144
     },
     "shopify": {
-     "gross_sales": null
+     "gross_sales": null,
+     "net_sales": 402483
     },
     "walmart": {
      "gross_sales": null
@@ -153,7 +159,8 @@
      "gross_sales_2025": 399431
     },
     "shopify": {
-     "gross_sales": null
+     "gross_sales": null,
+     "net_sales": 635500
     },
     "walmart": {
      "gross_sales": null
@@ -175,7 +182,8 @@
      "gross_sales_2025": 459609
     },
     "shopify": {
-     "gross_sales": null
+     "gross_sales": null,
+     "net_sales": 847333
     },
     "walmart": {
      "gross_sales": null
@@ -197,7 +205,8 @@
      "gross_sales_2025": 395589
     },
     "shopify": {
-     "gross_sales": null
+     "gross_sales": null,
+     "net_sales": 1059167
     },
     "walmart": {
      "gross_sales": null
@@ -219,7 +228,8 @@
      "gross_sales_2025": 296312
     },
     "shopify": {
-     "gross_sales": null
+     "gross_sales": null,
+     "net_sales": 529583
     },
     "walmart": {
      "gross_sales": null
@@ -241,7 +251,8 @@
      "gross_sales_2025": 880804
     },
     "shopify": {
-     "gross_sales": null
+     "gross_sales": null,
+     "net_sales": 2542000
     },
     "walmart": {
      "gross_sales": null
@@ -263,7 +274,8 @@
      "gross_sales_2025": 1014024
     },
     "shopify": {
-     "gross_sales": null
+     "gross_sales": null,
+     "net_sales": 2118333
     },
     "walmart": {
      "gross_sales": null
@@ -275,5 +287,5 @@
    "note": ""
   }
  },
- "plans_note": "Amazon 2026 = 'Revenue FC by KA' (bang ke hoach Amazon 2026, tong $5.000.023; REV 2025 trong bang = $4.643.832, khop ordered_sales theo ngay dat ~ -3%). Shopify/Walmart/TikTok: chua co ke hoach."
+ "plans_note": "Amazon 2026 = 'Revenue FC by KA' (bang ke hoach Amazon 2026, tong $5.000.023, co so doanh thu gop/ordered sales; REV 2025 trong bang = $4.643.832, khop ordered_sales theo ngay dat ~ -3%). Shopify 2026 = 'Rev Target (Shopify)' trong bang ke hoach 2026 cua user (16/10/2026), tong $10.593.715, co so doanh thu thuan (T1-T2/2026 thuc te thuan = 91%/87% ke hoach; T4-T7 vuot 104-156%; T9 50%, T10 dang 39% MTD). Walmart/TikTok: chua co ke hoach. Ke hoach tong (net_revenue) chua nhap -> nhip do thang = Shopify (thuan) + Amazon (gop)."
 }

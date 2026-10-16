@@ -1,6 +1,1174 @@
 {
-  "updated_at": null,
-  "currency": "USD",
-  "note": "Giá vốn landed (FOB + cước + thuế nhập + đóng gói) theo SKU, lấy từ báo cáo tồn kho kế toán. Khoá = SKU đúng như trên Amazon/Shopify; code = mã nội bộ (tuỳ chọn); landed_cost = USD/unit; bundle hoặc multipack để landed_cost null và khai components = {\"SKU thành phần\": số lượng}. Dùng cho: vốn nằm trong tồn kho (trang Sản phẩm & tồn kho) và lãi theo sản phẩm (V9).",
-  "skus": {}
+ "updated_at": "2026-10-16",
+ "currency": "USD",
+ "note": "Giá vốn landed (EXW + thuế nhập + cước về kho, KHÔNG gồm phí FBA/ShipMonk) theo SKU, dựng 16/10/2026 từ BAO CAO TON KHO 08.2026 - ADD NHAP T9 (sheet Danh muc = ánh xạ SKU→mã nội bộ; sheet 08.2026 = tồn cuối theo lô → đơn giá bình quân; sheet nhapT9 = lô FBA tháng 9; khối GIÁ VỐN BỔ SUNG 31/8–6/9 = giá xuất kho kế toán). Khoá = SKU đúng như trên Amazon/Shopify; code = mã nội bộ; landed_cost = USD/unit; bundle để landed_cost null và khai components. basis = căn cứ từng dòng (dashboard bỏ qua). Lô FBA (Amazon) đắt hơn vì cước giao vào FBA ($4–6/unit); dashboard KHÔNG expense cước FBA inbound nữa (chỉ ghi memo) nên không tính 2 lần. Chưa có giá: Coffin, EMRCRD-*, CLMDNT-V1-4L-LGR. Tỷ lệ kiểm chứng 45 ngày (01/09–15/10): xem claude/cogs-opex-data-review.md.",
+ "skus": {
+  "PKCTCV-JMB-LGR": {
+   "code": "PKBJ",
+   "landed_cost": 10.01,
+   "basis": "kế toán: giá xuất Shopify 31/8–6/9 \"PKCTCV-JMB-\" $10,007 (tồn BQ PKBJ+PKB Jumbo $10.77)"
+  },
+  "PKCTCV-L-LGR": {
+   "code": "PKBL",
+   "landed_cost": 8.3,
+   "basis": "kế toán: giá xuất Shopify 31/8–6/9 \"PKCTCV-L-\" $8,3037 (tồn BQ $9,35 gồm lô FBA)"
+  },
+  "B8-4TJB-QMVG": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 9.18,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "PKCTCV-L-BL": {
+   "code": "PKBL",
+   "landed_cost": 8.3,
+   "basis": "kế toán: giá xuất Shopify 31/8–6/9 \"PKCTCV-L-\" $8,3037 (tồn BQ $9,35 gồm lô FBA)"
+  },
+  "PKCTCV-L-RNW": {
+   "code": "PKBL",
+   "landed_cost": 8.3,
+   "basis": "kế toán: giá xuất Shopify 31/8–6/9 \"PKCTCV-L-\" $8,3037 (tồn BQ $9,35 gồm lô FBA)"
+  },
+  "PKCTCV-L-DGR": {
+   "code": "PKBL",
+   "landed_cost": 8.3,
+   "basis": "kế toán: giá xuất Shopify 31/8–6/9 \"PKCTCV-L-\" $8,3037 (tồn BQ $9,35 gồm lô FBA)"
+  },
+  "V2-OVFX-6KWD": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 9.18,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "PKCTCV-JMB-DGR": {
+   "code": "PKBJ",
+   "landed_cost": 10.01,
+   "basis": "kế toán: giá xuất Shopify 31/8–6/9 \"PKCTCV-JMB-\" $10,007 (tồn BQ PKBJ+PKB Jumbo $10.77)"
+  },
+  "PKCTCV-JMB-BL": {
+   "code": "PKBJ",
+   "landed_cost": 10.01,
+   "basis": "kế toán: giá xuất Shopify 31/8–6/9 \"PKCTCV-JMB-\" $10,007 (tồn BQ PKBJ+PKB Jumbo $10.77)"
+  },
+  "SSWFFTR-12PCK": {
+   "code": "SSWFFTR-12PCK",
+   "landed_cost": 9.86,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "L7-9KT1-WRCT": {
+   "code": "PKBD",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 18.23,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "V3-YEBW-3SMV": {
+   "code": "PKBJ",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 12.7,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "BS-JYOW-7BE3": {
+   "code": "PKBJ",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 12.7,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "IC-QNJ4-XN1O": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 9.42,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "KH-Z7GA-9HM3": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 10.2,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "PKCTCV-JMB-BRWN": {
+   "code": "PKBJ",
+   "landed_cost": 10.01,
+   "basis": "kế toán: giá xuất Shopify 31/8–6/9 \"PKCTCV-JMB-\" $10,007 (tồn BQ PKBJ+PKB Jumbo $10.77)"
+  },
+  "PKCTCV-L-WHT": {
+   "code": "PKBL",
+   "landed_cost": 8.3,
+   "basis": "kế toán: giá xuất Shopify 31/8–6/9 \"PKCTCV-L-\" $8,3037 (tồn BQ $9,35 gồm lô FBA)"
+  },
+  "G9-Z1VY-6342": {
+   "code": "PKBD",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 18.23,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "H2-ZNNP-B1OA": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 10.2,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "SSWF-4L": {
+   "code": "SSWF-4L",
+   "landed_cost": 28.89,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "PKCTCV-JMB-RNW": {
+   "code": "PKBJ",
+   "landed_cost": 10.01,
+   "basis": "kế toán: giá xuất Shopify 31/8–6/9 \"PKCTCV-JMB-\" $10,007 (tồn BQ PKBJ+PKB Jumbo $10.77)"
+  },
+  "PKCTCV-JMB-RNG": {
+   "code": "PKBJ",
+   "landed_cost": 10.01,
+   "basis": "kế toán: giá xuất Shopify 31/8–6/9 \"PKCTCV-JMB-\" $10,007 (tồn BQ PKBJ+PKB Jumbo $10.77)"
+  },
+  "SSLB-4L": {
+   "code": "SSLB-4L",
+   "landed_cost": 102.32,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "PKCTCV-JMB-SG": {
+   "code": "PKBJ",
+   "landed_cost": 10.01,
+   "basis": "kế toán: giá xuất Shopify 31/8–6/9 \"PKCTCV-JMB-\" $10,007 (tồn BQ PKBJ+PKB Jumbo $10.77)"
+  },
+  "PKCTCV-L-RNG": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 8.3,
+   "basis": "kế toán: giá xuất Shopify 31/8–6/9 \"PKCTCV-L-\" $8,3037 (tồn BQ $9,35 gồm lô FBA)"
+  },
+  "PKCTCV-L-SG": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 8.3,
+   "basis": "kế toán: giá xuất Shopify 31/8–6/9 \"PKCTCV-L-\" $8,3037 (tồn BQ $9,35 gồm lô FBA)"
+  },
+  "PKCTCV-L-GRN": {
+   "code": "PKBL",
+   "landed_cost": 8.3,
+   "basis": "kế toán: giá xuất Shopify 31/8–6/9 \"PKCTCV-L-\" $8,3037 (tồn BQ $9,35 gồm lô FBA)"
+  },
+  "7V-V368-66DX": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 10.2,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "V9-XUV1-I830": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 9.42,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "PKCTCV-JMB-PNK": {
+   "code": "PKBJ",
+   "landed_cost": 10.01,
+   "basis": "kế toán: giá xuất Shopify 31/8–6/9 \"PKCTCV-JMB-\" $10,007 (tồn BQ PKBJ+PKB Jumbo $10.77)"
+  },
+  "UJ-BF1W-A3WA": {
+   "code": "PKBD",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 18.23,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "PKCTCV-JMB-WHT": {
+   "code": "PKBJ",
+   "landed_cost": 10.01,
+   "basis": "kế toán: giá xuất Shopify 31/8–6/9 \"PKCTCV-JMB-\" $10,007 (tồn BQ PKBJ+PKB Jumbo $10.77)"
+  },
+  "PKCTCV-JMB-BLCK": {
+   "code": "PKBJ",
+   "landed_cost": 10.01,
+   "basis": "kế toán: giá xuất Shopify 31/8–6/9 \"PKCTCV-JMB-\" $10,007 (tồn BQ PKBJ+PKB Jumbo $10.77)"
+  },
+  "PKCTCV2Z-L-DGR-2CVRS": {
+   "code": "PKCTCV2Z-L",
+   "landed_cost": 7.97,
+   "basis": "tồn BQ 7.064 units $7,97 (= \"PKCTCV-L-COLOR\" $7,9661 trong khối 31/8–6/9)"
+  },
+  "PKCTCV-L-BLCK": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 8.3,
+   "basis": "kế toán: giá xuất Shopify 31/8–6/9 \"PKCTCV-L-\" $8,3037 (tồn BQ $9,35 gồm lô FBA)"
+  },
+  "PKCTCV2Z-L-LGR-2CVRS": {
+   "code": "PKCTCV2Z-L",
+   "landed_cost": 7.97,
+   "basis": "tồn BQ 7.064 units $7,97 (= \"PKCTCV-L-COLOR\" $7,9661 trong khối 31/8–6/9)"
+  },
+  "1X-2PUV-K2KS": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 10.2,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "PKCTCV-L-BRWN": {
+   "code": "PKBL",
+   "landed_cost": 8.3,
+   "basis": "kế toán: giá xuất Shopify 31/8–6/9 \"PKCTCV-L-\" $8,3037 (tồn BQ $9,35 gồm lô FBA)"
+  },
+  "VU-U9DU-W262": {
+   "code": "VU-U9DU-W262",
+   "name": "Cattasaurus 135oz Wireless Cat Water Fountain, 304 Stainless Steel Aut",
+   "landed_cost": 31.14,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "PKCTCV-L-TN": {
+   "code": "PKBL",
+   "landed_cost": 8.3,
+   "basis": "kế toán: giá xuất Shopify 31/8–6/9 \"PKCTCV-L-\" $8,3037 (tồn BQ $9,35 gồm lô FBA)"
+  },
+  "50-8ROV-RORE": {
+   "code": "PKBJ",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 12.7,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "P1-J7MW-4YSA": {
+   "code": "PKBC",
+   "name": "CATTASAURUS Peekaboo Cat Cave for Multiple & Large Cats Up to 30-45 Lb",
+   "landed_cost": 19.5,
+   "basis": "tồn BQ 402 units (2 lô $13,42 / $21,88 — lệch lớn, cần kế toán xác nhận)"
+  },
+  "PKCTCV-L-PNK": {
+   "code": "PKBL",
+   "landed_cost": 8.3,
+   "basis": "kế toán: giá xuất Shopify 31/8–6/9 \"PKCTCV-L-\" $8,3037 (tồn BQ $9,35 gồm lô FBA)"
+  },
+  "PKCTCV-2J-LGR-5FRB": {
+   "code": "PKBJ",
+   "landed_cost": null,
+   "components": {
+    "PKCTCV-JMB-LGR": 2
+   },
+   "basis": "bundle"
+  },
+  "PKCTCV-JMB-GTHC": {
+   "code": "PKCTCV-JMB-GTHC",
+   "landed_cost": 11.37,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "42-86F6-WL9I": {
+   "code": "42-86F6-WL9I",
+   "name": "Cattasaurus 135oz Wireless Cat Water Fountain, 304 Stainless Steel Aut",
+   "landed_cost": 25.24,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "IS-5H4Z-M0HP": {
+   "code": "IS-5H4Z-M0HP",
+   "name": "Cattasaurus 135oz Wireless Cat Water Fountain, 304 Stainless Steel Aut",
+   "landed_cost": 27.95,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "PW-XTQW-SHLI": {
+   "code": "PW-XTQW-SHLI",
+   "name": "Cattasaurus 135oz Wireless Cat Water Fountain, 304 Stainless Steel Aut",
+   "landed_cost": 33.84,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "V3-493Q-SN07": {
+   "code": "PKBJ",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 12.7,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "JY-XI7Z-ZLWC": {
+   "code": "PKBJ2",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 25.26,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "BU-0BV2-LF0Y": {
+   "code": "PKBJ",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 12.7,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "PKCTCV-JMB-BOO": {
+   "code": "PKCTCV-JMB-BOO",
+   "landed_cost": 11.33,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "IS-LH8O-QIOH": {
+   "code": "PKBJ2",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 25.26,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "PKCTCV-JMB-LGR-2FRB": {
+   "code": "PKBJ",
+   "landed_cost": null,
+   "components": {
+    "PKCTCV-JMB-LGR": 1
+   },
+   "basis": "bundle"
+  },
+  "PKCTCV-3L-BL": {
+   "code": "PKBL",
+   "landed_cost": null,
+   "components": {
+    "PKCTCV-L-BL": 3
+   },
+   "basis": "bundle"
+  },
+  "PKCTCV-L-BL-2FRB": {
+   "code": "PKBL",
+   "landed_cost": null,
+   "components": {
+    "PKCTCV-L-BL": 1
+   },
+   "basis": "bundle"
+  },
+  "PKCTCV-L-GTHC": {
+   "code": "PKCTCV-L-GTHC",
+   "landed_cost": 7.77,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "0S-IQO6-IK83": {
+   "code": "PKBJ",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 12.7,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "G0-XFD9-2HZE": {
+   "code": "PKBC",
+   "landed_cost": 19.5,
+   "basis": "tồn BQ 402 units (2 lô $13,42 / $21,88 — lệch lớn, cần kế toán xác nhận)"
+  },
+  "PKCTCV-2L-BL-5FRB": {
+   "code": "PKBL",
+   "landed_cost": null,
+   "components": {
+    "PKCTCV-L-BL": 2
+   },
+   "basis": "bundle"
+  },
+  "Coffin": {
+   "code": "",
+   "landed_cost": null,
+   "basis": "CHƯA CÓ GIÁ VỐN trong sổ kho — kế toán bổ sung"
+  },
+  "VY-8D4I-M63D": {
+   "code": "VY-8D4I-M63D",
+   "name": "Cattasaurus 135oz Wireless Cat Water Fountain, 304 Stainless Steel Aut",
+   "landed_cost": 33.84,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "AP15": {
+   "code": "AP15",
+   "landed_cost": 4.74,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "SSWFFTR-48PCK": {
+   "code": "SSWFFTR-48PCK",
+   "landed_cost": 32.97,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "AP03": {
+   "code": "AP03",
+   "landed_cost": 0.93,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "SL-HXSA-WW6Y": {
+   "code": "SL-HXSA-WW6Y",
+   "name": "Cattasaurus 135oz Wireless Cat Water Fountain, 304 Stainless Steel Aut",
+   "landed_cost": 33.84,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "GX-JMC2-1DQY": {
+   "code": "GX-JMC2-1DQY",
+   "name": "Cattasaurus 135oz Wireless Cat Water Fountain, 304 Stainless Steel Aut",
+   "landed_cost": 27.95,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "T2-1TE2-IMZ3": {
+   "code": "T2-1TE2-IMZ3",
+   "name": "Cattasaurus 135oz Wireless Cat Water Fountain, 304 Stainless Steel Aut",
+   "landed_cost": 27.95,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "CP-A8FX-4LR5": {
+   "code": "PKBJ2",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 25.26,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "SSWFFTR-4PCK": {
+   "code": "SSWFFTR-4PCK",
+   "landed_cost": 2.81,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "SSWF-4L-90D": {
+   "code": "SSWF-4L-90D",
+   "landed_cost": 31.06,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "FCNT01": {
+   "code": "FCNT01",
+   "landed_cost": 1.51,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "PKCTCV-3L-LGR": {
+   "code": "PKBL",
+   "landed_cost": null,
+   "components": {
+    "PKCTCV-L-LGR": 3
+   },
+   "basis": "bundle"
+  },
+  "SSLB-L": {
+   "code": "SSLB-L",
+   "landed_cost": 26.09,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "PKCTCV2Z-2L-LGR-4CVRS": {
+   "code": "PKCTCV2Z-L",
+   "landed_cost": 15.94,
+   "basis": "bundle 2 × PKCTCV2Z-L $7,97"
+  },
+  "E9-5PHP-1Z4R": {
+   "code": "E9-5PHP-1Z4R",
+   "name": "Cattasaurus 135oz Wireless Cat Water Fountain, 304 Stainless Steel Aut",
+   "landed_cost": 29.92,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "SLFRLL": {
+   "code": "SLFRLL",
+   "landed_cost": 2.15,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "24-OEYE-RXV4": {
+   "code": "24-OEYE-RXV4",
+   "name": "Cattasaurus 135oz Wireless Cat Water Fountain, 304 Stainless Steel Aut",
+   "landed_cost": 29.92,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "amzn.gr.V2-OVFX-6KWD-wAXDGzziP_GCnhir-VG": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 9.18,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "PT07C": {
+   "code": "PT07C",
+   "landed_cost": 1.42,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "PKCTCV-3L-RNW": {
+   "code": "PKBL",
+   "landed_cost": null,
+   "components": {
+    "PKCTCV-L-RNW": 3
+   },
+   "basis": "bundle"
+  },
+  "AP14": {
+   "code": "AP14",
+   "landed_cost": 4.15,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "JE-GGV4-3IJB": {
+   "code": "JE-GGV4-3IJB",
+   "name": "Cattasaurus Quarterly Filter Refills, Patent-Pending 6-Layer Filtratio",
+   "landed_cost": 7.87,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "PKCTCV-2J-LGR": {
+   "code": "PKBJ",
+   "landed_cost": null,
+   "components": {
+    "PKCTCV-JMB-LGR": 2
+   },
+   "basis": "bundle"
+  },
+  "PKBKBD-M-DGR": {
+   "code": "PKBKBD-M-",
+   "landed_cost": 9.04,
+   "basis": "kế toán: giá xuất \"PKBKBD-M-DGR\" $9,0418 (31/8–6/9)"
+  },
+  "NOF-PLYBX-LGR": {
+   "code": "NOF-PLYBX-LGR",
+   "landed_cost": 4.04,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "B2-LLPU-44PW": {
+   "code": "PKBC",
+   "name": "Cattasaurus Peekaboo Cat Cave for Multiple & Large Cats Up to 30-45 Lb",
+   "landed_cost": 19.5,
+   "basis": "tồn BQ 402 units (2 lô $13,42 / $21,88 — lệch lớn, cần kế toán xác nhận)"
+  },
+  "amzn.gr.BS-JYOW-7BE3-hdDA9Ss2wwC_zEql-VG": {
+   "code": "PKBJ",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 12.7,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "PKBKBD-M-BG": {
+   "code": "PKBKBD-M-BG",
+   "landed_cost": 10.57,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "amzn.gr.B8-4TJB-QMVG-6_K0OILL_nT6TlhZ-VG": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 9.18,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "ZT-KQGA-P2QW": {
+   "code": "ZT-KQGA-P2QW",
+   "name": "Cattasaurus Monthly Filter Refills, Patent-Pending 6-Layer Filtration ",
+   "landed_cost": 2.85,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "AP03-DUO": {
+   "code": "AP03",
+   "landed_cost": null,
+   "components": {
+    "AP03": 2
+   },
+   "basis": "bundle"
+  },
+  "SSLB-2L": {
+   "code": "SSLB-2L",
+   "landed_cost": 51.5,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "PKCTCV2Z-2L-LGR-DGR-4CVRS": {
+   "code": "PKCTCV2Z-L",
+   "landed_cost": 15.94,
+   "basis": "bundle 2 × PKCTCV2Z-L $7,97"
+  },
+  "PKCTCV-3L-2LGR-DGR": {
+   "code": "PKBL",
+   "landed_cost": 24.9,
+   "basis": "bundle 3 × PKBL $8.3"
+  },
+  "YY-9WR7-4WPC": {
+   "code": "YY-9WR7-4WPC",
+   "name": "Cattasaurus 135oz Wireless Cat Water Fountain, 304 Stainless Steel Aut",
+   "landed_cost": 29.92,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "amzn.gr.V2-OVFX-6KWD-L_xy7kXIFb2cWKFz-LN": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 9.18,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "PKBKBD-M-LGR": {
+   "code": "PKBKBD-M-LGR",
+   "landed_cost": 10.57,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "PKBKBD-M-GRN": {
+   "code": "PKBKBD-M-GRN",
+   "landed_cost": 10.57,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "97-0EXG-TLJY": {
+   "code": "97-0EXG-TLJY",
+   "name": "Cattasaurus 135oz Wireless Cat Water Fountain, 304 Stainless Steel Aut",
+   "landed_cost": 27.21,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "PKCTCV-3L-DGR": {
+   "code": "PKBL",
+   "landed_cost": null,
+   "components": {
+    "PKCTCV-L-DGR": 3
+   },
+   "basis": "bundle"
+  },
+  "PKCTCV-3J-LGR": {
+   "code": "PKBJ",
+   "landed_cost": null,
+   "components": {
+    "PKCTCV-JMB-LGR": 3
+   },
+   "basis": "bundle"
+  },
+  "NOF-PLYBX-BG": {
+   "code": "NOF-PLYBX-BG",
+   "landed_cost": 4.04,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "PKBKBD-M-RNW": {
+   "code": "PKBKBD-M-RNW",
+   "landed_cost": 9.84,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "PKCTCV-2L-LGR": {
+   "code": "PKBL",
+   "landed_cost": null,
+   "components": {
+    "PKCTCV-L-LGR": 2
+   },
+   "basis": "bundle"
+  },
+  "AP03-TRIO": {
+   "code": "AP03",
+   "landed_cost": null,
+   "components": {
+    "AP03": 3
+   },
+   "basis": "bundle"
+  },
+  "amzn.gr.BS-JYOW-7BE3-OBtvOgM2Qwrt07TL-LN": {
+   "code": "PKBJ",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 12.7,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "PKCTCV2Z-2L-DGR-4CVRS": {
+   "code": "PKCTCV2Z-L",
+   "landed_cost": 15.94,
+   "basis": "bundle 2 × PKCTCV2Z-L $7,97"
+  },
+  "PKCTCV-3L-LGR-DGR-BL": {
+   "code": "PKBL",
+   "landed_cost": 24.9,
+   "basis": "bundle 3 × PKBL $8.3"
+  },
+  "PKCTCV-3L-2LGR-BL": {
+   "code": "PKBL",
+   "landed_cost": 24.9,
+   "basis": "bundle 3 × PKBL $8.3"
+  },
+  "PKCTCV-2J-GTHC": {
+   "code": "PKBJ",
+   "landed_cost": null,
+   "components": {
+    "PKCTCV-JMB-GTHC": 2
+   },
+   "basis": "bundle"
+  },
+  "PKCTCV-2L-LGR-DGR": {
+   "code": "PKBL",
+   "landed_cost": 16.6,
+   "basis": "bundle 2 × PKBL $8.3"
+  },
+  "PKCTCV-6L-BL": {
+   "code": "PKBL",
+   "landed_cost": null,
+   "components": {
+    "PKCTCV-L-BL": 6
+   },
+   "basis": "bundle"
+  },
+  "CLMDNT-V1-4L-LGR": {
+   "code": "",
+   "landed_cost": null,
+   "basis": "CHƯA CÓ GIÁ VỐN trong sổ kho — kế toán bổ sung"
+  },
+  "amzn.gr.1X-2PUV-K2KS-R7uGzI6Mqfv6G2B0-VG": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 10.2,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.IS-LH8O-QIOH-I47OhwcsoCCiwrfs-VG": {
+   "code": "PKBJ2",
+   "landed_cost": 25.26,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.G9-Z1VY-6342-DGYptEQpD9VNkH7a-VG": {
+   "code": "PKBD",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 18.23,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.KH-Z7GA-9HM3-wChae_KVJTeDMdTL-VG": {
+   "code": "PKBL",
+   "landed_cost": 10.2,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.B8-4TJB-QMVG-HCFqpPbKsQ8ig4Uv-VG": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 9.18,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "PKCTCV-3L-2DGR-LGR": {
+   "code": "PKBL",
+   "landed_cost": 24.9,
+   "basis": "bundle 3 × PKBL $8.3"
+  },
+  "PKCTCV-2J-LGR-BL": {
+   "code": "PKBJ",
+   "landed_cost": 20.02,
+   "basis": "bundle 2 × PKBJ $10.01"
+  },
+  "amzn.gr.BS-JYOW-7BE3-4InlgmoeVdLf-0CR-LN": {
+   "code": "PKBJ",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 12.7,
+   "basis": "biến thể Amazon (amzn.gr.) của BS-JYOW-7BE3"
+  },
+  "amzn.gr.V3-YEBW-3SMV-owIGPBKBZp5d_C0Y-VG": {
+   "code": "PKBJ",
+   "landed_cost": 12.7,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.V2-OVFX-6KWD-bpsuPjGaNcGV7c3q-VG": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 9.18,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "PKCTCV-2J-BOO": {
+   "code": "PKBJ",
+   "landed_cost": null,
+   "components": {
+    "PKCTCV-JMB-BOO": 2
+   },
+   "basis": "bundle"
+  },
+  "PKCTCV-2J-DGR": {
+   "code": "PKBJ",
+   "landed_cost": null,
+   "components": {
+    "PKCTCV-JMB-DGR": 2
+   },
+   "basis": "bundle"
+  },
+  "PKCTCV-2J-LGR-DGR": {
+   "code": "PKBJ",
+   "landed_cost": 20.02,
+   "basis": "bundle 2 × PKBJ $10.01"
+  },
+  "amzn.gr.L7-9KT1-WRCT-yEscFxbJambdskwR-VG": {
+   "code": "PKBD",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 18.23,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.V9-XUV1-I830-YPQYEJd4HE8FeuIc-VG": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 9.42,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.UJ-BF1W-A3WA-NeXOaukiZiULQGd6-VG": {
+   "code": "PKBD",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 18.23,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.BS-JYOW-7BE3-Xjw-Xc80MohAzfTB-VG": {
+   "code": "PKBJ",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 12.7,
+   "basis": "biến thể Amazon (amzn.gr.) của BS-JYOW-7BE3"
+  },
+  "PKBKBD-M-GTHC": {
+   "code": "PKBKBD-M-GTHC",
+   "landed_cost": 14.85,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "amzn.gr.KH-Z7GA-9HM3-3ODl0g37y93FZk0e-LN": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 10.2,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.V2-OVFX-6KWD-eRr5m_4J9djLIYN7-LN": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 9.18,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.B8-4TJB-QMVG-NmiUYXK7CdBstexp-VG": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 9.18,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "Z9-1GVT-BATX": {
+   "code": "AP14",
+   "landed_cost": 4.15,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "PKCTCV-2L-DGR": {
+   "code": "PKBL",
+   "landed_cost": null,
+   "components": {
+    "PKCTCV-L-DGR": 2
+   },
+   "basis": "bundle"
+  },
+  "PKCTCV-6L-RNW": {
+   "code": "PKBL",
+   "landed_cost": null,
+   "components": {
+    "PKCTCV-L-RNW": 6
+   },
+   "basis": "bundle"
+  },
+  "PKCTCV-2L-LGR-BL": {
+   "code": "PKBL",
+   "landed_cost": 16.6,
+   "basis": "bundle 2 × PKBL $8.3"
+  },
+  "PKCTCV-3L-2BL-RNW": {
+   "code": "PKBL",
+   "landed_cost": 24.9,
+   "basis": "bundle 3 × PKBL $8.3"
+  },
+  "PT07C-DUO": {
+   "code": "PT07C",
+   "landed_cost": null,
+   "components": {
+    "PT07C": 2
+   },
+   "basis": "bundle"
+  },
+  "PKCTCV-3J-BL": {
+   "code": "PKBJ",
+   "landed_cost": null,
+   "components": {
+    "PKCTCV-JMB-BL": 3
+   },
+   "basis": "bundle"
+  },
+  "amzn.gr.1X-2PUV-K2KS-cDrxFTyA1L7_CIIP-LN": {
+   "code": "PKBL",
+   "landed_cost": 10.2,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "SSWFFTR-48PCK-SSWF-4L": {
+   "code": "SSWF-4L+SSWFFTR-48PCK",
+   "landed_cost": null,
+   "components": {
+    "SSWF-4L": 1,
+    "SSWFFTR-48PCK": 1
+   },
+   "basis": "bundle đài phun + 48 lõi lọc"
+  },
+  "amzn.gr.H2-ZNNP-B1OA-W8SmIzMuoBozsnKE-VG": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 10.2,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.V3-YEBW-3SMV-SbPygeO-KxN788oV-LN": {
+   "code": "PKBJ",
+   "landed_cost": 12.7,
+   "basis": "biến thể Amazon (amzn.gr.) của V3-YEBW-3SMV"
+  },
+  "amzn.gr.IS-LH8O-QIOH-HV2Qttcg8kh6G31Z-VG": {
+   "code": "PKBJ2",
+   "landed_cost": 25.26,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.IS-LH8O-QIOH-ItVrHd5niGbb_VQu-VG": {
+   "code": "PKBJ2",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 25.26,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.V3-YEBW-3SMV-p8LWrIQAQMP669J2-VG": {
+   "code": "PKBJ",
+   "landed_cost": 12.7,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.50-8ROV-RORE-2dsCgd_zA0rgNL-r-VG": {
+   "code": "PKBJ",
+   "landed_cost": 12.7,
+   "basis": "biến thể Amazon (amzn.gr.) của 50-8ROV-RORE"
+  },
+  "amzn.gr.L7-9KT1-WRCT-GG3aDgsdGd8cg7AO-LN": {
+   "code": "PKBD",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 18.23,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "PKCTCV-2J-BL-BRWN": {
+   "code": "PKBJ",
+   "landed_cost": 20.02,
+   "basis": "bundle 2 × PKBJ $10.01"
+  },
+  "amzn.gr.IC-QNJ4-XN1O-fHyoshfqjJnPdybo-VG": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 9.42,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "SSWFFTR-12PCK-90D": {
+   "code": "SSWFFTR-12PCK",
+   "landed_cost": 9.86,
+   "basis": "coi như SSWFFTR-12PCK (gói 90 ngày) — kế toán xác nhận"
+  },
+  "PKCTCV-2J-DGR-BL": {
+   "code": "PKBJ",
+   "landed_cost": 20.02,
+   "basis": "bundle 2 × PKBJ $10.01"
+  },
+  "PKCTCV-2J-DGR-RNW": {
+   "code": "PKBJ",
+   "landed_cost": 20.02,
+   "basis": "bundle 2 × PKBJ $10.01"
+  },
+  "NOF-3CND-BG": {
+   "code": "NOF-3CND-BG",
+   "landed_cost": 29.66,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "amzn.gr.B8-4TJB-QMVG-jURsfSaklWBGuZix-LN": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 9.18,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.V2-OVFX-6KWD-zAYHLqwLAENBBkEL-LN": {
+   "code": "PKBL",
+   "landed_cost": 9.18,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.H2-ZNNP-B1OA-6wzU-aI2HHl_7y-B-LN": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 10.2,
+   "basis": "biến thể Amazon (amzn.gr.) của H2-ZNNP-B1OA"
+  },
+  "amzn.gr.KH-Z7GA-9HM3-DbaDXI1wCh9vYr3D-VG": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 10.2,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.V2-OVFX-6KWD-zAYHLqwLAENBBkEL-VG": {
+   "code": "PKBL",
+   "landed_cost": 9.18,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "AP14-DUO": {
+   "code": "AP14",
+   "landed_cost": null,
+   "components": {
+    "AP14": 2
+   },
+   "basis": "bundle"
+  },
+  "CLMDNT-V1-2L-DGR": {
+   "code": "CLMDNT-V1-2L-DGR",
+   "landed_cost": 7.76,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "CLMDNT-V1-2L-LGR": {
+   "code": "CLMDNT-V1-2L-LGR",
+   "landed_cost": 9.29,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "amzn.gr.V9-XUV1-I830-RpVbSi_P-koOHAeb-LN": {
+   "code": "PKBL",
+   "landed_cost": 9.42,
+   "basis": "biến thể Amazon (amzn.gr.) của V9-XUV1-I830"
+  },
+  "PKCTCV-2L-TN": {
+   "code": "PKBL",
+   "landed_cost": null,
+   "components": {
+    "PKCTCV-L-TN": 2
+   },
+   "basis": "bundle"
+  },
+  "PKCTCV-2L-GTHC": {
+   "code": "PKBL",
+   "landed_cost": null,
+   "components": {
+    "PKCTCV-L-GTHC": 2
+   },
+   "basis": "bundle"
+  },
+  "PKCTCV-2L-DGR-RNW": {
+   "code": "PKBL",
+   "landed_cost": 16.6,
+   "basis": "bundle 2 × PKBL $8.3"
+  },
+  "PT07C-TRIO": {
+   "code": "PT07C",
+   "landed_cost": null,
+   "components": {
+    "PT07C": 3
+   },
+   "basis": "bundle"
+  },
+  "amzn.gr.UJ-BF1W-A3WA-ePReG7wfPBxV4yjm-VG": {
+   "code": "PKBD",
+   "landed_cost": 18.23,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.UJ-BF1W-A3WA-SJd0cGn4a_QW5-JP-VG": {
+   "code": "PKBD",
+   "landed_cost": 18.23,
+   "basis": "biến thể Amazon (amzn.gr.) của UJ-BF1W-A3WA"
+  },
+  "PKCTCV-3L-2BL-LGR": {
+   "code": "PKBL",
+   "landed_cost": 24.9,
+   "basis": "bundle 3 × PKBL $8.3"
+  },
+  "SSWF-PMP": {
+   "code": "SSWF-PMP",
+   "landed_cost": 3.38,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "PKCTCV-2L-LGR-5FRB": {
+   "code": "PKBL",
+   "landed_cost": null,
+   "components": {
+    "PKCTCV-L-LGR": 2
+   },
+   "basis": "bundle"
+  },
+  "amzn.gr.0S-IQO6-IK83-42X2hws_CkxKRvaO-VG": {
+   "code": "PKBJ",
+   "landed_cost": 12.7,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.V3-YEBW-3SMV-JWhPhVSlv5WqG3Hf-LN": {
+   "code": "PKBJ",
+   "landed_cost": 12.7,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.V3-YEBW-3SMV-owIGPBKBZp5d_C0Y-LN": {
+   "code": "PKBJ",
+   "landed_cost": 12.7,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.BS-JYOW-7BE3-BtIHFAQQN0uXSgOG-VG": {
+   "code": "PKBJ",
+   "landed_cost": 12.7,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.CP-A8FX-4LR5-qx3B3mcwkktDLyKs-VG": {
+   "code": "PKBJ2",
+   "landed_cost": 25.26,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.CP-A8FX-4LR5-wFZuEbz1GmYmLPTb-VG": {
+   "code": "PKBJ2",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 25.26,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.BU-0BV2-LF0Y-RjT68dA-R4BzZBEi-VG": {
+   "code": "PKBJ",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 12.7,
+   "basis": "biến thể Amazon (amzn.gr.) của BU-0BV2-LF0Y"
+  },
+  "amzn.gr.BU-0BV2-LF0Y-STnLMl2rm6E7VBRU-GD": {
+   "code": "PKBJ",
+   "landed_cost": 12.7,
+   "basis": "biến thể Amazon (amzn.gr.) của BU-0BV2-LF0Y"
+  },
+  "amzn.gr.BU-0BV2-LF0Y-C0D7KO1yXe8plSP3-GD": {
+   "code": "PKBJ",
+   "landed_cost": 12.7,
+   "basis": "biến thể Amazon (amzn.gr.) của BU-0BV2-LF0Y"
+  },
+  "amzn.gr.BS-JYOW-7BE3-ngWa0CMnU9aBSdt--LN": {
+   "code": "PKBJ",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 12.7,
+   "basis": "biến thể Amazon (amzn.gr.) của BS-JYOW-7BE3"
+  },
+  "amzn.gr.IC-QNJ4-XN1O-IHh6MHlb0Li3G2_H-VG": {
+   "code": "PKBL",
+   "landed_cost": 9.42,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.BS-JYOW-7BE3-IAyCxxbEb-xEuzTe-VG": {
+   "code": "PKBJ",
+   "landed_cost": 12.7,
+   "basis": "biến thể Amazon (amzn.gr.) của BS-JYOW-7BE3"
+  },
+  "amzn.gr.B8-4TJB-QMVG-NmiUYXK7CdBstexp-LN": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 9.18,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.7V-V368-66DX-2_9Cid7X2mlCVMA8-LN": {
+   "code": "PKBL",
+   "landed_cost": 10.2,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.H2-ZNNP-B1OA-c8Mnkz42GO3BxRQv-LN": {
+   "code": "PKBL",
+   "landed_cost": 10.2,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.7V-V368-66DX-uU7IAbKpFw5IUVe9-LN": {
+   "code": "PKBL",
+   "landed_cost": 10.2,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.IC-QNJ4-XN1O-dlHqPplmz5T3K2dq-LN": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 9.42,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.IC-QNJ4-XN1O-SoIER-bYARvYP5Wt-LN": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 9.42,
+   "basis": "biến thể Amazon (amzn.gr.) của IC-QNJ4-XN1O"
+  },
+  "amzn.gr.1X-2PUV-K2KS-7w1Fc1evPcrCJKud-VG": {
+   "code": "PKBL",
+   "landed_cost": 10.2,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.7V-V368-66DX-K6H_tCzioZ3UYGfU-VG": {
+   "code": "PKBL",
+   "landed_cost": 10.2,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.V2-OVFX-6KWD-N5NbM7lU3GjPynFA-VG": {
+   "code": "PKBL",
+   "landed_cost": 9.18,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.H2-ZNNP-B1OA-k4R6x1_D6Nb2uNNN-VG": {
+   "code": "PKBL",
+   "landed_cost": 10.2,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "SSWF-CNK": {
+   "code": "SSWF-CNK",
+   "landed_cost": 6.03,
+   "basis": "tồn BQ sổ kho 08.2026 (+nhập T9)"
+  },
+  "amzn.gr.V9-XUV1-I830-HbHztFtsOry9eLkj-VG": {
+   "code": "PKBL",
+   "landed_cost": 9.42,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.V9-XUV1-I830-lRllNw2DFYIdzcuJ-VG": {
+   "code": "PKBL",
+   "landed_cost": 9.42,
+   "basis": "lô FBA JHQ326-03 (nhapT9) landed/unit"
+  },
+  "amzn.gr.B8-4TJB-QMVG-wrlqo0KPRDbQHspb-GD": {
+   "code": "PKBL",
+   "name": "Cattasaurus 4-in-1 Peekaboo Cat Cave, Donut Tunnel, Self Warming Bed &",
+   "landed_cost": 9.18,
+   "basis": "biến thể Amazon (amzn.gr.) của B8-4TJB-QMVG"
+  },
+  "EMRCRD-4": {
+   "code": "",
+   "landed_cost": null,
+   "basis": "CHƯA CÓ GIÁ VỐN trong sổ kho — kế toán bổ sung"
+  },
+  "EMRCRD-1": {
+   "code": "",
+   "landed_cost": null,
+   "basis": "CHƯA CÓ GIÁ VỐN trong sổ kho — kế toán bổ sung"
+  }
+ }
 }
