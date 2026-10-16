@@ -27,6 +27,21 @@ Optional env vars:
   ORDERS_REPORT          1 (default) = also pull GET_FLAT_FILE_ALL_ORDERS_DATA_BY_ORDER_DATE_GENERAL
                          (Reports API, role "Inventory and Order Tracking"); 0 = Finances only
   ORDERS_REPORT_CHUNK_DAYS  days per report request (default 30 -> 2 reports for 45 days)
+
+Per-SKU units + order funnel (v2.8, additive - every earlier field keeps its exact value): each daily
+row inside the published range also carries
+  sku_units {sku: units}, sku_sales {sku: item-price sum}  - All Orders report lines by PURCHASE day,
+            Amazon.com channel, cancelled lines excluded (same rows as ordered_units / ordered_sales,
+            so the per-day sums match them to the cent);
+  sku_refund_units {sku: units}  - Finances RefundEvent (and chargeback / A-to-z claim events, which
+            `refunds` also contains) ShipmentItemAdjustmentList.QuantityShipped on the POSTED day,
+            the day `refunds` is booked on;
+  orders_placed / orders_fulfilled / orders_partially_fulfilled / orders_cancelled  - distinct
+            Amazon.com order ids of the report by purchase day and order-status (Shipped /
+            PartiallyShipped / Cancelled) at report time; orders_placed - orders_cancelled =
+            ordered_orders unless an order has every line item-cancelled without being cancelled.
+  SKU = raw seller SKU, trimmed; empty -> "(no sku)". meta.schema_info {sku_units_since,
+  statuses_since} = first day in the file that carries these keys; older history days lack them.
 """
 import base64
 import csv
@@ -181,6 +196,54 @@ FEE_MAP = {"mapped_orders": set(), "unmapped_orders": set(), "unmapped_amount": 
 ORDER_LINES = {}         # amazon-order-id -> [ {day, sku, qty, price, afn} ] from the All Orders report (Amazon.com, not cancelled)
 POSTED_UNITS = {}        # (order id, sku) -> units whose ShipmentEvent fees are posted
 SKU_STATS = {}           # sku -> {"units", "fba", "commission", "principal"} from posted ShipmentItemList (the real fee per SKU)
+
+# ---------------------------------------------------------------- v2.8: per-SKU units + order funnel
+# These keys live INSIDE the daily rows next to the earlier fields but are deliberately kept out of
+# DAILY_FIELDS, so sum_range() (the totals block), compute_net_sales() and every earlier computation
+# stay byte-for-byte what they were. Older history days lack them (history_merge keeps old rows as-is).
+SKU_FIELDS = ["sku_units", "sku_sales"]          # from the All Orders report (purchase day)
+SKU_REFUND_FIELD = "sku_refund_units"            # from the Finances refund events (posted day)
+STATUS_FIELDS = ["orders_placed", "orders_fulfilled", "orders_partially_fulfilled", "orders_cancelled"]   # from the report
+NO_SKU = "(no sku)"
+SKU_COUNTS = {"report_lines": 0, "report_lines_without_sku": 0, "report_lines_zero_qty": 0,
+              "refund_items": 0, "refund_items_without_qty": 0, "refund_items_without_sku": 0}
+
+
+def sku_key(sku):
+    """Raw seller SKU, trimmed; empty / missing / non-string -> "(no sku)"."""
+    s = sku.strip() if isinstance(sku, str) else ""
+    return s or NO_SKU
+
+
+def add_sku_fields(d):
+    """Add the v2.8 keys (empty per-SKU dicts, zero counters) to a daily row; existing keys untouched.
+    The report-derived keys exist only when the report is enabled (otherwise the script cannot know them)."""
+    d.setdefault(SKU_REFUND_FIELD, {})
+    if ORDERS_REPORT:
+        for f in SKU_FIELDS:
+            d.setdefault(f, {})
+        for f in STATUS_FIELDS:
+            d.setdefault(f, 0)
+    return d
+
+
+def finalise_sku_fields(daily):
+    """Every published day carries the keys (an empty dict = "no units", a missing key = "no data");
+    sku_sales rounded like the money fields."""
+    for d in daily.values():
+        add_sku_fields(d)
+        for k in list(d.get("sku_sales") or {}):
+            d["sku_sales"][k] = round(d["sku_sales"][k], 2)
+
+
+def schema_info(daily):
+    """meta.schema_info: the first day in the (merged) file that carries the v2.8 keys, so the
+    dashboard can show "no data yet" before it. Days after that date can still lack the keys (a
+    backfill chunk run with an older script), so a missing key always means "unknown"."""
+    sku_days = [day for day, row in daily.items() if isinstance(row, dict) and "sku_units" in row]
+    status_days = [day for day, row in daily.items() if isinstance(row, dict) and "orders_placed" in row]
+    return {"sku_units_since": min(sku_days) if sku_days else None,
+            "statuses_since": min(status_days) if status_days else None}
 
 
 # ---------------------------------------------------------------- history (shared block)
@@ -478,12 +541,31 @@ def process_shipment_event(ev, daily, warnings):
     return order_ids
 
 
+def _add_refund_units(d, item):
+    """v2.8: units refunded per SKU on the refund's posted day (ShipmentItem.QuantityShipped is the
+    refunded quantity in refund events; an item without it is counted in meta.sku_counts, not guessed)."""
+    SKU_COUNTS["refund_items"] += 1
+    try:
+        qty = int(item.get("QuantityShipped") or 0)
+    except (TypeError, ValueError):
+        qty = 0
+    if qty <= 0:
+        SKU_COUNTS["refund_items_without_qty"] += 1
+        return
+    key = sku_key(item.get("SellerSKU"))
+    if key == NO_SKU:
+        SKU_COUNTS["refund_items_without_sku"] += 1
+    units = add_sku_fields(d)[SKU_REFUND_FIELD]
+    units[key] = units.get(key, 0) + qty
+
+
 def process_refund_event(ev, daily, warnings):
     dk = event_day(ev)
     if not dk:
         return
     d = daily.setdefault(dk, new_daily_bucket())
     for item in ev.get("ShipmentItemAdjustmentList", []) or []:
+        _add_refund_units(d, item)
         for charge in item.get("ItemChargeAdjustmentList", []) or []:
             ctype = charge.get("ChargeType")
             v = amt(charge.get("ChargeAmount"))
@@ -796,6 +878,24 @@ def _num(v):
         return 0.0
 
 
+def _count_order_status(daily, stats, order_id, day, status):
+    """v2.8 order funnel: each Amazon.com order id once, on its purchase day, by the report's
+    order-status (Shipped / PartiallyShipped / Cancelled / Pending / Unshipped / Shipping)."""
+    seen = stats.setdefault("_status_seen", {})
+    if seen.get(order_id) == day:
+        return
+    seen[order_id] = day
+    d = add_sku_fields(daily.setdefault(day, new_daily_bucket()))
+    d["orders_placed"] += 1
+    s = status.lower().replace(" ", "")
+    if s == "shipped":
+        d["orders_fulfilled"] += 1
+    elif s == "partiallyshipped":
+        d["orders_partially_fulfilled"] += 1
+    elif s in ("cancelled", "canceled"):
+        d["orders_cancelled"] += 1
+
+
 def ingest_orders_report(tsv_text, daily, warnings, stats):
     """Fold report rows (one per order line) into daily[order_day].ordered_*."""
     if not tsv_text or not tsv_text.strip():
@@ -822,6 +922,11 @@ def ingest_orders_report(tsv_text, daily, warnings, stats):
         order_id = (row.get("amazon-order-id") or "").strip()
         if order_id:
             ORDER_DAYS[order_id] = day        # fees of this order (whenever it ships) are booked on this day
+        # v2.8 funnel: counted BEFORE the cancelled skip (a cancelled order is placed + cancelled),
+        # Amazon.com channel only, inside the published range (same scope as ordered_orders)
+        if order_id and (row.get("sales-channel") or "").strip().lower() != "non-amazon" \
+                and not (KEEP_RANGE[0] and (day < KEEP_RANGE[0] or day > KEEP_RANGE[1])):
+            _count_order_status(daily, stats, order_id, day, status)
         if cancelled:
             stats["cancelled_lines"] = stats.get("cancelled_lines", 0) + 1
             continue
@@ -845,6 +950,18 @@ def ingest_orders_report(tsv_text, daily, warnings, stats):
         add(d, "ordered_shipping", _num(row.get("shipping-price")) + _num(row.get("gift-wrap-price")))
         add(d, "ordered_promotions", _num(row.get("item-promotion-discount")) + _num(row.get("ship-promotion-discount")))
         add(d, "ordered_units", qty)
+        # v2.8: the same line, per SKU (item-price is the LINE total, so sku_sales sums it as-is;
+        # per day: sum(sku_units) == ordered_units and sum(sku_sales) == ordered_sales)
+        skey = sku_key(row.get("sku"))
+        SKU_COUNTS["report_lines"] += 1
+        if skey == NO_SKU:
+            SKU_COUNTS["report_lines_without_sku"] += 1
+        add_sku_fields(d)
+        if qty > 0:
+            d["sku_units"][skey] = d["sku_units"].get(skey, 0) + qty
+        else:
+            SKU_COUNTS["report_lines_zero_qty"] += 1
+        d["sku_sales"][skey] = d["sku_sales"].get(skey, 0.0) + _num(price_raw)
         if order_id:
             ORDER_LINES.setdefault(order_id, []).append({
                 "day": day, "sku": (row.get("sku") or "").strip(), "qty": qty, "price": _num(price_raw),
@@ -914,6 +1031,7 @@ def fetch_orders_by_order_date(access_token, window_start, window_end, daily, wa
         stats["rows"] += ingest_orders_report(text, daily, warnings, stats)
         chunk_start = chunk_end
     stats.pop("_order_days", None)
+    stats.pop("_status_seen", None)   # v2.8 working set, never published
     stats["complete"] = ok
     return stats
 
@@ -1073,6 +1191,7 @@ def main():
         if k <= today_key:
             daily.setdefault(k, new_daily_bucket())
     compute_net_sales(daily)
+    finalise_sku_fields(daily)   # v2.8: every published day carries the per-SKU / funnel keys (empty when nothing happened)
     pending_stats, sku_rates = book_pending_fees(daily, today_key)
     log(f"Pending fees (orders since {pending_stats['since']} not yet posted by Amazon): {pending_stats['orders']} orders / "
         f"{pending_stats['units']} units -> FBA {pending_stats['fba']:.2f} + referral {pending_stats['referral']:.2f} expected, "
@@ -1114,7 +1233,10 @@ def main():
             "events_processed": total_events,
             "warnings": sorted(warnings),
             "schema": 5,   # 2 = other_fees + giftwrap_credits + diagnostics; 3 = ordered_* fields by order date; 4 = ordered_* fees + monthly storage; 5 = *_pending expected fees per SKU
-            "script_version": "2.7",   # 2.4 = All Orders report; 2.5 = history + backfill; 2.6 = fees by order date, FBA storage by month stored; 2.7 = pending fees priced per SKU
+                           # (kept at 5 in v2.8: the dashboard compares it numerically; the per-SKU / funnel keys are announced by schema_info)
+            "script_version": "2.8",   # 2.4 = All Orders report; 2.5 = history + backfill; 2.6 = fees by order date, FBA storage by month stored; 2.7 = pending fees priced per SKU; 2.8 = sku_units / sku_sales / sku_refund_units + order status counters per day
+            "schema_info": schema_info(daily),   # v2.8 (additive): first day carrying the per-SKU / funnel keys
+            "sku_counts": dict(SKU_COUNTS),      # v2.8: report lines / refund items read for them, and the ones without SKU or quantity
             "history": hist,
             "orders_report": orders_stats,
             "sales_basis": {

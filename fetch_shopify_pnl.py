@@ -140,6 +140,22 @@ rolling run, which rebuilds every day of the window.
   GOOGLE_ADS_HANDLE_SUFFIX  product-handle suffix of the Google-Ads-only product pages (default -gg)
   JOURNEY_BATCH             orders per moments request, default 15 (auto-halves on cost errors)
   MOMENTS_FIRST             sessions read per order in that pass, default 25
+
+Order funnel + per-SKU units (v2.0, additive - every v1.9 field keeps its exact value): each daily
+row inside the fetched window also carries
+  orders_placed / orders_paid / orders_fulfilled / orders_partially_fulfilled / orders_cancelled /
+  orders_refunded  - integer counts of the orders CREATED that day, by their status at fetch time
+            (displayFinancialStatus / displayFulfillmentStatus / cancelledAt / refunds). Test orders
+            are skipped like everywhere else; orders_placed - orders = cancelled orders whose
+            financial status is VOIDED (cancelled before any money moved, never a sale).
+  sku_units {sku: units}, sku_sales {sku: pre-discount amount} - Order.lineItems of the same orders
+            that make up `orders`, on the ORDER day (edit additions stay on the order day here);
+            sku_refund_units {sku: units} - Refund.refundLineItems on the REFUND day, like refunded_total.
+            SKU = raw Shopify SKU, trimmed; empty -> "(no sku)". Tip lines are skipped (not sales).
+  meta.schema_info {sku_units_since, statuses_since} = first day in the file that carries these keys;
+  older history days simply lack them (the dashboard must treat a missing key as "no data yet").
+  LINE_ITEMS_FIRST          line items per order in the orders query, default 50 (auto-halves on cost
+                            errors); orders with more get their remaining pages in a small extra pass
 """
 import json
 import os
@@ -156,8 +172,9 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "1.9"
-SCHEMA = 3   # 3 = daily "attribution" block (customer-journey last-touch channels)
+SCRIPT_VERSION = "2.0"   # 2.0 = order funnel counters + per-SKU units / sales / refund units per day (additive)
+SCHEMA = 3   # 3 = daily "attribution" block (customer-journey last-touch channels). Kept at 3 on purpose: the
+             # dashboard compares it numerically; the v2.0 keys are announced by meta.schema_info instead.
 
 SHOP = os.environ.get("SHOPIFY_SHOP", "").strip().lower().replace("https://", "").rstrip("/")
 API_VERSION = os.environ.get("SHOPIFY_API_VERSION", "2026-07").strip()
@@ -193,6 +210,43 @@ DAILY_FIELDS = [
 ]
 MONEY_FIELDS = [f for f in DAILY_FIELDS if f not in ("orders", "snowball_orders", "payment_fees_orders", "fees_missing_orders")]
 FEE_KINDS = {"SALE", "CAPTURE"}   # transaction kinds that carry Shopify Payments processing fees
+
+# ---------------------------------------------------------------- v2.0: order funnel + per-SKU units
+# These keys live INSIDE the daily rows next to the v1.9 fields but are deliberately kept out of
+# DAILY_FIELDS / MONEY_FIELDS so sum_range() (the totals block) and every v1.9 computation stay
+# byte-for-byte what they were. Older history days lack them (history_merge keeps old rows as-is).
+FUNNEL_FIELDS = ["orders_placed", "orders_paid", "orders_fulfilled", "orders_partially_fulfilled",
+                 "orders_cancelled", "orders_refunded"]
+SKU_FIELDS = ["sku_units", "sku_refund_units", "sku_sales"]
+PAID_STATUSES = {"PAID", "PARTIALLY_REFUNDED", "REFUNDED"}   # displayFinancialStatus values of an order that was (ever) paid
+NO_SKU = "(no sku)"
+LINE_ITEMS_FIRST = max(1, int(os.environ.get("LINE_ITEMS_FIRST", "50")))
+LINE_ITEMS_MAX_PAGES = 50   # safety stop for the extra line-item pages of one order (50 x LINE_ITEMS_FIRST items)
+
+
+def sku_key(sku):
+    """Raw platform SKU, trimmed; empty / missing / non-string -> "(no sku)"."""
+    s = sku.strip() if isinstance(sku, str) else ""
+    return s or NO_SKU
+
+
+def add_funnel_fields(d):
+    """Add the v2.0 keys (zero counters, empty per-SKU dicts) to a daily row; existing keys untouched."""
+    for f in FUNNEL_FIELDS:
+        d.setdefault(f, 0)
+    for f in SKU_FIELDS:
+        d.setdefault(f, {})
+    return d
+
+
+def schema_info(daily):
+    """meta.schema_info: the first day in the (merged) file that carries the v2.0 keys, so the
+    dashboard can show "no data yet" before it. Days between that date and today can still lack
+    the keys (a backfill chunk run with an older script), so a missing key always means "unknown"."""
+    sku_days = [day for day, row in daily.items() if isinstance(row, dict) and "sku_units" in row]
+    status_days = [day for day, row in daily.items() if isinstance(row, dict) and "orders_placed" in row]
+    return {"sku_units_since": min(sku_days) if sku_days else None,
+            "statuses_since": min(status_days) if status_days else None}
 
 # ---------------------------------------------------------------- marketing attribution settings
 ATTRIBUTION = os.environ.get("ATTRIBUTION", "on").strip().lower() not in ("off", "0", "false", "no")
@@ -232,12 +286,16 @@ JOURNEY_SUMMARY_FIELDS = """
 # processedAt + orderAdjustments are what make "returns" equal Shopify Analytics'
 # sales_reversals (see Aggregator.add_order). The small pageInfo blocks only tell us
 # when a refund has more line items / adjustments than we asked for.
+# v2.0 additions: displayFulfillmentStatus (enum, free), lineItems(first: $lineItemsFirst) with
+# sku / quantity / original unit price (the only new connection - the one real cost increase;
+# fetch_orders halves PAGE_SIZE and then LINE_ITEMS_FIRST when Shopify says the query is too
+# costly), refundLineItems.quantity and lineItem.sku (scalars on objects already requested).
 ORDERS_QUERY = """
-query Orders($first: Int!, $after: String, $q: String, $refundsFirst: Int!) {
+query Orders($first: Int!, $after: String, $q: String, $refundsFirst: Int!, $lineItemsFirst: Int!) {
   orders(first: $first, after: $after, query: $q, sortKey: CREATED_AT) {
     pageInfo { hasNextPage endCursor }
     nodes {
-      id name createdAt cancelledAt test displayFinancialStatus tags edited
+      id name createdAt cancelledAt test displayFinancialStatus displayFulfillmentStatus tags edited
       customAttributes { key value }%JOURNEY%
       subtotalPriceSet { shopMoney { amount } }
       totalDiscountsSet { shopMoney { amount } }
@@ -246,6 +304,10 @@ query Orders($first: Int!, $after: String, $q: String, $refundsFirst: Int!) {
       totalPriceSet { shopMoney { amount } }
       shippingLines(first: 5) {
         nodes { originalPriceSet { shopMoney { amount } } discountedPriceSet { shopMoney { amount } } }
+      }
+      lineItems(first: $lineItemsFirst) {
+        pageInfo { hasNextPage endCursor }
+        nodes { sku quantity title requiresShipping originalUnitPriceSet { shopMoney { amount } } }
       }
       transactions(first: 8) {
         kind status gateway processedAt
@@ -261,9 +323,10 @@ query Orders($first: Int!, $after: String, $q: String, $refundsFirst: Int!) {
         refundLineItems(first: $refundsFirst) {
           pageInfo { hasNextPage }
           nodes {
+            quantity
             subtotalSet { shopMoney { amount } }
             totalTaxSet { shopMoney { amount } }
-            lineItem { title requiresShipping }
+            lineItem { title requiresShipping sku }
           }
         }
         orderAdjustments(first: 20) {
@@ -330,6 +393,22 @@ query EditAgreements($ids: [ID!]!, $agreementsFirst: Int!, $salesFirst: Int!) {
 EDIT_BATCH = int(os.environ.get("EDIT_BATCH", "7"))
 EDIT_LIMITS = (6, 20)        # agreements per order, sales per agreement (first pass)
 EDIT_LIMITS_RETRY = (25, 80)  # one order per request when the first pass was truncated
+
+# v2.0: the remaining line items of the (rare) orders that have more than LINE_ITEMS_FIRST of them -
+# one order per request, continuing from the cursor the orders query stopped at.
+LINE_ITEMS_PAGE_QUERY = """
+query LineItemsPage($id: ID!, $first: Int!, $after: String) {
+  node(id: $id) {
+    ... on Order {
+      id
+      lineItems(first: $first, after: $after) {
+        pageInfo { hasNextPage endCursor }
+        nodes { sku quantity title requiresShipping originalUnitPriceSet { shopMoney { amount } } }
+      }
+    }
+  }
+}
+"""
 
 # One cheap call: can this token see an order created before the 60-day visibility
 # window at all? (Empty answer = read_all_orders missing, or a shop younger than that.)
@@ -781,6 +860,21 @@ def is_tip_line(refund_line_item):
     return (li.get("title") or "").strip().lower() == "tip" and not li.get("requiresShipping", True)
 
 
+def is_tip_item(line_item):
+    """Same test as is_tip_line, for an Order.lineItems node (v2.0 per-SKU units skip tips: they are
+    not part of gross sales, exactly like the refund side skips refunded tips)."""
+    li = line_item or {}
+    return (li.get("title") or "").strip().lower() == "tip" and not li.get("requiresShipping", True)
+
+
+def line_quantity(node):
+    """Int quantity of a line item / refund line item node; anything odd -> 0."""
+    try:
+        return int((node or {}).get("quantity") or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
 def commission_base(subtotal, shipping, tax, total):
     if COMMISSION_BASE == "subtotal_shipping":
         return subtotal + shipping
@@ -1184,16 +1278,24 @@ class Aggregator:
             "journeys_ready": 0, "journeys_pending": 0, "journeys_missing": 0, "journeys_no_session": 0,
             "journeys_deferred": 0, "journeys_resolved_by_moments": 0, "journeys_moments_truncated": 0,
             "journeys_unresolved": 0,
+            # v2.0 per-SKU units: line items read / skipped, orders whose line items needed an extra page
+            "line_items_counted": 0, "line_items_without_sku": 0, "line_items_tips": 0, "line_items_zero_qty": 0,
+            "line_items_truncated": 0, "line_items_pages_failed": 0, "refund_line_units": 0,
         }
         self.gateways = {}
         self.journeys = {}    # numeric order id -> raw journey record (see journey_month_path)
         self.deferred = {}    # order gid -> numeric id of orders whose last session is direct (moments pass)
+        self.line_items_pending = {}   # order gid -> {"day", "after"}: booked orders with more than LINE_ITEMS_FIRST line items
+        self.line_items_first = LINE_ITEMS_FIRST   # smallest value the orders query actually ran with
 
     def in_window(self, day):
         return day is not None and self.window_start <= day <= self.window_end
 
     def bucket(self, day):
-        return self.daily.setdefault(day, new_daily_bucket())
+        d = self.daily.get(day)
+        if d is None:
+            d = self.daily[day] = add_funnel_fields(new_daily_bucket())
+        return d
 
     def add_order(self, o, late_refunds_only=False):
         oid = o.get("id")
@@ -1205,6 +1307,11 @@ class Aggregator:
             self.counts["orders_skipped_test"] += 1
             return
         status = (o.get("displayFinancialStatus") or "").upper()
+        day = local_day(o.get("createdAt"), self.tz)
+        if not late_refunds_only and self.in_window(day):
+            # v2.0 funnel: EVERY non-test order created in the window, including the voided ones
+            # skipped just below (they are "placed" and "cancelled" even though they were never a sale)
+            self.add_order_status(o, day, status)
         if o.get("cancelledAt") and status == "VOIDED":
             # cancelled before any money moved - never a sale, never a return
             self.counts["orders_skipped_voided"] += 1
@@ -1246,7 +1353,6 @@ class Aggregator:
         elif not program and conv is not None and conv["commission"]:
             self.counts["snowball_export_without_tag"] += 1
 
-        day = local_day(o.get("createdAt"), self.tz)
         booked = bool(not late_refunds_only and self.in_window(day))
         if o.get("edited"):
             # items added by an order edit are inside these order-level totals; they are moved
@@ -1263,6 +1369,7 @@ class Aggregator:
             d["tax"] += tax
             self.counts["orders_counted"] += 1
             self.add_payment_fees(o, d)
+            self.add_line_items(o, d, day)   # v2.0: sku_units / sku_sales of the same orders that make up `orders`
             if ATTRIBUTION:
                 self.add_attribution(o, day, subtotal)
             if program:
@@ -1335,6 +1442,14 @@ class Aggregator:
             d["refunded_tax"] += refunded_tax
             d["refunded_total"] += refunded_total
             self.counts["refunds_counted"] += 1
+            # v2.0: units refunded / removed per SKU on the refund day (tip lines already excluded).
+            # $0 refunds of an order edit count too, exactly like their value counts in `returns`.
+            for li in li_nodes:
+                q = line_quantity(li)
+                if q > 0:
+                    key = sku_key(((li.get("lineItem") or {}).get("sku")))
+                    d["sku_refund_units"][key] = d["sku_refund_units"].get(key, 0) + q
+                    self.counts["refund_line_units"] += q
             if adj_nodes:
                 self.counts["refunds_with_adjustments"] += 1
             elif li_nodes and refunded_total == 0:
@@ -1360,6 +1475,55 @@ class Aggregator:
             self.counts["late_orders_scanned"] += 1
             if touched_window:
                 self.counts["late_refund_orders"] += 1
+
+    # ------------------------------------------------------------ v2.0 order funnel + per-SKU units
+    def add_order_status(self, o, day, status):
+        """Order funnel, keyed by the order's CREATION day, status as of this run: placed -> paid ->
+        fulfilled, plus cancelled / refunded. Called for every non-test order created inside the
+        window (voided-cancelled ones included), before any of the v1.9 skips."""
+        d = self.bucket(day)
+        d["orders_placed"] += 1
+        if status in PAID_STATUSES:
+            d["orders_paid"] += 1
+        fstatus = (o.get("displayFulfillmentStatus") or "").upper()
+        if fstatus == "FULFILLED":
+            d["orders_fulfilled"] += 1
+        elif fstatus == "PARTIALLY_FULFILLED":
+            d["orders_partially_fulfilled"] += 1
+        if o.get("cancelledAt"):
+            d["orders_cancelled"] += 1
+        # refunded = money actually went back (a $0 order-edit removal leaves the order "paid")
+        if any(money(r.get("totalRefundedSet")) > 0 for r in (o.get("refunds") or []) if r):
+            d["orders_refunded"] += 1
+
+    def add_line_items(self, o, d, day):
+        """sku_units / sku_sales of a booked order on its order day; orders with more line items than
+        the query asked for are remembered for fetch_line_item_pages (nothing is dropped silently)."""
+        conn = o.get("lineItems") or {}
+        self.add_line_item_nodes(conn.get("nodes") or [], d)
+        info = conn.get("pageInfo") or {}
+        if info.get("hasNextPage"):
+            self.counts["line_items_truncated"] += 1
+            self.line_items_pending[o.get("id")] = {"day": day, "after": info.get("endCursor")}
+
+    def add_line_item_nodes(self, nodes, d):
+        for li in nodes:
+            if not li:
+                continue
+            if is_tip_item(li):
+                self.counts["line_items_tips"] += 1
+                continue
+            qty = line_quantity(li)
+            if qty <= 0:
+                self.counts["line_items_zero_qty"] += 1
+                continue
+            key = sku_key(li.get("sku"))
+            if key == NO_SKU:
+                self.counts["line_items_without_sku"] += 1
+            d["sku_units"][key] = d["sku_units"].get(key, 0) + qty
+            # pre-discount, like gross_sales (= subtotal + discounts = sum of original line prices)
+            d["sku_sales"][key] = d["sku_sales"].get(key, 0.0) + money(li.get("originalUnitPriceSet")) * qty
+            self.counts["line_items_counted"] += 1
 
     # ------------------------------------------------------------ marketing attribution
     def add_attribution(self, o, day, sales):
@@ -1534,6 +1698,8 @@ class Aggregator:
                 g["amount"] = round(g["amount"], 2)
             for k in list(d["payment_fee_types"]):
                 d["payment_fee_types"][k] = round(d["payment_fee_types"][k], 2)
+            for k in list(d.get("sku_sales") or {}):
+                d["sku_sales"][k] = round(d["sku_sales"][k], 2)
         for g in self.gateways.values():
             for f in ("amount", "fees"):
                 g[f] = round(g[f], 2)
@@ -1559,17 +1725,26 @@ def sum_range(daily, start_key, end_key):
 def fetch_orders(client, q, agg, late_refunds_only=False):
     page_size = PAGE_SIZE
     refunds_first = 25   # line items per refund; a truncated refund is reported in meta.warnings
+    line_items_first = LINE_ITEMS_FIRST   # v2.0; halved only after PAGE_SIZE has hit its floor
     after = None
     pages = 0
     while True:
         try:
-            data = client.query(ORDERS_QUERY, {"first": page_size, "after": after, "q": q, "refundsFirst": refunds_first})
+            data = client.query(ORDERS_QUERY, {"first": page_size, "after": after, "q": q, "refundsFirst": refunds_first,
+                                               "lineItemsFirst": line_items_first})
         except CostTooHigh as e:
-            if page_size <= 10:
-                raise
-            page_size = max(10, page_size // 2)
-            log(f"query cost too high ({e}) - retrying with PAGE_SIZE={page_size}")
-            continue
+            if page_size > 10:
+                page_size = max(10, page_size // 2)
+                log(f"query cost too high ({e}) - retrying with PAGE_SIZE={page_size}")
+                continue
+            if line_items_first > 10:
+                # v2.0: the line-item connection is the only new cost; shrink it before giving up
+                # (orders with more line items than this get the rest in fetch_line_item_pages)
+                line_items_first = max(10, line_items_first // 2)
+                agg.line_items_first = min(agg.line_items_first, line_items_first)
+                log(f"query cost too high even at PAGE_SIZE={page_size} ({e}) - retrying with LINE_ITEMS_FIRST={line_items_first}")
+                continue
+            raise
         conn = data.get("orders") or {}
         nodes = conn.get("nodes") or []
         for o in nodes:
@@ -1624,6 +1799,45 @@ def fetch_edit_agreements(client, agg):
         agg.counts["edit_lists_truncated"] += 1
         agg.warnings.add(f"order {oid} has more agreements/sales than fetched even at {EDIT_LIMITS_RETRY} - some edit additions stay on the order date")
     log(f"  edited orders: {len(ids)}, edit additions moved to their edit date: {agg.counts['edit_additions_moved']}, ledger requests: {requests}")
+    return requests
+
+
+def fetch_line_item_pages(client, agg):
+    """v2.0 second pass, usually empty: the remaining line items of booked orders that have more
+    than LINE_ITEMS_FIRST of them, one order per request from the cursor the orders query stopped
+    at. A failure is a warning plus a count, never fatal (the day then under-counts that order)."""
+    pending = list(agg.line_items_pending.items())
+    if not pending:
+        return 0
+    requests = 0
+    for oid, info in pending:
+        after, first, pages = info.get("after"), LINE_ITEMS_FIRST, 0
+        while after and pages < LINE_ITEMS_MAX_PAGES:
+            try:
+                data = client.query(LINE_ITEMS_PAGE_QUERY, {"id": oid, "first": first, "after": after})
+            except CostTooHigh as e:
+                if first <= 10:
+                    agg.counts["line_items_pages_failed"] += 1
+                    agg.warnings.add(f"line items of order {oid} beyond the first {LINE_ITEMS_FIRST} could not be read ({e}) - sku_units under-counts that order")
+                    break
+                first = max(10, first // 2)
+                continue
+            except RuntimeError as e:
+                agg.counts["line_items_pages_failed"] += 1
+                agg.warnings.add(f"line items of order {oid} beyond the first {LINE_ITEMS_FIRST} could not be read ({str(e)[:120]}) - sku_units under-counts that order")
+                break
+            requests += 1
+            pages += 1
+            conn = ((data.get("node") or {}).get("lineItems") or {})
+            agg.add_line_item_nodes(conn.get("nodes") or [], agg.bucket(info["day"]))
+            pinfo = conn.get("pageInfo") or {}
+            after = pinfo.get("endCursor") if pinfo.get("hasNextPage") else None
+        if after:
+            agg.counts["line_items_pages_failed"] += 1
+            agg.warnings.add(f"order {oid} has more than {LINE_ITEMS_MAX_PAGES * LINE_ITEMS_FIRST} line items - sku_units under-counts it")
+        agg.line_items_pending.pop(oid, None)
+    log(f"  line items: {len(pending)} orders had more than {LINE_ITEMS_FIRST} line items, {requests} extra requests, "
+        f"{agg.counts['line_items_pages_failed']} failed")
     return requests
 
 
@@ -1714,6 +1928,7 @@ def reclassify_only():
     meta = previous.setdefault("meta", {})
     meta["script_version"] = SCRIPT_VERSION
     meta["schema"] = SCHEMA
+    meta["schema_info"] = schema_info(daily)   # v2.0: unchanged daily rows, so the dates stay what they were
     meta["reclassified_at"] = previous["generated_at"]
     meta["journey_records"] = len(records)
     with open(OUTPUT_PATH, "w") as f:
@@ -1808,6 +2023,11 @@ def main():
     log(f"Fetching sales ledger for {len(agg.edited)} edited orders ...")
     pages += fetch_edit_agreements(client, agg)
 
+    # v2.0: orders with more than LINE_ITEMS_FIRST line items (rare) - read the rest.
+    if agg.line_items_pending:
+        log(f"Fetching remaining line items for {len(agg.line_items_pending)} orders with more than {LINE_ITEMS_FIRST} line items ...")
+        pages += fetch_line_item_pages(client, agg)
+
     # Attribution: orders whose last session was direct need their earlier sessions.
     if ATTRIBUTION:
         log(f"Fetching earlier sessions for {len(agg.deferred)} orders whose last session was direct ...")
@@ -1895,6 +2115,11 @@ def main():
             "throttled_waits": client.throttled_waits,
             "counts": agg.counts,
             "warnings": sorted(agg.warnings),
+            # v2.0 (additive): first day carrying the funnel / per-SKU keys, and the line-item page size used
+            "schema_info": schema_info(daily),
+            "line_items_first": agg.line_items_first,
+            "funnel_basis": "orders_* = orders created that day (test orders skipped), status as of this run; "
+                            "sku_units / sku_sales = Order.lineItems on the order day; sku_refund_units = refundLineItems on the refund day",
         },
     }
 
