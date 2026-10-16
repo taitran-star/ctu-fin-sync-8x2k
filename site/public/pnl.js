@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build a662464fbd).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build e33db7bdb8).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -2593,11 +2593,11 @@
     const key = _maskVer+'|'+TODAY_ISO;
     if(_stockCache.ver===key) return _stockCache.rows;
     const out = {};
-    const get = sku => out[sku] = out[sku] || {sku, line: productLineOf(sku), fba:0, fbaInbound:0, smk:0, smkIncoming:0, unitsAz:0, unitsSh:0, days:0, sales:0};
+    const get = sku => out[sku] = out[sku] || {sku, line: productLineOf(sku), fba:0, fbaInbound:0, smk:0, smkIncoming:0, unitsAz:0, unitsSh:0, days:0, sales:0, known:false};
     const skipSku = sku => /^amzn\.gr\./i.test(sku) || sku==='(no sku)' || sku==='RETURN-OFFSET';
     const snap = AMAZON_STORAGE_LIVE_DATA && AMAZON_STORAGE_LIVE_DATA.inventory && AMAZON_STORAGE_LIVE_DATA.inventory.snapshot;
-    if(snap) Object.keys(snap).forEach(sku=>{ if(skipSku(sku)) return; const s = snap[sku], o = get(sku); o.fba += s.fulfillable||0; o.fbaInbound += (s.inbound_working||0)+(s.inbound_shipped||0)+(s.inbound_receiving||0); });
-    if(SHIPMONK_INVENTORY && SHIPMONK_INVENTORY.skus) Object.keys(SHIPMONK_INVENTORY.skus).forEach(sku=>{ const s = SHIPMONK_INVENTORY.skus[sku], o = get(sku); const av = Math.max(0, Math.min(+s.available||0, (+s.on_hand||0) - (+s.quarantined||0) - (+s.unavailable||0))); o.smk += isFinite(av) ? av : 0; o.smkIncoming += +s.incoming||0; });
+    if(snap) Object.keys(snap).forEach(sku=>{ if(skipSku(sku)) return; const s = snap[sku], o = get(sku); o.known = true; o.fba += s.fulfillable||0; o.fbaInbound += (s.inbound_working||0)+(s.inbound_shipped||0)+(s.inbound_receiving||0); });
+    if(SHIPMONK_INVENTORY && SHIPMONK_INVENTORY.skus) Object.keys(SHIPMONK_INVENTORY.skus).forEach(sku=>{ const s = SHIPMONK_INVENTORY.skus[sku], o = get(sku); o.known = true; const av = Math.max(0, Math.min(+s.available||0, (+s.on_hand||0) - (+s.quarantined||0) - (+s.unavailable||0))); o.smk += isFinite(av) ? av : 0; o.smkIncoming += +s.incoming||0; });
     // velocity: last 30 closed days with per-SKU units (either sync)
     const from = shiftIso(TODAY_ISO, 30), to = shiftIso(TODAY_ISO, 1);
     let dAz = 0, dSh = 0;
@@ -2609,7 +2609,7 @@
       else if(skuFees[o.sku]) perDay = skuFees[o.sku].units/win;
       const units = o.unitsAz + o.unitsSh;
       const price = units>0 ? o.sales/units : 0;
-      const stock = o.fba + o.smk, cover = perDay>0 ? stock/perDay : null;
+      const stock = o.fba + o.smk, cover = (perDay>0 && o.known) ? stock/perDay : null;   // unknown stock (SKU in neither snapshot) -> no cover, no risk
       const atRisk = (cover!==null && cover<30) ? Math.max(0, (30-cover))*perDay*price : 0;
       return Object.assign(o, {perDay, price, stock, cover, atRisk});
     });
@@ -2632,7 +2632,7 @@
     const stock = stockRows();
     const list = Object.values(le.lines).filter(l=>l.net>0.005 || l.units>0).sort((a,b)=>b.net-a.net);
     const totNet = sum(list.map(l=>l.net)), totCm = sum(list.map(l=>l.cm)), totUnits = sum(list.map(l=>l.units));
-    const coverOf = id => { const rs = stock.filter(s=>s.line===id); const pd = sum(rs.map(s=>s.perDay)), st = sum(rs.map(s=>s.stock)); return pd>0 ? st/pd : null; };
+    const coverOf = id => { const rs = stock.filter(s=>s.line===id && s.known); const pd = sum(rs.map(s=>s.perDay)), st = sum(rs.map(s=>s.stock)); return pd>0 ? st/pd : null; };
     const dcell = (cur, prev) => (prev===null || prev===undefined || !isFinite(prev) || prev<=0) ? '<td class="num d-flat">—</td>' : `<td class="num">${pillOf((cur/prev-1)*100)}</td>`;
     t.innerHTML = `<thead><tr><th>${tx('pl.line')}</th><th class="num">${tx('m.units')}</th><th class="num">${tx('m.netRevenue')}</th><th>${tx('pl.share')}</th><th class="num">${tx('pl.vsPrior')}</th><th class="num">CM3</th><th class="num">CM3 %</th><th class="num">${tx('pl.cover')}</th></tr></thead><tbody>` +
       list.map(l=>{ const cv = coverOf(l.id); const pv = lp && lp.lines[l.id] ? lp.lines[l.id].net : null; return `<tr><td class="name">${productLineName(l.id)}<small style="display:block;font-weight:400;color:var(--ink-muted);">${l.skus} SKU</small></td><td class="num">${intFmt(l.units)}</td><td class="num">${money(l.net,{compact:true})}</td><td><div class="bar"><i style="width:${totNet>0?(l.net/totNet*100).toFixed(1):0}%"></i></div></td>${dcell(l.net, pv)}<td class="num ${l.cm<0?'d-down':''}">${money(l.cm,{compact:true})}</td><td class="num">${l.net>0 ? (l.cm/l.net*100).toFixed(0)+'%' : '—'}</td><td class="num ${cv!==null && cv<30 ? 'd-down' : ''}">${cv===null ? '—' : (cv>365 ? '>1y' : Math.round(cv)+' '+tx('u.d'))}</td></tr>`; }).join('') +
@@ -2945,7 +2945,7 @@
       <div class="kpi"><div class="label">${costKnown ? tv('Capital tied up in FBA','Vốn nằm trong FBA') : tv('Storage fee ','Phí lưu kho ')+(stKey ? stKey.slice(5,7)+'/'+stKey.slice(0,4) : '')}</div><div class="value">${costKnown ? money(capitalTotal,{compact:true}) : money(stTotal,{compact:true})}</div><div class="foot">${costKnown ? capitalSkus+'/'+rows.length+tv(' SKUs with a cost · storage ',' SKU có giá vốn · lưu kho ')+(stKey ? stKey.slice(5,7)+'/'+stKey.slice(0,4)+' '+money(stTotal,{compact:true}) : '—') : (ltKey ? 'LTSF '+ltKey.slice(5,7)+'/'+ltKey.slice(0,4)+': '+money(ltTotal)+' · ' : '')+high.length+tv(' SKUs with &gt; 180 days of stock · ',' SKU tồn &gt; 180 ngày · ')+dead.length+tv(' SKUs with no sales in ',' SKU không bán trong ')+velWin+' '+tx('u.days')}</div></div>`;
     document.getElementById('invNote').textContent = 'Snapshot FBA Inventory API '+(inv.as_of||'')+tv(' · sales velocity = ',' · tốc độ bán = ')+(useDaily ? tv('units per SKU over the last ','units theo SKU ')+skuDays+tv(' days (sync 2.8)',' ngày gần nhất (sync 2.8)') : tv('units shipped in the ','đơn vị đã ship trong ')+win+tv('-day Amazon sync window ÷ ',' ngày đồng bộ Amazon ÷ ')+win);
     const flag = r => r.virtual ? '<span class="tag info"><span class="d"></span>'+tv('virtual bundle — stock held by its component SKUs','bundle ảo — tồn theo SKU thành phần')+'</span>' : r.perDay===0 ? '<span class="tag info"><span class="d"></span>'+tx('inv.tagNoSales')+'</span>' : r.fulfillable<=0 ? '<span class="tag gap"><span class="d"></span>'+tx('inv.tagOut')+'</span>' : (r.outAllD!==null && r.outAllD<30) ? '<span class="tag gap"><span class="d"></span>'+tx('inv.tagSoon')+'</span>' : (r.outD!==null && r.outD<30) ? '<span class="tag info"><span class="d"></span>'+tx('inv.tagWaiting')+'</span>' : (r.coverIn!==null && r.coverIn>180) ? '<span class="tag info"><span class="d"></span>'+tv('overstocked','tồn lâu')+'</span>' : '<span class="tag live"><span class="d"></span>'+tx('inv.tagOk')+'</span>';
-    const fmtOut = d => d===null ? '—' : d>=730 ? tv('>2 years','>2 năm') : fmtDmy(addDays(d))+' <small style="color:var(--ink-muted)">'+d+' '+tx('u.d')+'</small>';
+    const fmtOut = d => d===null ? '—' : d>=365 ? tv('>1 year','>1 năm') : fmtDmy(addDays(d))+' <small style="color:var(--ink-muted)">'+d+' '+tx('u.d')+'</small>';
     const fmtPo = r => r.pos.length ? r.pos.map(p=>intFmt(p.qty)+(p.eta ? ' · '+p.eta.slice(8,10)+'/'+p.eta.slice(5,7) : '')).join('<br>') : '—';
     t.innerHTML = `<thead><tr><th>SKU</th><th>${tx('u.product')}</th><th class="num">/${tx('u.day')}</th><th class="num">${tv('Fulfillable','Bán được')}</th><th class="num">${tv('Inbound','Đang về')}</th><th class="num">${tv('Manual PO','PO nhập tay')}</th><th class="num">${tx('inv.outStock')}</th><th class="num">${tx('inv.outAll')}</th><th class="num">${tv('Stock capital','Vốn tồn')}</th><th class="num">${tv('Storage/month','Lưu kho/tháng')}</th><th>${tx('u.status')}</th></tr></thead><tbody>`+
       rows.slice(0,60).map(r=>`<tr><td style="font-family:var(--font-mono);font-size:11.5px;">${r.sku}</td><td title="${r.name.replace(/"/g,'&quot;')}">${r.name.slice(0,44)}${r.name.length>44?'…':''}</td><td class="num" title="${intFmt(r.units)} units / ${velWin} ${tx('u.days')}">${r.perDay.toFixed(1)}</td><td class="num">${intFmt(r.fulfillable)}</td><td class="num">${intFmt(r.inbound)}</td><td class="num">${fmtPo(r)}</td><td class="num" style="white-space:nowrap;">${fmtOut(r.outD)}</td><td class="num" style="white-space:nowrap;">${fmtOut(r.outAllD)}</td><td class="num">${r.capital!==null ? money(r.capital,{compact:true}) : '—'}</td><td class="num">${r.fee ? money(r.fee) : '—'}</td><td>${flag(r)}</td></tr>`).join('')+'</tbody>';
@@ -3080,7 +3080,9 @@
     const stock = stockRows(); const byStock = {}; stock.forEach(r=>{ byStock[r.sku] = r; });
     const todayD = days[TOTAL_DAYS-1].date, addDays = k => { const d = new Date(todayD); d.setDate(d.getDate()+k); return d; };
     const poBySku = {}; PURCHASE_ORDERS.forEach(po=>{ if(po.dest!=='shipmonk' || po.received) return; (poBySku[po.sku] = poBySku[po.sku]||[]).push(po); });
-    const whs = (inv.warehouses||[]).map(w=>w.identifier||w.name||String(w.id));
+    const whAll = (inv.warehouses||[]).map(w=>w.identifier||w.name||String(w.id));
+    const whTot = (inv.totals && inv.totals.by_warehouse) || {};
+    const whs = whAll.filter(w=> !whTot[w] || (whTot[w].available||0)>0 || (whTot[w].on_hand||0)>0);
     const rows = Object.keys(inv.skus).map(sku=>{
       const s = inv.skus[sku], st = byStock[sku];
       const available = Math.max(0, Math.min(+s.available||0, (+s.on_hand||0) - (+s.quarantined||0) - (+s.unavailable||0)));
@@ -3101,10 +3103,10 @@
       <div class="kpi${soon.length?' alert':''}"><div class="label">${tx('inv.soon')}</div><div class="value">${soon.length}</div><div class="foot">${soon.length ? tx('inv.earliest')+' '+fmtDmy(addDays(soon[0].outAllD))+' · '+soon.slice(0,3).map(r=>r.sku).join(', ') : '—'}</div></div>
       <div class="kpi${back.length?' alert':''}"><div class="label">${tx('smk.backordered')}</div><div class="value">${back.length}</div><div class="foot">${back.length ? intFmt(sum(back.map(r=>r.backordered)))+' '+tx('smk.unitsShort')+' · '+back.slice(0,3).map(r=>r.sku).join(', ') : tx('smk.noBackorder')}</div></div>`;
     setNote('smkInvNote', tx('smk.note', {as_of: (inv.as_of||'').slice(0,10), wh: whs.join(' · '), n: rows.length}));
-    const fmtOut = d => d===null ? '—' : d>=730 ? '>2y' : fmtDmy(addDays(d))+' <small style="color:var(--ink-muted)">'+d+' '+tx('u.d')+'</small>';
+    const fmtOut = d => d===null ? '—' : d>=365 ? '>1y' : fmtDmy(addDays(d))+' <small style="color:var(--ink-muted)">'+d+' '+tx('u.d')+'</small>';
     const flag = r => r.backordered>0 ? `<span class="tag gap"><span class="d"></span>${tx('smk.tagBack')}</span>` : r.perDay===0 ? `<span class="tag info"><span class="d"></span>${tx('inv.tagNoSales')}</span>` : r.available<=0 ? `<span class="tag gap"><span class="d"></span>${tx('inv.tagOut')}</span>` : (r.outAllD!==null && r.outAllD<30) ? `<span class="tag gap"><span class="d"></span>${tx('inv.tagSoon')}</span>` : (r.outD!==null && r.outD<30) ? `<span class="tag info"><span class="d"></span>${tx('inv.tagWaiting')}</span>` : `<span class="tag live"><span class="d"></span>${tx('inv.tagOk')}</span>`;
     t.innerHTML = `<thead><tr><th>SKU</th><th>${tx('u.product')}</th><th class="num">/${tx('u.day')}</th><th class="num">${tx('smk.available')}</th><th class="num">${tx('smk.onHand')}</th><th class="num">${tx('smk.allocated')}</th><th class="num">${tx('smk.incoming')}</th><th class="num">PO</th><th class="num">${tx('inv.outStock')}</th><th class="num">${tx('inv.outAll')}</th><th>${tx('smk.byWarehouse')}</th><th>${tx('u.status')}</th></tr></thead><tbody>` +
-      rows.slice(0,60).map(r=>`<tr><td style="font-family:var(--font-mono);font-size:11.5px;">${r.sku}</td><td title="${(r.name||'').replace(/"/g,'&quot;')}">${(r.name||'').slice(0,34)}${r.name && r.name.length>34?'…':''}<small style="display:block;color:var(--ink-muted)">${productLineName(r.line)}</small></td><td class="num">${r.perDay.toFixed(1)}</td><td class="num">${intFmt(r.available)}</td><td class="num">${intFmt(r.onHand)}</td><td class="num">${intFmt(r.allocated)}</td><td class="num">${intFmt(r.incoming)}</td><td class="num">${r.poQty ? intFmt(r.poQty) : '—'}</td><td class="num" style="white-space:nowrap;">${fmtOut(r.outD)}</td><td class="num" style="white-space:nowrap;">${fmtOut(r.outAllD)}</td><td style="font-size:11.5px;color:var(--ink-muted);white-space:nowrap;">${whs.map(w=> r.bw[w] ? w+' '+intFmt(r.bw[w].available||0) : '').filter(Boolean).join(' · ')||'—'}</td><td>${flag(r)}</td></tr>`).join('') + '</tbody>';
+      rows.slice(0,60).map(r=>`<tr><td style="font-family:var(--font-mono);font-size:11.5px;">${r.sku}</td><td title="${(r.name||'').replace(/"/g,'&quot;')}">${(r.name||'').slice(0,34)}${r.name && r.name.length>34?'…':''}<small style="display:block;color:var(--ink-muted)">${productLineName(r.line)}</small></td><td class="num">${r.perDay.toFixed(1)}</td><td class="num">${intFmt(r.available)}</td><td class="num">${intFmt(r.onHand)}</td><td class="num">${intFmt(r.allocated)}</td><td class="num">${intFmt(r.incoming)}</td><td class="num">${r.poQty ? intFmt(r.poQty) : '—'}</td><td class="num" style="white-space:nowrap;">${fmtOut(r.outD)}</td><td class="num" style="white-space:nowrap;">${fmtOut(r.outAllD)}</td><td style="font-size:11.5px;color:var(--ink-muted);white-space:nowrap;">${whs.map(w=> (r.bw[w] && (r.bw[w].available||0)>0) ? w+' '+intFmt(r.bw[w].available) : '').filter(Boolean).join(' · ')||'—'}</td><td>${flag(r)}</td></tr>`).join('') + '</tbody>';
     setNote('smkInvCaption', (rows.length>60 ? tx('inv.showing', {n: rows.length})+' ' : '') + tx('smk.caption'));
   }
   function renderPurchaseOrders(snap){
