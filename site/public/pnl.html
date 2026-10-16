@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="vi">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#f2f6e6" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0b1f1b" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#05372E" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#05372E" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Cattasaurus">
@@ -49,9 +49,9 @@
     /* Cattasaurus brand (Brand Guidelines 11/2024): Pistachio #C9E595 (primary), Pine #05372E, Forest #285D18, Pear #669937 */
     --brand-pistachio:#C9E595; --brand-pine:#05372E; --brand-forest:#285D18; --brand-pear:#669937;
     --band-bg:var(--brand-pistachio); --band-ink:var(--brand-pine);
-    --surface-page:#f2f6e6; --surface-card:#ffffff; --surface-card-2:#f3f7e9; --surface-card-3:#e7efd6;
+    --surface-page:#f4f6f0; --surface-card:#ffffff; --surface-card-2:#f3f7e9; --surface-card-3:#e7efd6;
     --ink-primary:#05372E; --ink-secondary:#33544a; --ink-muted:#6c857a;
-    --gridline:#dfe8cf; --baseline:#b5c7a0; --border:rgba(5,55,46,0.14);
+    --gridline:#e3e9d8; --baseline:#b5c7a0; --border:rgba(5,55,46,0.11);
     --success-text:#285D18;
     /* chart slots = brand hues stepped for white cards; validated (lightness band, chroma, CVD ΔE ≥ 8, ≥ 3:1) */
     --series-1:#2f6e1d; --series-2:#c2478f; --series-3:#d9762b; --series-4:#008d9e; --series-5:#a98000; --series-6:#6a45a3; --series-7:#669937;
@@ -98,25 +98,60 @@
     --brand-forest:#b9da7a; --logo-light:none; --logo-dark:block;
   }
   *{box-sizing:border-box;}
-  body{margin:0;background:var(--surface-page);color:var(--ink-primary);font-family:var(--font-body);font-variant-numeric:tabular-nums;padding-inline:20px;padding-block:0 24px;}
-  .wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px;}
-  h1,h2,h3{font-family:var(--font-head);font-weight:600;text-transform:uppercase;letter-spacing:.05em;line-height:1.2;margin:0;text-wrap:balance;}
+  html{scroll-padding-top:120px;}
+  body{margin:0;background:var(--surface-page);color:var(--ink-primary);font-family:var(--font-body);font-size:13px;line-height:1.45;font-variant-numeric:tabular-nums;padding:0;}
+  .wrap{max-width:1600px;margin:0 auto;padding:18px 24px 48px;display:flex;flex-direction:column;gap:16px;}
+  h1,h2,h3{font-family:var(--font-head);font-weight:600;line-height:1.25;margin:0;text-wrap:balance;letter-spacing:0;text-transform:none;}
   .display{font-family:var(--font-display);font-weight:500;letter-spacing:.01em;}
-  /* brand band: Pistachio field with the Pine wordmark (dark mode flips to Pine field / Pistachio type - the brand's other pairing) */
-  .top{position:relative;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;background:var(--band-bg);color:var(--band-ink);border-radius:18px;margin:18px 0 0;padding:22px 24px 20px;}
-  .brand{display:flex;align-items:center;gap:22px;min-width:0;}
-  .brand-logo{flex:none;}
-  .brand-logo img{display:block;height:64px;width:auto;}
-  .brand-logo .logo-light{display:var(--logo-light);}
-  .brand-logo .logo-dark{display:var(--logo-dark);}
-  .brand-text{min-width:0;padding-left:22px;border-left:1px solid color-mix(in srgb,var(--band-ink) 28%,transparent);}
-  .brand-title{font-family:var(--font-head);font-weight:600;font-size:12px;letter-spacing:.16em;text-transform:uppercase;opacity:.9;margin:0 0 5px;line-height:1.3;}
-  .band-mascot{position:absolute;right:28px;bottom:0;height:98px;width:auto;pointer-events:none;user-select:none;}
-  @media (min-width:900px){.top{padding-right:200px;}}
-  @media (max-width:899px){.band-mascot{display:none;}}
-  .sub{color:var(--band-ink);opacity:.85;font-size:12.5px;margin-top:6px;max-width:760px;font-weight:500;}
-  .sub b{font-weight:700;}
   a{color:var(--accent);}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  /* ---- V10 shell: slim Pine top bar (brand pairing: Pistachio on Pine) + white page bar with the filters ---- */
+  .topbar{position:sticky;top:0;z-index:40;background:var(--brand-pine);color:#dfe9cf;padding-top:env(safe-area-inset-top,0px);}
+  .tb-in{max-width:1600px;margin:0 auto;padding:0 24px;height:52px;display:flex;align-items:center;gap:18px;}
+  .tb-brand{flex:none;display:flex;align-items:center;}
+  .tb-brand img{display:block;height:28px;width:auto;}
+  .tb-tabs{display:flex;gap:2px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none;}
+  .tb-tabs::-webkit-scrollbar{display:none;}
+  .tb-tabs button{font:inherit;font-weight:600;font-size:13px;color:rgba(223,233,207,.78);background:transparent;border:0;border-radius:8px;padding:7px 12px;cursor:pointer;white-space:nowrap;line-height:1.2;}
+  .tb-tabs button:hover{color:#fff;background:rgba(255,255,255,.07);}
+  .tb-tabs button.active{background:var(--brand-pistachio);color:var(--brand-pine);}
+  .tb-tabs button:focus-visible{outline:2px solid var(--brand-pistachio);outline-offset:1px;}
+  .tb-right{display:flex;align-items:center;gap:6px;flex:none;}
+  .tb-sync{display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(223,233,207,.8);margin-right:6px;white-space:nowrap;}
+  .tb-sync .tb-dot{width:7px;height:7px;border-radius:50%;background:#8fbf3f;box-shadow:0 0 0 3px rgba(143,191,63,.22);flex:none;}
+  .tb-sync button{font:inherit;font-size:13px;border:0;background:rgba(255,255,255,.08);color:#fff;border-radius:7px;padding:3px 8px;cursor:pointer;line-height:1.2;}
+  .tb-sync button:hover{background:rgba(255,255,255,.16);}
+  .tb-sync a{color:rgba(223,233,207,.8);text-decoration:none;font-size:12px;}
+  .tb-lang{display:flex;background:rgba(255,255,255,.08);border-radius:8px;padding:2px;}
+  .tb-lang button{font:inherit;font-weight:700;font-size:11px;letter-spacing:.04em;border:0;background:transparent;color:rgba(223,233,207,.7);padding:4px 8px;border-radius:6px;cursor:pointer;line-height:1.2;}
+  .tb-lang button.active{background:var(--brand-pistachio);color:var(--brand-pine);}
+  .tb-ico{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;border:0;background:transparent;color:rgba(223,233,207,.8);cursor:pointer;text-decoration:none;}
+  .tb-ico:hover{background:rgba(255,255,255,.08);color:#fff;}
+  .pagebar{position:sticky;top:calc(52px + env(safe-area-inset-top,0px));z-index:30;background:var(--surface-card);border-bottom:1px solid var(--border);}
+  .pb-in{max-width:1600px;margin:0 auto;padding:10px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .pb-title{min-width:0;margin-right:auto;}
+  .pb-title h1{font-size:18px;font-weight:600;letter-spacing:-.01em;}
+  .pb-ctx{font-size:12px;color:var(--ink-muted);margin-top:2px;display:flex;gap:6px;flex-wrap:wrap;}
+  .pb-ctx .pb-note:not(:empty)::before{content:'·';margin-right:6px;}
+  .pb-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+  .subctl{flex-basis:100%;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .subctl:empty{display:none;}
+  .chfilter{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .seg{display:flex;background:var(--surface-card-2);border:1px solid var(--border);border-radius:9px;padding:2px;gap:2px;flex:none;}
+  .seg button{border:none;background:transparent;color:var(--ink-secondary);font-family:var(--font-body);font-size:12.5px;font-weight:600;padding:5px 11px;border-radius:7px;cursor:pointer;line-height:1.3;}
+  .seg button.active{background:var(--accent-solid);color:var(--accent-solid-ink);}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;}
+  /* filter dropdown buttons share one height with the segmented control */
+  .ddbtn{display:inline-flex;align-items:center;gap:7px;font-family:var(--font-body);font-size:12.5px;font-weight:600;color:var(--ink-primary);background:var(--surface-card);border:1px solid var(--border);border-radius:9px;padding:6px 10px;cursor:pointer;white-space:nowrap;max-width:100%;line-height:1.3;}
+  .ddbtn:hover{border-color:color-mix(in srgb, var(--ink-primary) 30%, var(--border));}
+  .ddbtn .k{font-weight:500;color:var(--ink-muted);}
+  .ddbtn .v{overflow:hidden;text-overflow:ellipsis;max-width:220px;}
+  .ddbtn .caret{font-size:10px;color:var(--ink-muted);}
+  .ddlist.one{grid-template-columns:1fr;}
+  .ddlist .dditem.chk{display:flex;align-items:center;gap:8px;}
+  .ddlist .dditem.chk .box{width:15px;height:15px;border:1px solid var(--border);border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;line-height:1;color:var(--accent-solid-ink);background:var(--surface-card-2);flex:none;}
+  .ddlist .dditem.chk.on .box{background:var(--accent-solid);border-color:var(--accent-solid);}
+  .ddlist .dditem.chk.on{color:var(--ink-primary);}
 
   /* view mode controls */
   .modebar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface-card);border:1px solid var(--border);border-radius:14px;padding:10px 12px;}
@@ -497,6 +532,115 @@
     table.stmt.multihist tr.detail td.label{padding-left:24px;}
     table.stmt.multihist td.pct{width:auto;min-width:40px;}
   }
+
+  /* ---- V10 polish: cards, tiles, brief block, overview cards, tables ---- */
+  .card{background:var(--surface-card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;}
+  .card-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px 14px;margin-bottom:12px;flex-wrap:wrap;}
+  .card-head h2{font-size:14px;font-weight:600;color:var(--ink-primary);text-transform:none;letter-spacing:0;}
+  .card-head .note{font-size:12px;color:var(--ink-muted);}
+  .caption{font-size:11.5px;color:var(--ink-muted);padding:2px 0 0;line-height:1.45;}
+  .btn.mini{margin-left:auto;}
+  .kpi{background:var(--surface-card);border:1px solid var(--border);border-radius:12px;padding:14px 16px 12px;display:flex;flex-direction:column;gap:4px;min-width:0;}
+  .kpi .kh{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .kpi .label{font-size:12px;color:var(--ink-secondary);text-transform:none;letter-spacing:0;font-weight:500;}
+  .kpi .value{font-family:var(--font-display);font-size:27px;font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:0;white-space:nowrap;line-height:1.05;margin-top:2px;}
+  .kpi .deltas{display:flex;flex-direction:column;gap:1px;margin-top:2px;}
+  .kpi .delta{font-size:11.5px;font-family:var(--font-body);display:flex;align-items:center;gap:4px;color:var(--ink-secondary);}
+  .kpi .delta .k{color:var(--ink-muted);}
+  .kpi .foot{font-size:11px;color:var(--ink-muted);line-height:1.35;}
+  .kpi .spark{display:block;width:100%;height:34px;margin-top:6px;}
+  .pill-d{display:inline-flex;align-items:center;gap:2px;font-size:11px;font-weight:600;padding:2px 7px;border-radius:999px;white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .pill-d.up{color:var(--success-text);background:color-mix(in srgb, var(--status-good) 14%, transparent);}
+  .pill-d.down{color:var(--status-critical);background:color-mix(in srgb, var(--status-critical) 12%, transparent);}
+  .pill-d.flat{color:var(--ink-muted);background:var(--surface-card-2);}
+  .exec-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;}
+  .exec-kpis>*{min-width:0;}
+  @media (max-width:1400px){.exec-kpis{grid-template-columns:repeat(3,minmax(0,1fr));}}
+  @media (max-width:760px){.exec-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  @media (max-width:420px){.exec-kpis{grid-template-columns:minmax(0,1fr);}}
+  .strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin:0;}
+  .strip .st{border-radius:12px;padding:10px 14px;}
+  .strip .st .l{font-size:11px;letter-spacing:.04em;}
+  .strip .st .v{font-size:19px;}
+  .brief-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin:0;background:var(--surface-card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+  .brief-grid>*{min-width:0;padding:14px 18px;border-left:1px solid var(--border);}
+  .brief-grid>*:first-child{border-left:0;}
+  @media (max-width:1200px){.brief-grid{grid-template-columns:repeat(2,minmax(0,1fr));} .brief-grid>*:nth-child(3){border-left:0;} .brief-grid>*:nth-child(n+3){border-top:1px solid var(--border);}}
+  @media (max-width:640px){.brief-grid{grid-template-columns:minmax(0,1fr);} .brief-grid>*{border-left:0;border-top:1px solid var(--border);} .brief-grid>*:first-child{border-top:0;}}
+  .brief-grid h3{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-muted);margin:0 0 8px;font-weight:600;}
+  .brief-grid .lead{font-size:13.5px;line-height:1.5;color:var(--ink-primary);}
+  .brief-grid .lead b{font-weight:600;}
+  .brief-grid .sub{font-size:11.5px;color:var(--ink-muted);margin-top:8px;line-height:1.4;}
+  .kv-rows .r{font-size:12.5px;}
+  .kv-rows .r .n small{font-size:11px;}
+  .ov-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:16px;align-items:stretch;}
+  .ov-grid>*{min-width:0;}
+  @media (max-width:1100px){.ov-grid{grid-template-columns:minmax(0,1fr);}}
+  .exec-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:16px;align-items:start;}
+  @media (max-width:1300px){.exec-grid{grid-template-columns:minmax(0,1fr);}}
+  .chan-list{display:flex;flex-direction:column;gap:8px;}
+  .chan-list .r{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:10px;align-items:center;font-size:12.5px;}
+  .chan-list .r .sw{width:9px;height:9px;border-radius:2px;}
+  .chan-list .r .bar{height:6px;border-radius:3px;background:var(--surface-card-2);overflow:hidden;}
+  .chan-list .r .bar i{display:block;height:100%;border-radius:3px;}
+  .chan-list .r .v{font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .chan-list .r .p{color:var(--ink-muted);white-space:nowrap;width:40px;text-align:right;font-variant-numeric:tabular-nums;}
+  .donut-wrap{display:grid;grid-template-columns:150px minmax(0,1fr);gap:16px;align-items:center;}
+  @media (max-width:420px){.donut-wrap{grid-template-columns:minmax(0,1fr);}}
+  .mini-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px;}
+  .mini-stats .ms{background:var(--surface-card-2);border-radius:10px;padding:9px 12px;}
+  .mini-stats .ms .l{font-size:11px;color:var(--ink-muted);}
+  .mini-stats .ms .v{font-family:var(--font-display);font-size:18px;font-weight:500;margin-top:2px;white-space:nowrap;}
+  .dollar-bar{display:flex;height:10px;border-radius:5px;overflow:hidden;gap:2px;background:var(--surface-card-2);margin:8px 0 10px;}
+  .dollar-bar i{display:block;height:100%;min-width:2px;}
+  .dollar-rows{display:flex;flex-direction:column;gap:6px;font-size:12.5px;}
+  .dollar-rows .r{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:10px;align-items:center;}
+  .dollar-rows .r .p{color:var(--ink-muted);width:40px;text-align:right;font-variant-numeric:tabular-nums;}
+  .dollar-rows .r .v{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .dollar-rows .r.keep .v{color:var(--success-text);}
+  .pl-grid{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:20px;align-items:start;}
+  .pl-grid>*{min-width:0;}
+  @media (max-width:1100px){.pl-grid{grid-template-columns:minmax(0,1fr);}}
+  table.simple{font-size:12.5px;}
+  table.simple th{font-size:10.5px;padding:6px 10px;}
+  table.simple td{padding:7px 10px;font-size:12.5px;}
+  table.simple td .bar{height:6px;border-radius:3px;background:var(--surface-card-2);overflow:hidden;min-width:80px;}
+  table.simple td .bar i{display:block;height:100%;border-radius:3px;background:var(--accent-solid);}
+  .fstage{border-radius:12px;}
+  .banner{border-radius:12px;font-size:12.5px;}
+  .sources{gap:10px;}
+  .gapslist .gap-row{border-radius:10px;}
+  details.defs summary{font-size:13px;}
+  .foot{font-size:11px;}
+  /* P&L page: keep its segmented period control and sub-controls on one row */
+  .pb-controls .seg{order:2;} .pb-controls .shoppick{order:2;} .pb-controls .chfilter{order:1;}
+  @media (max-width:900px){
+    .tb-in{padding:0 14px;gap:10px;height:48px;}
+    .tb-brand img{height:24px;}
+    .tb-tabs button{font-size:12.5px;padding:6px 10px;}
+    .tb-sync span#siteLoadedAt, .tb-sync a{display:none;}
+    .pagebar{top:calc(48px + env(safe-area-inset-top,0px));}
+    .pb-in{padding:10px 14px;}
+    .pb-title h1{font-size:16px;}
+    .wrap{padding:14px 14px 90px;gap:14px;}
+    .card{padding:14px;}
+    .strip{grid-template-columns:repeat(3,minmax(0,1fr));}
+  }
+  @media (max-width:640px){
+    .tb-in{flex-wrap:wrap;height:auto;padding:8px 12px 0;gap:8px 10px;}
+    .tb-brand{order:1;} .tb-right{order:2;margin-left:auto;} .tb-tabs{order:3;flex-basis:100%;padding-bottom:6px;margin:0 -12px;padding-left:12px;padding-right:12px;}
+    .tb-sync{margin-right:0;}
+    .pagebar{position:static;}
+    .pb-in{padding:10px 12px;gap:8px;}
+    .pb-title{flex-basis:100%;margin-right:0;}
+    .pb-controls{width:100%;justify-content:flex-start;gap:6px;}
+    .chfilter{gap:6px;}
+    .ddbtn{font-size:12px;padding:5px 8px;gap:5px;}
+    .ddbtn .v{max-width:120px;}
+    .seg{display:grid;grid-template-columns:repeat(4,1fr);width:100%;flex:1 1 100%;}
+    .strip{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .wrap{padding:12px 12px 40px;}
+  }
 </style>
 <style>
   :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
@@ -509,68 +653,88 @@
   #siteLoad .bar i{display:block;height:100%;width:6%;background:var(--brand-pine);border-radius:999px;transition:width .3s;}
   @keyframes siteWalk{0%,100%{transform:translateY(0) rotate(-1.5deg)}50%{transform:translateY(-6px) rotate(1.5deg)}}
   @media (prefers-reduced-motion:reduce){#siteLoad .mascot{animation:none}}
-  #siteRefresh{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:40;display:flex;align-items:center;gap:10px;background:var(--surface-card);border:1px solid var(--border);border-radius:999px;padding:6px 8px 6px 12px;font-family:var(--font-mono);font-size:12px;color:var(--ink-secondary);box-shadow:0 8px 28px rgba(0,0,0,.14);}
-  #siteRefresh button{font:inherit;font-weight:600;border:0;border-radius:999px;background:var(--accent-solid);color:var(--accent-solid-ink);padding:6px 11px;cursor:pointer;}
-  #siteRefresh button:focus-visible,#siteRefresh a:focus-visible{outline:2px solid var(--ink-primary);outline-offset:2px;}
-  #siteRefresh a{color:var(--ink-muted);text-decoration:none;padding:0 4px;}
   @media print{#siteRefresh{display:none}}
   /* phones: the bar spans the bottom, and the page gets room under it so the last P&L rows are not hidden behind it */
   @media (max-width:520px){
-    body{padding-bottom:calc(76px + env(safe-area-inset-bottom,0px)) !important;}
-    #siteRefresh{left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));justify-content:space-between;gap:6px;padding:6px 6px 6px 10px;font-size:11.5px;}
-    #siteRefresh a{padding:0 2px;}
   }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="top">
-    <div class="brand">
-      <div class="brand-logo"><img class="logo-light" src="/img/logo-h-pine.png" alt="Cattasaurus" width="1000" height="327"><img class="logo-dark" src="/img/logo-h-pistachio.png" alt="" aria-hidden="true" width="1000" height="327"></div>
-      <div class="brand-text">
-        <h1 class="brand-title">Dashboard · P&amp;L chuẩn D2C</h1>
-        <div class="sub">P&amp;L quản trị chuẩn D2C: Doanh thu thuần → COGS → Lợi nhuận gộp → phí thanh toán &amp; sàn → marketing → Lợi nhuận đóng góp → OpEx → EBITDA; điểm hoà vốn, ROAS &amp; MER · <b>ngày tính theo giờ Los Angeles (PT)</b> cho mọi nguồn · nguồn chưa kết nối hiển thị <b>$0</b>, không dùng số mẫu</div>
+<header class="topbar">
+  <div class="tb-in">
+    <a class="tb-brand" href="/?menu=1" title="Cattasaurus"><img src="/img/logo-h-pistachio.png" alt="Cattasaurus" width="1000" height="327"></a>
+    <nav class="tb-tabs" id="mainTabs" role="tablist" aria-label="Pages">
+      <button type="button" data-view="exec" class="active" role="tab" aria-selected="true" data-i18n="nav.exec">Overview</button>
+      <button type="button" data-view="sales" role="tab" aria-selected="false" data-i18n="nav.sales">Sales &amp; customers</button>
+      <button type="button" data-view="marketing" role="tab" aria-selected="false" data-i18n="nav.marketing">Marketing</button>
+      <button type="button" data-view="pnl" role="tab" aria-selected="false" data-i18n="nav.pnl">P&amp;L</button>
+      <button type="button" data-view="inventory" role="tab" aria-selected="false" data-i18n="nav.inventory">Products &amp; inventory</button>
+      <button type="button" data-view="opex" role="tab" aria-selected="false" data-i18n="nav.opex">Fixed costs &amp; cash</button>
+      <button type="button" data-view="data" role="tab" aria-selected="false" data-i18n="nav.data">Data</button>
+    </nav>
+    <div class="tb-right">
+      <div id="siteRefresh" class="tb-sync" hidden><span class="tb-dot" aria-hidden="true"></span><span id="siteLoadedAt" data-i18n-title="tb.loadedAt" title="When the numbers were loaded (your clock)"></span><button type="button" id="siteReload" data-i18n-title="tb.reload" title="Reload the latest numbers">↻</button><a href="/?menu=1#app" id="siteInstall" data-i18n="tb.install" data-i18n-title="tb.installTitle" title="Install as an app" hidden>Install</a></div>
+      <div class="tb-lang" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">EN</button><button type="button" data-lang="vi" aria-pressed="false">VI</button></div>
+      <button type="button" class="tb-ico" id="themeBtn" data-i18n-title="tb.theme" title="Light / dark" aria-label="Theme"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 2v14a7 7 0 0 0 0-14z" fill="currentColor"/></svg></button>
+      <a class="tb-ico" href="/logout" data-i18n-title="tb.signout" title="Sign out" aria-label="Sign out"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M21 3v18"/></svg></a>
+    </div>
+  </div>
+</header>
+
+<div class="pagebar">
+  <div class="pb-in">
+    <div class="pb-title">
+      <h1 id="pageTitle">Overview</h1>
+      <div class="pb-ctx"><span id="rangeLbl"></span><span class="pb-note" id="pageCtx"></span></div>
+    </div>
+    <div class="pb-controls">
+      <div class="chfilter" id="filterBar"></div>
+      <div class="seg" id="modeSeg">
+        <button data-mode="day" class="active" data-i18n="mode.day">Day</button>
+        <button data-mode="week" data-i18n="mode.week">Week</button>
+        <button data-mode="month" data-i18n="mode.month">Month</button>
+        <button data-mode="range" data-i18n="mode.range">Custom</button>
       </div>
+      <div class="shoppick" id="shopPicker" hidden></div>
     </div>
-    <img class="band-mascot" src="/img/mascot-lying.png" alt="" aria-hidden="true" width="720" height="429">
-  </div>
-
-  <div class="maintabs" id="mainTabs" role="tablist">
-    <button type="button" data-view="exec" class="active" role="tab" aria-selected="true">Điều hành</button>
-    <button type="button" data-view="sales" role="tab" aria-selected="false">Bán hàng &amp; khách</button>
-    <button type="button" data-view="marketing" role="tab" aria-selected="false">Marketing</button>
-    <button type="button" data-view="pnl" role="tab" aria-selected="false">Lãi lỗ (P&amp;L)</button>
-    <button type="button" data-view="inventory" role="tab" aria-selected="false">Sản phẩm &amp; tồn kho</button>
-    <button type="button" data-view="opex" role="tab" aria-selected="false">Chi phí cố định &amp; tiền</button>
-    <button type="button" data-view="data" role="tab" aria-selected="false">Dữ liệu</button>
-  </div>
-
-  <div class="modebar">
-    <div class="seg" id="modeSeg">
-      <button data-mode="day" class="active">Theo ngày</button>
-      <button data-mode="week">Theo tuần</button>
-      <button data-mode="month">Theo tháng</button>
-      <button data-mode="range">Tuỳ chọn</button>
-    </div>
-    <div class="shoppick" id="shopPicker" hidden></div>
     <div class="subctl" id="subCtl"></div>
-    <div class="rangelbl" id="rangeLbl"></div>
-    <div class="chfilter" id="chFilter" title="Lọc kênh bán — áp dụng cho mọi trang"></div>
   </div>
+</div>
 
+<main class="wrap">
   <div class="banner" id="chBanner" hidden><i data-icon="filter"></i><span id="chBannerTxt"></span></div>
-
-  <div class="banner" id="liveBanner" style="border-color:color-mix(in srgb, var(--accent) 35%, var(--border));background:color-mix(in srgb, var(--accent) 8%, var(--surface-card));"><i data-icon="plug"></i><span>Đang kết nối dữ liệu thật…</span></div>
-
-  <div class="banner" id="syncBanner"><i data-icon="clock"></i><span><b>Lưu ý ngày gần nhất:</b> khoảng xem gồm ngày hôm nay (giờ LA) nên số ngày đó chưa chốt — Amazon ghi nhận phí/settlement muộn 24–48h, các nguồn khác cập nhật mỗi 30 phút.</span></div>
 
   <div id="viewExec" class="view">
   <div class="strip" id="periodStrip"></div>
   <div class="exec-kpis" id="execKpis"></div>
   <div class="brief-grid" id="briefGrid">
-    <div class="card"><h3>Tóm tắt kỳ này</h3><div class="lead" id="briefSummary"></div><div class="sub" id="briefSummarySub"></div></div>
-    <div class="card"><h3>Điều gì làm lợi nhuận đổi</h3><div class="kv-rows" id="briefMoved"></div><div class="sub" id="briefMovedSub"></div></div>
-    <div class="card"><h3>Cần quyết tuần này</h3><div class="kv-rows" id="briefDecide"></div><div class="sub" id="briefDecideSub"></div></div>
+    <div><h3 data-i18n="brief.summary">In brief</h3><div class="lead" id="briefSummary"></div><div class="sub" id="briefSummarySub"></div></div>
+    <div><h3 data-i18n="brief.moved">What moved profit</h3><div class="kv-rows" id="briefMoved"></div><div class="sub" id="briefMovedSub"></div></div>
+    <div><h3 data-i18n="brief.risks">Biggest risks</h3><div class="kv-rows" id="briefRisks"></div><div class="sub" id="briefRisksSub"></div></div>
+    <div><h3 data-i18n="brief.decide">Decide this week</h3><div class="kv-rows" id="briefDecide"></div><div class="sub" id="briefDecideSub"></div></div>
+  </div>
+
+  <div class="ov-grid">
+    <div class="card" id="revCard">
+      <div class="card-head"><h2 data-i18n="rev.title">Revenue performance</h2><div class="note" id="revNote"></div><div class="seg" id="revSeg" style="margin-left:auto;"><button type="button" data-g="day" class="active" data-i18n="rev.daily">Daily</button><button type="button" data-g="week" data-i18n="rev.weekly">Weekly</button><button type="button" data-g="month" data-i18n="rev.monthly">Monthly</button></div></div>
+      <div class="legend" id="revLegend" style="margin-bottom:6px;"></div>
+      <div style="position:relative;"><svg id="revChart" style="width:100%;display:block;"></svg><div class="tooltip" id="revTip"></div></div>
+      <div class="caption" id="revCaption" style="margin-top:6px;"></div>
+    </div>
+    <div class="card" id="chanCard">
+      <div class="card-head"><h2 data-i18n="chan.title">Sales channels</h2><div class="note" id="chanNote"></div></div>
+      <div class="donut-wrap"><svg id="chanDonut" viewBox="0 0 150 150" width="150" height="150" role="img"></svg><div class="chan-list" id="chanList"></div></div>
+      <div class="mini-stats" id="chanStats"></div>
+    </div>
+  </div>
+
+  <div class="card" id="plCard">
+    <div class="card-head"><h2 data-i18n="pl.title">Product lines</h2><div class="note" id="plNote"></div><button class="btn mini" type="button" data-export="plTable" data-name="product-lines">CSV</button></div>
+    <div class="pl-grid">
+      <div style="overflow-x:auto;"><table class="simple" id="plTable" style="min-width:600px;"></table></div>
+      <div><h3 class="subhead" style="margin-top:0;" data-i18n="pl.dollar">Where each $100 of net revenue goes</h3><div class="dollar-bar" id="dollarBar"></div><div class="dollar-rows" id="dollarRows"></div></div>
+    </div>
+    <div class="caption" id="plCaption" style="margin-top:8px;"></div>
   </div>
 
   <div class="exec-grid">
@@ -582,34 +746,34 @@
       <div class="caption" id="paceCaption" style="padding-left:2px;margin-top:6px;"></div>
     </div>
     <div class="card" id="matrixCard">
-      <div class="card-head"><h2>Kênh bán</h2><div class="note">Doanh thu thuần theo ngày đặt · so cùng số ngày kỳ trước &amp; năm trước · kế hoạch = doanh thu gộp theo ngày đặt</div><button class="btn mini" type="button" data-export="matrixTable" data-name="kenh-ban">CSV</button></div>
+      <div class="card-head"><h2 data-i18n="h.matrixTitle">Kênh bán</h2><div class="note" data-i18n="h.matrixNote">Doanh thu thuần theo ngày đặt · so cùng số ngày kỳ trước &amp; năm trước · kế hoạch = doanh thu gộp theo ngày đặt</div><button class="btn mini" type="button" data-export="matrixTable" data-name="kenh-ban">CSV</button></div>
       <div style="overflow-x:auto;"><table class="simple matrix" id="matrixTable" style="min-width:760px;"></table></div>
       <div class="caption" id="matrixCaption" style="padding-left:2px;margin-top:8px;"></div>
     </div>
   </div>
 
   <div class="card" id="bridgeCard">
-    <div class="card-head"><h2>Cầu lợi nhuận — CM3 đổi vì đâu</h2><div class="note" id="bridgeNote"></div></div>
+    <div class="card-head"><h2 data-i18n="h.bridgeTitle">Cầu lợi nhuận — CM3 đổi vì đâu</h2><div class="note" id="bridgeNote"></div></div>
     <div class="bridge-wrap"><svg id="bridgeChart" style="width:100%;display:block;min-width:560px;"></svg></div>
     <div class="caption" id="bridgeCaption" style="padding-left:2px;margin-top:8px;"></div>
   </div>
 
   <div class="card" id="alertCard">
-    <div class="card-head"><h2>Cảnh báo</h2><div class="note">Tự tính từ kỳ đang xem · ngưỡng ghi cạnh mỗi dòng</div></div>
+    <div class="card-head"><h2 data-i18n="h.alertTitle">Cảnh báo</h2><div class="note" data-i18n="h.alertNote">Tự tính từ kỳ đang xem · ngưỡng ghi cạnh mỗi dòng</div></div>
     <div id="alertList" class="gapslist"></div>
   </div>
 
   <details class="card defs" id="execDefs">
-    <summary>Định nghĩa dùng trên trang này</summary>
+    <summary data-i18n="h.defsSummary">Định nghĩa dùng trên trang này</summary>
     <div class="defs-body">
-      <div><b>Doanh thu thuần</b> = doanh thu gộp − giảm giá − hoàn tiền, không gồm thuế. Theo ngày đặt hàng, giờ Los Angeles.</div>
-      <div><b>Giá vốn sản phẩm</b> = số thật theo tháng/kênh trong <code>data/cogs_monthly.json</code> (từ báo cáo tồn kho kế toán) nếu đã điền; tháng/kênh nào chưa điền thì = doanh thu thuần × tỷ lệ ước tính trong <code>data/targets_monthly.json</code>. Hiện: <span id="defCogs"></span>.</div>
-      <div><b>Lợi nhuận gộp</b> = doanh thu thuần − giá vốn sản phẩm − fulfillment (FBA, ShipMonk, cước, bao bì).</div>
-      <div><b>CM2</b> = lợi nhuận gộp − hoa hồng sàn − phí cổng thanh toán. <b>CM3 (LN đóng góp)</b> = CM2 − toàn bộ marketing (quảng cáo, affiliate, creator).</div>
-      <div><b>EBITDA</b> = CM3 − chi phí hoạt động (kho bãi, G&amp;A nhập tay, Klaviyo, Snowball).</div>
-      <div><b>MER</b> = doanh thu thuần ÷ tổng chi quảng cáo (Meta, Google, Amazon Ads, TikTok Ads, AppLovin, Walmart Connect), chỉ tính ngày mọi nguồn đã có số. <b>MER hoà vốn</b> = 1 ÷ (CM2 ÷ doanh thu thuần).</div>
-      <div><b>nCAC (Shopify)</b> = quảng cáo D2C (Meta + Google + AppLovin) ÷ số khách mới Shopify theo hành trình đơn. Sàn không cho biết khách mới nên không tính cho Amazon/Walmart/TikTok.</div>
-      <div><b>So kỳ trước</b> = cùng số ngày của tháng/tuần liền trước (tháng 1–15 so với tháng trước 1–15). <b>So năm trước</b> = cùng khoảng ngày năm 2025 (tuần/ngày lùi 52 tuần để cùng thứ).</div>
+      <div data-i18n="h.def1"><b>Doanh thu thuần</b> = doanh thu gộp − giảm giá − hoàn tiền, không gồm thuế. Theo ngày đặt hàng, giờ Los Angeles.</div>
+      <div data-i18n="h.def2"><b>Giá vốn sản phẩm</b> = số thật theo tháng/kênh trong <code>data/cogs_monthly.json</code> (từ báo cáo tồn kho kế toán) nếu đã điền; tháng/kênh nào chưa điền thì = doanh thu thuần × tỷ lệ ước tính trong <code>data/targets_monthly.json</code>. Hiện: <span id="defCogs"></span>.</div>
+      <div data-i18n="h.def3"><b>Lợi nhuận gộp</b> = doanh thu thuần − giá vốn sản phẩm − fulfillment (FBA, ShipMonk, cước, bao bì).</div>
+      <div data-i18n="h.def4"><b>CM2</b> = lợi nhuận gộp − hoa hồng sàn − phí cổng thanh toán. <b>CM3 (LN đóng góp)</b> = CM2 − toàn bộ marketing (quảng cáo, affiliate, creator).</div>
+      <div data-i18n="h.def5"><b>EBITDA</b> = CM3 − chi phí hoạt động (kho bãi, G&amp;A nhập tay, Klaviyo, Snowball).</div>
+      <div data-i18n="h.def6"><b>MER</b> = doanh thu thuần ÷ tổng chi quảng cáo (Meta, Google, Amazon Ads, TikTok Ads, AppLovin, Walmart Connect), chỉ tính ngày mọi nguồn đã có số. <b>MER hoà vốn</b> = 1 ÷ (CM2 ÷ doanh thu thuần).</div>
+      <div data-i18n="h.def7"><b>nCAC (Shopify)</b> = quảng cáo D2C (Meta + Google + AppLovin) ÷ số khách mới Shopify theo hành trình đơn. Sàn không cho biết khách mới nên không tính cho Amazon/Walmart/TikTok.</div>
+      <div data-i18n="h.def8"><b>So kỳ trước</b> = cùng số ngày của tháng/tuần liền trước (tháng 1–15 so với tháng trước 1–15). <b>So năm trước</b> = cùng khoảng ngày năm 2025 (tuần/ngày lùi 52 tuần để cùng thứ).</div>
     </div>
   </details>
   </div><!-- /viewExec -->
@@ -622,26 +786,26 @@
     </div>
     <div class="legend" id="trendLegend" style="margin-bottom:8px;"></div>
     <div id="trendWrap" style="position:relative;"><svg id="trendChart" style="width:100%;display:block;"></svg><div class="tooltip" id="trendTip"></div></div>
-    <div class="caption" id="trendCaption" style="padding-left:2px;margin-top:6px;">Doanh thu thuần, <b>chi phí biến đổi</b> (giá vốn + fulfillment + phí giao dịch + quảng cáo + hoa hồng… — tăng giảm theo doanh thu), <b>chi phí hoạt động</b> (kho bãi & logistics + G&amp;A, đường đứt nét — lương, văn phòng… chưa nhập nên đường này còn thấp) và lợi nhuận hoạt động (EBITDA) của từng kỳ, cùng định nghĩa với bảng P&amp;L. Bấm tên trong chú giải để ẩn/hiện một đường (ẩn doanh thu để nhìn rõ chi phí). Kỳ đang xem được tô nền; kỳ chưa kết thúc vẽ điểm rỗng. Rê chuột để xem số và tỷ lệ chi phí trên doanh thu.</div>
+    <div class="caption" id="trendCaption" style="padding-left:2px;margin-top:6px;" data-i18n="h.trendCaption">Doanh thu thuần, <b>chi phí biến đổi</b> (giá vốn + fulfillment + phí giao dịch + quảng cáo + hoa hồng… — tăng giảm theo doanh thu), <b>chi phí hoạt động</b> (kho bãi & logistics + G&amp;A, đường đứt nét — lương, văn phòng… chưa nhập nên đường này còn thấp) và lợi nhuận hoạt động (EBITDA) của từng kỳ, cùng định nghĩa với bảng P&amp;L. Bấm tên trong chú giải để ẩn/hiện một đường (ẩn doanh thu để nhìn rõ chi phí). Kỳ đang xem được tô nền; kỳ chưa kết thúc vẽ điểm rỗng. Rê chuột để xem số và tỷ lệ chi phí trên doanh thu.</div>
   </div>
 
   <div class="card" id="funnelCard">
-    <div class="card-head"><h2>Funnel đơn hàng — đặt → thanh toán → giao → huỷ / hoàn</h2><div class="note" id="funnelNote"></div><button class="btn mini" type="button" data-export="funnelTable" data-name="funnel-don-hang">CSV</button></div>
+    <div class="card-head"><h2 data-i18n="h.funnelTitle">Funnel đơn hàng — đặt → thanh toán → giao → huỷ / hoàn</h2><div class="note" id="funnelNote"></div><button class="btn mini" type="button" data-export="funnelTable" data-name="funnel-don-hang">CSV</button></div>
     <div class="fgrid" id="funnelKpis"></div>
     <div style="overflow-x:auto;"><table class="simple" id="funnelTable" style="min-width:640px;"></table></div>
     <div class="caption" id="funnelCaption" style="padding-left:2px;margin-top:8px;"></div>
   </div>
 
   <div class="card" id="returnsCard">
-    <div class="card-head"><h2>Trả hàng theo SKU</h2><div class="note" id="returnsNote"></div><button class="btn mini" type="button" data-export="returnsTable" data-name="tra-hang-theo-sku">CSV</button></div>
+    <div class="card-head"><h2 data-i18n="h.returnsTitle">Trả hàng theo SKU</h2><div class="note" id="returnsNote"></div><button class="btn mini" type="button" data-export="returnsTable" data-name="tra-hang-theo-sku">CSV</button></div>
     <div style="overflow-x:auto;"><table class="simple" id="returnsTable" style="min-width:640px;"></table></div>
     <div class="caption" id="returnsCaption" style="padding-left:2px;margin-top:8px;"></div>
   </div>
 
   <div class="card" id="attrCard" style="display:none;">
     <div class="card-head">
-      <h2>Kênh bán theo điểm chạm cuối — đơn Shopify</h2>
-      <div class="note" id="attrNote">Hành trình khách Shopify lưu cho từng đơn (các lượt ghé trong 30 ngày trước đơn) · kênh = lượt ghé cuối không kể direct · doanh thu thuần theo ngày đặt</div>
+      <h2 data-i18n="h.attrTitle">Kênh bán theo điểm chạm cuối — đơn Shopify</h2>
+      <div class="note" id="attrNote" data-i18n="h.attrNote">Hành trình khách Shopify lưu cho từng đơn (các lượt ghé trong 30 ngày trước đơn) · kênh = lượt ghé cuối không kể direct · doanh thu thuần theo ngày đặt</div>
     </div>
     <div class="be-grid" id="attrKpis"></div>
     <div class="share-bar" id="attrBar"></div>
@@ -654,7 +818,7 @@
 
   <div class="card" id="loopCard" style="display:none;">
     <div class="card-head">
-      <h2>Đăng ký định kỳ — Loop Subscriptions</h2>
+      <h2 data-i18n="h.loopTitle">Đăng ký định kỳ — Loop Subscriptions</h2>
       <div class="note" id="loopNote"></div>
     </div>
     <div class="be-grid" id="loopKpis"></div>
@@ -663,43 +827,43 @@
 
   <div class="card" id="shopifyReconCard" style="display:none;">
     <div class="card-head">
-      <h2>Shopify — đối chiếu với Shopify Analytics</h2>
-      <div class="note">Cùng định nghĩa với báo cáo "Sales over time" của Shopify · ngày theo giờ cửa hàng (LA)</div>
+      <h2 data-i18n="h.reconTitle">Shopify — đối chiếu với Shopify Analytics</h2>
+      <div class="note" data-i18n="h.reconNote">Cùng định nghĩa với báo cáo "Sales over time" của Shopify · ngày theo giờ cửa hàng (LA)</div>
     </div>
     <div style="overflow-x:auto;"><table class="simple" id="shopifyReconTable" style="min-width:520px;"></table></div>
-    <div class="caption" style="padding-left:2px;margin-top:8px;">Dòng "Shopify" trong bảng P&amp;L ở trên là <b>Gross sales</b> (giá niêm yết × số lượng, trước giảm giá) — đúng như Shopify định nghĩa, nên lớn hơn nhiều so với "Total sales" trên trang Analytics vì cửa hàng giảm giá sâu (B1G2F, mã affiliate…). Doanh thu thuần của dashboard = Net sales = Gross − Discounts − Returns. Xem trong Shopify: Analytics → Reports → "Sales over time" (có đủ các cột này).</div>
+    <div class="caption" style="padding-left:2px;margin-top:8px;" data-i18n="h.reconCaption">Dòng "Shopify" trong bảng P&amp;L ở trên là <b>Gross sales</b> (giá niêm yết × số lượng, trước giảm giá) — đúng như Shopify định nghĩa, nên lớn hơn nhiều so với "Total sales" trên trang Analytics vì cửa hàng giảm giá sâu (B1G2F, mã affiliate…). Doanh thu thuần của dashboard = Net sales = Gross − Discounts − Returns. Xem trong Shopify: Analytics → Reports → "Sales over time" (có đủ các cột này).</div>
   </div>
 
   </div><!-- /viewSales -->
 
   <div id="viewMarketing" class="view" hidden>
   <div class="card">
-    <div class="card-head"><h2>ROAS theo kênh &amp; MER toàn marketing</h2><div class="note" id="roasFinding"></div><div class="note" style="flex-basis:100%;">ROAS = doanh thu quy về kênh ÷ chi phí kênh đó (có thể trùng lặp do đa chạm)</div></div>
+    <div class="card-head"><h2 data-i18n="h.roasTitle">ROAS theo kênh &amp; MER toàn marketing</h2><div class="note" id="roasFinding"></div><div class="note" style="flex-basis:100%;" data-i18n="h.roasNote">ROAS = doanh thu quy về kênh ÷ chi phí kênh đó (có thể trùng lặp do đa chạm)</div></div>
     <div class="roas-grid" id="roasGrid"></div>
     <div class="mer-band">
-      <div class="m-label"><b>MER (Marketing Efficiency Ratio)</b> = Doanh thu thuần toàn bộ ÷ Tổng chi tiêu quảng cáo (Meta, Google, Amazon Ads, TikTok Ads, AppLovin, Walmart Connect). Chỉ tính những ngày mọi nguồn quảng cáo đã có số. Khác ROAS ở chỗ dùng doanh thu thật (kể cả organic/halo), nên MER thường thấp hơn tổng ROAS cộng dồn từng kênh — dùng MER để đánh giá hiệu quả marketing tổng thể, dùng ROAS để tối ưu từng kênh.</div>
+      <div class="m-label" data-i18n="h.merLabel"><b>MER (Marketing Efficiency Ratio)</b> = Doanh thu thuần toàn bộ ÷ Tổng chi tiêu quảng cáo (Meta, Google, Amazon Ads, TikTok Ads, AppLovin, Walmart Connect). Chỉ tính những ngày mọi nguồn quảng cáo đã có số. Khác ROAS ở chỗ dùng doanh thu thật (kể cả organic/halo), nên MER thường thấp hơn tổng ROAS cộng dồn từng kênh — dùng MER để đánh giá hiệu quả marketing tổng thể, dùng ROAS để tối ưu từng kênh.</div>
       <div class="m-value" id="merValue"></div>
     </div>
     <div class="mer-note" id="merNote" hidden></div>
-    <div class="caption" style="padding-left:2px;"><span id="adsCaptionAmazon">* Amazon Ads chờ Amazon duyệt quyền Advertising API → chi $0 và không tính vào MER. </span>TikTok Ads = GMV Max của TikTok Shop ("DT quy về" là doanh thu TikTok Shop mà GMV Max tự nhận). Amazon Ads (khi có số): chi phí Sponsored Products / Brands / Display theo ngày, "DT quy về" là doanh thu Amazon gán cho quảng cáo (không cộng vào doanh thu).</div>
+    <div class="caption" style="padding-left:2px;"><span id="adsCaptionAmazon" data-i18n="h.adsCapAmazon">* Amazon Ads chờ Amazon duyệt quyền Advertising API → chi $0 và không tính vào MER. </span><span data-i18n="h.adsCapRest">TikTok Ads = GMV Max của TikTok Shop ("DT quy về" là doanh thu TikTok Shop mà GMV Max tự nhận). Amazon Ads (khi có số): chi phí Sponsored Products / Brands / Display theo ngày, "DT quy về" là doanh thu Amazon gán cho quảng cáo (không cộng vào doanh thu).</span></div>
   </div>
 
   <div class="card" id="metaCampaignCard" style="display:none;">
     <div class="card-head">
-      <h2>Meta Ads theo sản phẩm &amp; chiến dịch</h2>
+      <h2 data-i18n="h.metaTitle">Meta Ads theo sản phẩm &amp; chiến dịch</h2>
       <div class="note" id="metaCampaignNote">Marketing API · attribution theo cài đặt ad account · sắp theo chi tiêu trong khoảng đang xem</div>
     </div>
     <div style="overflow-x:auto;"><table class="simple" id="metaCampaignTable" style="min-width:900px;"></table></div>
-    <div class="caption" style="padding-left:2px;margin-top:8px;">Sản phẩm / thị trường / giai đoạn tách từ tên campaign ("Peekaboo - Bidcap - Control - Low Bid - CA"). Frequency ≈ impressions ÷ tổng reach theo ngày (thấp hơn Ads Manager một chút khi xem nhiều ngày). CPA = chi ÷ đơn quy về; ROAS = doanh thu quy về ÷ chi. Ngưỡng cảnh báo: ROAS &lt; 1.5 hoặc CPA &gt; $90.</div>
+    <div class="caption" style="padding-left:2px;margin-top:8px;" data-i18n="h.metaCaption">Sản phẩm / thị trường / giai đoạn tách từ tên campaign ("Peekaboo - Bidcap - Control - Low Bid - CA"). Frequency ≈ impressions ÷ tổng reach theo ngày (thấp hơn Ads Manager một chút khi xem nhiều ngày). CPA = chi ÷ đơn quy về; ROAS = doanh thu quy về ÷ chi. Ngưỡng cảnh báo: ROAS &lt; 1.5 hoặc CPA &gt; $90.</div>
   </div>
 
   <div class="card" id="googleCampaignCard" style="display:none;">
     <div class="card-head">
-      <h2>Google Ads theo sản phẩm &amp; chiến dịch</h2>
+      <h2 data-i18n="h.googleTitle">Google Ads theo sản phẩm &amp; chiến dịch</h2>
       <div class="note" id="googleCampaignNote">Google Ads API · sắp theo chi tiêu trong khoảng đang xem</div>
     </div>
     <div style="overflow-x:auto;"><table class="simple" id="googleCampaignTable" style="min-width:860px;"></table></div>
-    <div class="caption" style="padding-left:2px;margin-top:8px;">Loại campaign (Search / Shopping / Performance Max / Demand Gen) lấy từ Google; sản phẩm tách từ tên campaign hoặc bảng alias trong workflow ("PKC" = Peekaboo). "Conv." là conversions theo cài đặt tài khoản Google Ads (mặc định gồm mua hàng đã tính vào cột conversions), DT quy về = conversions_value. Cùng ngưỡng cảnh báo với Meta: ROAS &lt; 1.5 hoặc CPA &gt; $90.</div>
+    <div class="caption" style="padding-left:2px;margin-top:8px;" data-i18n="h.googleCaption">Loại campaign (Search / Shopping / Performance Max / Demand Gen) lấy từ Google; sản phẩm tách từ tên campaign hoặc bảng alias trong workflow ("PKC" = Peekaboo). "Conv." là conversions theo cài đặt tài khoản Google Ads (mặc định gồm mua hàng đã tính vào cột conversions), DT quy về = conversions_value. Cùng ngưỡng cảnh báo với Meta: ROAS &lt; 1.5 hoặc CPA &gt; $90.</div>
   </div>
 
   <div class="card" id="klaviyoCard" style="display:none;">
@@ -718,8 +882,8 @@
 
   <div class="card" id="snowballCard" style="display:none;">
     <div class="card-head">
-      <h2>Snowball — hoa hồng influencer/affiliate</h2>
-      <div class="note">Tính từ đơn Shopify được Snowball gắn tag "Referral - SS - &lt;program&gt;" · cửa sổ đồng bộ 45 ngày · hoa hồng = giá trị đơn × % program, trừ lại khi hoàn tiền</div>
+      <h2 data-i18n="h.snowballTitle">Snowball — hoa hồng influencer/affiliate</h2>
+      <div class="note" data-i18n="h.snowballNote">Tính từ đơn Shopify được Snowball gắn tag "Referral - SS - &lt;program&gt;" · cửa sổ đồng bộ 45 ngày · hoa hồng = giá trị đơn × % program, trừ lại khi hoàn tiền</div>
     </div>
     <div id="snowballBody"></div>
   </div>
@@ -729,13 +893,13 @@
   <div class="kpis" id="kpiRow"></div>
 
   <div class="card" id="ueCard">
-    <div class="card-head"><h2>Kinh tế đơn vị — một đơn kiếm được gì</h2><div class="note" id="ueNote"></div><button class="btn mini" type="button" data-export="ueTable" data-name="kinh-te-don-vi">CSV</button></div>
+    <div class="card-head"><h2 data-i18n="h.ueTitle">Kinh tế đơn vị — một đơn kiếm được gì</h2><div class="note" id="ueNote"></div><button class="btn mini" type="button" data-export="ueTable" data-name="kinh-te-don-vi">CSV</button></div>
     <div style="overflow-x:auto;"><table class="simple" id="ueTable" style="min-width:640px;"></table></div>
     <div class="caption" id="ueCaption" style="padding-left:2px;margin-top:8px;"></div>
   </div>
 
   <div class="card" id="sensCard">
-    <div class="card-head"><h2>Độ nhạy — CM3 đổi bao nhiêu nếu…</h2><div class="note" id="sensNote"></div><button class="btn mini" type="button" data-export="sensTable" data-name="do-nhay">CSV</button></div>
+    <div class="card-head"><h2 data-i18n="h.sensTitle">Độ nhạy — CM3 đổi bao nhiêu nếu…</h2><div class="note" id="sensNote"></div><button class="btn mini" type="button" data-export="sensTable" data-name="do-nhay">CSV</button></div>
     <div style="overflow-x:auto;"><table class="simple" id="sensTable" style="min-width:620px;"></table></div>
     <div class="scen" id="scenBox"></div>
     <div class="scen-out" id="scenOut"></div>
@@ -744,38 +908,38 @@
 
   <div class="card">
     <div class="card-head">
-      <h2>Báo cáo lãi lỗ (P&amp;L statement)</h2>
+      <h2 data-i18n="h.stmtTitle">Báo cáo lãi lỗ (P&amp;L statement)</h2>
       <div class="note" id="stmtFinding"></div>
       <button class="btn mini" type="button" data-export="stmtTable" data-name="pnl">CSV</button>
-      <div class="note">% tính trên Doanh thu thuần của từng cột · bấm dòng nhóm để thu gọn/mở rộng · có thêm 6 kỳ liền trước để so xu hướng ở hầu hết các dòng (một vài dòng phụ có cấu trúc đổi theo kỳ — mix loại phí, breakdown kho theo kỳ hoá đơn, dòng đối chiếu — chỉ hiện cho kỳ đang xem)</div>
+      <div class="note" data-i18n="h.stmtNote">% tính trên Doanh thu thuần của từng cột · bấm dòng nhóm để thu gọn/mở rộng · có thêm 6 kỳ liền trước để so xu hướng ở hầu hết các dòng (một vài dòng phụ có cấu trúc đổi theo kỳ — mix loại phí, breakdown kho theo kỳ hoá đơn, dòng đối chiếu — chỉ hiện cho kỳ đang xem)</div>
     </div>
     <div class="stmt-wrap"><table class="stmt" id="stmtTable"></table></div>
-    <div class="caption" style="padding-left:2px;margin-top:8px;">Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa kết nối ($0)</span> chưa có nguồn dữ liệu nên để $0 (không ước tính). Vì vậy <b>Lợi nhuận gộp / đóng góp / EBITDA ở trên là lợi nhuận TRƯỚC</b> các khoản còn gắn nhãn đó (giá vốn sản phẩm, phí sàn Walmart/TikTok, phí Afterpay, G&amp;A…) — sẽ tự đúng dần khi từng nguồn được nối vào. Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa nhập ($0)</span> là chi phí không có API (lương, văn phòng, khấu hao, lãi vay, thuế TNDN): điền theo tháng vào file <code>data/opex_monthly.json</code> trên GitHub, bảng tự đọc và rải đều theo ngày; tháng chưa điền lấy theo tháng gần nhất đã điền.</div>
+    <div class="caption" style="padding-left:2px;margin-top:8px;" data-i18n="h.stmtCaption">Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa kết nối ($0)</span> chưa có nguồn dữ liệu nên để $0 (không ước tính). Vì vậy <b>Lợi nhuận gộp / đóng góp / EBITDA ở trên là lợi nhuận TRƯỚC</b> các khoản còn gắn nhãn đó (giá vốn sản phẩm, phí sàn Walmart/TikTok, phí Afterpay, G&amp;A…) — sẽ tự đúng dần khi từng nguồn được nối vào. Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa nhập ($0)</span> là chi phí không có API (lương, văn phòng, khấu hao, lãi vay, thuế TNDN): điền theo tháng vào file <code>data/opex_monthly.json</code> trên GitHub, bảng tự đọc và rải đều theo ngày; tháng chưa điền lấy theo tháng gần nhất đã điền.</div>
   </div>
 
   <div class="card" id="channelCostCard">
     <div class="card-head">
-      <h2>Chi phí để bán qua từng kênh (take rate)</h2>
-      <div class="note">Mỗi $1 doanh thu thuần của kênh, kênh và dịch vụ đi kèm lấy bao nhiêu — trước giá vốn sản phẩm và G&amp;A</div>
+      <h2 data-i18n="h.takeTitle">Chi phí để bán qua từng kênh (take rate)</h2>
+      <div class="note" data-i18n="h.takeNote">Mỗi $1 doanh thu thuần của kênh, kênh và dịch vụ đi kèm lấy bao nhiêu — trước giá vốn sản phẩm và G&amp;A</div>
     </div>
     <div class="chan-grid" id="channelCostGrid"></div>
-    <div class="caption" style="padding-left:2px;margin-top:8px;">Cùng số với bảng P&amp;L, chỉ xếp lại theo kênh. <b>Hoa hồng &amp; phí sàn / cổng thanh toán</b> là % cố định trên mỗi đơn (như margin của nhà bán lẻ) — chuẩn P&amp;L quản trị D2C xếp vào <i>phí bán hàng theo giao dịch</i> (trước CM2); <b>quảng cáo &amp; affiliate</b> là chi phí tuỳ chọn để tạo nhu cầu, xếp vào <i>marketing</i> (trước CM3) — không gộp chung để còn đọc được ACOS/TACOS. Tổng của cả hai cộng fulfillment và lưu kho = <b>take rate</b> của kênh ("Amazon lấy bao nhiêu %"). Klaviyo và gói Social Snowball trên P&amp;L nằm ở G&amp;A, ở đây tính cho kênh D2C vì chỉ phục vụ kênh đó.<span id="channelCostNote"></span></div>
+    <div class="caption" style="padding-left:2px;margin-top:8px;" data-i18n="h.takeCaption">Cùng số với bảng P&amp;L, chỉ xếp lại theo kênh. <b>Hoa hồng &amp; phí sàn / cổng thanh toán</b> là % cố định trên mỗi đơn (như margin của nhà bán lẻ) — chuẩn P&amp;L quản trị D2C xếp vào <i>phí bán hàng theo giao dịch</i> (trước CM2); <b>quảng cáo &amp; affiliate</b> là chi phí tuỳ chọn để tạo nhu cầu, xếp vào <i>marketing</i> (trước CM3) — không gộp chung để còn đọc được ACOS/TACOS. Tổng của cả hai cộng fulfillment và lưu kho = <b>take rate</b> của kênh ("Amazon lấy bao nhiêu %"). Klaviyo và gói Social Snowball trên P&amp;L nằm ở G&amp;A, ở đây tính cho kênh D2C vì chỉ phục vụ kênh đó.<span id="channelCostNote"></span></div>
   </div>
 
   <div class="card">
-    <div class="card-head"><h2>Điểm hoà vốn (break-even)</h2><div class="note">Dựa trên tỷ lệ chi phí biến đổi &amp; chi phí hoạt động (kho bãi, G&amp;A) của kỳ đang xem</div></div>
+    <div class="card-head"><h2 data-i18n="h.beTitle">Điểm hoà vốn (break-even)</h2><div class="note" data-i18n="h.beNote">Dựa trên tỷ lệ chi phí biến đổi &amp; chi phí hoạt động (kho bãi, G&amp;A) của kỳ đang xem</div></div>
     <div class="be-grid" id="beGrid"></div>
     <div style="position:relative;"><svg id="beChart" style="width:100%;display:block;"></svg></div>
   </div>
 
   <div class="card">
     <div class="card-head">
-      <h2>Sales tax thu hộ</h2>
-      <div class="note">Khoản thu hộ (pass-through liability) — không nằm trong P&amp;L ở trên · số thật từ Shopify; chưa tách theo bang (cần nối nguồn nộp thuế)</div>
+      <h2 data-i18n="h.taxTitle">Sales tax thu hộ</h2>
+      <div class="note" data-i18n="h.taxNote">Khoản thu hộ (pass-through liability) — không nằm trong P&amp;L ở trên · số thật từ Shopify; chưa tách theo bang (cần nối nguồn nộp thuế)</div>
     </div>
     <div style="overflow-x:auto;">
     <table class="simple" style="min-width:520px;">
-      <thead><tr><th>Kênh</th><th style="text-align:right">Đã thu</th><th style="text-align:right">Đã nộp</th><th style="text-align:right">Còn nợ</th><th>Trạng thái</th></tr></thead>
+      <thead><tr><th data-i18n="h.taxCh">Kênh</th><th style="text-align:right" data-i18n="h.taxCollected">Đã thu</th><th style="text-align:right" data-i18n="h.taxRemitted">Đã nộp</th><th style="text-align:right" data-i18n="h.taxOwed">Còn nợ</th><th data-i18n="h.taxStatus">Trạng thái</th></tr></thead>
       <tbody id="taxBody"></tbody>
     </table>
     </div>
@@ -783,8 +947,8 @@
 
   <div class="card" id="amazonGapsCard" style="display:none;">
     <div class="card-head">
-      <h2>Amazon — chi phí chưa capture đầy đủ</h2>
-      <div class="note">Từ log lần đồng bộ SP-API gần nhất · không đổi số đã hiển thị ở trên ngoài phần được ghi rõ</div>
+      <h2 data-i18n="h.amzGapTitle">Amazon — chi phí chưa capture đầy đủ</h2>
+      <div class="note" data-i18n="h.amzGapNote">Từ log lần đồng bộ SP-API gần nhất · không đổi số đã hiển thị ở trên ngoài phần được ghi rõ</div>
     </div>
     <div id="amazonGapsBody"></div>
   </div>
@@ -793,76 +957,87 @@
 
   <div id="viewInventory" class="view" hidden>
   <div class="card" id="invCard">
-    <div class="card-head"><h2>Tồn kho Amazon FBA theo SKU</h2><div class="note" id="invNote"></div><button class="btn mini" type="button" data-export="invTable" data-name="ton-kho">CSV</button></div>
+    <div class="card-head"><h2 data-i18n="h.invTitle">Tồn kho Amazon FBA theo SKU</h2><div class="note" id="invNote"></div><button class="btn mini" type="button" data-export="invTable" data-name="ton-kho">CSV</button></div>
     <div class="be-grid" id="invKpis"></div>
     <div style="overflow-x:auto;"><table class="simple" id="invTable" style="min-width:980px;"></table></div>
     <div class="caption" id="invCaption" style="padding-left:2px;margin-top:8px;"></div>
   </div>
+  <div class="card" id="smkInvCard">
+    <div class="card-head"><h2 data-i18n="smk.title">ShipMonk warehouses — stock by SKU</h2><div class="note" id="smkInvNote"></div><button class="btn mini" type="button" data-export="smkInvTable" data-name="shipmonk-stock">CSV</button></div>
+    <div class="be-grid" id="smkInvKpis"></div>
+    <div style="overflow-x:auto;"><table class="simple" id="smkInvTable" style="min-width:1100px;"></table></div>
+    <div class="caption" id="smkInvCaption" style="margin-top:8px;"></div>
+  </div>
   <div class="card" id="prodCard">
-    <div class="card-head"><h2>Lãi theo sản phẩm — CM3 từng SKU</h2><div class="note" id="prodNote"></div><button class="btn mini" type="button" data-export="prodTable" data-name="lai-theo-san-pham">CSV</button></div>
+    <div class="card-head"><h2 data-i18n="h.prodTitle">Lãi theo sản phẩm — CM3 từng SKU</h2><div class="note" id="prodNote"></div><button class="btn mini" type="button" data-export="prodTable" data-name="lai-theo-san-pham">CSV</button></div>
     <div class="prodctl" id="prodCtl"></div>
     <div style="overflow-x:auto;"><table class="simple" id="prodTable" style="min-width:1100px;"></table></div>
     <div class="caption" id="prodCaption" style="padding-left:2px;margin-top:8px;"></div>
   </div>
   <div class="card" id="poCard">
-    <div class="card-head"><h2>Hàng đang đặt (PO) — nhập tay</h2><div class="note" id="poNote"></div></div>
+    <div class="card-head"><h2 data-i18n="h.poTitle">Hàng đang đặt (PO) — nhập tay</h2><div class="note" id="poNote"></div></div>
     <div style="overflow-x:auto;"><table class="simple" id="poTable" style="min-width:520px;"></table></div>
     <div class="caption" id="poCaption" style="padding-left:2px;margin-top:8px;"></div>
   </div>
   <div class="card" id="shipmonkCard" style="display:none;">
     <div class="card-head">
-      <h2>ShipMonk — chi phí fulfillment theo từng đơn</h2>
-      <div class="note">Ước tính của ShipMonk cho từng đơn (cước carrier + pick &amp; pack + vật liệu đóng gói) · ghi theo ngày đặt hàng (giờ LA), gồm cả đơn chưa ship — cùng ngày với doanh thu</div>
+      <h2 data-i18n="h.smTitle">ShipMonk — chi phí fulfillment theo từng đơn</h2>
+      <div class="note" data-i18n="h.smNote">Ước tính của ShipMonk cho từng đơn (cước carrier + pick &amp; pack + vật liệu đóng gói) · ghi theo ngày đặt hàng (giờ LA), gồm cả đơn chưa ship — cùng ngày với doanh thu</div>
     </div>
     <div style="overflow-x:auto;"><table class="simple" id="shipmonkTable" style="min-width:520px;"></table></div>
     <div id="shipmonkBreakdown" style="margin-top:10px;"></div>
-    <div class="caption" id="shipmonkCaption" style="padding-left:2px;margin-top:8px;">Số lấy từ ShipMonk API (<code>order_costs</code>: estimated shipping / pick &amp; pack / packaging) cho mọi đơn ShipMonk nhận — store Shopify lẫn Amazon FBM. Đơn chưa ship dùng ước tính của ShipMonk và được cập nhật lại mỗi 30 phút khi ship. Hoá đơn tuần của ShipMonk có thể lệch nhỏ (điều chỉnh cước, surcharge). <b>Chưa gồm</b> phí lưu kho, receiving, xử lý hàng trả và các khoản chỉ có trên hoá đơn — sẽ thêm khi có file hoá đơn.</div>
+    <div class="caption" id="shipmonkCaption" style="padding-left:2px;margin-top:8px;" data-i18n="h.smCaption">Số lấy từ ShipMonk API (<code>order_costs</code>: estimated shipping / pick &amp; pack / packaging) cho mọi đơn ShipMonk nhận — store Shopify lẫn Amazon FBM. Đơn chưa ship dùng ước tính của ShipMonk và được cập nhật lại mỗi 30 phút khi ship. Hoá đơn tuần của ShipMonk có thể lệch nhỏ (điều chỉnh cước, surcharge). <b>Chưa gồm</b> phí lưu kho, receiving, xử lý hàng trả và các khoản chỉ có trên hoá đơn — sẽ thêm khi có file hoá đơn.</div>
   </div>
 
   <div class="card">
-    <div class="card-head"><h2>Chưa có trên trang này</h2><div class="note">Cần thêm nguồn</div></div>
+    <div class="card-head"><h2 data-i18n="h.invGapsTitle">Chưa có trên trang này</h2><div class="note" data-i18n="h.invGapsNote">Cần thêm nguồn</div></div>
     <div id="invGaps" class="gapslist"></div>
   </div>
   </div><!-- /viewInventory -->
 
   <div id="viewOpex" class="view" hidden>
   <div class="card" id="opexSummaryCard">
-    <div class="card-head"><h2>Chi phí hoạt động (OpEx) kỳ đang xem</h2><div class="note" id="opexFinding"></div><button class="btn mini" type="button" data-export="opexMonthsTable" data-name="opex-thang">CSV</button><div class="note" style="flex-basis:100%;">Kho bãi (ShipMonk, FBA lưu kho &amp; dịch vụ) + G&amp;A (nhập tay, Klaviyo, Snowball) · dưới lợi nhuận đóng góp</div></div>
+    <div class="card-head"><h2 data-i18n="h.opexTitle">Chi phí hoạt động (OpEx) kỳ đang xem</h2><div class="note" id="opexFinding"></div><button class="btn mini" type="button" data-export="opexMonthsTable" data-name="opex-thang">CSV</button><div class="note" style="flex-basis:100%;" data-i18n="h.opexNote2">Kho bãi (ShipMonk, FBA lưu kho &amp; dịch vụ) + G&amp;A (nhập tay, Klaviyo, Snowball) · dưới lợi nhuận đóng góp</div></div>
     <div class="be-grid" id="opexKpis"></div>
     <div style="overflow-x:auto;"><table class="simple" id="opexMonthsTable" style="min-width:760px;"></table></div>
     <div class="caption" id="opexMonthsCaption" style="padding-left:2px;margin-top:8px;"></div>
   </div>
   <div class="card">
-      <div class="card-head"><h2>Chi phí nhập tay (OpEx theo tháng)</h2><div class="note">Không có API — điền theo tháng vào <code>data/opex_monthly.json</code> trên GitHub; tháng chưa điền lấy theo tháng gần nhất đã điền</div></div>
+      <div class="card-head"><h2 data-i18n="h.opexManTitle">Chi phí nhập tay (OpEx theo tháng)</h2><div class="note" data-i18n="h.opexManNote">Không có API — điền theo tháng vào <code>data/opex_monthly.json</code> trên GitHub; tháng chưa điền lấy theo tháng gần nhất đã điền</div></div>
       <div style="overflow-x:auto;"><table class="simple" id="opexTable" style="min-width:760px;"></table></div>
     </div>
 
   <div class="card">
-    <div class="card-head"><h2>Tiền mặt &amp; runway</h2><div class="note">Chưa có nguồn</div></div>
+    <div class="card-head"><h2 data-i18n="h.cashTitle">Tiền mặt &amp; runway</h2><div class="note" data-i18n="h.cashNote">Chưa có nguồn</div></div>
     <div id="cashGaps" class="gapslist"></div>
   </div>
   </div><!-- /viewOpex -->
 
   <div id="viewData" class="view" hidden>
+  <div class="banner" id="liveBanner" style="border-color:color-mix(in srgb, var(--accent) 35%, var(--border));background:color-mix(in srgb, var(--accent) 8%, var(--surface-card));"><i data-icon="plug"></i><span data-i18n="h.liveBanner">Đang kết nối dữ liệu thật…</span></div>
+  <div class="banner" id="syncBanner"><i data-icon="clock"></i><span data-i18n="h.syncBanner"><b>Lưu ý ngày gần nhất:</b> khoảng xem gồm ngày hôm nay (giờ LA) nên số ngày đó chưa chốt — Amazon ghi nhận phí/settlement muộn 24–48h, các nguồn khác cập nhật mỗi 30 phút.</span></div>
     <div class="card">
-      <div class="card-head"><h2>Sức khoẻ dữ liệu theo nguồn</h2><div class="note">Trạng thái tự động hoá của từng nguồn · chấm màu = tuổi lần đồng bộ gần nhất (Xanh &lt; 4h · Vàng 4–48h · Đỏ quá 48h hoặc chưa kết nối) · "N/14 ngày" = số ngày có số liệu thật trong 14 ngày gần nhất (không tính hôm nay, vì hôm nay chưa chốt)</div></div>
+      <div class="card-head"><h2 data-i18n="h.healthTitle">Sức khoẻ dữ liệu theo nguồn</h2><div class="note" data-i18n="h.healthNote">Trạng thái tự động hoá của từng nguồn · chấm màu = tuổi lần đồng bộ gần nhất (Xanh &lt; 4h · Vàng 4–48h · Đỏ quá 48h hoặc chưa kết nối) · "N/14 ngày" = số ngày có số liệu thật trong 14 ngày gần nhất (không tính hôm nay, vì hôm nay chưa chốt)</div></div>
       <div class="sources healthgrid" id="healthGrid"></div>
     </div>
 
     <div class="card">
-      <div class="card-head"><h2>Còn thiếu gì trên P&amp;L</h2><div class="note">Gom lại từ các dòng "Chưa kết nối/Chưa nhập ($0)" đang rải rác trong bảng P&amp;L và ROAS — để biết cần nối gì tiếp theo</div></div>
+      <div class="card-head"><h2 data-i18n="h.gapsTitle">Còn thiếu gì trên P&amp;L</h2><div class="note" data-i18n="h.gapsNote">Gom lại từ các dòng "Chưa kết nối/Chưa nhập ($0)" đang rải rác trong bảng P&amp;L và ROAS — để biết cần nối gì tiếp theo</div></div>
       <div id="gapsList" class="gapslist"></div>
     </div>
   </div><!-- /viewData -->
 
 
-  <div class="foot">Mọi nguồn được đồng bộ về cùng một lịch ngày: múi giờ America/Los_Angeles (Shopify, Amazon, Amazon Ads báo cáo sẵn theo giờ này; Meta &amp; Google được quy đổi từ dữ liệu theo giờ) · Cattasaurus Finance</div>
-</div>
-<div id="siteLoad" role="status" aria-live="polite"><img class="wm" src="/img/logo-h-pine.png" alt="Cattasaurus" width="1000" height="327"><img class="mascot" id="siteLoadImg" src="/img/mascot-bag.png" alt="" aria-hidden="true" width="515" height="720"><div class="fun" aria-hidden="true">meow… đang đếm tiền</div><div class="bar" aria-hidden="true"><i id="siteLoadBar"></i></div><div id="siteLoadMsg">Đang tải số liệu…</div></div>
-<div id="siteRefresh" hidden><span id="siteLoadedAt" title="Giờ tải số liệu (giờ trên máy bạn)"></span><button type="button" id="siteReload" title="Tải lại số liệu mới nhất">↻ Cập nhật</button><a href="/?menu=1" title="Về trang chọn bảng">bảng khác</a><a href="/?menu=1#app" id="siteInstall" title="Cài như app lên máy / điện thoại" hidden>cài app</a><a href="/logout" title="Đăng xuất khỏi thiết bị này">thoát</a></div>
+  <div class="foot" data-i18n="h.foot">Mọi nguồn được đồng bộ về cùng một lịch ngày: múi giờ America/Los_Angeles (Shopify, Amazon, Amazon Ads báo cáo sẵn theo giờ này; Meta &amp; Google được quy đổi từ dữ liệu theo giờ) · Cattasaurus Finance</div>
+</main>
+<div id="siteLoad" role="status" aria-live="polite"><img class="wm" src="/img/logo-h-pine.png" alt="Cattasaurus" width="1000" height="327"><img class="mascot" id="siteLoadImg" src="/img/mascot-bag.png" alt="" aria-hidden="true" width="515" height="720"><div class="fun" aria-hidden="true">meow… counting the money</div><div class="bar" aria-hidden="true"><i id="siteLoadBar"></i></div><div id="siteLoadMsg">Loading the numbers…</div></div>
 <script>
 (function(){
-  var SOURCES = {"amazon": "amazon_pnl.json", "meta": "meta_ads.json", "shopify": "shopify_pnl.json", "google": "google_ads.json", "shipmonk": "shipmonk.json", "shipmonk_invoices": "shipmonk_invoices.json", "shipmonk_storage": "shipmonk_storage_daily.json", "paypal": "paypal.json", "klaviyo": "klaviyo.json", "klaviyo_invoices": "klaviyo_invoices.json", "amazon_ads": "amazon_ads.json", "opex": "opex_monthly.json", "amazon_storage": "amazon_storage.json", "loop_subscriptions": "loop_subscriptions.json", "tiktok_shop": "tiktok_shop.json", "walmart": "walmart.json", "applovin": "applovin.json", "tiktok_ads": "tiktok_ads.json", "targets": "targets_monthly.json", "cogs": "cogs_monthly.json", "purchase_orders": "purchase_orders.json", "cogs_skus": "cogs_skus.json"};
+  // language of the loader (pnl.js is not loaded yet): English by default, Vietnamese when the toggle saved 'vi'
+  var VI = false; try{ VI = localStorage.getItem('ctu_lang') === 'vi'; }catch(e){}
+  function T(en, vi){ return VI ? vi : en; }
+  if(VI){ var fun = document.querySelector('#siteLoad .fun'); if(fun) fun.textContent = 'meow… đang đếm tiền'; var m0 = document.getElementById('siteLoadMsg'); if(m0) m0.textContent = 'Đang tải số liệu…'; }
+  var SOURCES = {"amazon": "amazon_pnl.json", "meta": "meta_ads.json", "shopify": "shopify_pnl.json", "google": "google_ads.json", "shipmonk": "shipmonk.json", "shipmonk_invoices": "shipmonk_invoices.json", "shipmonk_storage": "shipmonk_storage_daily.json", "paypal": "paypal.json", "klaviyo": "klaviyo.json", "klaviyo_invoices": "klaviyo_invoices.json", "amazon_ads": "amazon_ads.json", "opex": "opex_monthly.json", "amazon_storage": "amazon_storage.json", "loop_subscriptions": "loop_subscriptions.json", "tiktok_shop": "tiktok_shop.json", "walmart": "walmart.json", "applovin": "applovin.json", "tiktok_ads": "tiktok_ads.json", "targets": "targets_monthly.json", "cogs": "cogs_monthly.json", "purchase_orders": "purchase_orders.json", "cogs_skus": "cogs_skus.json", "products": "products.json"};
   var keys = Object.keys(SOURCES), done = 0;
   window.__LIVE = {}; window.__LIVE_ERR = {}; window.__LOADED_AT = 0; window.__SAVED_AT = 0;
   try{ localStorage.setItem('ctu_last_dash', '/pnl'); }catch(e){}
@@ -870,11 +1045,11 @@
   var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
   var msg = document.getElementById('siteLoadMsg'), bar = document.getElementById('siteLoadBar');
   var t0 = Date.now();
-  function tick(){ done++; if(msg) msg.textContent = 'Đang tải số liệu… ' + done + '/' + keys.length; if(bar) bar.style.width = Math.round(6 + 94 * done / keys.length) + '%'; }
+  function tick(){ done++; if(msg) msg.textContent = T('Loading the numbers… ', 'Đang tải số liệu… ') + done + '/' + keys.length; if(bar) bar.style.width = Math.round(6 + 94 * done / keys.length) + '%'; }
   var slowTimer = setInterval(function(){
     if(done >= keys.length){ clearInterval(slowTimer); return; }
     var pending = keys.filter(function(k){ return !(k in window.__LIVE); });
-    if(msg && Date.now() - t0 > 12000) msg.textContent = 'Đang tải số liệu… ' + done + '/' + keys.length + ' — GitHub đang chậm, chờ: ' + pending.join(', ') + ' (' + Math.round((Date.now() - t0)/1000) + 's)';
+    if(msg && Date.now() - t0 > 12000) msg.textContent = T('Loading the numbers… ', 'Đang tải số liệu… ') + done + '/' + keys.length + T(' — GitHub is slow, waiting for: ', ' — GitHub đang chậm, chờ: ') + pending.join(', ') + ' (' + Math.round((Date.now() - t0)/1000) + 's)';
   }, 3000);
   function sad(text){ var im = document.getElementById('siteLoadImg'); if(im){ im.src = '/img/mascot-shy.png'; im.style.animation = 'none'; } if(msg) msg.textContent = text; if(bar) bar.style.width = '100%'; }
   window.__STALE = {};   // sources answered from a saved copy (service worker) or an old edge copy, with the reason
@@ -896,7 +1071,7 @@
     return load(k, 1).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=7cd40e687e';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=a662464fbd';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');
@@ -904,9 +1079,9 @@
       if(at){
         var stale = Object.keys(window.__STALE);
         var allSaved = stale.length === keys.length && stale.every(function(k){ return window.__STALE[k] === 'error'; });
-        if(window.__SAVED_AT && (navigator.onLine === false || allSaved)){ at.textContent = 'ngoại tuyến · số liệu đã lưu lúc ' + hhmm(window.__SAVED_AT); at.style.color = 'var(--status-serious)'; at.title = 'Không có mạng — đang xem bản số liệu máy này lưu lần cuối'; }
-        else if(stale.length){ at.textContent = stale.length + ' nguồn dùng bản đã lưu (GitHub đang chậm) · bấm ↻ để thử lại'; at.style.color = 'var(--status-serious)'; at.title = 'Nguồn: ' + stale.map(function(k){ return k + ' (' + window.__STALE[k] + ')'; }).join(', '); }
-        else at.textContent = 'số liệu lúc ' + hhmm(window.__LOADED_AT);
+        if(window.__SAVED_AT && (navigator.onLine === false || allSaved)){ at.textContent = T('offline · numbers saved at ', 'ngoại tuyến · số liệu đã lưu lúc ') + hhmm(window.__SAVED_AT); at.style.color = 'var(--status-serious)'; at.title = T('No connection — showing the numbers this device saved last', 'Không có mạng — đang xem bản số liệu máy này lưu lần cuối'); }
+        else if(stale.length){ at.textContent = stale.length + T(' sources use a saved copy (GitHub is slow) · press ↻ to retry', ' nguồn dùng bản đã lưu (GitHub đang chậm) · bấm ↻ để thử lại'); at.style.color = 'var(--status-serious)'; at.title = T('Sources: ', 'Nguồn: ') + stale.map(function(k){ return k + ' (' + window.__STALE[k] + ')'; }).join(', '); }
+        else at.textContent = T('numbers as of ', 'số liệu lúc ') + hhmm(window.__LOADED_AT);
       }
       var inst = document.getElementById('siteInstall'); if(inst && !standalone) inst.hidden = false;
       if(pill) pill.hidden = false;
@@ -914,8 +1089,8 @@
       if(errs.length && window.console) console.warn('sources not loaded:', window.__LIVE_ERR);
     };
     var failed = keys.filter(function(k){ return window.__LIVE_ERR[k]; });
-    if(failed.length === keys.length){ sad(navigator.onLine === false ? 'Không có mạng và máy này chưa lưu số liệu lần nào — có mạng lại thì bấm ↻.' : 'Không lấy được số liệu (mạng hoặc GitHub đang lỗi) — thử lại sau ít phút.'); return; }
-    s.onerror = function(){ sad('Không tải được pnl.js — tải lại trang.'); };
+    if(failed.length === keys.length){ sad(navigator.onLine === false ? T('No connection and this device has never saved the numbers — press ↻ once you are back online.', 'Không có mạng và máy này chưa lưu số liệu lần nào — có mạng lại thì bấm ↻.') : T('Could not fetch the numbers (network or GitHub error) — try again in a few minutes.', 'Không lấy được số liệu (mạng hoặc GitHub đang lỗi) — thử lại sau ít phút.')); return; }
+    s.onerror = function(){ sad(T('Could not load pnl.js — reload the page.', 'Không tải được pnl.js — tải lại trang.')); };
     document.body.appendChild(s);
   });
   document.getElementById('siteReload').addEventListener('click', function(){ location.reload(); });

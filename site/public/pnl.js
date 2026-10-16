@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 7cd40e687e).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build a662464fbd).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -17,6 +17,265 @@
 (function(){
   "use strict";
   function sum(arr){ return arr.reduce((a,b)=>a+b,0); }
+  // ---------- V10: language (English default, Vietnamese on toggle) ----------
+  let LANG = 'en';
+  try{ const l0 = localStorage.getItem('ctu_lang'); if(l0==='vi' || l0==='en') LANG = l0; }catch(e){}
+  document.documentElement.lang = LANG;
+  const L = {en:{}, vi:{}};   // filled below (L.en / L.vi); a missing key falls back to the other language, then to the key itself
+  function tx(key, vars){
+    let s = (L[LANG] && L[LANG][key]!==undefined) ? L[LANG][key] : (L.en[key]!==undefined ? L.en[key] : (L.vi[key]!==undefined ? L.vi[key] : key));
+    if(vars) Object.keys(vars).forEach(v=>{ s = s.split('{'+v+'}').join(vars[v]); });
+    return s;
+  }
+  const tv = (en, vi) => LANG==='vi' ? vi : en;   // inline pair for one-off strings
+  const dayWord = n => n===1 ? 'day' : 'days';   // English plural for day counts (Vietnamese strings carry their own 'ngày')
+  function setLang(l){ if(l!=='vi' && l!=='en') return; LANG = l; try{ localStorage.setItem('ctu_lang', l); }catch(e){} document.documentElement.lang = l; renderStatic(); renderAll(); if(window.__ctuReloadOnLang!==false) location.reload(); }   // reload so the loader / top-bar strings written before pnl.js follow too
+  function renderStatic(){
+    document.querySelectorAll('[data-i18n]').forEach(el=>{ el.innerHTML = tx(el.dataset.i18n); });
+    document.querySelectorAll('[data-i18n-title]').forEach(el=>{ el.title = tx(el.dataset.i18nTitle); });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el=>{ el.placeholder = tx(el.dataset.i18nPh); });
+    document.querySelectorAll('[data-lang]').forEach(b=>{ b.classList.toggle('active', b.dataset.lang===LANG); b.setAttribute('aria-pressed', b.dataset.lang===LANG ? 'true' : 'false'); });
+  }
+  Object.assign(L.en, {
+    'nav.exec':'Overview', 'nav.sales':'Sales &amp; customers', 'nav.marketing':'Marketing', 'nav.pnl':'P&amp;L', 'nav.inventory':'Products &amp; inventory', 'nav.opex':'Fixed costs &amp; cash', 'nav.data':'Data',
+    'mode.day':'Day', 'mode.week':'Week', 'mode.month':'Month', 'mode.range':'Custom',
+    'tb.loadedAt':'When the numbers were loaded (your clock)', 'tb.reload':'Reload the latest numbers', 'tb.install':'Install', 'tb.installTitle':'Install as an app', 'tb.theme':'Light / dark', 'tb.signout':'Sign out',
+    'brief.summary':'In brief', 'brief.moved':'What moved profit', 'brief.risks':'Biggest risks', 'brief.decide':'Decide this week',
+    'rev.title':'Revenue performance', 'rev.daily':'Daily', 'rev.weekly':'Weekly', 'rev.monthly':'Monthly', 'rev.peak':'Peak', 'rev.note':'Net revenue and CM3 · best {day}: {best}', 'rev.caption':'Net revenue = gross − discounts − refunds, by order date (Los Angeles). CM3 = contribution after product cost, fulfillment, fees and all marketing. Hover for orders and ad spend.',
+    'chan.title':'Sales channels', 'chan.note':'{total} across {n} channels', 'chan.avgDay':'Average day', 'chan.perOrder':'Revenue per order',
+    'pl.title':'Product lines', 'pl.line':'Product line', 'pl.share':'Share', 'pl.vsPrior':'vs prior', 'pl.cover':'Days of cover', 'pl.dollar':'Where each $100 of net revenue goes',
+    'pl.note':'{n} lines on {ch}{cov}', 'pl.caption':'Revenue, fees and ads are allocated to a line by its share of gross sales in each channel; fulfillment by units. Days of cover = FBA fulfillable + ShipMonk available ÷ units sold per day (last 30 days). Lines come from data/products.json.',
+    'pl.realCost':'Landed cost from data/cogs_skus.json for {n}/{of} SKUs; the rest is estimated.', 'pl.estCost':'Product cost is the estimate until data/cogs_skus.json is filled in.',
+    'd.productCost':'Product cost', 'd.fulfillment':'Fulfillment', 'd.fees':'Marketplace & payment fees', 'd.marketing':'Marketing', 'd.opex':'Operating costs', 'd.keep':'EBITDA kept',
+    'm.netRevenue':'Net revenue', 'm.orders':'Orders', 'm.adSpend':'Ad spend', 'm.units':'Units',
+    'u.days':'days', 'u.d':'d', 'u.noData':'No data', 'u.waiting':'Waiting for data', 'u.total':'Total', 'u.daysWithSku':'days with SKU data',
+    'risk.stockout':'{n} SKUs run out within 30 days', 'risk.stockoutNote':'{list} — revenue at risk over the next 30 days', 'risk.stockoutAction':'Place or expedite POs for: {list}',
+    'page.exec':'Overview', 'page.sales':'Sales & customers', 'page.marketing':'Marketing', 'page.pnl':'Profit & loss', 'page.inventory':'Products & inventory', 'page.opex':'Fixed costs & cash', 'page.data':'Data sources',
+    'ctx.vs':'vs {cmp}', 'ctx.today':'includes today (not final)',
+  });
+  Object.assign(L.vi, {
+    'nav.exec':'Điều hành', 'nav.sales':'Bán hàng &amp; khách', 'nav.marketing':'Marketing', 'nav.pnl':'Lãi lỗ (P&amp;L)', 'nav.inventory':'Sản phẩm &amp; tồn kho', 'nav.opex':'Chi phí cố định &amp; tiền', 'nav.data':'Dữ liệu',
+    'mode.day':'Ngày', 'mode.week':'Tuần', 'mode.month':'Tháng', 'mode.range':'Tuỳ chọn',
+    'tb.loadedAt':'Giờ tải số liệu (giờ trên máy bạn)', 'tb.reload':'Tải lại số liệu mới nhất', 'tb.install':'Cài app', 'tb.installTitle':'Cài như app lên máy / điện thoại', 'tb.theme':'Sáng / tối', 'tb.signout':'Đăng xuất',
+    'brief.summary':'Tóm tắt kỳ này', 'brief.moved':'Điều gì làm lợi nhuận đổi', 'brief.risks':'Rủi ro lớn nhất', 'brief.decide':'Cần quyết tuần này',
+    'rev.title':'Doanh thu theo thời gian', 'rev.daily':'Ngày', 'rev.weekly':'Tuần', 'rev.monthly':'Tháng', 'rev.peak':'Đỉnh', 'rev.note':'Doanh thu thuần và CM3 · cao nhất {day}: {best}', 'rev.caption':'Doanh thu thuần = gộp − giảm giá − hoàn tiền, theo ngày đặt (giờ Los Angeles). CM3 = lợi nhuận đóng góp sau giá vốn, fulfillment, phí và toàn bộ marketing. Rê chuột để xem số đơn và chi quảng cáo.',
+    'chan.title':'Kênh bán', 'chan.note':'{total} trên {n} kênh', 'chan.avgDay':'Trung bình mỗi ngày', 'chan.perOrder':'Doanh thu mỗi đơn',
+    'pl.title':'Dòng sản phẩm', 'pl.line':'Dòng sản phẩm', 'pl.share':'Tỷ trọng', 'pl.vsPrior':'so kỳ trước', 'pl.cover':'Ngày còn hàng', 'pl.dollar':'Mỗi $100 doanh thu thuần đi đâu',
+    'pl.note':'{n} dòng trên {ch}{cov}', 'pl.caption':'Doanh thu, phí và quảng cáo phân bổ cho dòng theo tỷ trọng doanh thu gộp của từng kênh; fulfillment theo units. Ngày còn hàng = FBA bán được + ShipMonk sẵn bán ÷ units bán mỗi ngày (30 ngày gần nhất). Dòng sản phẩm lấy từ data/products.json.',
+    'pl.realCost':'Giá vốn landed từ data/cogs_skus.json cho {n}/{of} SKU; còn lại ước tính.', 'pl.estCost':'Giá vốn đang ước tính cho đến khi điền data/cogs_skus.json.',
+    'd.productCost':'Giá vốn sản phẩm', 'd.fulfillment':'Fulfillment', 'd.fees':'Phí sàn & thanh toán', 'd.marketing':'Marketing', 'd.opex':'Chi phí hoạt động', 'd.keep':'EBITDA giữ lại',
+    'm.netRevenue':'Doanh thu thuần', 'm.orders':'Đơn hàng', 'm.adSpend':'Chi quảng cáo', 'm.units':'Units',
+    'u.days':'ngày', 'u.d':'ng', 'u.noData':'Chưa có dữ liệu', 'u.waiting':'Chờ dữ liệu', 'u.total':'Tổng', 'u.daysWithSku':'ngày có dữ liệu SKU',
+    'risk.stockout':'{n} SKU hết hàng trong 30 ngày', 'risk.stockoutNote':'{list} — doanh thu có nguy cơ mất trong 30 ngày tới', 'risk.stockoutAction':'Đặt hoặc đẩy nhanh PO cho: {list}',
+    'page.exec':'Điều hành', 'page.sales':'Bán hàng & khách', 'page.marketing':'Marketing', 'page.pnl':'Lãi lỗ', 'page.inventory':'Sản phẩm & tồn kho', 'page.opex':'Chi phí cố định & tiền', 'page.data':'Nguồn dữ liệu',
+    'ctx.vs':'so {cmp}', 'ctx.today':'gồm hôm nay (chưa chốt)',
+  });
+  Object.assign(L.en, {
+    'smk.title':'ShipMonk warehouses — stock by SKU', 'smk.waiting':'ShipMonk sync 1.4 writes a stock snapshot per SKU and warehouse (NV3, PA2, TO1). Upload fetch_shipmonk.py and wait for the next run; a 401/403 on the inventory step means the API key needs product read access.',
+    'smk.note':'Snapshot {as_of} · warehouses {wh} · {n} SKUs · velocity = Shopify units per day, last 30 days', 'smk.available':'Available', 'smk.onHand':'on hand', 'smk.allocated':'allocated', 'smk.incoming':'Incoming', 'smk.receivings':'in receivings', 'smk.backordered':'Backordered SKUs', 'smk.unitsShort':'units short', 'smk.noBackorder':'All open orders covered', 'smk.tagBack':'backordered', 'smk.byWarehouse':'By warehouse',
+    'smk.caption':'Available = units ShipMonk can allocate to new orders (capped at on hand − quarantined − unavailable). Allocated = reserved for open orders. Incoming = open receivings (expected − received). Stock-out dates use the Shopify sales velocity of the last 30 days; POs with destination "shipmonk" in data/purchase_orders.json are added on their ETA.',
+    'inv.soon':'Run out within 30 days', 'inv.earliest':'earliest', 'inv.outStock':'Stock-out (stock)', 'inv.outAll':'Stock-out (stock + incoming + PO)', 'inv.tagNoSales':'no sales', 'inv.tagOut':'out of stock', 'inv.tagSoon':'runs out — order now', 'inv.tagWaiting':'waiting on inbound', 'inv.tagOk':'ok', 'inv.showing':'Showing 60 of {n} SKUs.',
+    'u.product':'Product', 'u.day':'day', 'u.status':'Status',
+  });
+  Object.assign(L.vi, {
+    'smk.title':'Kho ShipMonk — tồn theo SKU', 'smk.waiting':'Script ShipMonk 1.4 ghi snapshot tồn kho theo SKU và kho (NV3, PA2, TO1). Up fetch_shipmonk.py rồi chờ lần chạy kế tiếp; nếu bước inventory báo 401/403 thì API key cần quyền đọc Products.',
+    'smk.note':'Snapshot {as_of} · kho {wh} · {n} SKU · tốc độ bán = units Shopify mỗi ngày, 30 ngày gần nhất', 'smk.available':'Sẵn bán', 'smk.onHand':'trong kho', 'smk.allocated':'đã giữ', 'smk.incoming':'Đang về', 'smk.receivings':'theo phiếu nhận', 'smk.backordered':'SKU thiếu hàng cho đơn', 'smk.unitsShort':'units thiếu', 'smk.noBackorder':'Mọi đơn mở đều đủ hàng', 'smk.tagBack':'thiếu hàng cho đơn', 'smk.byWarehouse':'Theo kho',
+    'smk.caption':'Sẵn bán = units ShipMonk có thể gán cho đơn mới (không vượt trong kho − cách ly − không dùng được). Đã giữ = dành cho đơn đang mở. Đang về = phiếu nhận còn mở (dự kiến − đã nhận). Ngày hết hàng tính theo tốc độ bán Shopify 30 ngày gần nhất; PO đích "shipmonk" trong data/purchase_orders.json cộng vào đúng ngày về.',
+    'inv.soon':'Hết hàng trong 30 ngày', 'inv.earliest':'sớm nhất', 'inv.outStock':'Hết hàng (tồn)', 'inv.outAll':'Hết hàng (tồn + về + PO)', 'inv.tagNoSales':'không bán', 'inv.tagOut':'hết hàng', 'inv.tagSoon':'sắp hết — đặt ngay', 'inv.tagWaiting':'chờ hàng về', 'inv.tagOk':'ổn', 'inv.showing':'Hiện 60/{n} SKU.',
+    'u.product':'Sản phẩm', 'u.day':'ngày', 'u.status':'Trạng thái',
+  });
+  window.__ctu = {setLang: l=>setLang(l)};
+  const MONTHS_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const DOW_EN = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  // ---------- V10 dictionary (keys used by tx()) ----------
+  Object.assign(L.en, {
+    'f.market':'Market', 'f.product':'Product', 'f.channel':'Channel', 'f.allMarkets':'All markets', 'f.allProducts':'All products', 'f.otherProducts':'Other / unmapped', 'f.allChannels':'All channels', 'f.channelsN':'channels',
+    'f.bn.channel':'Channel: {ch}', 'f.bn.market':'Market: {m}', 'f.bn.product':'Product: {p}',
+    'f.bn.alloc':'Every page shows only this selection. Shared costs (G&A, ShipMonk warehousing, D&A / interest / tax) are allocated by net-revenue share — {pct}% in this period — and marked “allocated”; company plans are not compared while filtering.',
+    'f.bn.unknown':'{n} of {of} days in this period have no market / product split yet (synced before the split existed) and are excluded.',
+    'f.bn.productNote':'Walmart and TikTok Shop carry no per-SKU data yet and are excluded from product filters; ads and fees are allocated to the product by its share of gross sales.',
+    'f.bn.clear':'Clear filters',
+  });
+  Object.assign(L.vi, {
+    'f.market':'Thị trường', 'f.product':'Sản phẩm', 'f.channel':'Kênh', 'f.allMarkets':'Mọi thị trường', 'f.allProducts':'Mọi sản phẩm', 'f.otherProducts':'Khác / chưa gán', 'f.allChannels':'Mọi kênh', 'f.channelsN':'kênh',
+    'f.bn.channel':'Kênh: {ch}', 'f.bn.market':'Thị trường: {m}', 'f.bn.product':'Sản phẩm: {p}',
+    'f.bn.alloc':'Mọi trang chỉ tính phần đang chọn. Chi phí chung (G&A, kho bãi ShipMonk, khấu hao / lãi vay / thuế) được phân bổ theo tỷ trọng doanh thu thuần — {pct}% trong kỳ này — và ghi “phân bổ”; kế hoạch tổng công ty không so sánh khi đang lọc.',
+    'f.bn.unknown':'{n}/{of} ngày trong kỳ chưa có dữ liệu tách thị trường / sản phẩm (đồng bộ trước khi có) nên bị loại.',
+    'f.bn.productNote':'Walmart và TikTok Shop chưa có dữ liệu theo SKU nên bị loại khi lọc sản phẩm; quảng cáo và phí được phân bổ cho sản phẩm theo tỷ trọng doanh thu gộp.',
+    'f.bn.clear':'Bỏ lọc',
+  });
+  // ---------- V10 dictionary, part A: period picker, P&L statement tags and other strings reused across renderers ----------
+  Object.assign(L.en, {
+    'pr.today':'Today', 'pr.yesterday':'Yesterday', 'pr.d7':'Last 7 days', 'pr.d30':'Last 30 days', 'pr.d90':'Last 90 days', 'pr.d365':'Last 365 days', 'pr.wtd':'This week', 'pr.mtd':'This month', 'pr.qtd':'This quarter', 'pr.ytd':'This year', 'pr.lastm':'Last month', 'pr.m12':'Last 12 months', 'pr.lasty':'Last year', 'pr.custom':'Custom',
+    'cmp.prev':'Previous period', 'cmp.year':'Same period last year', 'cmp.none':'No comparison', 'cmp.vs':'Compare to', 'cmp.pickRange':'Choose a date range', 'cmp.pickCmp':'Choose the comparison period', 'cmp.view':'View',
+    'u.orders':'orders', 'u.pts':'pts', 'u.vsPrev':'vs previous period', 'u.notConnected':'Not connected', 'u.notEntered':'not entered', 'u.perDay':'/day',
+    'tag.var':'Variable', 'tag.fix':'Fixed', 'tag.gap':'Not connected ($0)', 'tag.gapManual':'Not entered ($0)', 'tag.real':'Actual', 'tag.manual':'Manual entry', 'tag.est':'Includes estimate', 'tag.estDefault':'Part of it is an estimate for Amazon orders whose fees are not posted yet — replaced by the actual figure once Amazon posts it',
+    'st.outsideSync':' ({n} {d} outside the sync window = $0)', 'st.byOrderDate':'by order date', 'st.byShipDate':'by ship date', 'st.noInvoiceDays':' ({n} {d} without an invoice yet)', 'st.perInvoice':' — per ShipMonk invoice', 'st.manualMonthly':' — manual monthly entry', 'st.notEntered':' — not entered', 'st.notConnected':' — not connected',
+    'st.alloc':' — {pct}% allocated (net-revenue share of {sel})',
+    'cc.txnFees':'Transaction selling fees', 'cc.fulfil':'Fulfillment & warehousing', 'cc.mktOn':'Marketplace marketing', 'cc.shipmonkPerOrder':'ShipMonk per order',
+  });
+  Object.assign(L.vi, {
+    'pr.today':'Hôm nay', 'pr.yesterday':'Hôm qua', 'pr.d7':'7 ngày qua', 'pr.d30':'30 ngày qua', 'pr.d90':'90 ngày qua', 'pr.d365':'365 ngày qua', 'pr.wtd':'Tuần này', 'pr.mtd':'Tháng này', 'pr.qtd':'Quý này', 'pr.ytd':'Năm nay', 'pr.lastm':'Tháng trước', 'pr.m12':'12 tháng qua', 'pr.lasty':'Năm trước', 'pr.custom':'Tuỳ chọn',
+    'cmp.prev':'Kỳ liền trước', 'cmp.year':'Cùng kỳ năm trước', 'cmp.none':'Không so sánh', 'cmp.vs':'So với', 'cmp.pickRange':'Chọn khoảng thời gian', 'cmp.pickCmp':'Chọn kỳ so sánh', 'cmp.view':'Xem',
+    'u.orders':'đơn', 'u.pts':'đpt', 'u.vsPrev':'so kỳ trước', 'u.notConnected':'Chưa kết nối', 'u.notEntered':'chưa nhập', 'u.perDay':'/ngày',
+    'tag.var':'Biến đổi', 'tag.fix':'Cố định', 'tag.gap':'Chưa kết nối ($0)', 'tag.gapManual':'Chưa nhập ($0)', 'tag.real':'Số thật', 'tag.manual':'Nhập tay', 'tag.est':'Có ước tính', 'tag.estDefault':'Một phần là ước tính cho đơn Amazon chưa ghi phí — tự thay bằng số thật khi Amazon ghi',
+    'st.outsideSync':' ({n} ngày ngoài cửa sổ đồng bộ = $0)', 'st.byOrderDate':'theo ngày đặt hàng', 'st.byShipDate':'theo ngày ship', 'st.noInvoiceDays':' ({n} ngày chưa có hoá đơn)', 'st.perInvoice':' — theo hoá đơn ShipMonk', 'st.manualMonthly':' — nhập tay theo tháng', 'st.notEntered':' — chưa nhập', 'st.notConnected':' — chưa kết nối',
+    'st.alloc':' — phân bổ {pct}% (tỷ trọng doanh thu thuần của {sel})',
+    'cc.txnFees':'Phí bán hàng theo giao dịch', 'cc.fulfil':'Fulfillment & kho', 'cc.mktOn':'Marketing trên sàn', 'cc.shipmonkPerOrder':'ShipMonk theo đơn',
+  });
+  // ---------- V10 dictionary, part A: static text of pnl.html (data-i18n="h.*"); VI values = the original innerHTML byte for byte ----------
+  Object.assign(L.en, {
+    'h.matrixTitle':'Sales channels',
+    'h.matrixNote':'Net revenue by order date · vs the same days of the previous period &amp; last year · plan = gross sales by order date',
+    'h.bridgeTitle':'Profit bridge — what moved CM3',
+    'h.alertTitle':'Alerts',
+    'h.alertNote':'Computed from the selected period · threshold shown next to each line',
+    'h.defsSummary':'Definitions used on this page',
+    'h.def1':'<b>Net revenue</b> = gross sales − discounts − refunds, excluding tax. By order date, Los Angeles time.',
+    'h.def2':'<b>Product cost</b> = the actual monthly figure per channel in <code>data/cogs_monthly.json</code> (from the accountant\'s inventory report) where filled in; any month/channel not filled in = net revenue × the estimate rate in <code>data/targets_monthly.json</code>. Currently: <span id="defCogs"></span>.',
+    'h.def3':'<b>Gross profit</b> = net revenue − product cost − fulfillment (FBA, ShipMonk, postage, packaging).',
+    'h.def4':'<b>CM2</b> = gross profit − marketplace fees − payment processing fees. <b>CM3 (contribution margin)</b> = CM2 − all marketing (ads, affiliates, creators).',
+    'h.def5':'<b>EBITDA</b> = CM3 − operating costs (warehousing, manually entered G&amp;A, Klaviyo, Snowball).',
+    'h.def6':'<b>MER</b> = net revenue ÷ total ad spend (Meta, Google, Amazon Ads, TikTok Ads, AppLovin, Walmart Connect), counting only days on which every source has reported. <b>Break-even MER</b> = 1 ÷ (CM2 ÷ net revenue).',
+    'h.def7':'<b>nCAC (Shopify)</b> = D2C ads (Meta + Google + AppLovin) ÷ new Shopify customers per the order journey. Marketplaces do not report new customers, so it is not computed for Amazon/Walmart/TikTok.',
+    'h.def8':'<b>vs previous period</b> = the same days of the previous month/week (1st–15th of the month vs 1st–15th of last month). <b>vs last year</b> = the same date range in 2025 (weeks/days go back 52 weeks so the weekday matches).',
+    'h.trendCaption':'Net revenue, <b>variable costs</b> (product cost + fulfillment + transaction fees + ads + commissions… — rise and fall with revenue), <b>operating costs</b> (warehousing &amp; logistics + G&amp;A, dashed line — salaries, office… not entered yet, so this line is still low) and operating profit (EBITDA) per period, same definitions as the P&amp;L table. Click a name in the legend to hide/show a line (hide revenue to see the costs clearly). The selected period is shaded; an unfinished period is drawn with a hollow point. Hover for the figures and the cost-to-revenue ratios.',
+    'h.funnelTitle':'Order funnel — placed → paid → delivered → cancelled / refunded',
+    'h.returnsTitle':'Returns by SKU',
+    'h.attrTitle':'Sales channels by last touch — Shopify orders',
+    'h.attrNote':'Shopify customer journey stored per order (visits in the 30 days before the order) · channel = last visit excluding direct · net revenue by order date',
+    'h.loopTitle':'Recurring subscriptions — Loop Subscriptions',
+    'h.reconTitle':'Shopify — reconciliation with Shopify Analytics',
+    'h.reconNote':'Same definitions as Shopify\'s "Sales over time" report · days in store time (LA)',
+    'h.reconCaption':'The "Shopify" line in the P&amp;L table above is <b>Gross sales</b> (list price × quantity, before discounts) — exactly as Shopify defines it, so it is much larger than "Total sales" on the Analytics page because the store discounts deeply (B1G2F, affiliate codes…). The dashboard\'s net revenue = Net sales = Gross − Discounts − Returns. In Shopify: Analytics → Reports → "Sales over time" (has all of these columns).',
+    'h.roasTitle':'ROAS by channel &amp; blended MER',
+    'h.roasNote':'ROAS = revenue attributed to the channel ÷ that channel\'s spend (may overlap across touchpoints)',
+    'h.merLabel':'<b>MER (Marketing Efficiency Ratio)</b> = total net revenue ÷ total ad spend (Meta, Google, Amazon Ads, TikTok Ads, AppLovin, Walmart Connect). Only days on which every ad source has reported are counted. Unlike ROAS it uses actual revenue (including organic/halo), so MER is usually lower than the sum of per-channel ROAS — use MER to judge overall marketing efficiency, ROAS to optimise each channel.',
+    'h.adsCapAmazon':'* Amazon Ads is waiting for Amazon to approve Advertising API access → $0 spend and not counted in MER. ',
+    'h.metaTitle':'Meta Ads by product &amp; campaign',
+    'h.metaCaption':'Product / market / stage are parsed from the campaign name ("Peekaboo - Bidcap - Control - Low Bid - CA"). Frequency ≈ impressions ÷ total daily reach (slightly lower than Ads Manager over several days). CPA = spend ÷ attributed orders; ROAS = attributed revenue ÷ spend. Alert thresholds: ROAS &lt; 1.5 or CPA &gt; $90.',
+    'h.googleTitle':'Google Ads by product &amp; campaign',
+    'h.googleCaption':'Campaign type (Search / Shopping / Performance Max / Demand Gen) comes from Google; the product is parsed from the campaign name or the alias table in the workflow ("PKC" = Peekaboo). "Conv." are conversions per the Google Ads account settings (by default including purchases counted in the conversions column), attributed revenue = conversions_value. Same alert thresholds as Meta: ROAS &lt; 1.5 or CPA &gt; $90.',
+    'h.snowballTitle':'Snowball — influencer/affiliate commissions',
+    'h.snowballNote':'Computed from Shopify orders Snowball tags "Referral - SS - &lt;program&gt;" · 45-day sync window · commission = order value × program %, reversed on refund',
+    'h.ueTitle':'Unit economics — what one order earns',
+    'h.sensTitle':'Sensitivity — how much CM3 changes if…',
+    'h.stmtTitle':'Profit &amp; loss (P&amp;L statement)',
+    'h.stmtNote':'% of each column\'s net revenue · click a section row to collapse/expand · the 6 previous periods are added to compare the trend on most lines (a few detail lines whose structure changes by period — fee-type mix, warehouse breakdown by billing period, reconciliation lines — show for the selected period only)',
+    'h.stmtCaption':'Lines tagged <span class="tag gap" style="margin-left:0;"><span class="d"></span>Not connected ($0)</span> have no data source yet, so they stay at $0 (no estimate). Therefore <b>gross profit / contribution / EBITDA above are profit BEFORE</b> the items still carrying that tag (product cost, Walmart/TikTok marketplace fees, Afterpay fees, G&amp;A…) — they correct themselves as each source is connected. Lines tagged <span class="tag gap" style="margin-left:0;"><span class="d"></span>Not entered ($0)</span> are costs without an API (salaries, office, depreciation, interest, income tax): enter them per month in <code>data/opex_monthly.json</code> on GitHub; the table reads the file and spreads them evenly per day; a month not entered takes the latest entered month.',
+    'h.takeTitle':'Cost to sell through each channel (take rate)',
+    'h.takeNote':'Of each $1 of the channel\'s net revenue, how much the channel and its services take — before product cost and G&amp;A',
+    'h.takeCaption':'Same figures as the P&amp;L table, regrouped by channel. <b>Marketplace commissions / payment processing</b> are a fixed % of every order (like a retailer\'s margin) — the standard D2C management P&amp;L puts them under <i>transaction selling fees</i> (before CM2); <b>ads &amp; affiliates</b> are discretionary demand-generation costs, under <i>marketing</i> (before CM3) — kept apart so ACOS/TACOS stay readable. The two together plus fulfillment and storage = the channel\'s <b>take rate</b> ("how many % Amazon takes"). Klaviyo and the Social Snowball plan sit under G&amp;A on the P&amp;L; here they count for the D2C channel because they only serve that channel.<span id="channelCostNote"></span>',
+    'h.beTitle':'Break-even point',
+    'h.beNote':'Based on the variable-cost ratio &amp; operating costs (warehousing, G&amp;A) of the selected period',
+    'h.taxTitle':'Sales tax collected',
+    'h.taxNote':'Pass-through liability — not part of the P&amp;L above · actual figures from Shopify; not split by state yet (tax filing source needed)',
+    'h.taxCh':'Channel',
+    'h.taxCollected':'Collected',
+    'h.taxRemitted':'Remitted',
+    'h.taxOwed':'Owed',
+    'h.taxStatus':'Status',
+    'h.amzGapTitle':'Amazon — costs not fully captured yet',
+    'h.amzGapNote':'From the latest SP-API sync log · does not change the figures shown above except where stated',
+    'h.invTitle':'Amazon FBA inventory by SKU',
+    'h.prodTitle':'Profit by product — CM3 per SKU',
+    'h.poTitle':'Purchase orders (PO) — manual entry',
+    'h.smTitle':'ShipMonk — fulfillment cost per order',
+    'h.smNote':'ShipMonk\'s estimate per order (carrier postage + pick &amp; pack + packaging materials) · booked on the order date (LA time), including orders not shipped yet — same day as the revenue',
+    'h.smCaption':'Figures from the ShipMonk API (<code>order_costs</code>: estimated shipping / pick &amp; pack / packaging) for every order ShipMonk receives — the Shopify store as well as Amazon FBM. Unshipped orders use ShipMonk\'s estimate and are refreshed every 30 minutes as they ship. ShipMonk\'s weekly invoice can differ slightly (postage adjustments, surcharges). <b>Not yet included:</b> storage, receiving, returns handling and items that only appear on the invoice — added once the invoice file exists.',
+    'h.invGapsTitle':'Not on this page yet',
+    'h.invGapsNote':'More sources needed',
+    'h.opexTitle':'Operating costs (OpEx) for the selected period',
+    'h.opexNote2':'Warehousing (ShipMonk, FBA storage &amp; services) + G&amp;A (manual entry, Klaviyo, Snowball) · below contribution margin',
+    'h.opexManTitle':'Manually entered costs (monthly OpEx)',
+    'h.opexManNote':'No API — enter per month in <code>data/opex_monthly.json</code> on GitHub; a month not entered takes the latest entered month',
+    'h.cashTitle':'Cash &amp; runway',
+    'h.cashNote':'No source yet',
+    'h.liveBanner':'Connecting live data…',
+    'h.syncBanner':'<b>Note on the latest day:</b> the selected range includes today (LA time), so that day is not final — Amazon posts fees/settlements 24–48h late, the other sources update every 30 minutes.',
+    'h.healthTitle':'Data health by source',
+    'h.healthNote':'Automation status of each source · dot colour = age of the latest sync (Green &lt; 4h · Yellow 4–48h · Red over 48h or not connected) · "N/14 days" = days with actual data in the last 14 days (today excluded, since today is not final)',
+    'h.gapsTitle':'What\'s missing on the P&amp;L',
+    'h.gapsNote':'Collected from the "Not connected/Not entered ($0)" lines scattered across the P&amp;L table and ROAS — to know what to connect next',
+    'h.foot':'Every source is synced to the same day calendar: the America/Los_Angeles timezone (Shopify, Amazon and Amazon Ads already report in it; Meta &amp; Google are converted from hourly data) · Cattasaurus Finance',
+    'h.adsCapRest':'TikTok Ads = TikTok Shop\'s GMV Max ("Attributed revenue" is the TikTok Shop revenue GMV Max claims for itself). Amazon Ads (when available): daily Sponsored Products / Brands / Display spend; "Attributed revenue" is the Amazon revenue attributed to ads (not added to revenue).',
+  });
+  Object.assign(L.vi, {
+    'h.matrixTitle':'Kênh bán',
+    'h.matrixNote':'Doanh thu thuần theo ngày đặt · so cùng số ngày kỳ trước &amp; năm trước · kế hoạch = doanh thu gộp theo ngày đặt',
+    'h.bridgeTitle':'Cầu lợi nhuận — CM3 đổi vì đâu',
+    'h.alertTitle':'Cảnh báo',
+    'h.alertNote':'Tự tính từ kỳ đang xem · ngưỡng ghi cạnh mỗi dòng',
+    'h.defsSummary':'Định nghĩa dùng trên trang này',
+    'h.def1':'<b>Doanh thu thuần</b> = doanh thu gộp − giảm giá − hoàn tiền, không gồm thuế. Theo ngày đặt hàng, giờ Los Angeles.',
+    'h.def2':'<b>Giá vốn sản phẩm</b> = số thật theo tháng/kênh trong <code>data/cogs_monthly.json</code> (từ báo cáo tồn kho kế toán) nếu đã điền; tháng/kênh nào chưa điền thì = doanh thu thuần × tỷ lệ ước tính trong <code>data/targets_monthly.json</code>. Hiện: <span id="defCogs"></span>.',
+    'h.def3':'<b>Lợi nhuận gộp</b> = doanh thu thuần − giá vốn sản phẩm − fulfillment (FBA, ShipMonk, cước, bao bì).',
+    'h.def4':'<b>CM2</b> = lợi nhuận gộp − hoa hồng sàn − phí cổng thanh toán. <b>CM3 (LN đóng góp)</b> = CM2 − toàn bộ marketing (quảng cáo, affiliate, creator).',
+    'h.def5':'<b>EBITDA</b> = CM3 − chi phí hoạt động (kho bãi, G&amp;A nhập tay, Klaviyo, Snowball).',
+    'h.def6':'<b>MER</b> = doanh thu thuần ÷ tổng chi quảng cáo (Meta, Google, Amazon Ads, TikTok Ads, AppLovin, Walmart Connect), chỉ tính ngày mọi nguồn đã có số. <b>MER hoà vốn</b> = 1 ÷ (CM2 ÷ doanh thu thuần).',
+    'h.def7':'<b>nCAC (Shopify)</b> = quảng cáo D2C (Meta + Google + AppLovin) ÷ số khách mới Shopify theo hành trình đơn. Sàn không cho biết khách mới nên không tính cho Amazon/Walmart/TikTok.',
+    'h.def8':'<b>So kỳ trước</b> = cùng số ngày của tháng/tuần liền trước (tháng 1–15 so với tháng trước 1–15). <b>So năm trước</b> = cùng khoảng ngày năm 2025 (tuần/ngày lùi 52 tuần để cùng thứ).',
+    'h.trendCaption':'Doanh thu thuần, <b>chi phí biến đổi</b> (giá vốn + fulfillment + phí giao dịch + quảng cáo + hoa hồng… — tăng giảm theo doanh thu), <b>chi phí hoạt động</b> (kho bãi & logistics + G&amp;A, đường đứt nét — lương, văn phòng… chưa nhập nên đường này còn thấp) và lợi nhuận hoạt động (EBITDA) của từng kỳ, cùng định nghĩa với bảng P&amp;L. Bấm tên trong chú giải để ẩn/hiện một đường (ẩn doanh thu để nhìn rõ chi phí). Kỳ đang xem được tô nền; kỳ chưa kết thúc vẽ điểm rỗng. Rê chuột để xem số và tỷ lệ chi phí trên doanh thu.',
+    'h.funnelTitle':'Funnel đơn hàng — đặt → thanh toán → giao → huỷ / hoàn',
+    'h.returnsTitle':'Trả hàng theo SKU',
+    'h.attrTitle':'Kênh bán theo điểm chạm cuối — đơn Shopify',
+    'h.attrNote':'Hành trình khách Shopify lưu cho từng đơn (các lượt ghé trong 30 ngày trước đơn) · kênh = lượt ghé cuối không kể direct · doanh thu thuần theo ngày đặt',
+    'h.loopTitle':'Đăng ký định kỳ — Loop Subscriptions',
+    'h.reconTitle':'Shopify — đối chiếu với Shopify Analytics',
+    'h.reconNote':'Cùng định nghĩa với báo cáo "Sales over time" của Shopify · ngày theo giờ cửa hàng (LA)',
+    'h.reconCaption':'Dòng "Shopify" trong bảng P&amp;L ở trên là <b>Gross sales</b> (giá niêm yết × số lượng, trước giảm giá) — đúng như Shopify định nghĩa, nên lớn hơn nhiều so với "Total sales" trên trang Analytics vì cửa hàng giảm giá sâu (B1G2F, mã affiliate…). Doanh thu thuần của dashboard = Net sales = Gross − Discounts − Returns. Xem trong Shopify: Analytics → Reports → "Sales over time" (có đủ các cột này).',
+    'h.roasTitle':'ROAS theo kênh &amp; MER toàn marketing',
+    'h.roasNote':'ROAS = doanh thu quy về kênh ÷ chi phí kênh đó (có thể trùng lặp do đa chạm)',
+    'h.merLabel':'<b>MER (Marketing Efficiency Ratio)</b> = Doanh thu thuần toàn bộ ÷ Tổng chi tiêu quảng cáo (Meta, Google, Amazon Ads, TikTok Ads, AppLovin, Walmart Connect). Chỉ tính những ngày mọi nguồn quảng cáo đã có số. Khác ROAS ở chỗ dùng doanh thu thật (kể cả organic/halo), nên MER thường thấp hơn tổng ROAS cộng dồn từng kênh — dùng MER để đánh giá hiệu quả marketing tổng thể, dùng ROAS để tối ưu từng kênh.',
+    'h.adsCapAmazon':'* Amazon Ads chờ Amazon duyệt quyền Advertising API → chi $0 và không tính vào MER. ',
+    'h.metaTitle':'Meta Ads theo sản phẩm &amp; chiến dịch',
+    'h.metaCaption':'Sản phẩm / thị trường / giai đoạn tách từ tên campaign ("Peekaboo - Bidcap - Control - Low Bid - CA"). Frequency ≈ impressions ÷ tổng reach theo ngày (thấp hơn Ads Manager một chút khi xem nhiều ngày). CPA = chi ÷ đơn quy về; ROAS = doanh thu quy về ÷ chi. Ngưỡng cảnh báo: ROAS &lt; 1.5 hoặc CPA &gt; $90.',
+    'h.googleTitle':'Google Ads theo sản phẩm &amp; chiến dịch',
+    'h.googleCaption':'Loại campaign (Search / Shopping / Performance Max / Demand Gen) lấy từ Google; sản phẩm tách từ tên campaign hoặc bảng alias trong workflow ("PKC" = Peekaboo). "Conv." là conversions theo cài đặt tài khoản Google Ads (mặc định gồm mua hàng đã tính vào cột conversions), DT quy về = conversions_value. Cùng ngưỡng cảnh báo với Meta: ROAS &lt; 1.5 hoặc CPA &gt; $90.',
+    'h.snowballTitle':'Snowball — hoa hồng influencer/affiliate',
+    'h.snowballNote':'Tính từ đơn Shopify được Snowball gắn tag "Referral - SS - &lt;program&gt;" · cửa sổ đồng bộ 45 ngày · hoa hồng = giá trị đơn × % program, trừ lại khi hoàn tiền',
+    'h.ueTitle':'Kinh tế đơn vị — một đơn kiếm được gì',
+    'h.sensTitle':'Độ nhạy — CM3 đổi bao nhiêu nếu…',
+    'h.stmtTitle':'Báo cáo lãi lỗ (P&amp;L statement)',
+    'h.stmtNote':'% tính trên Doanh thu thuần của từng cột · bấm dòng nhóm để thu gọn/mở rộng · có thêm 6 kỳ liền trước để so xu hướng ở hầu hết các dòng (một vài dòng phụ có cấu trúc đổi theo kỳ — mix loại phí, breakdown kho theo kỳ hoá đơn, dòng đối chiếu — chỉ hiện cho kỳ đang xem)',
+    'h.stmtCaption':'Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa kết nối ($0)</span> chưa có nguồn dữ liệu nên để $0 (không ước tính). Vì vậy <b>Lợi nhuận gộp / đóng góp / EBITDA ở trên là lợi nhuận TRƯỚC</b> các khoản còn gắn nhãn đó (giá vốn sản phẩm, phí sàn Walmart/TikTok, phí Afterpay, G&amp;A…) — sẽ tự đúng dần khi từng nguồn được nối vào. Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa nhập ($0)</span> là chi phí không có API (lương, văn phòng, khấu hao, lãi vay, thuế TNDN): điền theo tháng vào file <code>data/opex_monthly.json</code> trên GitHub, bảng tự đọc và rải đều theo ngày; tháng chưa điền lấy theo tháng gần nhất đã điền.',
+    'h.takeTitle':'Chi phí để bán qua từng kênh (take rate)',
+    'h.takeNote':'Mỗi $1 doanh thu thuần của kênh, kênh và dịch vụ đi kèm lấy bao nhiêu — trước giá vốn sản phẩm và G&amp;A',
+    'h.takeCaption':'Cùng số với bảng P&amp;L, chỉ xếp lại theo kênh. <b>Hoa hồng &amp; phí sàn / cổng thanh toán</b> là % cố định trên mỗi đơn (như margin của nhà bán lẻ) — chuẩn P&amp;L quản trị D2C xếp vào <i>phí bán hàng theo giao dịch</i> (trước CM2); <b>quảng cáo &amp; affiliate</b> là chi phí tuỳ chọn để tạo nhu cầu, xếp vào <i>marketing</i> (trước CM3) — không gộp chung để còn đọc được ACOS/TACOS. Tổng của cả hai cộng fulfillment và lưu kho = <b>take rate</b> của kênh ("Amazon lấy bao nhiêu %"). Klaviyo và gói Social Snowball trên P&amp;L nằm ở G&amp;A, ở đây tính cho kênh D2C vì chỉ phục vụ kênh đó.<span id="channelCostNote"></span>',
+    'h.beTitle':'Điểm hoà vốn (break-even)',
+    'h.beNote':'Dựa trên tỷ lệ chi phí biến đổi &amp; chi phí hoạt động (kho bãi, G&amp;A) của kỳ đang xem',
+    'h.taxTitle':'Sales tax thu hộ',
+    'h.taxNote':'Khoản thu hộ (pass-through liability) — không nằm trong P&amp;L ở trên · số thật từ Shopify; chưa tách theo bang (cần nối nguồn nộp thuế)',
+    'h.taxCh':'Kênh',
+    'h.taxCollected':'Đã thu',
+    'h.taxRemitted':'Đã nộp',
+    'h.taxOwed':'Còn nợ',
+    'h.taxStatus':'Trạng thái',
+    'h.amzGapTitle':'Amazon — chi phí chưa capture đầy đủ',
+    'h.amzGapNote':'Từ log lần đồng bộ SP-API gần nhất · không đổi số đã hiển thị ở trên ngoài phần được ghi rõ',
+    'h.invTitle':'Tồn kho Amazon FBA theo SKU',
+    'h.prodTitle':'Lãi theo sản phẩm — CM3 từng SKU',
+    'h.poTitle':'Hàng đang đặt (PO) — nhập tay',
+    'h.smTitle':'ShipMonk — chi phí fulfillment theo từng đơn',
+    'h.smNote':'Ước tính của ShipMonk cho từng đơn (cước carrier + pick &amp; pack + vật liệu đóng gói) · ghi theo ngày đặt hàng (giờ LA), gồm cả đơn chưa ship — cùng ngày với doanh thu',
+    'h.smCaption':'Số lấy từ ShipMonk API (<code>order_costs</code>: estimated shipping / pick &amp; pack / packaging) cho mọi đơn ShipMonk nhận — store Shopify lẫn Amazon FBM. Đơn chưa ship dùng ước tính của ShipMonk và được cập nhật lại mỗi 30 phút khi ship. Hoá đơn tuần của ShipMonk có thể lệch nhỏ (điều chỉnh cước, surcharge). <b>Chưa gồm</b> phí lưu kho, receiving, xử lý hàng trả và các khoản chỉ có trên hoá đơn — sẽ thêm khi có file hoá đơn.',
+    'h.invGapsTitle':'Chưa có trên trang này',
+    'h.invGapsNote':'Cần thêm nguồn',
+    'h.opexTitle':'Chi phí hoạt động (OpEx) kỳ đang xem',
+    'h.opexNote2':'Kho bãi (ShipMonk, FBA lưu kho &amp; dịch vụ) + G&amp;A (nhập tay, Klaviyo, Snowball) · dưới lợi nhuận đóng góp',
+    'h.opexManTitle':'Chi phí nhập tay (OpEx theo tháng)',
+    'h.opexManNote':'Không có API — điền theo tháng vào <code>data/opex_monthly.json</code> trên GitHub; tháng chưa điền lấy theo tháng gần nhất đã điền',
+    'h.cashTitle':'Tiền mặt &amp; runway',
+    'h.cashNote':'Chưa có nguồn',
+    'h.liveBanner':'Đang kết nối dữ liệu thật…',
+    'h.syncBanner':'<b>Lưu ý ngày gần nhất:</b> khoảng xem gồm ngày hôm nay (giờ LA) nên số ngày đó chưa chốt — Amazon ghi nhận phí/settlement muộn 24–48h, các nguồn khác cập nhật mỗi 30 phút.',
+    'h.healthTitle':'Sức khoẻ dữ liệu theo nguồn',
+    'h.healthNote':'Trạng thái tự động hoá của từng nguồn · chấm màu = tuổi lần đồng bộ gần nhất (Xanh &lt; 4h · Vàng 4–48h · Đỏ quá 48h hoặc chưa kết nối) · "N/14 ngày" = số ngày có số liệu thật trong 14 ngày gần nhất (không tính hôm nay, vì hôm nay chưa chốt)',
+    'h.gapsTitle':'Còn thiếu gì trên P&amp;L',
+    'h.gapsNote':'Gom lại từ các dòng "Chưa kết nối/Chưa nhập ($0)" đang rải rác trong bảng P&amp;L và ROAS — để biết cần nối gì tiếp theo',
+    'h.foot':'Mọi nguồn được đồng bộ về cùng một lịch ngày: múi giờ America/Los_Angeles (Shopify, Amazon, Amazon Ads báo cáo sẵn theo giờ này; Meta &amp; Google được quy đổi từ dữ liệu theo giờ) · Cattasaurus Finance',
+    'h.adsCapRest':'TikTok Ads = GMV Max của TikTok Shop ("DT quy về" là doanh thu TikTok Shop mà GMV Max tự nhận). Amazon Ads (khi có số): chi phí Sponsored Products / Brands / Display theo ngày, "DT quy về" là doanh thu Amazon gán cho quảng cáo (không cộng vào doanh thu).',
+  });
   function money(v, opts){
     opts = opts||{};
     const abs = Math.abs(v);
@@ -37,12 +296,13 @@
     probe.style.color = v; document.body.appendChild(probe);
     const c = getComputedStyle(probe).color; probe.remove(); return c;
   }
-  function fmtDate(d){ return d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'}); }
-  function fmtDateLong(d){ return d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+  function fmtDate(d){ return LANG==='vi' ? d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'}) : MONTHS_EN[d.getMonth()]+' '+d.getDate(); }
+  function fmtDateLong(d){ return LANG==='vi' ? d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'}) : MONTHS_EN[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear(); }
   // Calendar date in the viewer's local timezone (NOT toISOString, which converts to UTC and
   // shifts every key one day early for UTC+ viewers, so real data landed on the wrong chip).
   function isoDate(d){ const p = n => String(n).padStart(2,'0'); return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
-  const DOW = ['CN','T2','T3','T4','T5','T6','T7'];
+  const DOW_VI = ['CN','T2','T3','T4','T5','T6','T7'];
+  const DOW = new Proxy(DOW_VI, {get: (o, i) => (LANG==='vi' ? DOW_VI : DOW_EN)[i]});
 
   // ---------- report calendar ----------
   // Every synced source buckets its days in REPORT_TZ (America/Los_Angeles - the Shopify
@@ -88,6 +348,7 @@
   // Do not rename this line.
   const GOOGLE_ADS_LIVE_DATA = (window.__LIVE && window.__LIVE["google"]) || null; /*GOOGLE_ADS_DATA_INJECT*/
   // ShipMonk (3PL) per-order fulfillment charges - data/shipmonk.json from the ShipMonk sync.
+  let SHIPMONK_INVENTORY = null;   // sync v1.4+: {as_of, warehouses[], skus{}, totals{}} (set by applyShipmonkRows)
   const SHIPMONK_LIVE_DATA = (window.__LIVE && window.__LIVE["shipmonk"]) || null; /*SHIPMONK_DATA_INJECT*/
   let shipmonkMeta = null;
   // ShipMonk INVOICES (storage, receiving, returns, packaging purchases, credits...) - read from the
@@ -234,26 +495,26 @@
   const ATTR_CH = [
     {key:'email', label:'Email (Klaviyo)', color:'var(--series-3)', ink:'#fff', cost:'klaviyo'},
     {key:'sms', label:'SMS (Klaviyo)', color:'color-mix(in srgb, var(--series-3) 55%, var(--surface-card))', cost:'klaviyo'},
-    {key:'email_other', label:'Email khác (không có UTM Klaviyo)', color:'color-mix(in srgb, var(--series-3) 28%, var(--surface-card))'},
+    {key:'email_other', get label(){ return tv('Other email (no Klaviyo UTM)', 'Email khác (không có UTM Klaviyo)'); }, color:'color-mix(in srgb, var(--series-3) 28%, var(--surface-card))'},
     {key:'meta_paid', label:'Meta Ads', color:'var(--series-1)', ink:'#fff', cost:'meta'},
-    {key:'meta_organic', label:'Meta không UTM (FB/IG referrer)', color:'color-mix(in srgb, var(--series-1) 45%, var(--surface-card))'},
-    {key:'meta_shop', label:'Mua trong Facebook / Instagram Shop', color:'color-mix(in srgb, var(--series-1) 70%, var(--surface-card))', ink:'#fff'},
+    {key:'meta_organic', get label(){ return tv('Meta without UTM (FB/IG referrer)', 'Meta không UTM (FB/IG referrer)'); }, color:'color-mix(in srgb, var(--series-1) 45%, var(--surface-card))'},
+    {key:'meta_shop', get label(){ return tv('Bought in Facebook / Instagram Shop', 'Mua trong Facebook / Instagram Shop'); }, color:'color-mix(in srgb, var(--series-1) 70%, var(--surface-card))', ink:'#fff'},
     {key:'google_ads', label:'Google Ads', color:'var(--series-2)', ink:'#fff', cost:'google'},
-    {key:'organic_search', label:'Tìm kiếm organic (Google, Bing…)', color:'var(--series-4)', ink:'#fff'},
+    {key:'organic_search', get label(){ return tv('Organic search (Google, Bing…)', 'Tìm kiếm organic (Google, Bing…)'); }, color:'var(--series-4)', ink:'#fff'},
     {key:'tiktok_ads', label:'TikTok Ads', color:'var(--series-5)', ink:'#fff', cost:'tiktokads'},
     {key:'tiktok_organic', label:'TikTok organic', color:'color-mix(in srgb, var(--series-5) 45%, var(--surface-card))'},
     {key:'tiktok_shop', label:'TikTok Shop', color:'color-mix(in srgb, var(--series-5) 70%, var(--surface-card))', ink:'#fff'},
     {key:'applovin', label:'AppLovin', color:'var(--series-7)', ink:'#fff', cost:'applovin'},
     {key:'snowball', label:'Snowball / creator / affiliate', color:'var(--series-6)', ink:'#fff', cost:'snowball'},
-    {key:'other_paid', label:'Quảng cáo trả tiền khác', color:'color-mix(in srgb, var(--series-7) 45%, var(--surface-card))'},
-    {key:'social_other', label:'Mạng xã hội khác', color:'color-mix(in srgb, var(--series-2) 45%, var(--surface-card))'},
+    {key:'other_paid', get label(){ return tv('Other paid ads', 'Quảng cáo trả tiền khác'); }, color:'color-mix(in srgb, var(--series-7) 45%, var(--surface-card))'},
+    {key:'social_other', get label(){ return tv('Other social', 'Mạng xã hội khác'); }, color:'color-mix(in srgb, var(--series-2) 45%, var(--surface-card))'},
     {key:'ai_search', label:'AI (ChatGPT, Perplexity…)', color:'color-mix(in srgb, var(--series-4) 45%, var(--surface-card))'},
-    {key:'referral', label:'Website giới thiệu', color:'var(--ink-muted)', ink:'#fff'},
-    {key:'other_utm', label:'UTM khác', color:'color-mix(in srgb, var(--ink-muted) 55%, var(--surface-card))'},
+    {key:'referral', get label(){ return tv('Referring websites', 'Website giới thiệu'); }, color:'var(--ink-muted)', ink:'#fff'},
+    {key:'other_utm', get label(){ return tv('Other UTM', 'UTM khác'); }, color:'color-mix(in srgb, var(--ink-muted) 55%, var(--surface-card))'},
     {key:'shop_app', label:'Shop app (Shopify)', color:'color-mix(in srgb, var(--series-6) 45%, var(--surface-card))'},
-    {key:'other_channel', label:'Kênh bán khác (POS, app, draft…)', color:'color-mix(in srgb, var(--ink-muted) 40%, var(--surface-card))'},
-    {key:'direct', label:'Direct (gõ link / bookmark)', color:'var(--baseline)'},
-    {key:'unknown', label:'Không có hành trình (web, không cookie)', color:'var(--gridline)'},
+    {key:'other_channel', get label(){ return tv('Other sales channels (POS, app, draft…)', 'Kênh bán khác (POS, app, draft…)'); }, color:'color-mix(in srgb, var(--ink-muted) 40%, var(--surface-card))'},
+    {key:'direct', get label(){ return tv('Direct (typed link / bookmark)', 'Direct (gõ link / bookmark)'); }, color:'var(--baseline)'},
+    {key:'unknown', get label(){ return tv('No journey (web, no cookie)', 'Không có hành trình (web, không cookie)'); }, color:'var(--gridline)'},
   ];
   const ATTR_BY_KEY = {}; ATTR_CH.forEach(c=>ATTR_BY_KEY[c.key]=c);
   const ATTR_PAID = {meta_paid:true, google_ads:true, tiktok_ads:true, applovin:true, other_paid:true};
@@ -265,13 +526,13 @@
   // G&A: only confirmed monthly fees carry a number (real:true). Everything else is $0 until
   // the accounting source is connected - no seeded estimates anywhere on this page.
   const GA_ITEMS = [
-    {key:'salary', label:'Lương gián tiếp (vận hành, quản lý)', monthly:0},
-    {key:'software', label:'Phần mềm & công cụ', monthly:0},
-    {key:'snowball_sub', label:'Social Snowball — phần mềm affiliate (gói Blizzard, không thu % hoa hồng)', monthly:350, real:true},
-    {key:'office', label:'Văn phòng & vận hành', monthly:0},
-    {key:'accounting', label:'Kế toán & pháp lý', monthly:0},
-    {key:'insurance', label:'Bảo hiểm', monthly:0},
-    {key:'other', label:'Khác', monthly:0},
+    {key:'salary', get label(){ return tv('Indirect salaries (operations, management)', 'Lương gián tiếp (vận hành, quản lý)'); }, monthly:0},
+    {key:'software', get label(){ return tv('Software & tools', 'Phần mềm & công cụ'); }, monthly:0},
+    {key:'snowball_sub', get label(){ return tv('Social Snowball — affiliate software (Blizzard plan, no % of commissions)', 'Social Snowball — phần mềm affiliate (gói Blizzard, không thu % hoa hồng)'); }, monthly:350, real:true},
+    {key:'office', get label(){ return tv('Office & operations', 'Văn phòng & vận hành'); }, monthly:0},
+    {key:'accounting', get label(){ return tv('Accounting & legal', 'Kế toán & pháp lý'); }, monthly:0},
+    {key:'insurance', get label(){ return tv('Insurance', 'Bảo hiểm'); }, monthly:0},
+    {key:'other', get label(){ return tv('Other', 'Khác'); }, monthly:0},
   ];
   const INVENTORY_MONTHLY = 0;   // holding cost: no source connected yet
   const META_ROAS_WARN = 1.5, META_CPA_WARN = 90;   // thresholds for the Meta campaign table
@@ -300,7 +561,7 @@
   const days = [];
   for(let i=0;i<TOTAL_DAYS;i++){
     const d = dateAt(i);
-    const row = {date:d, iso:isoDate(d), channels:{}, refunds:{}, orders:{}, discounts:{}, ads:{}, adsAttr:{}, amazonReal:null, metaReal:null, googleReal:null, shopifyReal:null, snowballReal:null, shipmonkReal:null, shipmonkInv:null, paypalReal:null, shopifyAttr:null, klaviyoReal:null, klaviyoCost:null, loopReal:null, tiktokReal:null, walmartReal:null, applovinReal:null, funnel:null, sku:null};
+    const row = {date:d, iso:isoDate(d), channels:{}, refunds:{}, orders:{}, discounts:{}, ads:{}, adsAttr:{}, amazonReal:null, metaReal:null, googleReal:null, shopifyReal:null, snowballReal:null, shipmonkReal:null, shipmonkInv:null, paypalReal:null, shopifyAttr:null, klaviyoReal:null, klaviyoCost:null, loopReal:null, tiktokReal:null, walmartReal:null, applovinReal:null, funnel:null, sku:null, markets:null};
     CH_KEYS.forEach(k=>{ row.channels[k]=0; row.refunds[k]=0; row.orders[k]=0; row.discounts[k]=0; });
     AD_KEYS.forEach(k=>{ row.ads[k]=0; row.adsAttr[k]=0; });
     days.push(row);
@@ -310,90 +571,179 @@
   const CH_UNCONNECTED = {walmart:true, tiktok:true};
   const AD_UNCONNECTED = {tiktokads:true, applovin:true, amazonads:true};   // amazonads flips to false when AMAZON_ADS_LIVE_DATA matches
 
+  // name / age are language-aware until setSource() overwrites age with a live status string (setter keeps that string as-is)
+  const mkSource = (key, nameFn, ageFn, level) => ({key, level, _age: undefined, get name(){ return nameFn(); }, get age(){ return this._age!==undefined ? this._age : ageFn(); }, set age(v){ this._age = v; }});
+  const NC0 = () => tv('Not connected — $0', 'Chưa kết nối — $0'), NC = () => tv('Not connected', 'Chưa kết nối');
   const SOURCES = [
-    {key:'shopify', name:'Shopify (doanh thu)', age:'Chưa kết nối — $0', level:'c'},
-    {key:'snowball', name:'Snowball (hoa hồng influencer)', age:'Chưa kết nối — chưa có trong P&L', level:'c'},
-    {key:'tiktokshop', name:'TikTok Shop (đơn hàng)', age:'Chưa kết nối — $0', level:'c'},
-    {key:'amazon', name:'Amazon Orders', age:'Chưa kết nối — $0', level:'c'},
-    {key:'walmart', name:'Walmart Marketplace', age:'Chưa kết nối — $0', level:'c'},
-    {key:'meta', name:'Meta Ads', age:'Chưa kết nối — $0', level:'c'},
-    {key:'google', name:'Google Ads', age:'Chưa kết nối — $0', level:'c'},
-    {key:'tiktokads', name:'TikTok Ads', age:'Chưa kết nối — $0', level:'c'},
-    {key:'applovin', name:'AppLovin', age:'Chưa kết nối — $0', level:'c'},
-    {key:'amazonads', name:'Amazon Ads (SP / SB / SD)', age:'Chờ Amazon duyệt Advertising API — $0', level:'c'},
-    {key:'amazonfin', name:'Amazon SP-API Finances', age:'Chưa kết nối — $0', level:'c'},
-    {key:'amazon_storage', name:'Amazon FBA tồn kho & phí lưu kho (Inventory API + report)', age:'Chưa kết nối — lưu kho theo số Amazon thu', level:'c'},
-    {key:'shipmonk', name:'ShipMonk (phí fulfillment theo đơn)', age:'Chưa kết nối — $0', level:'c'},
-    {key:'shipmonk_inv', name:'ShipMonk hoá đơn (lưu kho, receiving, hàng trả…)', age:'Chưa kết nối — $0', level:'c'},
-    {key:'paypal', name:'PayPal (phí giao dịch)', age:'Chưa kết nối — $0', level:'c'},
-    {key:'klaviyo', name:'Klaviyo (email & SMS marketing)', age:'Chưa kết nối', level:'c'},
-    {key:'loop', name:'Loop Subscriptions (đăng ký định kỳ)', age:'Chưa kết nối', level:'c'},
-    {key:'ga', name:'Kế toán (G&A)', age:'Chưa kết nối — $0', level:'c'},
+    mkSource('shopify', () => tv('Shopify (revenue)', 'Shopify (doanh thu)'), NC0, 'c'),
+    mkSource('snowball', () => tv('Snowball (influencer commissions)', 'Snowball (hoa hồng influencer)'), () => tv('Not connected — not in the P&L yet', 'Chưa kết nối — chưa có trong P&L'), 'c'),
+    mkSource('tiktokshop', () => tv('TikTok Shop (orders)', 'TikTok Shop (đơn hàng)'), NC0, 'c'),
+    mkSource('amazon', () => 'Amazon Orders', NC0, 'c'),
+    mkSource('walmart', () => 'Walmart Marketplace', NC0, 'c'),
+    mkSource('meta', () => 'Meta Ads', NC0, 'c'),
+    mkSource('google', () => 'Google Ads', NC0, 'c'),
+    mkSource('tiktokads', () => 'TikTok Ads', NC0, 'c'),
+    mkSource('applovin', () => 'AppLovin', NC0, 'c'),
+    mkSource('amazonads', () => 'Amazon Ads (SP / SB / SD)', () => tv('Waiting for Amazon to approve the Advertising API — $0', 'Chờ Amazon duyệt Advertising API — $0'), 'c'),
+    mkSource('amazonfin', () => 'Amazon SP-API Finances', NC0, 'c'),
+    mkSource('amazon_storage', () => tv('Amazon FBA inventory & storage fees (Inventory API + report)', 'Amazon FBA tồn kho & phí lưu kho (Inventory API + report)'), () => tv('Not connected — storage as charged by Amazon', 'Chưa kết nối — lưu kho theo số Amazon thu'), 'c'),
+    mkSource('shipmonk', () => tv('ShipMonk (per-order fulfillment fees)', 'ShipMonk (phí fulfillment theo đơn)'), NC0, 'c'),
+    mkSource('shipmonk_inv', () => tv('ShipMonk invoices (storage, receiving, returns…)', 'ShipMonk hoá đơn (lưu kho, receiving, hàng trả…)'), NC0, 'c'),
+    mkSource('paypal', () => tv('PayPal (transaction fees)', 'PayPal (phí giao dịch)'), NC0, 'c'),
+    mkSource('klaviyo', () => 'Klaviyo (email & SMS marketing)', NC, 'c'),
+    mkSource('loop', () => tv('Loop Subscriptions (recurring subscriptions)', 'Loop Subscriptions (đăng ký định kỳ)'), NC, 'c'),
+    mkSource('ga', () => tv('Accounting (G&A)', 'Kế toán (G&A)'), NC0, 'c'),
   ];
 
   // ---------- months list ----------
   const monthMap = {};
   days.forEach(d=>{ const m = d.iso.slice(0,7); (monthMap[m] = monthMap[m]||[]).push(d); });
   const MONTHS = Object.keys(monthMap).sort();
-  const MONTH_LABEL = m => { const [y,mo] = m.split('-'); return 'Tháng '+parseInt(mo,10)+'/'+y + (monthMap[m].length<28? ' (đến '+fmtDate(monthMap[m][monthMap[m].length-1].date)+')' : ''); };
+  const MONTH_LABEL = m => { const [y,mo] = m.split('-'); return tv(MONTHS_EN[parseInt(mo,10)-1]+' '+y, 'Tháng '+parseInt(mo,10)+'/'+y) + (monthMap[m].length<28? tv(' (to ', ' (đến ')+fmtDate(monthMap[m][monthMap[m].length-1].date)+')' : ''); };
   // ---------- weeks list (Monday - Sunday, keyed by the Monday) ----------
   const weekMap = {};
   days.forEach(d=>{ const dow = (d.date.getDay()+6)%7; const mon = new Date(d.date.getFullYear(), d.date.getMonth(), d.date.getDate()-dow); const k = isoDate(mon); (weekMap[k] = weekMap[k]||[]).push(d); });
   const WEEKS = Object.keys(weekMap).sort();
   function isoWeekNo(d){ const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const dn = t.getUTCDay()||7; t.setUTCDate(t.getUTCDate()+4-dn); const y0 = new Date(Date.UTC(t.getUTCFullYear(),0,1)); return Math.ceil((((t-y0)/86400000)+1)/7); }
-  const WEEK_LABEL = k => { const r = weekMap[k]; const mon = new Date(k.slice(0,4), k.slice(5,7)-1, k.slice(8,10)); const sun = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+6); return 'Tuần '+isoWeekNo(mon)+'/'+mon.getFullYear()+' · '+fmtDate(mon)+' – '+fmtDate(sun) + (r.length<7 ? ' (có '+r.length+' ngày)' : ''); };
+  const WEEK_LABEL = k => { const r = weekMap[k]; const mon = new Date(k.slice(0,4), k.slice(5,7)-1, k.slice(8,10)); const sun = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+6); return tv('Week ', 'Tuần ')+isoWeekNo(mon)+'/'+mon.getFullYear()+' · '+fmtDate(mon)+' – '+fmtDate(sun) + (r.length<7 ? tv(' ('+r.length+(r.length===1 ? ' day)' : ' days)'), ' (có '+r.length+' ngày)') : ''); };
 
-  // ---------- V8: global channel filter ----------
-  // Every number on every page can be narrowed to a subset of the sales channels. Sources that belong to one channel
-  // are simply dropped for the others (Amazon fees & storage, Shopify payment fees, PayPal, Snowball, Klaviyo, the ad
-  // platforms of that channel, the 3PL stores of that channel…). Costs shared by all channels — G&A, ShipMonk
-  // warehousing / receiving / returns, holding cost, below-EBITDA entries — are allocated to the selected channels in
-  // proportion to their net revenue of the same period and labelled "phân bổ".
+  // ---------- V10: global filters — channel × market × product line ----------
+  // Every number on every page can be narrowed by sales channel, market (country of the order) and product line.
+  // Channel: sources that belong to one channel are dropped for the others. Market / product: each channel-day is
+  // scaled by the share of that day's gross sales the selection represents (markets[] and sku_sales[] from the syncs,
+  // exact per SKU); costs shared by all channels (G&A, ShipMonk warehousing, holding cost, below-EBITDA entries) are
+  // allocated by net-revenue share and labelled "allocated". Days without the split (older than the sync's
+  // markets_since / sku_units_since) are excluded and counted so the filter banner can say so.
   const CH_MASK = {shopify:true, amazon:true, walmart:true, tiktok:true};
   try{ const m0 = JSON.parse(localStorage.getItem('ctu_ch')||'null'); if(m0 && typeof m0==='object'){ CH_KEYS.forEach(k=>{ CH_MASK[k] = m0[k]!==false; }); } }catch(e){}
   if(!CH_KEYS.some(k=>CH_MASK[k])) CH_KEYS.forEach(k=>CH_MASK[k]=true);
-  const maskPartial = () => CH_KEYS.some(k=>!CH_MASK[k]);
-  const maskLabel = () => CH_KEYS.filter(k=>CH_MASK[k]).map(k=>CH_LABEL[k]).join(' + ');
+  const FILTER = {market:'all', product:'all'};
+  try{ const f0 = JSON.parse(localStorage.getItem('ctu_filter')||'null'); if(f0 && typeof f0==='object'){ if(typeof f0.market==='string') FILTER.market = f0.market; if(typeof f0.product==='string') FILTER.product = f0.product; } }catch(e){}
+  const chPartial = () => CH_KEYS.some(k=>!CH_MASK[k]);
+  const maskPartial = () => chPartial() || FILTER.market!=='all' || FILTER.product!=='all';
   const AD_CHANNEL = {meta:'shopify', google:'shopify', applovin:'shopify', tiktokads:'tiktok', amazonads:'amazon'};
+  const US_ONLY_CH = {walmart:true, tiktok:true};   // sell in the US only and carry no SKU / market split yet
   let _maskVer = 0; const _maskCache = new WeakMap();
   function setChannelMask(next){ CH_KEYS.forEach(k=>{ CH_MASK[k] = next[k]!==false; }); if(!CH_KEYS.some(k=>CH_MASK[k])) CH_KEYS.forEach(k=>CH_MASK[k]=true); _maskVer++; try{ localStorage.setItem('ctu_ch', JSON.stringify(CH_MASK)); }catch(e){} }
+  function setFilter(patch){ Object.assign(FILTER, patch); _maskVer++; try{ localStorage.setItem('ctu_filter', JSON.stringify(FILTER)); }catch(e){} }
   const storeChannel = k => /amazon/i.test(k) ? 'amazon' : /walmart/i.test(k) ? 'walmart' : /tiktok/i.test(k) ? 'tiktok' : 'shopify';
+
+  // ---- markets (country of the order) ----
+  const MARKET_NAMES = {US:{en:'United States',vi:'Mỹ'}, CA:{en:'Canada',vi:'Canada'}, MX:{en:'Mexico',vi:'Mexico'}, GB:{en:'United Kingdom',vi:'Anh'}, AU:{en:'Australia',vi:'Úc'}, DE:{en:'Germany',vi:'Đức'}, FR:{en:'France',vi:'Pháp'}, XX:{en:'Unknown',vi:'Không rõ'}};
+  const marketLabel = cc => cc==='all' ? tx('f.allMarkets') : ((MARKET_NAMES[cc] && MARKET_NAMES[cc][LANG]) || cc);
+  let _marketsAvail = null;
+  function marketsAvailable(){
+    if(_marketsAvail) return _marketsAvail;
+    const seen = {US:0};
+    days.forEach(r=>{ if(!r.markets) return; CH_KEYS.forEach(k=>{ const mk = r.markets[k]; if(!mk) return; Object.keys(mk).forEach(cc=>{ seen[cc] = (seen[cc]||0) + 1; }); }); });
+    _marketsAvail = Object.keys(seen).sort((a,b)=> a==='US' ? -1 : b==='US' ? 1 : (a==='XX' ? 1 : b==='XX' ? -1 : a.localeCompare(b)));
+    return _marketsAvail;
+  }
+  const marketGross = (k, b) => k==='amazon' ? (+(b.ordered_sales!==undefined ? b.ordered_sales : b.gross_sales)||0) : (+b.gross_sales||0);
+
+  // ---- product lines (data/products.json) ----
+  const PRODUCTS_LIVE_DATA = (window.__LIVE && window.__LIVE["products"]) || null;
+  function parseProducts(data){
+    const out = [];
+    if(!data || typeof data!=='object' || !Array.isArray(data.lines)) return out;
+    data.lines.forEach(l=>{
+      if(!l || typeof l!=='object' || !l.id) return;
+      const re = []; (Array.isArray(l.match) ? l.match : []).forEach(p=>{ try{ re.push(new RegExp(p, 'i')); }catch(e){} });
+      out.push({id: String(l.id), name: (l.name && typeof l.name==='object') ? l.name : {en: String(l.name||l.id), vi: String(l.name||l.id)}, match: re, names: (Array.isArray(l.names) ? l.names : []).map(s=>String(s).toLowerCase()).filter(Boolean), skus: new Set((Array.isArray(l.skus) ? l.skus : []).map(s=>String(s).trim().toUpperCase()))});
+    });
+    return out;
+  }
+  const PRODUCT_LINES = parseProducts(PRODUCTS_LIVE_DATA);
+  const productLineName = id => id==='all' ? tx('f.allProducts') : id==='other' ? tx('f.otherProducts') : (()=>{ const l = PRODUCT_LINES.find(x=>x.id===id); return l ? (l.name[LANG] || l.name.en || l.name.vi || id) : id; })();
+  const _lineCache = {};
+  function amazonListingName(sku){ const snap = AMAZON_STORAGE_LIVE_DATA && AMAZON_STORAGE_LIVE_DATA.inventory && AMAZON_STORAGE_LIVE_DATA.inventory.snapshot; return (snap && snap[sku] && snap[sku].name) || ''; }
+  function productLineOf(sku){
+    if(sku in _lineCache) return _lineCache[sku];
+    let s = String(sku||'').trim(), up = s.toUpperCase(), out = 'other';
+    if(/^amzn\.gr\./i.test(s)){ const parent = s.slice(8, 20); out = productLineOf(parent); _lineCache[sku] = out; return out; }   // virtual bundle: amzn.gr.<XX-XXXX-XXXX>-…
+    const name = amazonListingName(s).toLowerCase();
+    for(const l of PRODUCT_LINES){ if(l.skus.has(up)){ out = l.id; break; } }
+    if(out==='other') for(const l of PRODUCT_LINES){ if(l.match.some(re=>re.test(s))){ out = l.id; break; } }
+    if(out==='other' && name) for(const l of PRODUCT_LINES){ if(l.names.some(n=>name.includes(n))){ out = l.id; break; } }
+    _lineCache[sku] = out; return out;
+  }
+  const productLinesAvailable = () => PRODUCT_LINES.map(l=>l.id).concat(['other']);
+
+  // share of one channel-day the selection represents: 1 = all of it, 0 = none, null = the day lacks the split
+  function rowFactor(r, k){
+    if(!CH_MASK[k]) return 0;
+    const mk = FILTER.market, pl = FILTER.product;
+    if(mk==='all' && pl==='all') return 1;
+    if(US_ONLY_CH[k]){ if(pl!=='all') return null; return mk==='US' ? 1 : 0; }
+    const mks = r.markets && r.markets[k], sd = r.sku && r.sku[k];
+    if(pl==='all'){
+      if(!mks) return null;
+      let tot = 0, sel = 0; Object.keys(mks).forEach(cc=>{ const g = marketGross(k, mks[cc]); tot += g; if(cc===mk) sel += g; });
+      return tot>0.005 ? Math.min(1, Math.max(0, sel/tot)) : 0;
+    }
+    if(!sd) return null;
+    let tot = 0; Object.values(sd.sales||{}).forEach(v=>{ tot += +v||0; });
+    let src = sd.sales;
+    if(mk!=='all'){ if(!mks) return null; const b = mks[mk]; src = b ? (b.sku_sales||{}) : {}; }
+    let sel = 0; Object.entries(src||{}).forEach(([s,v])=>{ if(productLineOf(s)===pl) sel += +v||0; });
+    return tot>0.005 ? Math.min(1, Math.max(0, sel/tot)) : 0;
+  }
+  function scaleDeep(o, f){
+    if(o===null || o===undefined) return o;
+    if(typeof o==='number') return o*f;
+    if(Array.isArray(o)) return o.map(x=>scaleDeep(x, f));
+    if(typeof o==='object'){ const out = {}; Object.keys(o).forEach(key=>{ out[key] = scaleDeep(o[key], f); }); return out; }
+    return o;
+  }
   function maskRow(r){
     if(!maskPartial()) return r;
     const c = _maskCache.get(r); if(c && c.ver===_maskVer) return c.row;
-    const m = Object.assign({}, r);
+    const F = {}; let unknown = false;
+    CH_KEYS.forEach(k=>{ let f = rowFactor(r, k); if(f===null){ unknown = true; f = 0; } F[k] = f; });
+    const m = Object.assign({}, r); m._unknown = unknown; m._factors = F;
     m.channels = {}; m.refunds = {}; m.orders = {}; m.discounts = {};
-    CH_KEYS.forEach(k=>{ const on = CH_MASK[k]; m.channels[k] = on ? r.channels[k] : 0; m.refunds[k] = on ? r.refunds[k] : 0; m.orders[k] = on ? r.orders[k] : 0; m.discounts[k] = on ? r.discounts[k] : 0; });
+    CH_KEYS.forEach(k=>{ const f = F[k]; m.channels[k] = r.channels[k]*f; m.refunds[k] = r.refunds[k]*f; m.orders[k] = r.orders[k]*f; m.discounts[k] = r.discounts[k]*f; });
     m.ads = {}; m.adsAttr = {};
-    AD_KEYS.forEach(k=>{ const on = CH_MASK[AD_CHANNEL[k]]; m.ads[k] = on ? r.ads[k] : 0; m.adsAttr[k] = on ? r.adsAttr[k] : 0; });
-    if(!CH_MASK.amazon){ m.amazonReal = null; m.amazonAdsReal = null; }
-    if(!CH_MASK.shopify){ m.shopifyReal = null; m.paypalReal = null; m.snowballReal = null; m.shopifyAttr = null; m.klaviyoReal = null; m.klaviyoCost = null; m.loopReal = null; m.metaReal = null; m.googleReal = null; m.applovinReal = null; }
-    if(!CH_MASK.tiktok){ m.tiktokReal = null; m.tiktokAdsReal = null; }
-    if(!CH_MASK.walmart) m.walmartReal = null;
+    AD_KEYS.forEach(k=>{ const f = F[AD_CHANNEL[k]]; m.ads[k] = r.ads[k]*f; m.adsAttr[k] = r.adsAttr[k]*f; });
+    const sc = (obj, f) => (obj===null || obj===undefined) ? obj : (f>=1 ? obj : (f<=0 ? null : scaleDeep(obj, f)));
+    m.amazonReal = sc(r.amazonReal, F.amazon); m.amazonAdsReal = sc(r.amazonAdsReal, F.amazon);
+    ['shopifyReal','paypalReal','snowballReal','shopifyAttr','klaviyoReal','klaviyoCost','loopReal','metaReal','googleReal','applovinReal'].forEach(key=>{ m[key] = sc(r[key], F.shopify); });
+    m.tiktokReal = sc(r.tiktokReal, F.tiktok); m.tiktokAdsReal = sc(r.tiktokAdsReal, F.tiktok);
+    m.walmartReal = sc(r.walmartReal, F.walmart);
     if(r.shipmonkReal){
-      // per-order 3PL cost by store -> channel; a day without the store split follows the take-rate card (all D2C)
+      // per-order 3PL cost by store -> channel factor; a day without the store split follows the take-rate card (all D2C)
       const bs = r.shipmonkReal.byStore || {}, stores = Object.keys(bs);
       if(stores.length){
         const keep = {}; let orders=0, units=0, shipping=0, packaging=0, pickPack=0, total=0;
-        stores.forEach(k=>{ if(!CH_MASK[storeChannel(k)]) return; const v = bs[k]; keep[k] = v; orders += v.orders||0; units += v.units||0; shipping += v.shipping_cost||0; packaging += v.packaging_cost||0; pickPack += v.pick_pack_cost||0; total += v.total_cost||0; });
-        const f = r.shipmonkReal.orders>0 ? orders/r.shipmonkReal.orders : 0, sc = x => Math.round((x||0)*f);
-        m.shipmonkReal = Object.assign({}, r.shipmonkReal, {orders, units, shipping, packaging, pickPack, total, byStore: keep, shipped: sc(r.shipmonkReal.shipped), unshipped: sc(r.shipmonkReal.unshipped), onhold: sc(r.shipmonkReal.onhold), missing: sc(r.shipmonkReal.missing), packages: sc(r.shipmonkReal.packages)});
-      } else if(!CH_MASK.shopify){
-        m.shipmonkReal = Object.assign({}, r.shipmonkReal, {orders:0, units:0, shipping:0, packaging:0, pickPack:0, total:0, shipped:0, unshipped:0, onhold:0, missing:0, packages:0});
-      }
+        stores.forEach(k=>{ const f = F[storeChannel(k)]; if(f<=0) return; const v = f>=1 ? bs[k] : scaleDeep(bs[k], f); keep[k] = v; orders += v.orders||0; units += v.units||0; shipping += v.shipping_cost||0; packaging += v.packaging_cost||0; pickPack += v.pick_pack_cost||0; total += v.total_cost||0; });
+        const f = r.shipmonkReal.orders>0 ? orders/r.shipmonkReal.orders : 0, sx = x => (x||0)*f;
+        m.shipmonkReal = Object.assign({}, r.shipmonkReal, {orders, units, shipping, packaging, pickPack, total, byStore: keep, shipped: sx(r.shipmonkReal.shipped), unshipped: sx(r.shipmonkReal.unshipped), onhold: sx(r.shipmonkReal.onhold), missing: sx(r.shipmonkReal.missing), packages: sx(r.shipmonkReal.packages)});
+      } else m.shipmonkReal = F.shopify>=1 ? r.shipmonkReal : (F.shopify<=0 ? Object.assign({}, r.shipmonkReal, {orders:0, units:0, shipping:0, packaging:0, pickPack:0, total:0, shipped:0, unshipped:0, onhold:0, missing:0, packages:0}) : scaleDeep(r.shipmonkReal, F.shopify));
     }
     // the invoice's order-level items (postage true-up, credits, packaging purchases) belong to the D2C store like the
     // take-rate card says; warehousing / receiving / returns stay shared and are allocated inside aggregate()
-    if(r.shipmonkInv && !CH_MASK.shopify) m.shipmonkInv = Object.assign({}, r.shipmonkInv, {adjustments:0, credits:0, packaging_purchases:0, cmpOk:false, cmpInv:0, cmpApi:0, trueUp:0, shipping:0});
+    if(r.shipmonkInv && F.shopify<1){ const f = F.shopify; m.shipmonkInv = Object.assign({}, r.shipmonkInv, {adjustments: r.shipmonkInv.adjustments*f, credits: r.shipmonkInv.credits*f, packaging_purchases: r.shipmonkInv.packaging_purchases*f, cmpOk: f>0 && r.shipmonkInv.cmpOk, cmpInv: (r.shipmonkInv.cmpInv||0)*f, cmpApi: (r.shipmonkInv.cmpApi||0)*f, trueUp: (r.shipmonkInv.trueUp||0)*f, shipping: (r.shipmonkInv.shipping||0)*f}); }
+    // per-SKU data is exact for the selection (market bucket, then the product line's SKUs); funnel counters scale
+    if(r.sku){
+      m.sku = {};
+      CH_KEYS.forEach(k=>{ const d = r.sku[k]; if(!d || F[k]<=0) return; let src = d;
+        if(FILTER.market!=='all'){ const b = r.markets && r.markets[k] && r.markets[k][FILTER.market]; src = b ? {units: b.sku_units||{}, sales: b.sku_sales||{}, refunds: b.sku_refund_units||{}} : {units:{}, sales:{}, refunds:{}}; }
+        if(FILTER.product!=='all'){ const pick = o => { const out = {}; Object.entries(o||{}).forEach(([s,v])=>{ if(productLineOf(s)===FILTER.product) out[s] = v; }); return out; }; src = {units: pick(src.units), sales: pick(src.sales), refunds: pick(src.refunds)}; }
+        m.sku[k] = src; });
+    }
+    if(r.funnel){ m.funnel = {}; CH_KEYS.forEach(k=>{ const f = r.funnel[k]; if(!f || F[k]<=0) return; m.funnel[k] = F[k]>=1 ? f : scaleDeep(f, F[k]); }); }
     _maskCache.set(r, {ver:_maskVer, row:m});
     return m;
   }
+  // human label of the active selection (channel · market · product)
+  const maskLabel = () => { const p = []; if(chPartial()) p.push(CH_KEYS.filter(k=>CH_MASK[k]).map(k=>CH_LABEL[k]).join(' + ')); if(FILTER.market!=='all') p.push(marketLabel(FILTER.market)); if(FILTER.product!=='all') p.push(productLineName(FILTER.product)); return p.join(' · '); };
 
   // ---------- aggregate ----------
   function aggregate(rowsIn){
     const partial = maskPartial();
     const rows = partial ? rowsIn.map(maskRow) : rowsIn;
     const n = rows.length || 1;
+    const unknownDays = partial ? rows.filter(r=>r._unknown).length : 0;
     const gross = {}; CH_KEYS.forEach(k=>gross[k]=sum(rows.map(r=>r.channels[k])));
     const refund = {}; CH_KEYS.forEach(k=>refund[k]=sum(rows.map(r=>r.refunds[k])));
     const discountBy = {}; CH_KEYS.forEach(k=>discountBy[k]=sum(rows.map(r=>r.discounts[k])));
@@ -587,11 +937,11 @@
     const opexCarriedDays = rows.filter(r=>r.opex && r.opex.carried).length;
     const opexSum = k => sum(rows.map(r=> r.opex ? (r.opex.vals[k]||0) : 0));
     const opexHas = k => rows.some(r=> r.opex && r.opex.has[k]);
-    const opexNote = (opexDays>0 && opexDays<n ? ` (${n-opexDays} ngày trước tháng đầu tiên đã nhập = $0)` : '') + (opexCarriedDays>0 ? ` (${opexCarriedDays} ngày lấy theo tháng gần nhất đã nhập)` : '');
+    const opexNote = (opexDays>0 && opexDays<n ? tv(` (${n-opexDays} days before the first entered month = $0)`, ` (${n-opexDays} ngày trước tháng đầu tiên đã nhập = $0)`) : '') + (opexCarriedDays>0 ? tv(` (${opexCarriedDays} days carried from the latest entered month)`, ` (${opexCarriedDays} ngày lấy theo tháng gần nhất đã nhập)`) : '');
     const gaItems = GA_ITEMS.map(it=>{
       const manualKey = OPEX_GA_KEYS.includes(it.key);
       const entered = manualKey && opexHas(it.key);
-      return {...it, value: (it.monthly/30*n + (manualKey ? opexSum(it.key) : 0)) * allocShare, manual: entered, label: it.label + (entered ? ' — nhập tay theo tháng' + opexNote : '')};
+      return {...it, value: (it.monthly/30*n + (manualKey ? opexSum(it.key) : 0)) * allocShare, manual: entered, label: it.label + (entered ? tx('st.manualMonthly') + opexNote : '')};
     });
     const salaryEntered = !!gaItems.find(it=>it.key==='salary' && it.manual);
     // Klaviyo: real invoices booked per billing cycle (data/klaviyo_invoices.json), spread per day
@@ -600,7 +950,7 @@
     const klaviyoCostParts = {platform:0, sms:0, upgrades:0, flex:0};
     rows.forEach(r=>{ if(r.klaviyoCost){ Object.keys(klaviyoCostParts).forEach(k=>{ klaviyoCostParts[k] += r.klaviyoCost[k]||0; }); } });
     if(klaviyoCostDays>0){
-      gaItems.push({key:'klaviyo', label:'Klaviyo — email & SMS (hoá đơn theo chu kỳ 19→18, chia đều theo ngày)' + (klaviyoCostDays<n ? ` — ${n-klaviyoCostDays} ngày chưa có hoá đơn` : ''), monthly:0, value: klaviyoCost, real:true});
+      gaItems.push({key:'klaviyo', label: tv('Klaviyo — email & SMS (invoiced per 19→18 billing cycle, spread evenly per day)', 'Klaviyo — email & SMS (hoá đơn theo chu kỳ 19→18, chia đều theo ngày)') + (klaviyoCostDays<n ? tv(` — ${n-klaviyoCostDays} days without an invoice yet`, ` — ${n-klaviyoCostDays} ngày chưa có hoá đơn`) : ''), monthly:0, value: klaviyoCost, real:true});
     }
     const gaTotal = sum(gaItems.map(it=>it.value));
     const inventoryHolding = INVENTORY_MONTHLY/30*n*allocShare;
@@ -663,7 +1013,7 @@
     const shopifyRealDays = rows.filter(r=>r.shopifyReal).length;
     const amazonRealDays = rows.filter(r=>r.amazonReal).length;
 
-    return {n, gross, refund, discountBy, orders, ads, adsAttr, grossSales, discount, refundsTotal, netRevenue, totalOrders, allocShare, maskPartial: partial,
+    return {n, gross, refund, discountBy, orders, ads, adsAttr, grossSales, discount, refundsTotal, netRevenue, totalOrders, allocShare, maskPartial: partial, unknownDays,
       productCost, productCostEst, cogsEstRate, productCostBy, productCostActual, productCostEstAmount, productCostHasActual, packaging, fulfillment, postage, cogs, grossProfit, nonAmazonOrders, shopifyTax, shopifyRealDays, amazonRealDays,
       shipmonkRealDays, shipmonkOrders, shipmonkUnshipped, shipmonkUnits, shipmonkPickPack, shipmonkByStore, shipmonkByChannel,
       smInvDays, smInv, smInvOther, smInvAdjCredits, smStorageOpen, smStorageOpenDays, smStorageCarryDays, smStorageReportDays, smInvShipCmp, smApiShipCmp, smCmpDays, smCmpMissingDays, smTrueUp, shipmonkInvoiceExtras, shipmonkLogistics, amazonLogistics, logisticsTotal, feesTotal, marketingTotal, cmBeforeMarketing,
@@ -710,9 +1060,11 @@
     };
     const r = map[key]; return r ? [clampIso(r[0]), clampIso(r[1])] : null;
   }
-  const PRESETS = [['today','Hôm nay'],['yesterday','Hôm qua'],['d7','7 ngày qua'],['d30','30 ngày qua'],['d90','90 ngày qua'],['d365','365 ngày qua'],['wtd','Tuần này'],['mtd','Tháng này'],['qtd','Quý này'],['ytd','Năm nay'],['lastm','Tháng trước'],['m12','12 tháng qua'],['lasty','Năm trước']];
-  const PRESET_LABEL = Object.fromEntries(PRESETS);
-  const CMP_LABEL = {prev:'Kỳ liền trước', year:'Cùng kỳ năm trước', none:'Không so sánh'};
+  // V10: labels are looked up at render time (tx 'pr.*' / 'cmp.*') so the picker follows the language toggle
+  const PRESET_KEYS = ['today','yesterday','d7','d30','d90','d365','wtd','mtd','qtd','ytd','lastm','m12','lasty'];
+  const presetLabel = k => PRESET_KEYS.includes(k) ? tx('pr.'+k) : undefined;
+  const CMP_KEYS = ['prev','year','none'];
+  const cmpLabel = k => tx('cmp.'+k);
   function execRange(){ if(EXEC_STATE.preset==='custom' && EXEC_STATE.from && EXEC_STATE.to) return [EXEC_STATE.from, EXEC_STATE.to]; return presetRange(EXEC_STATE.preset) || presetRange('mtd'); }
   function applyExecState(){ const r = execRange(); mode = 'range'; rangeFrom = r[0]; rangeTo = r[1]; }
   function savePnlState(){ PNL_STATE.mode = mode; PNL_STATE.selDayIdx = selDayIdx; PNL_STATE.selWeek = selWeek; PNL_STATE.selMonth = selMonth; PNL_STATE.rangeFrom = rangeFrom; PNL_STATE.rangeTo = rangeTo; }
@@ -726,9 +1078,9 @@
     const r = execRange();
     const f = new Date(+r[0].slice(0,4), +r[0].slice(5,7)-1, +r[0].slice(8,10)), t = new Date(+r[1].slice(0,4), +r[1].slice(5,7)-1, +r[1].slice(8,10));
     const span = r[0]===r[1] ? fmtDateLong(f) : fmtDate(f)+' – '+fmtDateLong(t);
-    const items = PRESETS.map(pr=>`<div class="dditem ${EXEC_STATE.preset===pr[0]?'active':''}" data-preset="${pr[0]}">${pr[1]}</div>`).join('');
-    el.innerHTML = `<div class="dd" id="ddRange"><button class="ddbtn" type="button" title="Chọn khoảng thời gian"><span>${PRESET_LABEL[EXEC_STATE.preset]||'Tuỳ chọn'}</span><span class="k">${span}</span><span class="caret">▾</span></button><div class="ddpanel"><div class="ddlist">${items}</div><div class="ddcustom">Tuỳ chọn <input type="date" id="exFrom" value="${r[0]}" min="${MIN_ISO}" max="${TODAY_ISO}"> – <input type="date" id="exTo" value="${r[1]}" min="${MIN_ISO}" max="${TODAY_ISO}"> <button class="btn mini" id="exApply" type="button" style="margin-left:0;">Xem</button></div></div></div>`
-      + `<div class="dd" id="ddCmp"><button class="ddbtn" type="button" title="Chọn kỳ so sánh"><span class="k">So với</span><span>${CMP_LABEL[EXEC_STATE.cmp]}</span><span class="caret">▾</span></button><div class="ddpanel" style="min-width:200px;"><div class="ddlist" style="grid-template-columns:1fr;">${Object.keys(CMP_LABEL).map(k=>`<div class="dditem ${EXEC_STATE.cmp===k?'active':''}" data-cmp="${k}">${CMP_LABEL[k]}</div>`).join('')}</div></div></div>`;
+    const items = PRESET_KEYS.map(k=>`<div class="dditem ${EXEC_STATE.preset===k?'active':''}" data-preset="${k}">${presetLabel(k)}</div>`).join('');
+    el.innerHTML = `<div class="dd" id="ddRange"><button class="ddbtn" type="button" title="${tx('cmp.pickRange')}"><span>${presetLabel(EXEC_STATE.preset)||tx('pr.custom')}</span><span class="k">${span}</span><span class="caret">▾</span></button><div class="ddpanel"><div class="ddlist">${items}</div><div class="ddcustom">${tx('pr.custom')} <input type="date" id="exFrom" value="${r[0]}" min="${MIN_ISO}" max="${TODAY_ISO}"> – <input type="date" id="exTo" value="${r[1]}" min="${MIN_ISO}" max="${TODAY_ISO}"> <button class="btn mini" id="exApply" type="button" style="margin-left:0;">${tx('cmp.view')}</button></div></div></div>`
+      + `<div class="dd" id="ddCmp"><button class="ddbtn" type="button" title="${tx('cmp.pickCmp')}"><span class="k">${tx('cmp.vs')}</span><span>${cmpLabel(EXEC_STATE.cmp)}</span><span class="caret">▾</span></button><div class="ddpanel" style="min-width:200px;"><div class="ddlist" style="grid-template-columns:1fr;">${CMP_KEYS.map(k=>`<div class="dditem ${EXEC_STATE.cmp===k?'active':''}" data-cmp="${k}">${cmpLabel(k)}</div>`).join('')}</div></div></div>`;
     const closeAll = () => el.querySelectorAll('.dd').forEach(d=>d.classList.remove('open'));
     el.querySelectorAll('.dd > .ddbtn').forEach(b=>b.addEventListener('click', (e)=>{ e.stopPropagation(); const dd = b.parentElement, open = dd.classList.contains('open'); closeAll(); if(!open) dd.classList.add('open'); }));
     el.querySelectorAll('.ddpanel').forEach(pn=>pn.addEventListener('click', e=>e.stopPropagation()));
@@ -755,25 +1107,48 @@
   }
 
   // ---------- sub-controls per mode ----------
-  // V8: channel filter chips (every page) + the "đang lọc" banner
+  // V10: Market · Product · Channel dropdowns (every page) + the "filtered" banner
   let _chAvail = null;
-  function renderChFilter(){
-    const el = document.getElementById('chFilter'); if(!el) return;
+  function renderFilterBar(){
+    const el = document.getElementById('filterBar'); if(!el) return;
     if(!_chAvail) _chAvail = CH_KEYS.filter(k=> days.some(r=> r.channels[k]>0));
-    const partial = maskPartial();
-    el.innerHTML = '<span class="lbl">Kênh</span><button type="button" class="chb all'+(partial?'':' on')+'" data-ch="all">Tất cả</button>' + _chAvail.map(k=>`<button type="button" class="chb${CH_MASK[k]?' on':''}" data-ch="${k}" title="${partial ? 'Thêm/bớt kênh này' : 'Chỉ xem kênh này'}">${CH_LABEL[k]}</button>`).join('');
-    el.querySelectorAll('.chb').forEach(b=>b.addEventListener('click', ()=>{
-      const k = b.dataset.ch, next = {...CH_MASK};
+    const chSel = CH_KEYS.filter(k=>CH_MASK[k]);
+    const chTxt = chPartial() ? (chSel.length===1 ? CH_LABEL[chSel[0]] : chSel.length+' '+tx('f.channelsN')) : tx('f.allChannels');
+    const dd = (id, label, value, items, extra) => `<div class="dd fdd" id="${id}"><button class="ddbtn" type="button"><span class="k">${label}</span><span class="v">${value}</span><span class="caret">▾</span></button><div class="ddpanel"><div class="ddlist one">${items}</div>${extra||''}</div></div>`;
+    const mkItems = ['all'].concat(marketsAvailable()).map(cc=>`<div class="dditem ${FILTER.market===cc?'active':''}" data-market="${cc}">${marketLabel(cc)}${cc!=='all' && cc!=='US' ? '' : ''}</div>`).join('');
+    const plItems = ['all'].concat(productLinesAvailable()).map(id=>`<div class="dditem ${FILTER.product===id?'active':''}" data-product="${id}">${productLineName(id)}</div>`).join('');
+    const chItems = `<div class="dditem ${chPartial()?'':'active'}" data-ch="all">${tx('f.allChannels')}</div>` + _chAvail.map(k=>`<div class="dditem chk ${CH_MASK[k]?'on':''}" data-ch="${k}"><span class="box">${CH_MASK[k]?'✓':''}</span>${CH_LABEL[k]}</div>`).join('');
+    el.innerHTML = dd('ddMarket', tx('f.market'), marketLabel(FILTER.market), mkItems) + dd('ddProduct', tx('f.product'), productLineName(FILTER.product), plItems) + dd('ddChannel', tx('f.channel'), chTxt, chItems);
+    const closeAll = () => document.querySelectorAll('.dd.open').forEach(d=>d.classList.remove('open'));
+    el.querySelectorAll('.dd > .ddbtn').forEach(b=>b.addEventListener('click', (e)=>{ e.stopPropagation(); const d = b.parentElement, open = d.classList.contains('open'); closeAll(); if(!open) d.classList.add('open'); }));
+    el.querySelectorAll('.ddpanel').forEach(pn=>pn.addEventListener('click', e=>e.stopPropagation()));
+    el.querySelectorAll('[data-market]').forEach(i=>i.addEventListener('click', ()=>{ setFilter({market: i.dataset.market}); closeAll(); renderAll(); }));
+    el.querySelectorAll('[data-product]').forEach(i=>i.addEventListener('click', ()=>{ setFilter({product: i.dataset.product}); closeAll(); renderAll(); }));
+    el.querySelectorAll('[data-ch]').forEach(i=>i.addEventListener('click', ()=>{
+      const k = i.dataset.ch, next = {...CH_MASK};
       if(k==='all') CH_KEYS.forEach(x=>next[x]=true);
-      else if(!partial) CH_KEYS.forEach(x=>next[x]=(x===k));      // from "all": the first click isolates that channel
       else { next[k] = !next[k]; if(!CH_KEYS.some(x=>next[x])) CH_KEYS.forEach(x=>next[x]=true); }
       setChannelMask(next); renderAll();
     }));
-    const bn = document.getElementById('chBanner'), tx = document.getElementById('chBannerTxt');
-    if(bn){ bn.hidden = !partial; if(partial && tx) tx.innerHTML = '<b>Đang lọc kênh: '+maskLabel()+'.</b> Mọi trang chỉ tính doanh thu, phí, fulfillment và quảng cáo của kênh này. Chi phí chung (G&amp;A, kho bãi ShipMonk, khấu hao / lãi vay / thuế) được <b>phân bổ</b> theo tỷ trọng doanh thu thuần của kênh trong kỳ; kế hoạch tổng công ty không so sánh khi đang lọc. Bấm <b>Tất cả</b> để bỏ lọc.'; }
+    renderFilterBanner();
   }
+  function renderFilterBanner(){
+    const bn = document.getElementById('chBanner'), tx_ = document.getElementById('chBannerTxt'); if(!bn) return;
+    const partial = maskPartial(); bn.hidden = !partial; if(!partial || !tx_) return;
+    const a = aggregate(currentRows());
+    const parts = [];
+    if(chPartial()) parts.push(tx('f.bn.channel', {ch: CH_KEYS.filter(k=>CH_MASK[k]).map(k=>CH_LABEL[k]).join(' + ')}));
+    if(FILTER.market!=='all') parts.push(tx('f.bn.market', {m: marketLabel(FILTER.market)}));
+    if(FILTER.product!=='all') parts.push(tx('f.bn.product', {p: productLineName(FILTER.product)}));
+    let note = tx('f.bn.alloc', {pct: (a.allocShare*100).toFixed(0)});
+    if(a.unknownDays>0) note += ' ' + tx('f.bn.unknown', {n: a.unknownDays, of: a.n});
+    if(FILTER.product!=='all') note += ' ' + tx('f.bn.productNote');
+    tx_.innerHTML = '<b>'+parts.join(' · ')+'.</b> '+note+' <a href="#" id="chClear">'+tx('f.bn.clear')+'</a>';
+    const cl = document.getElementById('chClear'); if(cl) cl.addEventListener('click', (e)=>{ e.preventDefault(); const next = {}; CH_KEYS.forEach(x=>next[x]=true); setChannelMask(next); setFilter({market:'all', product:'all'}); renderAll(); });
+  }
+  document.addEventListener('click', ()=>{ document.querySelectorAll('.dd.open').forEach(d=>d.classList.remove('open')); });
   function renderSubCtl(){
-    renderChFilter();
+    renderFilterBar();
     const el = document.getElementById('subCtl');
     const seg = document.getElementById('modeSeg'), sp = document.getElementById('shopPicker');
     if(!onPnl()){ if(seg) seg.hidden = true; el.hidden = true; if(sp){ sp.hidden = false; renderShopPicker(); } return; }
@@ -785,13 +1160,13 @@
         html += `<div class="chip ${i===selDayIdx?'active':''}" data-idx="${i}"><span class="dow">${DOW[d.getDay()]}</span>${fmtDate(d)}</div>`;
       }
       html += '</div>';
-      html += `<input type="date" id="dayPick" value="${days[selDayIdx].iso}" min="${days[0].iso}" max="${days[TOTAL_DAYS-1].iso}" title="Chọn ngày bất kỳ trong lịch sử">`;
+      html += `<input type="date" id="dayPick" value="${days[selDayIdx].iso}" min="${days[0].iso}" max="${days[TOTAL_DAYS-1].iso}" title="${tv('Pick any day in the history', 'Chọn ngày bất kỳ trong lịch sử')}">`;
       el.innerHTML = html;
       el.querySelectorAll('.chip').forEach(c=>c.addEventListener('click', ()=>{ selDayIdx = parseInt(c.dataset.idx,10); renderAll(); }));
       document.getElementById('dayPick').addEventListener('change', (e)=>{ const idx = days.findIndex(d=>d.iso===e.target.value); if(idx>=0){ selDayIdx = idx; renderAll(); } });
     } else if(mode==='week'){
       const idx = WEEKS.indexOf(selWeek);
-      let html = `<button class="chip" id="weekPrev" ${idx<=0?'disabled':''} title="Tuần trước">‹</button><select id="weekSel">`+WEEKS.map(w=>`<option value="${w}" ${w===selWeek?'selected':''}>${WEEK_LABEL(w)}</option>`).join('')+`</select><button class="chip" id="weekNext" ${idx>=WEEKS.length-1?'disabled':''} title="Tuần sau">›</button>`;
+      let html = `<button class="chip" id="weekPrev" ${idx<=0?'disabled':''} title="${tv('Previous week', 'Tuần trước')}">‹</button><select id="weekSel">`+WEEKS.map(w=>`<option value="${w}" ${w===selWeek?'selected':''}>${WEEK_LABEL(w)}</option>`).join('')+`</select><button class="chip" id="weekNext" ${idx>=WEEKS.length-1?'disabled':''} title="${tv('Next week', 'Tuần sau')}">›</button>`;
       el.innerHTML = html;
       document.getElementById('weekSel').addEventListener('change', (e)=>{ selWeek = e.target.value; renderAll(); });
       document.getElementById('weekPrev').addEventListener('click', ()=>{ const i = WEEKS.indexOf(selWeek); if(i>0){ selWeek = WEEKS[i-1]; renderAll(); } });
@@ -804,17 +1179,17 @@
       const min = days[0].iso, max = days[TOTAL_DAYS-1].iso;
       // presets: trailing 30/90 days, every calendar year in the data, quarters of the latest year
       const presets = [
-        {label:'30 ngày', from: days[Math.max(0,TOTAL_DAYS-30)].iso, to: max},
-        {label:'90 ngày', from: days[Math.max(0,TOTAL_DAYS-90)].iso, to: max},
+        {label: tv('30 days', '30 ngày'), from: days[Math.max(0,TOTAL_DAYS-30)].iso, to: max},
+        {label: tv('90 days', '90 ngày'), from: days[Math.max(0,TOTAL_DAYS-90)].iso, to: max},
       ];
       const years = [...new Set(days.map(d=>d.iso.slice(0,4)))];
-      years.forEach(y=>{ const f = y+'-01-01', t = y+'-12-31'; presets.push({label:'Năm '+y, from: f<min?min:f, to: t>max?max:t}); });
+      years.forEach(y=>{ const f = y+'-01-01', t = y+'-12-31'; presets.push({label: tv('Year '+y, 'Năm '+y), from: f<min?min:f, to: t>max?max:t}); });
       const ly = years[years.length-1];
       [['Q1','01-01','03-31'],['Q2','04-01','06-30'],['Q3','07-01','09-30'],['Q4','10-01','12-31']].forEach(([q,a,b])=>{
         const f = ly+'-'+a, t = ly+'-'+b; if(f<=max && t>=min) presets.push({label:q+' '+ly, from: f<min?min:f, to: t>max?max:t});
       });
       const chips = presets.map(p=>`<div class="chip ${p.from===rangeFrom&&p.to===rangeTo?'active':''}" data-from="${p.from}" data-to="${p.to}">${p.label}</div>`).join('');
-      el.innerHTML = `<div class="chips">${chips}</div> Từ <input type="date" id="fromD" value="${rangeFrom}" min="${min}" max="${max}"> đến <input type="date" id="toD" value="${rangeTo}" min="${min}" max="${max}"> <button class="btn" id="applyRange">Xem</button>`;
+      el.innerHTML = `<div class="chips">${chips}</div> ${tv('From', 'Từ')} <input type="date" id="fromD" value="${rangeFrom}" min="${min}" max="${max}"> ${tv('to', 'đến')} <input type="date" id="toD" value="${rangeTo}" min="${min}" max="${max}"> <button class="btn" id="applyRange">${tx('cmp.view')}</button>`;
       el.querySelectorAll('.chip').forEach(c=>c.addEventListener('click', ()=>{ rangeFrom=c.dataset.from; rangeTo=c.dataset.to; renderAll(); }));
       document.getElementById('applyRange').addEventListener('click', ()=>{
         const f = document.getElementById('fromD').value, t = document.getElementById('toD').value;
@@ -831,20 +1206,20 @@
     let prev = prevRows ? aggregate(prevRows) : null;
     if(prev && prev.netRevenue===0) prev = null;   // period before the synced window = no data
     const items = [
-      {label:'Doanh thu thuần', v:cur.netRevenue, pv:prev&&prev.netRevenue},
-      {label:'Lợi nhuận gộp', v:cur.grossProfit, pv:prev&&prev.grossProfit},
-      {label:'LN đóng góp (sau marketing)', v:cur.contributionProfit, pv:prev&&prev.contributionProfit},
-      {label:'LN hoạt động (EBITDA)', v:cur.netProfit, pv:prev&&prev.netProfit},
-      {label:'Biên EBITDA', v: cur.netRevenue? cur.netProfit/cur.netRevenue*100:0, pv: prev&&prev.netRevenue? prev.netProfit/prev.netRevenue*100:null, pct:true},
+      {label: tx('m.netRevenue'), v:cur.netRevenue, pv:prev&&prev.netRevenue},
+      {label: tv('Gross profit', 'Lợi nhuận gộp'), v:cur.grossProfit, pv:prev&&prev.grossProfit},
+      {label: tv('Contribution margin (after marketing)', 'LN đóng góp (sau marketing)'), v:cur.contributionProfit, pv:prev&&prev.contributionProfit},
+      {label: tv('Operating profit (EBITDA)', 'LN hoạt động (EBITDA)'), v:cur.netProfit, pv:prev&&prev.netProfit},
+      {label: tv('EBITDA margin', 'Biên EBITDA'), v: cur.netRevenue? cur.netProfit/cur.netRevenue*100:0, pv: prev&&prev.netRevenue? prev.netProfit/prev.netRevenue*100:null, pct:true},
     ];
-    if(cur.belowEbitdaEntered) items.push({label:'Lợi nhuận ròng (sau thuế)', v:cur.netIncome, pv:prev&&prev.netIncome});
+    if(cur.belowEbitdaEntered) items.push({label: tv('Net profit (after tax)', 'Lợi nhuận ròng (sau thuế)'), v:cur.netIncome, pv:prev&&prev.netIncome});
     document.getElementById('kpiRow').classList.toggle('six', items.length===6);
     document.getElementById('kpiRow').innerHTML = items.map(it=>{
-      let deltaHtml = '<div class="delta flat">— kỳ trước không có dữ liệu</div>';
+      let deltaHtml = '<div class="delta flat">'+tv('— no data for the previous period', '— kỳ trước không có dữ liệu')+'</div>';
       if(it.pv!==null && it.pv!==undefined){
         const delta = it.pct ? (it.v-it.pv) : (it.pv!==0? (it.v-it.pv)/Math.abs(it.pv)*100 : 0);
         const up = delta>=0;
-        deltaHtml = `<div class="delta ${up?'up':'down'}">${up?'▲':'▼'} ${Math.abs(delta).toFixed(1)}${it.pct?' đpt':'%'} so kỳ trước</div>`;
+        deltaHtml = `<div class="delta ${up?'up':'down'}">${up?'▲':'▼'} ${Math.abs(delta).toFixed(1)}${it.pct?' '+tx('u.pts'):'%'} ${tx('u.vsPrev')}</div>`;
       }
       const valStr = it.pct ? it.v.toFixed(1)+'%' : money(it.v);
       return `<div class="kpi"><div class="label">${it.label}</div><div class="value">${valStr}</div>${deltaHtml}</div>`;
@@ -852,7 +1227,7 @@
 
     const rangeLbl = document.getElementById('rangeLbl');
     const first = rows[0].date, last = rows[rows.length-1].date;
-    rangeLbl.textContent = rows.length===1 ? fmtDateLong(first) : (fmtDate(first)+' – '+fmtDateLong(last)+' · '+rows.length+' ngày');
+    rangeLbl.textContent = rows.length===1 ? fmtDateLong(first) : (fmtDate(first)+' – '+fmtDateLong(last)+' · '+rows.length+' '+tx('u.days'));
 
     const banner = document.getElementById('syncBanner');
     banner.style.display = rows.some(r=>r._syncing) ? 'flex' : 'none';
@@ -868,8 +1243,8 @@
   function buildRows(a){
     const nr = a.netRevenue;
     const rows = [];
-    const alloc = a.maskPartial ? ' — phân bổ '+(a.allocShare*100).toFixed(0)+'% (tỷ trọng doanh thu thuần của '+maskLabel()+')' : '';
-    rows.push({...stLine('Doanh thu gộp (Gross Sales)', a.grossSales, nr, null, 'gs'), hget: x=>x.grossSales});
+    const alloc = a.maskPartial ? tx('st.alloc', {pct: (a.allocShare*100).toFixed(0), sel: maskLabel()}) : '';
+    rows.push({...stLine(tv('Gross sales', 'Doanh thu gộp (Gross Sales)'), a.grossSales, nr, null, 'gs'), hget: x=>x.grossSales});
     const chState = k => ({
       unconnected: !!CH_UNCONNECTED[k] || (k==='shopify' && !shopifyMatched) || (k==='amazon' && !amazonMatched),
       liveDays: k==='shopify' ? a.shopifyRealDays : k==='amazon' ? a.amazonRealDays : 0,
@@ -877,271 +1252,271 @@
     const netBy = k => a.gross[k] - a.discountBy[k] - a.refund[k];
     [...CH_KEYS].sort((x,y)=>a.gross[y]-a.gross[x]).forEach(k=>{
       const {unconnected, liveDays} = chState(k);
-      let label = CH_LABEL[k]+' · '+a.orders[k].toLocaleString('en-US')+' đơn';
-      if(k==='amazon' && liveDays>0) label += amazonOrderBasisDays>0 ? ' (theo ngày đặt hàng — khớp Seller Central)' : ' (theo ngày ship — Finances)';
-      if(!unconnected && liveDays>0 && liveDays<a.n) label += ' ('+(a.n-liveDays)+' ngày ngoài cửa sổ đồng bộ = $0)';
+      let label = CH_LABEL[k]+' · '+a.orders[k].toLocaleString('en-US')+' '+tx('u.orders');
+      if(k==='amazon' && liveDays>0) label += amazonOrderBasisDays>0 ? tv(' (by order date — matches Seller Central)', ' (theo ngày đặt hàng — khớp Seller Central)') : tv(' (by ship date — Finances)', ' (theo ngày ship — Finances)');
+      if(!unconnected && liveDays>0 && liveDays<a.n) label += tx('st.outsideSync', {n: a.n-liveDays, d: dayWord(a.n-liveDays)});
       rows.push({...stLine(label, a.gross[k], nr, null, 'gs'), detail:true, gap: unconnected, live: !unconnected && liveDays>0, hget: x=>x.gross[k]});
     });
-    rows.push({...stLine('Giảm giá & khuyến mãi', -a.discount, nr, 'var', 'disc'), neg:true, hget: x=>-x.discount});
+    rows.push({...stLine(tv('Discounts & promotions', 'Giảm giá & khuyến mãi'), -a.discount, nr, 'var', 'disc'), neg:true, hget: x=>-x.discount});
     CH_KEYS.filter(k=>a.discountBy[k]>0).sort((x,y)=>a.discountBy[y]-a.discountBy[x]).forEach(k=>{
-      const note = k==='shopify' ? ' — mã giảm giá, KM tự động, B1G2F… (Shopify Analytics: Discounts)' : k==='amazon' ? ' — promotions Amazon' : '';
+      const note = k==='shopify' ? tv(' — discount codes, automatic discounts, B1G2F… (Shopify Analytics: Discounts)', ' — mã giảm giá, KM tự động, B1G2F… (Shopify Analytics: Discounts)') : k==='amazon' ? tv(' — Amazon promotions', ' — promotions Amazon') : '';
       rows.push({...stLine(CH_LABEL[k]+note, -a.discountBy[k], nr, null, 'disc'), detail:true, neg:true, hget: x=>-x.discountBy[k]});
     });
-    rows.push({...stLine('Hoàn tiền / Trả hàng', -a.refundsTotal, nr, 'var', 'ref'), neg:true, hget: x=>-x.refundsTotal});
+    rows.push({...stLine(tv('Refunds / returns', 'Hoàn tiền / Trả hàng'), -a.refundsTotal, nr, 'var', 'ref'), neg:true, hget: x=>-x.refundsTotal});
     CH_KEYS.filter(k=>a.refund[k]!==0).sort((x,y)=>a.refund[y]-a.refund[x]).forEach(k=>{
-      const note = k==='shopify' ? ' — hàng trả + tiền hoàn thêm, theo ngày Shopify xử lý hoàn (= Returns trên Shopify Analytics)' : k==='amazon' ? ' — ghi ngày Amazon hoàn tiền' : '';
+      const note = k==='shopify' ? tv(' — returned goods + extra refunds, on the day Shopify processed the refund (= Returns in Shopify Analytics)', ' — hàng trả + tiền hoàn thêm, theo ngày Shopify xử lý hoàn (= Returns trên Shopify Analytics)') : k==='amazon' ? tv(' — booked on the day Amazon refunded', ' — ghi ngày Amazon hoàn tiền') : '';
       rows.push({...stLine(CH_LABEL[k]+note, -a.refund[k], nr, null, 'ref'), detail:true, neg: a.refund[k]>0, hget: x=>-x.refund[k]});
     });
-    rows.push({...stSub('= Doanh thu thuần (Net Revenue)', nr, nr, 'nr'), hget: x=>x.netRevenue});
+    rows.push({...stSub(tv('= Net revenue', '= Doanh thu thuần (Net Revenue)'), nr, nr, 'nr'), hget: x=>x.netRevenue});
     // Same split as Gross Sales: each channel's net = its gross - its discounts - its refunds; the four add up to the subtotal.
     [...CH_KEYS].sort((x,y)=>netBy(y)-netBy(x)).forEach(k=>{
       const {unconnected, liveDays} = chState(k);
-      let label = CH_LABEL[k]+' — thuần (gộp − giảm giá − hoàn tiền)';
-      if(k==='shopify' && !unconnected) label = 'Shopify — thuần = Net sales trên Shopify Analytics';
-      if(k==='amazon' && !unconnected) label = 'Amazon — thuần (giá bán − promotions − hoàn tiền)';
+      let label = CH_LABEL[k]+tv(' — net (gross − discounts − refunds)', ' — thuần (gộp − giảm giá − hoàn tiền)');
+      if(k==='shopify' && !unconnected) label = tv('Shopify — net = Net sales in Shopify Analytics', 'Shopify — thuần = Net sales trên Shopify Analytics');
+      if(k==='amazon' && !unconnected) label = tv('Amazon — net (selling price − promotions − refunds)', 'Amazon — thuần (giá bán − promotions − hoàn tiền)');
       rows.push({...stLine(label, netBy(k), nr, null, 'nr'), detail:true, gap: unconnected, live: !unconnected && liveDays>0, hget: x=>x.gross[k]-x.discountBy[k]-x.refund[k]});
     });
 
-    rows.push(stSection('Giá vốn hàng bán — COGS (giá vốn sản phẩm + fulfillment)','cogs'));
+    rows.push(stSection(tv('Cost of goods sold — COGS (product cost + fulfillment)', 'Giá vốn hàng bán — COGS (giá vốn sản phẩm + fulfillment)'),'cogs'));
     if(a.productCostHasActual && !a.productCostEst){
-      rows.push({...stLine('Giá vốn sản phẩm — theo sổ kho kế toán (data/cogs_monthly.json), rải theo doanh thu thuần từng ngày', -a.productCost, nr, 'var', 'cogs'), neg:true, hget: x=>-x.productCost});
+      rows.push({...stLine(tv('Product cost — per the accountant\'s inventory book (data/cogs_monthly.json), spread by each day\'s net revenue', 'Giá vốn sản phẩm — theo sổ kho kế toán (data/cogs_monthly.json), rải theo doanh thu thuần từng ngày'), -a.productCost, nr, 'var', 'cogs'), neg:true, hget: x=>-x.productCost});
     } else if(a.productCostHasActual && a.productCostEst){
-      rows.push({...stLine('Giá vốn sản phẩm — '+money(a.productCostActual,{compact:true})+' theo sổ kho kế toán + '+money(a.productCostEstAmount,{compact:true})+' ƯỚC TÍNH '+(a.cogsEstRate*100).toFixed(0)+'% (kênh/tháng chưa có số trong data/cogs_monthly.json)', -a.productCost, nr, 'var', 'cogs'), neg:true, est:true, estTitle: (COGS_EST&&COGS_EST.basis)||'', hget: x=>-x.productCost});
+      rows.push({...stLine(tv('Product cost — ', 'Giá vốn sản phẩm — ')+money(a.productCostActual,{compact:true})+tv(' per the accountant\'s inventory book + ', ' theo sổ kho kế toán + ')+money(a.productCostEstAmount,{compact:true})+tv(' ESTIMATED at ', ' ƯỚC TÍNH ')+(a.cogsEstRate*100).toFixed(0)+tv('% (channel/month without a figure in data/cogs_monthly.json)', '% (kênh/tháng chưa có số trong data/cogs_monthly.json)'), -a.productCost, nr, 'var', 'cogs'), neg:true, est:true, estTitle: (COGS_EST&&COGS_EST.basis)||'', hget: x=>-x.productCost});
     } else if(a.productCostEst){
-      rows.push({...stLine('Giá vốn sản phẩm — ƯỚC TÍNH '+(a.cogsEstRate*100).toFixed(0)+'% doanh thu thuần (chưa có số thật; điền số kế toán vào data/cogs_monthly.json để thay)', -a.productCost, nr, 'var', 'cogs'), neg:true, est:true, estTitle: (COGS_EST&&COGS_EST.basis)||'', hget: x=>-x.productCost});
+      rows.push({...stLine(tv('Product cost — ESTIMATED at ', 'Giá vốn sản phẩm — ƯỚC TÍNH ')+(a.cogsEstRate*100).toFixed(0)+tv('% of net revenue (no actual figure yet; enter the accountant\'s figures in data/cogs_monthly.json to replace it)', '% doanh thu thuần (chưa có số thật; điền số kế toán vào data/cogs_monthly.json để thay)'), -a.productCost, nr, 'var', 'cogs'), neg:true, est:true, estTitle: (COGS_EST&&COGS_EST.basis)||'', hget: x=>-x.productCost});
     } else {
-      rows.push({...stLine('Giá vốn sản phẩm (chưa có bảng giá vốn theo SKU)', -a.productCost, nr, 'var', 'cogs'), neg:true, gap:true, hget: x=>-x.productCost});
+      rows.push({...stLine(tv('Product cost (no cost-per-SKU table yet)', 'Giá vốn sản phẩm (chưa có bảng giá vốn theo SKU)'), -a.productCost, nr, 'var', 'cogs'), neg:true, gap:true, hget: x=>-x.productCost});
     }
     const smLive = a.shipmonkRealDays>0;
-    const smBasis = shipmonkOrderBasis() ? 'theo ngày đặt hàng' : 'theo ngày ship';
-    const smNote = smLive ? ' — ShipMonk, ' + smBasis + (a.shipmonkRealDays<a.n ? ' ('+(a.n-a.shipmonkRealDays)+' ngày ngoài cửa sổ đồng bộ = $0)' : '') : '';
+    const smBasis = shipmonkOrderBasis() ? tx('st.byOrderDate') : tx('st.byShipDate');
+    const smNote = smLive ? ' — ShipMonk, ' + smBasis + (a.shipmonkRealDays<a.n ? tx('st.outsideSync', {n: a.n-a.shipmonkRealDays, d: dayWord(a.n-a.shipmonkRealDays)}) : '') : '';
     const smStores = smLive ? Object.entries(a.shipmonkByStore||{}).sort((x,y)=>y[1].total-x[1].total) : [];
     const smStoreRows = (field, what) => {   // one detail row per ShipMonk store (Shopify vs Amazon FBM) when there is more than one
       if(smStores.length<2) return;
       smStores.forEach(([name, t])=>{
-        rows.push({...stLine(shipmonkStoreLabel(name)+' — '+what+' ('+t.orders.toLocaleString('en-US')+' đơn)', -t[field], nr, null, 'cogs'), detail:true, neg:true, live:true});
+        rows.push({...stLine(shipmonkStoreLabel(name)+' — '+what+' ('+t.orders.toLocaleString('en-US')+' '+tx('u.orders')+')', -t[field], nr, null, 'cogs'), detail:true, neg:true, live:true});
       });
     };
-    rows.push({...stLine('Phí đóng gói (packaging)' + (smLive ? ' — vật liệu đóng gói ShipMonk, ' + smBasis : ''), -a.packaging, nr, 'var', 'cogs'), neg:true, gap: !smLive, live: smLive, hget: x=>-x.packaging});
+    rows.push({...stLine(tv('Packaging', 'Phí đóng gói (packaging)') + (smLive ? tv(' — ShipMonk packaging materials, ', ' — vật liệu đóng gói ShipMonk, ') + smBasis : ''), -a.packaging, nr, 'var', 'cogs'), neg:true, gap: !smLive, live: smLive, hget: x=>-x.packaging});
     smStoreRows('packaging', 'packaging');
     const skuPend = a.amazonPendSkuDays>0;
-    const fbaEstTxt = a.amazonFbaEst>0.5 ? ' — trong đó '+money(a.amazonFbaEst)+(skuPend ? ' cho '+a.amazonPendUnits.toLocaleString('en-US')+' units Amazon chưa ghi phí, tính theo cước FBA thật của từng SKU ('+a.amazonFeeEstDays+' ngày; thay bằng số thật khi Amazon ghi)' : ' ước tính cho đơn Amazon chưa ghi phí ('+a.amazonFeeEstDays+' ngày, '+(amazonFeeEstRates ? money(amazonFeeEstRates.fbaPerUnit)+'/unit theo '+amazonFeeEstRates.settledDays+' ngày đã chốt' : '')+')') : '';
-    rows.push({...stLine('Phí fulfillment FBA — Amazon pick & pack + ship (FBAPerUnitFulfillmentFee)'+fbaEstTxt, -a.fulfillment, nr, 'var', 'cogs'), neg:true, live: a.amazonRealDays>0, est: a.amazonFbaEst>0.5, hget: x=>-x.fulfillment});
-    const smOrdersTxt = a.shipmonkOrders.toLocaleString('en-US')+' đơn' + (a.shipmonkUnshipped>0 ? ', '+a.shipmonkUnshipped.toLocaleString('en-US')+' chưa ship — tính theo ước tính ShipMonk' : '') + ', '+a.shipmonkUnits.toLocaleString('en-US')+' units';
-    rows.push({...stLine(smLive ? 'Phí fulfillment ShipMonk — pick & pack ('+smOrdersTxt+')' + smNote : 'Phí fulfillment ShipMonk / kho thủ công — đơn Shopify + Amazon FBM (chưa kết nối ShipMonk)', -a.shipmonkPickPack, nr, 'var', 'cogs'), neg:true, gap: !smLive, live: smLive, hget: x=>-x.shipmonkPickPack});
+    const fbaEstTxt = a.amazonFbaEst>0.5 ? tv(' — of which ', ' — trong đó ')+money(a.amazonFbaEst)+(skuPend ? tv(' for ', ' cho ')+a.amazonPendUnits.toLocaleString('en-US')+tv(' Amazon units with no fee posted yet, at each SKU\'s actual FBA rate (', ' units Amazon chưa ghi phí, tính theo cước FBA thật của từng SKU (')+a.amazonFeeEstDays+tv(' days; replaced by the actual figure once Amazon posts it)', ' ngày; thay bằng số thật khi Amazon ghi)') : tv(' estimated for Amazon orders with no fee posted yet (', ' ước tính cho đơn Amazon chưa ghi phí (')+a.amazonFeeEstDays+tv(' days, ', ' ngày, ')+(amazonFeeEstRates ? money(amazonFeeEstRates.fbaPerUnit)+tv('/unit based on ', '/unit theo ')+amazonFeeEstRates.settledDays+tv(' settled days', ' ngày đã chốt') : '')+')') : '';
+    rows.push({...stLine(tv('FBA fulfillment fee — Amazon pick & pack + ship (FBAPerUnitFulfillmentFee)', 'Phí fulfillment FBA — Amazon pick & pack + ship (FBAPerUnitFulfillmentFee)')+fbaEstTxt, -a.fulfillment, nr, 'var', 'cogs'), neg:true, live: a.amazonRealDays>0, est: a.amazonFbaEst>0.5, hget: x=>-x.fulfillment});
+    const smOrdersTxt = a.shipmonkOrders.toLocaleString('en-US')+' '+tx('u.orders') + (a.shipmonkUnshipped>0 ? ', '+a.shipmonkUnshipped.toLocaleString('en-US')+tv(' not shipped yet — at ShipMonk\'s estimate', ' chưa ship — tính theo ước tính ShipMonk') : '') + ', '+a.shipmonkUnits.toLocaleString('en-US')+' units';
+    rows.push({...stLine(smLive ? tv('ShipMonk fulfillment fee — pick & pack (', 'Phí fulfillment ShipMonk — pick & pack (')+smOrdersTxt+')' + smNote : tv('ShipMonk / manual warehouse fulfillment fee — Shopify + Amazon FBM orders (ShipMonk not connected)', 'Phí fulfillment ShipMonk / kho thủ công — đơn Shopify + Amazon FBM (chưa kết nối ShipMonk)'), -a.shipmonkPickPack, nr, 'var', 'cogs'), neg:true, gap: !smLive, live: smLive, hget: x=>-x.shipmonkPickPack});
     smStoreRows('pickPack', 'pick & pack');
-    rows.push({...stLine('Phí vận chuyển đến khách (postage) — đơn ngoài FBA' + (smLive ? ' — cước carrier ShipMonk ước tính theo đơn, ' + smBasis : ''), -a.postage, nr, 'var', 'cogs'), neg:true, gap: !smLive, live: smLive, hget: x=>-x.postage});
+    rows.push({...stLine(tv('Shipping to customers (postage) — non-FBA orders', 'Phí vận chuyển đến khách (postage) — đơn ngoài FBA') + (smLive ? tv(' — ShipMonk carrier rates estimated per order, ', ' — cước carrier ShipMonk ước tính theo đơn, ') + smBasis : ''), -a.postage, nr, 'var', 'cogs'), neg:true, gap: !smLive, live: smLive, hget: x=>-x.postage});
     smStoreRows('shipping', 'postage');
     if(a.smInvDays>0){
-      const invNote = ' — theo hoá đơn ShipMonk' + (a.smInvDays<a.n ? ' ('+(a.n-a.smInvDays)+' ngày chưa có hoá đơn)' : '');
+      const invNote = tx('st.perInvoice') + (a.smInvDays<a.n ? tx('st.noInvoiceDays', {n: a.n-a.smInvDays, d: dayWord(a.n-a.smInvDays)}) : '');
       const invLine = (label, v, opts) => rows.push({...stLine(label + invNote, -v, nr, 'var', 'cogs'), neg: v>=0, live:true, ...(opts||{})});
-      if(a.smInv.packaging_purchases !== 0) invLine('Mua bao bì riêng qua ShipMonk — custom packaging, ghi khi ShipMonk xuất hoá đơn', a.smInv.packaging_purchases);
-      if(a.smInvAdjCredits !== 0) invLine('Điều chỉnh cước & credit ShipMonk — hoàn/điều chỉnh trên hoá đơn', a.smInvAdjCredits);
+      if(a.smInv.packaging_purchases !== 0) invLine(tv('Packaging bought through ShipMonk — custom packaging, booked when ShipMonk invoices it', 'Mua bao bì riêng qua ShipMonk — custom packaging, ghi khi ShipMonk xuất hoá đơn'), a.smInv.packaging_purchases);
+      if(a.smInvAdjCredits !== 0) invLine(tv('ShipMonk postage adjustments & credits — refunds/adjustments on the invoice', 'Điều chỉnh cước & credit ShipMonk — hoàn/điều chỉnh trên hoá đơn'), a.smInvAdjCredits);
       if(a.smCmpDays>0){
         const pct = a.smInvShipCmp ? (Math.min(a.smInvShipCmp, a.smApiShipCmp)/Math.max(a.smInvShipCmp, a.smApiShipCmp)*100) : 100;
-        invLine('Chênh lệch hoá đơn − ước tính API (cước + pick & pack), tính theo từng kỳ hoá đơn', a.smTrueUp);
-        rows.push({...stLine('Đối chiếu '+a.smCmpDays+' ngày: hoá đơn ghi '+money(a.smInvShipCmp)+' cước + pick & pack · API ước tính '+money(a.smApiShipCmp)+' (theo ngày ship) · khớp '+pct.toFixed(1)+'%', 0, nr, null, 'cogs'), detail:true, live:true});
+        invLine(tv('Invoice − API estimate difference (postage + pick & pack), per billing period', 'Chênh lệch hoá đơn − ước tính API (cước + pick & pack), tính theo từng kỳ hoá đơn'), a.smTrueUp);
+        rows.push({...stLine(tv('Reconciliation of ', 'Đối chiếu ')+a.smCmpDays+tv(' days: invoice shows ', ' ngày: hoá đơn ghi ')+money(a.smInvShipCmp)+tv(' postage + pick & pack · API estimate ', ' cước + pick & pack · API ước tính ')+money(a.smApiShipCmp)+tv(' (by ship date) · match ', ' (theo ngày ship) · khớp ')+pct.toFixed(1)+'%', 0, nr, null, 'cogs'), detail:true, live:true});
       } else if(a.smCmpMissingDays>0){
-        rows.push({...stLine('Đối chiếu cước + pick & pack với hoá đơn: chưa được — API chưa có đủ ngày ship của kỳ này (chờ backfill)', 0, nr, null, 'cogs'), detail:true});
+        rows.push({...stLine(tv('Reconciliation of postage + pick & pack against the invoice: not possible yet — the API does not have every ship day of this period yet (waiting for backfill)', 'Đối chiếu cước + pick & pack với hoá đơn: chưa được — API chưa có đủ ngày ship của kỳ này (chờ backfill)'), 0, nr, null, 'cogs'), detail:true});
       }
     }
     if(a.amazonInboundFreightReal !== 0){
-      rows.push({...stLine('Memo — cước & thuế nhập hàng vào FBA '+money(a.amazonInboundFreightReal)+' (Amazon Global Logistics, ngày hoá đơn): tính vào giá vốn hàng nhập kho, KHÔNG trừ ở đây', 0, nr, null, 'cogs'), detail:true, live:true});
+      rows.push({...stLine(tv('Memo — inbound freight & duty into FBA ', 'Memo — cước & thuế nhập hàng vào FBA ')+money(a.amazonInboundFreightReal)+tv(' (Amazon Global Logistics, invoice date): capitalised into inventory cost, NOT deducted here', ' (Amazon Global Logistics, ngày hoá đơn): tính vào giá vốn hàng nhập kho, KHÔNG trừ ở đây'), 0, nr, null, 'cogs'), detail:true, live:true});
     }
-    rows.push({...stSub('= Tổng COGS', -a.cogs, nr, 'cogs_sub'), hget: x=>-x.cogs});
-    rows.push({...stSub('= Lợi nhuận gộp (Gross Profit)', a.grossProfit, nr, 'gp'), hget: x=>x.grossProfit});
+    rows.push({...stSub(tv('= Total COGS', '= Tổng COGS'), -a.cogs, nr, 'cogs_sub'), hget: x=>-x.cogs});
+    rows.push({...stSub(tv('= Gross profit', '= Lợi nhuận gộp (Gross Profit)'), a.grossProfit, nr, 'gp'), hget: x=>x.grossProfit});
 
     // Variable selling fees = what the channel and the payment processor keep out of every order (a fixed % per
     // transaction, like a retailer's margin) - NOT marketing: ads/affiliates are discretionary demand generation (next section).
-    rows.push(stSection('Phí bán hàng theo giao dịch — hoa hồng sàn & cổng thanh toán (variable selling fees)','opvar'));
-    rows.push({...stGroup('<b>Hoa hồng & phí sàn</b> (marketplace fees) — % cố định trên mỗi đơn, như margin của nhà bán lẻ; không phải marketing', -a.marketplaceFees, nr, 'opvar'), hget: x=>-x.marketplaceFees});
+    rows.push(stSection(tv('Transaction selling fees — marketplace commissions & payment processing (variable selling fees)', 'Phí bán hàng theo giao dịch — hoa hồng sàn & cổng thanh toán (variable selling fees)'),'opvar'));
+    rows.push({...stGroup(tv('<b>Marketplace fees</b> — a fixed % of every order, like a retailer\'s margin; not marketing', '<b>Hoa hồng & phí sàn</b> (marketplace fees) — % cố định trên mỗi đơn, như margin của nhà bán lẻ; không phải marketing'), -a.marketplaceFees, nr, 'opvar'), hget: x=>-x.marketplaceFees});
     if(a.amazonOrdersReal>0){
       const feeOrdered = a.amazonFeeOrderedDays>0;
-      const feeBasisTxt = feeOrdered ? ' — theo ngày đặt hàng' + (a.amazonRefEst>0.5 ? ', trong đó '+money(a.amazonRefEst)+(a.amazonPendSkuDays>0 ? ' cho '+a.amazonPendUnits.toLocaleString('en-US')+' units Amazon chưa ghi phí, tính theo tỷ lệ referral thật của từng SKU ('+a.amazonFeeEstDays+' ngày; thay bằng số thật khi Amazon ghi)' : ' ước tính cho đơn Amazon chưa ghi phí ('+a.amazonFeeEstDays+' ngày, '+(amazonFeeEstRates ? (amazonFeeEstRates.refRate*100).toFixed(1)+'% doanh thu theo '+amazonFeeEstRates.settledDays+' ngày đã chốt' : '')+'; thay bằng số thật khi Amazon ghi)') : ' (Amazon đã ghi phí đủ)') : ' — theo ngày ship (Finances)';
-      rows.push({...stLine('Phí giới thiệu Amazon (Referral fees)'+feeBasisTxt, -a.amazonReferralFeesReal, nr, 'var', 'opvar'), neg:true, live: feeOrdered, est: a.amazonRefEst>0.5, hget: x=>-x.amazonReferralFeesReal});
+      const feeBasisTxt = feeOrdered ? tv(' — by order date', ' — theo ngày đặt hàng') + (a.amazonRefEst>0.5 ? tv(', of which ', ', trong đó ')+money(a.amazonRefEst)+(a.amazonPendSkuDays>0 ? tv(' for ', ' cho ')+a.amazonPendUnits.toLocaleString('en-US')+tv(' Amazon units with no fee posted yet, at each SKU\'s actual referral rate (', ' units Amazon chưa ghi phí, tính theo tỷ lệ referral thật của từng SKU (')+a.amazonFeeEstDays+tv(' days; replaced by the actual figure once Amazon posts it)', ' ngày; thay bằng số thật khi Amazon ghi)') : tv(' estimated for Amazon orders with no fee posted yet (', ' ước tính cho đơn Amazon chưa ghi phí (')+a.amazonFeeEstDays+tv(' days, ', ' ngày, ')+(amazonFeeEstRates ? (amazonFeeEstRates.refRate*100).toFixed(1)+tv('% of revenue based on ', '% doanh thu theo ')+amazonFeeEstRates.settledDays+tv(' settled days', ' ngày đã chốt') : '')+tv('; replaced by the actual figure once Amazon posts it)', '; thay bằng số thật khi Amazon ghi)')) : tv(' (Amazon has posted all fees)', ' (Amazon đã ghi phí đủ)')) : tv(' — by ship date (Finances)', ' — theo ngày ship (Finances)');
+      rows.push({...stLine(tv('Amazon referral fees', 'Phí giới thiệu Amazon (Referral fees)')+feeBasisTxt, -a.amazonReferralFeesReal, nr, 'var', 'opvar'), neg:true, live: feeOrdered, est: a.amazonRefEst>0.5, hget: x=>-x.amazonReferralFeesReal});
       // Script schema 2 splits the per-order "other" fees out of the catch-all; on older
       // JSON they are still inside the catch-all and this line would be a misleading $0.
       const amazonSchema2 = !!(amazonMeta && amazonMeta.schema >= 2);
       if(amazonSchema2 || a.amazonOtherFeesReal !== 0){
-        rows.push({...stLine('Phí Amazon khác (thu hộ sales tax, shipping chargeback/holdback, phí xử lý hoàn tiền, postage nhãn trả hàng)' + (feeOrdered ? ' — theo ngày đặt hàng, gồm điều chỉnh phí khi hoàn tiền' : ''), -a.amazonOtherFeesReal, nr, 'var', 'opvar'), neg: a.amazonOtherFeesReal>=0, hget: x=>-x.amazonOtherFeesReal});
-        if(feeOrdered && Math.abs(a.amazonRefundFeeAdj) >= 0.01) rows.push({...stLine('… trong đó Amazon trả lại phí khi hoàn tiền (theo ngày hoàn): '+money(a.amazonRefundFeeAdj), 0, nr, null, 'opvar'), detail:true, live:true});
+        rows.push({...stLine(tv('Other Amazon fees (sales tax collection, shipping chargeback/holdback, refund administration fee, return-label postage)', 'Phí Amazon khác (thu hộ sales tax, shipping chargeback/holdback, phí xử lý hoàn tiền, postage nhãn trả hàng)') + (feeOrdered ? tv(' — by order date, including fee adjustments on refunds', ' — theo ngày đặt hàng, gồm điều chỉnh phí khi hoàn tiền') : ''), -a.amazonOtherFeesReal, nr, 'var', 'opvar'), neg: a.amazonOtherFeesReal>=0, hget: x=>-x.amazonOtherFeesReal});
+        if(feeOrdered && Math.abs(a.amazonRefundFeeAdj) >= 0.01) rows.push({...stLine(tv('… of which fees Amazon returned on refunds (by refund date): ', '… trong đó Amazon trả lại phí khi hoàn tiền (theo ngày hoàn): ')+money(a.amazonRefundFeeAdj), 0, nr, null, 'opvar'), detail:true, live:true});
       }
       const catchAllLabel = amazonSchema2
-        ? 'Điều chỉnh & khoản Amazon trả lại / chưa phân loại (reimbursement hàng mất/hỏng, reserve, liquidation, mục chưa map) — số dương = Amazon trả lại tiền'
-        : 'Phí Amazon khác/chưa phân loại (gift wrap, sales tax fee, shipping chargeback...)';
+        ? tv('Adjustments & Amazon reimbursements / unclassified (lost/damaged reimbursements, reserve, liquidation, unmapped items) — positive = money back from Amazon', 'Điều chỉnh & khoản Amazon trả lại / chưa phân loại (reimbursement hàng mất/hỏng, reserve, liquidation, mục chưa map) — số dương = Amazon trả lại tiền')
+        : tv('Other / unclassified Amazon fees (gift wrap, sales tax fee, shipping chargeback...)', 'Phí Amazon khác/chưa phân loại (gift wrap, sales tax fee, shipping chargeback...)');
       rows.push({...stLine(catchAllLabel, -a.amazonOtherUnclassifiedCost, nr, 'var', 'opvar'), neg: a.amazonOtherUnclassifiedCost>=0, hget: x=>-x.amazonOtherUnclassifiedCost});
     } else {
-      rows.push({...stLine('Phí sàn Amazon (khoảng này chưa có dữ liệu SP-API)', 0, nr, 'var', 'opvar'), neg:true, gap:true});
+      rows.push({...stLine(tv('Amazon marketplace fees (no SP-API data for this period)', 'Phí sàn Amazon (khoảng này chưa có dữ liệu SP-API)'), 0, nr, 'var', 'opvar'), neg:true, gap:true});
     }
     if(a.walmartDays>0){
       const estW = a.walmartFeesEst>0.005;
-      rows.push({...stLine('Phí sàn Walmart — hoa hồng · '+a.walmartSettledOrders.toLocaleString('en-US')+' đơn đã đối soát (phí thật)'+(estW ? ' + '+a.walmartUnsettledOrders.toLocaleString('en-US')+' đơn chưa đối soát (ước tính)' : ''), -a.walmartFees, nr, 'var', 'opvar'), neg: a.walmartFees>=0, live:true, est: estW, estTitle: estW ? 'Đơn chưa có trong báo cáo đối soát của Walmart chưa có phí thật. '+money(a.walmartFeesEst)+' là ước tính = doanh thu các đơn đó × tỷ lệ hoa hồng đo trên đơn đã đối soát; tự thay bằng phí thật khi Walmart đưa đơn vào báo cáo.' : '', hget: x=>-x.walmartFees});
+      rows.push({...stLine(tv('Walmart marketplace fees — commission · ', 'Phí sàn Walmart — hoa hồng · ')+a.walmartSettledOrders.toLocaleString('en-US')+tv(' reconciled orders (actual fees)', ' đơn đã đối soát (phí thật)')+(estW ? ' + '+a.walmartUnsettledOrders.toLocaleString('en-US')+tv(' unreconciled orders (estimate)', ' đơn chưa đối soát (ước tính)') : ''), -a.walmartFees, nr, 'var', 'opvar'), neg: a.walmartFees>=0, live:true, est: estW, estTitle: estW ? tv('Orders not yet in Walmart\'s reconciliation report have no actual fee. ', 'Đơn chưa có trong báo cáo đối soát của Walmart chưa có phí thật. ')+money(a.walmartFeesEst)+tv(' is an estimate = those orders\' revenue × the commission rate measured on reconciled orders; replaced by the actual fee once Walmart adds the orders to the report.', ' là ước tính = doanh thu các đơn đó × tỷ lệ hoa hồng đo trên đơn đã đối soát; tự thay bằng phí thật khi Walmart đưa đơn vào báo cáo.') : '', hget: x=>-x.walmartFees});
     } else {
-      rows.push({...stLine('Phí sàn Walmart — '+(walmartMatched ? 'khoảng này ngoài dữ liệu đơn Walmart' : 'chưa kết nối'), -a.walmartFees, nr, 'var', 'opvar'), neg:true, gap:true, hget: x=>-x.walmartFees});
+      rows.push({...stLine(tv('Walmart marketplace fees — ', 'Phí sàn Walmart — ')+(walmartMatched ? tv('this period is outside the Walmart order data', 'khoảng này ngoài dữ liệu đơn Walmart') : tv('not connected', 'chưa kết nối')), -a.walmartFees, nr, 'var', 'opvar'), neg:true, gap:true, hget: x=>-x.walmartFees});
     }
     if(a.tiktokDays>0){
       const estS = a.tiktokFeesEstSelling>0.005;
-      rows.push({...stLine('Phí sàn TikTok Shop — referral (6%) + phí xử lý hoàn tiền · '+a.tiktokSettledOrders.toLocaleString('en-US')+' đơn đã quyết toán (phí thật)'+(estS ? ' + '+a.tiktokUnsettledOrders.toLocaleString('en-US')+' đơn chưa quyết toán (ước tính)' : ''), -a.tiktokFees, nr, 'var', 'opvar'), neg: a.tiktokFees>=0, live:true, est: estS, estTitle: estS ? 'Đơn chưa quyết toán chưa có phí thật (TikTok chốt phí khoảng 8 ngày sau khi giao). '+money(a.tiktokFeesEstSelling)+' là ước tính = doanh thu thuần các đơn đó × tỷ lệ phí đo trên đơn đã quyết toán; tự thay bằng phí thật khi đơn quyết toán.' : '', hget: x=>-x.tiktokFees});
+      rows.push({...stLine(tv('TikTok Shop marketplace fees — referral (6%) + refund administration fee · ', 'Phí sàn TikTok Shop — referral (6%) + phí xử lý hoàn tiền · ')+a.tiktokSettledOrders.toLocaleString('en-US')+tv(' settled orders (actual fees)', ' đơn đã quyết toán (phí thật)')+(estS ? ' + '+a.tiktokUnsettledOrders.toLocaleString('en-US')+tv(' unsettled orders (estimate)', ' đơn chưa quyết toán (ước tính)') : ''), -a.tiktokFees, nr, 'var', 'opvar'), neg: a.tiktokFees>=0, live:true, est: estS, estTitle: estS ? tv('Unsettled orders have no actual fee yet (TikTok settles fees about 8 days after delivery). ', 'Đơn chưa quyết toán chưa có phí thật (TikTok chốt phí khoảng 8 ngày sau khi giao). ')+money(a.tiktokFeesEstSelling)+tv(' is an estimate = those orders\' net revenue × the fee rate measured on settled orders; replaced by the actual fee once the orders settle.', ' là ước tính = doanh thu thuần các đơn đó × tỷ lệ phí đo trên đơn đã quyết toán; tự thay bằng phí thật khi đơn quyết toán.') : '', hget: x=>-x.tiktokFees});
     } else {
-      rows.push({...stLine('Phí sàn TikTok Shop — '+(tiktokMatched ? 'khoảng này ngoài dữ liệu đơn TikTok' : 'chưa kết nối'), -a.tiktokFees, nr, 'var', 'opvar'), neg:true, gap:true, hget: x=>-x.tiktokFees});
+      rows.push({...stLine(tv('TikTok Shop marketplace fees — ', 'Phí sàn TikTok Shop — ')+(tiktokMatched ? tv('this period is outside the TikTok order data', 'khoảng này ngoài dữ liệu đơn TikTok') : tv('not connected', 'chưa kết nối')), -a.tiktokFees, nr, 'var', 'opvar'), neg:true, gap:true, hget: x=>-x.tiktokFees});
     }
-    rows.push({...stGroup('<b>Phí cổng thanh toán</b> (payment processing) — Shopify Payments, PayPal, theo từng giao dịch', -a.paymentFeesAll, nr, 'opvar'), hget: x=>-x.paymentFeesAll});
+    rows.push({...stGroup(tv('<b>Payment processing fees</b> — Shopify Payments, PayPal, per transaction', '<b>Phí cổng thanh toán</b> (payment processing) — Shopify Payments, PayPal, theo từng giao dịch'), -a.paymentFeesAll, nr, 'opvar'), hget: x=>-x.paymentFeesAll});
     if(a.paymentFeeDays>0){
-      const GW_LABEL = {shopify_payments:'Shopify Payments (thẻ, Shop Pay)', paypal:'PayPal', shop_cash:'Shop Cash', gift_card:'Gift card', manual:'Thủ công', shopify_installments:'Shop Pay Installments', 'afterpay (new)':'Afterpay (trả góp)', afterpay:'Afterpay (trả góp)'};
+      const GW_LABEL = {shopify_payments: tv('Shopify Payments (cards, Shop Pay)', 'Shopify Payments (thẻ, Shop Pay)'), paypal:'PayPal', shop_cash:'Shop Cash', gift_card:'Gift card', manual: tv('Manual', 'Thủ công'), shopify_installments:'Shop Pay Installments', 'afterpay (new)': tv('Afterpay (instalments)', 'Afterpay (trả góp)'), afterpay: tv('Afterpay (instalments)', 'Afterpay (trả góp)')};
       // Gateways that never carry a per-transaction fee: gift cards, Shop Cash rewards and manual/COD orders.
       const GW_NO_FEE = new Set(['gift_card','shop_cash','manual']);
-      let lbl = 'Phí cổng thanh toán — Shopify Payments, phí thật theo từng giao dịch ('+a.paymentFeeOrders.toLocaleString('en-US')+' đơn)';
-      if(a.paymentFeeDays<a.n) lbl += ' ('+(a.n-a.paymentFeeDays)+' ngày ngoài cửa sổ đồng bộ = $0)';
+      let lbl = tv('Payment processing fees — Shopify Payments, actual fee per transaction (', 'Phí cổng thanh toán — Shopify Payments, phí thật theo từng giao dịch (')+a.paymentFeeOrders.toLocaleString('en-US')+' '+tx('u.orders')+')';
+      if(a.paymentFeeDays<a.n) lbl += tx('st.outsideSync', {n: a.n-a.paymentFeeDays, d: dayWord(a.n-a.paymentFeeDays)});
       rows.push({...stLine(lbl, -a.paymentFees, nr, 'var', 'opvar'), neg:true, live:true, hget: x=>-x.paymentFees});
       Object.entries(a.feeTypeMix).sort((x,y)=>y[1]-x[1]).forEach(([k,v])=>{
-        const FT = {domestic_card_not_present:'thẻ nội địa 2.25% + $0.30', premium_domestic_card_not_present:'thẻ premium 2.95% + $0.30', amex_card_not_present:'Amex 2.95% + $0.30', international_card_not_present:'thẻ quốc tế 3.25% + $0.42', foreign_exchange_fee:'phí quy đổi ngoại tệ 1.5%', amazon_pay_base:'Amazon Pay', amex_international_card_not_present:'Amex quốc tế', premium_international_card_not_present:'thẻ premium quốc tế', shop_pay_installments:'Shop Pay Installments'};
+        const FT = {domestic_card_not_present: tv('domestic cards 2.25% + $0.30', 'thẻ nội địa 2.25% + $0.30'), premium_domestic_card_not_present: tv('premium cards 2.95% + $0.30', 'thẻ premium 2.95% + $0.30'), amex_card_not_present:'Amex 2.95% + $0.30', international_card_not_present: tv('international cards 3.25% + $0.42', 'thẻ quốc tế 3.25% + $0.42'), foreign_exchange_fee: tv('foreign exchange fee 1.5%', 'phí quy đổi ngoại tệ 1.5%'), amazon_pay_base:'Amazon Pay', amex_international_card_not_present: tv('international Amex', 'Amex quốc tế'), premium_international_card_not_present: tv('premium international cards', 'thẻ premium quốc tế'), shop_pay_installments:'Shop Pay Installments'};
         rows.push({...stLine((FT[k]||k), -v, nr, null, 'opvar'), detail:true, neg:true, live:true});
       });
       Object.entries(a.gatewayMix).filter(([g])=>g!=='shopify_payments' && !(g==='paypal' && a.paypalDays>0) && !/afterpay|clearpay/i.test(g)).sort((x,y)=>y[1].amount-x[1].amount).forEach(([g,v])=>{
-        const base = (GW_LABEL[g]||g)+' — '+v.orders.toLocaleString('en-US')+' đơn, '+money(v.amount)+' thu qua cổng này';
-        if(GW_NO_FEE.has(g)) rows.push({...stLine(base+' — cổng này không thu phí giao dịch', 0, nr, null, 'opvar'), detail:true, live:true});
-        else rows.push({...stLine(base+' — phí chưa kết nối', 0, nr, null, 'opvar'), detail:true, neg:true, gap:true});
+        const base = (GW_LABEL[g]||g)+' — '+v.orders.toLocaleString('en-US')+' '+tx('u.orders')+', '+money(v.amount)+tv(' collected through this gateway', ' thu qua cổng này');
+        if(GW_NO_FEE.has(g)) rows.push({...stLine(base+tv(' — this gateway charges no transaction fee', ' — cổng này không thu phí giao dịch'), 0, nr, null, 'opvar'), detail:true, live:true});
+        else rows.push({...stLine(base+tv(' — fees not connected', ' — phí chưa kết nối'), 0, nr, null, 'opvar'), detail:true, neg:true, gap:true});
       });
       if(a.afterpayOrders>0){
-        rows.push({...stLine('Afterpay (trả góp) — '+a.afterpayOrders.toLocaleString('en-US')+' đơn, '+money(a.afterpayAmount)+' thu qua cổng này — phí ước tính '+(AFTERPAY_FEE.pct*100).toFixed(0)+'% + $'+AFTERPAY_FEE.fixed.toFixed(2)+'/đơn', -a.afterpayFees, nr, null, 'opvar'), detail:true, neg:true, live:true, est:true, estTitle:'Shopify không lộ phí Afterpay. Ước tính = số thu qua Afterpay × '+(AFTERPAY_FEE.pct*100).toFixed(1)+'% + $'+AFTERPAY_FEE.fixed.toFixed(2)+' × số đơn (biểu phí công khai, chưa phải phí thật). Sẽ thay bằng phí thật khi có báo cáo settlement của Afterpay.', hget: x=>-x.afterpayFees});
+        rows.push({...stLine(tv('Afterpay (instalments) — ', 'Afterpay (trả góp) — ')+a.afterpayOrders.toLocaleString('en-US')+' '+tx('u.orders')+', '+money(a.afterpayAmount)+tv(' collected through this gateway — estimated fee ', ' thu qua cổng này — phí ước tính ')+(AFTERPAY_FEE.pct*100).toFixed(0)+'% + $'+AFTERPAY_FEE.fixed.toFixed(2)+tv('/order', '/đơn'), -a.afterpayFees, nr, null, 'opvar'), detail:true, neg:true, live:true, est:true, estTitle: tv('Shopify does not expose the Afterpay fee. Estimate = amount collected through Afterpay × ', 'Shopify không lộ phí Afterpay. Ước tính = số thu qua Afterpay × ')+(AFTERPAY_FEE.pct*100).toFixed(1)+'% + $'+AFTERPAY_FEE.fixed.toFixed(2)+tv(' × number of orders (public rate card, not the actual fee). Replaced by the actual fee once Afterpay\'s settlement report is available.', ' × số đơn (biểu phí công khai, chưa phải phí thật). Sẽ thay bằng phí thật khi có báo cáo settlement của Afterpay.'), hget: x=>-x.afterpayFees});
       }
     } else if(a.paypalDays===0){
-      rows.push({...stLine('Phí cổng thanh toán (Shopify Payments / PayPal / ShopPay) — chưa kết nối', -a.paymentFees, nr, 'var', 'opvar'), neg:true, gap:true});
+      rows.push({...stLine(tv('Payment processing fees (Shopify Payments / PayPal / ShopPay) — not connected', 'Phí cổng thanh toán (Shopify Payments / PayPal / ShopPay) — chưa kết nối'), -a.paymentFees, nr, 'var', 'opvar'), neg:true, gap:true});
     }
     if(a.paypalDays>0){
-      let plbl = 'Phí PayPal — phí thật theo từng giao dịch ('+a.paypalPaymentsCount.toLocaleString('en-US')+' thanh toán, '+money(a.paypalPayments)+' thu qua PayPal)';
-      if(a.paypalDays<a.n) plbl += ' ('+(a.n-a.paypalDays)+' ngày ngoài cửa sổ đồng bộ = $0)';
+      let plbl = tv('PayPal fees — actual fee per transaction (', 'Phí PayPal — phí thật theo từng giao dịch (')+a.paypalPaymentsCount.toLocaleString('en-US')+tv(' payments, ', ' thanh toán, ')+money(a.paypalPayments)+tv(' collected through PayPal)', ' thu qua PayPal)');
+      if(a.paypalDays<a.n) plbl += tx('st.outsideSync', {n: a.n-a.paypalDays, d: dayWord(a.n-a.paypalDays)});
       rows.push({...stLine(plbl, -a.paypalFees, nr, 'var', 'opvar'), neg:true, live:true, hget: x=>-x.paypalFees});
       const pc = a.paypalCompare;
       if(pc && pc.shopify>0){
         const gap = pc.paypal - pc.shopify, pct = pc.paypal ? (Math.min(pc.shopify, pc.paypal)/pc.paypal*100) : 0;
-        rows.push({...stLine('Đối chiếu '+pc.days+' ngày cả hai cùng live: Shopify ghi '+money(pc.shopify)+' qua PayPal ('+pc.shopifyOrders.toLocaleString('en-US')+' đơn) · PayPal ghi '+money(pc.paypal)+' ('+pc.paypalCount.toLocaleString('en-US')+' thanh toán) · khớp '+pct.toFixed(1)+'%'+(Math.abs(gap)>=1 ? ', chênh '+money(gap)+' = thanh toán của đơn đã huỷ / ngoài Shopify' : ''), 0, nr, null, 'opvar'), detail:true, live:true});
+        rows.push({...stLine(tv('Reconciliation of ', 'Đối chiếu ')+pc.days+tv(' days with both live: Shopify shows ', ' ngày cả hai cùng live: Shopify ghi ')+money(pc.shopify)+tv(' via PayPal (', ' qua PayPal (')+pc.shopifyOrders.toLocaleString('en-US')+' '+tx('u.orders')+tv(') · PayPal shows ', ') · PayPal ghi ')+money(pc.paypal)+' ('+pc.paypalCount.toLocaleString('en-US')+tv(' payments) · match ', ' thanh toán) · khớp ')+pct.toFixed(1)+'%'+(Math.abs(gap)>=1 ? tv(', difference ', ', chênh ')+money(gap)+tv(' = payments on cancelled / non-Shopify orders', ' = thanh toán của đơn đã huỷ / ngoài Shopify') : ''), 0, nr, null, 'opvar'), detail:true, live:true});
       }
     }
-    rows.push({...stSub('= Tổng phí bán hàng theo giao dịch (hoa hồng sàn + cổng thanh toán)', -a.feesTotal, nr, 'opvar_sub'), hget: x=>-x.feesTotal});
-    rows.push({...stSub('= Lợi nhuận đóng góp trước marketing (CM2 — sau phí giao dịch, trước quảng cáo)', a.cmBeforeMarketing, nr, 'cm2'), hget: x=>x.cmBeforeMarketing});
+    rows.push({...stSub(tv('= Total transaction selling fees (marketplace commissions + payment processing)', '= Tổng phí bán hàng theo giao dịch (hoa hồng sàn + cổng thanh toán)'), -a.feesTotal, nr, 'opvar_sub'), hget: x=>-x.feesTotal});
+    rows.push({...stSub(tv('= Contribution margin before marketing (CM2 — after transaction fees, before ads)', '= Lợi nhuận đóng góp trước marketing (CM2 — sau phí giao dịch, trước quảng cáo)'), a.cmBeforeMarketing, nr, 'cm2'), hget: x=>x.cmBeforeMarketing});
 
-    rows.push(stSection('Marketing & bán hàng (quảng cáo + hoa hồng affiliate)','mkt'));
+    rows.push(stSection(tv('Marketing & selling (ads + affiliate commissions)', 'Marketing & bán hàng (quảng cáo + hoa hồng affiliate)'),'mkt'));
     AD_KEYS.forEach(k=>{
-      let label = 'Quảng cáo — '+AD_LABEL[k];
+      let label = tv('Ads — ', 'Quảng cáo — ')+AD_LABEL[k];
       let live = false, gap = false;
       if(k==='amazonads'){
-        if(!amazonAdsMatched){ label += ' (chờ Amazon duyệt Advertising API)'; gap = true; }
-        else if(a.amazonAdsRealDays===a.n){ live = true; label += ' (SP '+money(a.amazonAdsSplit.sp)+' · SB '+money(a.amazonAdsSplit.sb)+' · SD '+money(a.amazonAdsSplit.sd)+')'+(a.amazonAdsSplit.stv>0.005 ? ' — Sellerboard ghi thêm '+money(a.amazonAdsSplit.stv)+' "Sponsored TV" không có trong Ads console: không tính' : ''); }
-        else if(a.amazonAdsRealDays>0){ live = true; label += ' ('+(a.n-a.amazonAdsRealDays)+' ngày chưa có số = $0)'; }
-        else { label += ' (khoảng này chưa có số)'; gap = true; }
+        if(!amazonAdsMatched){ label += tv(' (waiting for Amazon to approve the Advertising API)', ' (chờ Amazon duyệt Advertising API)'); gap = true; }
+        else if(a.amazonAdsRealDays===a.n){ live = true; label += ' (SP '+money(a.amazonAdsSplit.sp)+' · SB '+money(a.amazonAdsSplit.sb)+' · SD '+money(a.amazonAdsSplit.sd)+')'+(a.amazonAdsSplit.stv>0.005 ? tv(' — Sellerboard also records ', ' — Sellerboard ghi thêm ')+money(a.amazonAdsSplit.stv)+tv(' "Sponsored TV" that is not in the Ads console: not counted', ' "Sponsored TV" không có trong Ads console: không tính') : ''); }
+        else if(a.amazonAdsRealDays>0){ live = true; label += tv(' ('+(a.n-a.amazonAdsRealDays)+' days without figures yet = $0)', ' ('+(a.n-a.amazonAdsRealDays)+' ngày chưa có số = $0)'); }
+        else { label += tv(' (no figures for this period yet)', ' (khoảng này chưa có số)'); gap = true; }
       }
-      else if(AD_UNCONNECTED[k]){ label += ' — chưa kết nối'; gap = true; }
+      else if(AD_UNCONNECTED[k]){ label += tx('st.notConnected'); gap = true; }
       if(k==='meta'){
         if(a.metaAdsRealDays===a.n){ live = true; }
-        else if(a.metaAdsRealDays>0){ live = true; label += ' ('+(a.n-a.metaAdsRealDays)+' ngày ngoài cửa sổ Marketing API = $0)'; }
-        else { label += metaMatched ? ' (khoảng này ngoài cửa sổ Marketing API)' : ' — chưa kết nối'; gap = true; }
+        else if(a.metaAdsRealDays>0){ live = true; label += tv(' ('+(a.n-a.metaAdsRealDays)+' days outside the Marketing API window = $0)', ' ('+(a.n-a.metaAdsRealDays)+' ngày ngoài cửa sổ Marketing API = $0)'); }
+        else { label += metaMatched ? tv(' (this period is outside the Marketing API window)', ' (khoảng này ngoài cửa sổ Marketing API)') : tx('st.notConnected'); gap = true; }
       }
       if(k==='google'){
         if(a.googleAdsRealDays===a.n){ live = true; }
-        else if(a.googleAdsRealDays>0){ live = true; label += ' ('+(a.n-a.googleAdsRealDays)+' ngày ngoài cửa sổ Google Ads API = $0)'; }
-        else { label += googleMatched ? ' (khoảng này ngoài cửa sổ Google Ads API)' : ' — chưa kết nối'; gap = true; }
+        else if(a.googleAdsRealDays>0){ live = true; label += tv(' ('+(a.n-a.googleAdsRealDays)+' days outside the Google Ads API window = $0)', ' ('+(a.n-a.googleAdsRealDays)+' ngày ngoài cửa sổ Google Ads API = $0)'); }
+        else { label += googleMatched ? tv(' (this period is outside the Google Ads API window)', ' (khoảng này ngoài cửa sổ Google Ads API)') : tx('st.notConnected'); gap = true; }
       }
       if(k==='applovin' && applovinMatched){
         if(a.applovinRealDays===a.n){ live = true; }
-        else if(a.applovinRealDays>0){ live = true; label += ' ('+(a.n-a.applovinRealDays)+' ngày chưa có số = $0 — API chỉ giữ 45 ngày; nạp file export để có lịch sử)'; }
-        else { label += ' (khoảng này chưa có số — API chỉ giữ 45 ngày; nạp file export để có lịch sử)'; gap = true; }
+        else if(a.applovinRealDays>0){ live = true; label += tv(' ('+(a.n-a.applovinRealDays)+' days without figures yet = $0 — the API keeps only 45 days; load an export file for history)', ' ('+(a.n-a.applovinRealDays)+' ngày chưa có số = $0 — API chỉ giữ 45 ngày; nạp file export để có lịch sử)'); }
+        else { label += tv(' (no figures for this period — the API keeps only 45 days; load an export file for history)', ' (khoảng này chưa có số — API chỉ giữ 45 ngày; nạp file export để có lịch sử)'); gap = true; }
       }
       if(k==='tiktokads' && tiktokAdsMatched){
-        label += ' (GMV Max — quảng cáo TikTok Shop)';
+        label += tv(' (GMV Max — TikTok Shop ads)', ' (GMV Max — quảng cáo TikTok Shop)');
         if(a.tiktokAdsRealDays===a.n){ live = true; }
-        else if(a.tiktokAdsRealDays>0){ live = true; label += ' ('+(a.n-a.tiktokAdsRealDays)+' ngày chưa có số = $0)'; }
-        else { label += ' (khoảng này chưa có số)'; gap = true; }
+        else if(a.tiktokAdsRealDays>0){ live = true; label += tv(' ('+(a.n-a.tiktokAdsRealDays)+' days without figures yet = $0)', ' ('+(a.n-a.tiktokAdsRealDays)+' ngày chưa có số = $0)'); }
+        else { label += tv(' (no figures for this period yet)', ' (khoảng này chưa có số)'); gap = true; }
       }
       let est = false, estTitle = '';
       if(k==='amazonads' && a.amazonAdsProvisionalDays>0){
         const exl = AMAZON_ADS_LIVE_DATA.meta.automation.fetched_last_day;
-        est = true; estTitle = 'Export Sellerboard mới có đến '+exl.slice(8,10)+'/'+exl.slice(5,7)+' — số của '+a.amazonAdsProvisionalDays+' ngày sau đó ('+money(a.amazonAdsProvisionalAmt)+') là bản tạm kéo từ PPC dashboard trong ngày (thường mới một phần ngày), tự thay khi export có';
-        label += ' — '+a.amazonAdsProvisionalDays+' ngày sau export Sellerboard (đến '+exl.slice(8,10)+'/'+exl.slice(5,7)+'): số tạm, tự cập nhật';
+        est = true; estTitle = tv('The Sellerboard export only reaches ', 'Export Sellerboard mới có đến ')+exl.slice(8,10)+'/'+exl.slice(5,7)+tv(' — the figures of the ', ' — số của ')+a.amazonAdsProvisionalDays+tv(' days after it (', ' ngày sau đó (')+money(a.amazonAdsProvisionalAmt)+tv(') are provisional, pulled from the PPC dashboard during the day (usually a partial day), replaced once the export has them', ') là bản tạm kéo từ PPC dashboard trong ngày (thường mới một phần ngày), tự thay khi export có');
+        label += ' — '+a.amazonAdsProvisionalDays+tv(' days after the Sellerboard export (to ', ' ngày sau export Sellerboard (đến ')+exl.slice(8,10)+'/'+exl.slice(5,7)+tv('): provisional, updates automatically', '): số tạm, tự cập nhật');
       }
       rows.push({...stLine(label, -a.ads[k], nr, 'var', 'mkt'), neg:true, live, gap, est, estTitle, hget: x=>-x.ads[k]});
     });
     if(a.snowballRealDays>0){
-      let label = 'Hoa hồng influencer/affiliate — Snowball · '+a.snowballOrders.toLocaleString('en-US')+' đơn referral';
-      if(a.snowballRealDays<a.n) label += ' ('+(a.n-a.snowballRealDays)+' ngày ngoài cửa sổ đồng bộ chưa tính)';
+      let label = tv('Influencer/affiliate commission — Snowball · ', 'Hoa hồng influencer/affiliate — Snowball · ')+a.snowballOrders.toLocaleString('en-US')+tv(' referral orders', ' đơn referral');
+      if(a.snowballRealDays<a.n) label += tv(' ('+(a.n-a.snowballRealDays)+' days outside the sync window not counted)', ' ('+(a.n-a.snowballRealDays)+' ngày ngoài cửa sổ đồng bộ chưa tính)');
       rows.push({...stLine(label, -a.snowballCommission, nr, 'var', 'mkt'), neg: a.snowballCommission>=0, live:true, hget: x=>-x.snowballCommission});
     } else if(shopifyMatched){
-      rows.push({...stLine('Hoa hồng influencer/affiliate — Snowball (khoảng này ngoài cửa sổ đồng bộ Shopify — chưa có số)', 0, nr, 'var', 'mkt'), neg:true, gap:true, hget: x=>-x.snowballCommission});
+      rows.push({...stLine(tv('Influencer/affiliate commission — Snowball (this period is outside the Shopify sync window — no figures)', 'Hoa hồng influencer/affiliate — Snowball (khoảng này ngoài cửa sổ đồng bộ Shopify — chưa có số)'), 0, nr, 'var', 'mkt'), neg:true, gap:true, hget: x=>-x.snowballCommission});
     }
     if(a.tiktokDays>0){
       const estA = a.tiktokAffiliateEst>0.005, estP = a.tiktokSmartEst>0.005;
-      rows.push({...stLine('Hoa hồng creator/affiliate — TikTok Shop (phí thật đơn đã quyết toán'+(estA ? ' + ước tính đơn chưa quyết toán' : '')+')', -a.tiktokAffiliate, nr, 'var', 'mkt'), neg: a.tiktokAffiliate>=0, live:true, est: estA, estTitle: estA ? 'Hoa hồng creator thay đổi theo từng đơn (0–30%). '+money(a.tiktokAffiliateEst)+' là ước tính theo tỷ lệ trung bình của các đơn đã quyết toán.' : '', hget: x=>-x.tiktokAffiliate});
-      rows.push({...stLine('Smart Promotion — TikTok Shop (quảng cáo trong sàn, tính theo doanh thu)'+(estP ? ' · đơn chưa quyết toán: ước tính' : ''), -a.tiktokSmart, nr, 'var', 'mkt'), neg: a.tiktokSmart>=0, live:true, est: estP, estTitle: estP ? money(a.tiktokSmartEst)+' là ước tính theo tỷ lệ của các đơn đã quyết toán.' : '', hget: x=>-x.tiktokSmart});
+      rows.push({...stLine(tv('Creator/affiliate commission — TikTok Shop (actual fees on settled orders', 'Hoa hồng creator/affiliate — TikTok Shop (phí thật đơn đã quyết toán')+(estA ? tv(' + estimate for unsettled orders', ' + ước tính đơn chưa quyết toán') : '')+')', -a.tiktokAffiliate, nr, 'var', 'mkt'), neg: a.tiktokAffiliate>=0, live:true, est: estA, estTitle: estA ? tv('Creator commission varies per order (0–30%). ', 'Hoa hồng creator thay đổi theo từng đơn (0–30%). ')+money(a.tiktokAffiliateEst)+tv(' is an estimate at the average rate of settled orders.', ' là ước tính theo tỷ lệ trung bình của các đơn đã quyết toán.') : '', hget: x=>-x.tiktokAffiliate});
+      rows.push({...stLine(tv('Smart Promotion — TikTok Shop (in-marketplace ads, charged on revenue)', 'Smart Promotion — TikTok Shop (quảng cáo trong sàn, tính theo doanh thu)')+(estP ? tv(' · unsettled orders: estimate', ' · đơn chưa quyết toán: ước tính') : ''), -a.tiktokSmart, nr, 'var', 'mkt'), neg: a.tiktokSmart>=0, live:true, est: estP, estTitle: estP ? money(a.tiktokSmartEst)+tv(' is an estimate at the rate of settled orders.', ' là ước tính theo tỷ lệ của các đơn đã quyết toán.') : '', hget: x=>-x.tiktokSmart});
     }
     if(a.walmartDays>0 && a.walmartAds>0.005){
-      rows.push({...stLine('Quảng cáo Walmart Connect (khoản trừ trong báo cáo đối soát)', -a.walmartAds, nr, 'var', 'mkt'), neg:true, live:true, hget: x=>-x.walmartAds});
+      rows.push({...stLine(tv('Walmart Connect ads (deducted in the reconciliation report)', 'Quảng cáo Walmart Connect (khoản trừ trong báo cáo đối soát)'), -a.walmartAds, nr, 'var', 'mkt'), neg:true, live:true, hget: x=>-x.walmartAds});
     }
-    rows.push({...stSub('= Tổng marketing & bán hàng', -a.marketingTotal, nr, 'mkt_sub'), hget: x=>-x.marketingTotal});
-    rows.push({...stSub('= Lợi nhuận đóng góp (Contribution Margin, sau marketing)', a.contributionProfit, nr, 'cm'), hget: x=>x.contributionProfit});
+    rows.push({...stSub(tv('= Total marketing & selling', '= Tổng marketing & bán hàng'), -a.marketingTotal, nr, 'mkt_sub'), hget: x=>-x.marketingTotal});
+    rows.push({...stSub(tv('= Contribution margin (CM3, after marketing)', '= Lợi nhuận đóng góp (Contribution Margin, sau marketing)'), a.contributionProfit, nr, 'cm'), hget: x=>x.contributionProfit});
 
-    rows.push(stSection('Chi phí hoạt động (OpEx) — kho bãi & logistics','logi'));
+    rows.push(stSection(tv('Operating costs (OpEx) — warehousing & logistics', 'Chi phí hoạt động (OpEx) — kho bãi & logistics'),'logi'));
     if(a.amazonOrdersReal>0){
       const feeOrdered = a.amazonFeeOrderedDays>0;
       if(feeOrdered){
-        let sl = 'Phí lưu kho FBA hàng tháng — ghi vào tháng lưu kho (Amazon thu ngày 7–15 tháng sau)';
+        let sl = tv('FBA monthly storage fee — booked in the month of storage (Amazon charges it on the 7th–15th of the next month)', 'Phí lưu kho FBA hàng tháng — ghi vào tháng lưu kho (Amazon thu ngày 7–15 tháng sau)');
         const slParts = [];
-        if(a.amazonStorageReportDays>0) slParts.push(a.amazonStorageReportDays+' ngày theo report Storage Fees của Amazon, chưa thu tiền');
-        if(a.amazonStorageEstDays>0) slParts.push(a.amazonStorageEstDays+' ngày ước tính '+money(a.amazonStorageEstAmt)+' = tồn kho FBA từng SKU × thể tích × đơn giá Amazon');
-        if(a.amazonStorageMissingDays>0) slParts.push(a.amazonStorageMissingDays+' ngày thuộc tháng Amazon chưa thu phí = $0');
+        if(a.amazonStorageReportDays>0) slParts.push(a.amazonStorageReportDays+tv(' days per Amazon\'s Storage Fees report, not charged yet', ' ngày theo report Storage Fees của Amazon, chưa thu tiền'));
+        if(a.amazonStorageEstDays>0) slParts.push(a.amazonStorageEstDays+tv(' days estimated ', ' ngày ước tính ')+money(a.amazonStorageEstAmt)+tv(' = FBA stock per SKU × volume × Amazon\'s rate', ' = tồn kho FBA từng SKU × thể tích × đơn giá Amazon'));
+        if(a.amazonStorageMissingDays>0) slParts.push(a.amazonStorageMissingDays+tv(' days in a month Amazon has not charged yet = $0', ' ngày thuộc tháng Amazon chưa thu phí = $0'));
         if(slParts.length) sl += ' ('+slParts.join(' · ')+')';
-        rows.push({...stLine(sl, -a.amazonStorageAlloc, nr, 'fix', 'logi'), neg:true, live:true, est: a.amazonStorageEstDays>0, estTitle:'Ước tính theo cách tính của Amazon (unit trung bình/ngày × cu ft × đơn giá theo mùa & size tier, học từ report các tháng trước); thay bằng report rồi bằng số Amazon thu thật', hget: x=>-x.amazonStorageAlloc});
-        if(Math.abs(a.amazonStoragePosted) >= 0.01) rows.push({...stLine('Đối chiếu: Amazon thu phí lưu kho '+money(a.amazonStoragePosted)+' trong khoảng này (ngày 7–15 hàng tháng, cho tháng trước)', 0, nr, null, 'logi'), detail:true, live:true});
+        rows.push({...stLine(sl, -a.amazonStorageAlloc, nr, 'fix', 'logi'), neg:true, live:true, est: a.amazonStorageEstDays>0, estTitle: tv('Estimated the way Amazon calculates it (average units/day × cu ft × seasonal rate by size tier, learned from earlier months\' reports); replaced by the report, then by the amount Amazon actually charges', 'Ước tính theo cách tính của Amazon (unit trung bình/ngày × cu ft × đơn giá theo mùa & size tier, học từ report các tháng trước); thay bằng report rồi bằng số Amazon thu thật'), hget: x=>-x.amazonStorageAlloc});
+        if(Math.abs(a.amazonStoragePosted) >= 0.01) rows.push({...stLine(tv('Reconciliation: Amazon charged ', 'Đối chiếu: Amazon thu phí lưu kho ')+money(a.amazonStoragePosted)+tv(' of storage fees in this period (7th–15th of each month, for the previous month)', ' trong khoảng này (ngày 7–15 hàng tháng, cho tháng trước)'), 0, nr, null, 'logi'), detail:true, live:true});
       }
-      rows.push({...stLine(feeOrdered ? 'Phí dịch vụ Amazon (subscription, xử lý trả hàng, removal, Vine/coupon — không gồm lưu kho tháng)' : 'Phí dịch vụ Amazon (subscription, lưu kho FBA, xử lý trả hàng, removal, Vine/coupon)', -a.amazonServiceFeesReal, nr, 'fix', 'logi'), neg:true, gap: a.amazonServiceFeesReal===0, hget: x=>-x.amazonServiceFeesReal});
+      rows.push({...stLine(feeOrdered ? tv('Amazon service fees (subscription, returns processing, removal, Vine/coupon — excluding monthly storage)', 'Phí dịch vụ Amazon (subscription, xử lý trả hàng, removal, Vine/coupon — không gồm lưu kho tháng)') : tv('Amazon service fees (subscription, FBA storage, returns processing, removal, Vine/coupon)', 'Phí dịch vụ Amazon (subscription, lưu kho FBA, xử lý trả hàng, removal, Vine/coupon)'), -a.amazonServiceFeesReal, nr, 'fix', 'logi'), neg:true, gap: a.amazonServiceFeesReal===0, hget: x=>-x.amazonServiceFeesReal});
     }
     if(a.smInvDays>0 || a.smStorageOpenDays>0){
-      const invNote = ' — theo hoá đơn ShipMonk' + (a.smInvDays<a.n ? ' ('+(a.n-a.smInvDays)+' ngày chưa có hoá đơn)' : '');
+      const invNote = tx('st.perInvoice') + (a.smInvDays<a.n ? tx('st.noInvoiceDays', {n: a.n-a.smInvDays, d: dayWord(a.n-a.smInvDays)}) : '');
       const logiLine = (label, v, extra, hget) => rows.push({...stLine(label + (extra===undefined ? invNote : extra) + alloc, -v, nr, 'fix', 'logi'), neg: v>=0, live:true, hget});
       // storage: exact per-day amounts from the ShipMonk report (= invoice when the period closes); before 06/2025 the invoice is spread evenly
       const evenDays = a.smInvDays - a.smStorageReportDays;
       let stNote = '';
       if(a.smStorageReportDays>0 || a.smStorageOpenDays>0){
-        stNote = ' — phí thật từng ngày theo report Storage Fees của ShipMonk';
-        if(a.smStorageReportDays>0 && a.smInvDays===a.smStorageReportDays && a.smStorageOpenDays===0) stNote += ' (đã khớp hoá đơn)';
+        stNote = tv(' — actual per-day fees per ShipMonk\'s Storage Fees report', ' — phí thật từng ngày theo report Storage Fees của ShipMonk');
+        if(a.smStorageReportDays>0 && a.smInvDays===a.smStorageReportDays && a.smStorageOpenDays===0) stNote += tv(' (reconciled to invoice)', ' (đã khớp hoá đơn)');
         else {
           const parts = [];
-          if(a.smStorageReportDays>0) parts.push(a.smStorageReportDays+' ngày đã khớp hoá đơn');
-          if(a.smStorageOpenDays - a.smStorageCarryDays>0) parts.push((a.smStorageOpenDays - a.smStorageCarryDays)+' ngày kỳ chưa xuất hoá đơn: theo report');
-          if(a.smStorageCarryDays>0) parts.push(a.smStorageCarryDays+' ngày report chưa có: tạm lấy bằng ngày gần nhất');
-          if(evenDays>0) parts.push(evenDays+' ngày trước 06/2025: chia đều theo kỳ hoá đơn');
+          if(a.smStorageReportDays>0) parts.push(a.smStorageReportDays+tv(' days reconciled to invoice', ' ngày đã khớp hoá đơn'));
+          if(a.smStorageOpenDays - a.smStorageCarryDays>0) parts.push((a.smStorageOpenDays - a.smStorageCarryDays)+tv(' days of the open billing period: per report', ' ngày kỳ chưa xuất hoá đơn: theo report'));
+          if(a.smStorageCarryDays>0) parts.push(a.smStorageCarryDays+tv(' days not in the report yet: carried from the latest day', ' ngày report chưa có: tạm lấy bằng ngày gần nhất'));
+          if(evenDays>0) parts.push(evenDays+tv(' days before 06/2025: spread evenly over the billing period', ' ngày trước 06/2025: chia đều theo kỳ hoá đơn'));
           stNote += ' ('+parts.join(' · ')+')';
         }
-      } else stNote = ' — chia đều theo ngày trong kỳ hoá đơn (report theo ngày chỉ có từ 06/2025)' + (a.smInvDays<a.n ? ' ('+(a.n-a.smInvDays)+' ngày chưa có hoá đơn)' : '');
-      rows.push({...stLine('Lưu kho ShipMonk — pallet & bin' + stNote + alloc, -a.smInv.storage, nr, 'fix', 'logi'), neg: a.smInv.storage>=0, live:true, est: a.smStorageCarryDays>0, estTitle:'Ngày report ShipMonk chưa cập nhật (làm mới ~04:00 giờ kho) tạm lấy bằng ngày gần nhất; tự thay khi report có số', hget: x=>-x.smInv.storage});
-      logiLine('Receiving hàng nhập ShipMonk — nhận carton, dỡ container', a.smInv.receiving, undefined, x=>-x.smInv.receiving);
-      logiLine('Xử lý hàng trả ShipMonk — processing + cước hàng trả', a.smInv.returns, undefined, x=>-x.smInv.returns);
-      if(a.smInvOther !== 0) logiLine('Phí khác ShipMonk — phí tối thiểu, phạt trễ, audit, phụ phí' + (Math.abs(a.smInv.unallocated)>=1 ? ' (gồm '+money(a.smInv.unallocated)+' hoá đơn không tách được mục)' : ''), a.smInvOther, undefined, x=>-x.smInvOther);
+      } else stNote = tv(' — spread evenly over the days of the billing period (the per-day report only exists from 06/2025)', ' — chia đều theo ngày trong kỳ hoá đơn (report theo ngày chỉ có từ 06/2025)') + (a.smInvDays<a.n ? tx('st.noInvoiceDays', {n: a.n-a.smInvDays, d: dayWord(a.n-a.smInvDays)}) : '');
+      rows.push({...stLine(tv('ShipMonk storage — pallets & bins', 'Lưu kho ShipMonk — pallet & bin') + stNote + alloc, -a.smInv.storage, nr, 'fix', 'logi'), neg: a.smInv.storage>=0, live:true, est: a.smStorageCarryDays>0, estTitle: tv('Days the ShipMonk report has not updated yet (refreshes ~04:00 warehouse time) are carried from the latest day; replaced once the report has the figure', 'Ngày report ShipMonk chưa cập nhật (làm mới ~04:00 giờ kho) tạm lấy bằng ngày gần nhất; tự thay khi report có số'), hget: x=>-x.smInv.storage});
+      logiLine(tv('ShipMonk receiving — cartons received, containers unloaded', 'Receiving hàng nhập ShipMonk — nhận carton, dỡ container'), a.smInv.receiving, undefined, x=>-x.smInv.receiving);
+      logiLine(tv('ShipMonk returns handling — processing + return postage', 'Xử lý hàng trả ShipMonk — processing + cước hàng trả'), a.smInv.returns, undefined, x=>-x.smInv.returns);
+      if(a.smInvOther !== 0) logiLine(tv('Other ShipMonk fees — minimum fee, late fees, audits, surcharges', 'Phí khác ShipMonk — phí tối thiểu, phạt trễ, audit, phụ phí') + (Math.abs(a.smInv.unallocated)>=1 ? tv(' (including ', ' (gồm ')+money(a.smInv.unallocated)+tv(' of invoice items that could not be split by section)', ' hoá đơn không tách được mục)') : ''), a.smInvOther, undefined, x=>-x.smInvOther);
     } else if(a.shipmonkRealDays>0){
-      rows.push({...stLine('Lưu kho / receiving / hàng trả ShipMonk — chưa có hoá đơn cho khoảng này', 0, nr, 'fix', 'logi'), gap:true});
+      rows.push({...stLine(tv('ShipMonk storage / receiving / returns — no invoice for this period yet', 'Lưu kho / receiving / hàng trả ShipMonk — chưa có hoá đơn cho khoảng này'), 0, nr, 'fix', 'logi'), gap:true});
     }
-    rows.push({...stLine('Chi phí tồn kho (holding cost) — chưa nhập' + alloc, -a.inventoryHolding, nr, 'fix', 'logi'), neg:true, gap:true, hget: x=>-x.inventoryHolding});
-    rows.push({...stSub('= Tổng kho bãi & logistics', -(a.logisticsTotal + a.inventoryHolding), nr, 'logi_sub'), hget: x=>-(x.logisticsTotal + x.inventoryHolding)});
+    rows.push({...stLine(tv('Inventory holding cost — not entered', 'Chi phí tồn kho (holding cost) — chưa nhập') + alloc, -a.inventoryHolding, nr, 'fix', 'logi'), neg:true, gap:true, hget: x=>-x.inventoryHolding});
+    rows.push({...stSub(tv('= Total warehousing & logistics', '= Tổng kho bãi & logistics'), -(a.logisticsTotal + a.inventoryHolding), nr, 'logi_sub'), hget: x=>-(x.logisticsTotal + x.inventoryHolding)});
 
-    rows.push(stSection('Chi phí hoạt động (OpEx) — G&A (phần mềm, lương, văn phòng…)','fixed'));
+    rows.push(stSection(tv('Operating costs (OpEx) — G&A (software, salaries, office…)', 'Chi phí hoạt động (OpEx) — G&A (phần mềm, lương, văn phòng…)'),'fixed'));
     a.gaItems.forEach(it=>{
       const known = it.real || it.manual;
-      rows.push({...stLine(it.label + (known ? '' : ' — chưa nhập') + (it.key==='klaviyo' ? '' : alloc), -it.value, nr, 'fix', 'fixed'), neg:true, live: it.real ? 'real' : (it.manual ? 'manual' : false), gap: known ? false : 'manual', hget: x=>-((x.gaItems.find(g=>g.key===it.key)||{}).value||0)});
+      rows.push({...stLine(it.label + (known ? '' : tx('st.notEntered')) + (it.key==='klaviyo' ? '' : alloc), -it.value, nr, 'fix', 'fixed'), neg:true, live: it.real ? 'real' : (it.manual ? 'manual' : false), gap: known ? false : 'manual', hget: x=>-((x.gaItems.find(g=>g.key===it.key)||{}).value||0)});
     });
-    rows.push({...stSub('= Tổng G&A', -a.gaTotal, nr, 'fixed_sub'), hget: x=>-x.gaTotal});
-    rows.push({...stSub('= Tổng chi phí hoạt động (OpEx)', -a.fixedTotal, nr, 'opex_sub'), hget: x=>-x.fixedTotal});
+    rows.push({...stSub(tv('= Total G&A', '= Tổng G&A'), -a.gaTotal, nr, 'fixed_sub'), hget: x=>-x.gaTotal});
+    rows.push({...stSub(tv('= Total operating costs (OpEx)', '= Tổng chi phí hoạt động (OpEx)'), -a.fixedTotal, nr, 'opex_sub'), hget: x=>-x.fixedTotal});
 
-    rows.push({...stFinal('= Lợi nhuận hoạt động (EBITDA)' + (a.salaryEntered ? ' — trước khấu hao, lãi vay, thuế TNDN' : ' — trước lương chưa nhập, khấu hao, lãi vay, thuế TNDN'), a.netProfit, nr), hget: x=>x.netProfit});
+    rows.push({...stFinal(tv('= Operating profit (EBITDA)', '= Lợi nhuận hoạt động (EBITDA)') + (a.salaryEntered ? tv(' — before depreciation, interest, income tax', ' — trước khấu hao, lãi vay, thuế TNDN') : tv(' — before salaries not entered, depreciation, interest, income tax', ' — trước lương chưa nhập, khấu hao, lãi vay, thuế TNDN')), a.netProfit, nr), hget: x=>x.netProfit});
 
     // Below EBITDA: D&A -> EBIT, interest -> EBT, income tax -> net income (manual monthly entries in data/opex_monthly.json)
-    rows.push(stSection('Dưới EBITDA — khấu hao, lãi vay, thuế TNDN (nhập tay theo tháng)','below'));
-    const manualNote = ' — nhập tay theo tháng' + a.opexNote + alloc;
-    rows.push({...stLine('Khấu hao & phân bổ (D&A) — khuôn, thiết bị, phần mềm mua đứt' + (a.depreciationEntered ? manualNote : ' — chưa nhập'), -a.depreciation, nr, 'fix', 'below'), neg:true, live: a.depreciationEntered ? 'manual' : false, gap: a.depreciationEntered ? false : 'manual', hget: x=>-x.depreciation});
-    rows.push({...stSub('= EBIT (lợi nhuận trước lãi vay & thuế)', a.ebit, nr, 'ebit_sub'), hget: x=>x.ebit});
-    rows.push({...stLine('Lãi vay & chi phí tài chính (± lãi tiền gửi, chênh lệch tỷ giá)' + (a.interestEntered ? manualNote : ' — chưa nhập'), -a.interest, nr, 'fix', 'below'), neg: a.interest>=0, live: a.interestEntered ? 'manual' : false, gap: a.interestEntered ? false : 'manual', hget: x=>-x.interest});
-    rows.push({...stSub('= Lợi nhuận trước thuế (EBT)', a.ebt, nr, 'ebt_sub'), hget: x=>x.ebt});
-    const taxLabel = 'Thuế thu nhập doanh nghiệp (TNDN)' + (a.taxEntered ? manualNote : a.incomeTaxEstimated ? ` — ước tính ${(a.taxRate*100).toFixed(a.taxRate*100%1 ? 1 : 0)}% × lợi nhuận trước thuế dương (tax_rate trong file; thay bằng số kế toán khi có)` : ' — chưa nhập');
-    rows.push({...stLine(taxLabel, -a.incomeTax, nr, 'fix', 'below'), neg:true, live: a.taxEntered ? 'manual' : false, gap: (a.taxEntered || a.incomeTaxEstimated) ? false : 'manual', est: a.incomeTaxEstimated, estTitle:'Ước tính theo thuế suất trong data/opex_monthly.json — nhập income_tax theo tháng để thay bằng số thật', hget: x=>-x.incomeTax});
-    rows.push({...stFinal('= Lợi nhuận ròng (Net Profit, sau thuế)' + (a.belowEbitdaEntered ? '' : ' — hiện bằng EBITDA vì các khoản dưới EBITDA còn để $0'), a.netIncome, nr), hget: x=>x.netIncome});
+    rows.push(stSection(tv('Below EBITDA — depreciation, interest, income tax (manual monthly entry)', 'Dưới EBITDA — khấu hao, lãi vay, thuế TNDN (nhập tay theo tháng)'),'below'));
+    const manualNote = tx('st.manualMonthly') + a.opexNote + alloc;
+    rows.push({...stLine(tv('Depreciation & amortisation (D&A) — moulds, equipment, software bought outright', 'Khấu hao & phân bổ (D&A) — khuôn, thiết bị, phần mềm mua đứt') + (a.depreciationEntered ? manualNote : tx('st.notEntered')), -a.depreciation, nr, 'fix', 'below'), neg:true, live: a.depreciationEntered ? 'manual' : false, gap: a.depreciationEntered ? false : 'manual', hget: x=>-x.depreciation});
+    rows.push({...stSub(tv('= EBIT (profit before interest & tax)', '= EBIT (lợi nhuận trước lãi vay & thuế)'), a.ebit, nr, 'ebit_sub'), hget: x=>x.ebit});
+    rows.push({...stLine(tv('Interest & finance costs (± deposit interest, exchange differences)', 'Lãi vay & chi phí tài chính (± lãi tiền gửi, chênh lệch tỷ giá)') + (a.interestEntered ? manualNote : tx('st.notEntered')), -a.interest, nr, 'fix', 'below'), neg: a.interest>=0, live: a.interestEntered ? 'manual' : false, gap: a.interestEntered ? false : 'manual', hget: x=>-x.interest});
+    rows.push({...stSub(tv('= Profit before tax (EBT)', '= Lợi nhuận trước thuế (EBT)'), a.ebt, nr, 'ebt_sub'), hget: x=>x.ebt});
+    const taxLabel = tv('Corporate income tax', 'Thuế thu nhập doanh nghiệp (TNDN)') + (a.taxEntered ? manualNote : a.incomeTaxEstimated ? tv(` — estimated ${(a.taxRate*100).toFixed(a.taxRate*100%1 ? 1 : 0)}% × positive profit before tax (tax_rate in the file; replaced by the accountant's figure when available)`, ` — ước tính ${(a.taxRate*100).toFixed(a.taxRate*100%1 ? 1 : 0)}% × lợi nhuận trước thuế dương (tax_rate trong file; thay bằng số kế toán khi có)`) : tx('st.notEntered'));
+    rows.push({...stLine(taxLabel, -a.incomeTax, nr, 'fix', 'below'), neg:true, live: a.taxEntered ? 'manual' : false, gap: (a.taxEntered || a.incomeTaxEstimated) ? false : 'manual', est: a.incomeTaxEstimated, estTitle: tv('Estimated at the tax rate in data/opex_monthly.json — enter income_tax per month to replace it with the actual figure', 'Ước tính theo thuế suất trong data/opex_monthly.json — nhập income_tax theo tháng để thay bằng số thật'), hget: x=>-x.incomeTax});
+    rows.push({...stFinal(tv('= Net profit (after tax)', '= Lợi nhuận ròng (Net Profit, sau thuế)') + (a.belowEbitdaEntered ? '' : tv(' — currently equals EBITDA because the items below EBITDA are still $0', ' — hiện bằng EBITDA vì các khoản dưới EBITDA còn để $0')), a.netIncome, nr), hget: x=>x.netIncome});
     return rows;
   }
 
@@ -1166,7 +1541,7 @@
         const r = weekMap[wk];
         const mon = new Date(parseInt(wk.slice(0,4),10), parseInt(wk.slice(5,7),10)-1, parseInt(wk.slice(8,10),10));
         const sun = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+6);
-        out.push({rows:r, label: fmtDate(mon)+'–'+fmtDate(sun), sub: 'Tuần '+isoWeekNo(mon), current: wk===selWeek});
+        out.push({rows:r, label: fmtDate(mon)+'–'+fmtDate(sun), sub: tv('Week ', 'Tuần ')+isoWeekNo(mon), current: wk===selWeek});
       }
     } else if(mode==='month'){
       const ci = MONTHS.indexOf(selMonth);
@@ -1176,7 +1551,7 @@
         const mk = MONTHS[mi];
         const r = monthMap[mk];
         const [y,mo] = mk.split('-');
-        out.push({rows:r, label:'Th'+parseInt(mo,10)+'/'+y, sub: r.length<28 ? 'đến '+fmtDate(r[r.length-1].date) : r.length+' ngày', current: mk===selMonth});
+        out.push({rows:r, label: tv(MONTHS_EN[parseInt(mo,10)-1]+' '+y, 'Th'+parseInt(mo,10)+'/'+y), sub: r.length<28 ? tv('to ', 'đến ')+fmtDate(r[r.length-1].date) : r.length+' '+tx('u.days'), current: mk===selMonth});
       }
     }
     return out;
@@ -1209,9 +1584,9 @@
     const wrap = table.closest('.stmt-wrap'); if(wrap) wrap.classList.toggle('has-hist', hist.length>0);
     const histHeadCells = hist.map(h=>`<th class="num hist grpstart">${h.label}${h.sub?`<br><span class="sub">${h.sub}</span>`:''}</th><th class="pct hist">%</th>`).join('');
     const curHead = curP
-      ? `<th class="num cur grpstart">${curP.label}${curP.sub?`<br><span class="sub">${curP.sub}</span>`:''}<br><span class="sub cur-tag">— đang xem</span></th><th class="pct cur">%</th>`
-      : `<th class="num cur grpstart">Số tiền</th><th class="pct cur">% DT thuần</th>`;
-    let html = `<thead><tr><th>Khoản mục</th>${histHeadCells}${curHead}</tr></thead><tbody>`;
+      ? `<th class="num cur grpstart">${curP.label}${curP.sub?`<br><span class="sub">${curP.sub}</span>`:''}<br><span class="sub cur-tag">${tv('— selected', '— đang xem')}</span></th><th class="pct cur">%</th>`
+      : `<th class="num cur grpstart">${tv('Amount', 'Số tiền')}</th><th class="pct cur">${tv('% of net rev.', '% DT thuần')}</th>`;
+    let html = `<thead><tr><th>${tv('Line item', 'Khoản mục')}</th>${histHeadCells}${curHead}</tr></thead><tbody>`;
     let curSection = null, sectionOpen = true;
     const histCells = r => {
       if(!hist.length) return '';
@@ -1234,10 +1609,10 @@
       if(r.t==='group'){
         html += `<tr class="group ${hiddenCls}" data-sec="${curSection||''}"><td class="label">${r.label}</td>${histCells(r)}<td class="num cur grpstart">${money(r.value)}</td><td class="pct cur">${pctStr(r.pct)}</td></tr>`;
       } else if(r.t==='line'){
-        const tagHtml = r.tag ? `<span class="tag ${r.tag}"><span class="d"></span>${r.tag==='var'?'Biến đổi':'Cố định'}</span>` : '';
-        const gapHtml = r.gap ? `<span class="tag gap"><span class="d"></span>${r.gap==='manual' ? 'Chưa nhập ($0)' : 'Chưa kết nối ($0)'}</span>` : '';
-        const liveHtml = r.live ? `<span class="tag live"><span class="d"></span>${r.live==='real'?'Số thật': r.live==='manual' ? 'Nhập tay' : 'Live'}</span>` : '';
-        const estHtml = r.est ? `<span class="tag info" title="${r.estTitle || 'Một phần là ước tính cho đơn Amazon chưa ghi phí — tự thay bằng số thật khi Amazon ghi'}"><span class="d"></span>Có ước tính</span>` : '';
+        const tagHtml = r.tag ? `<span class="tag ${r.tag}"><span class="d"></span>${r.tag==='var'?tx('tag.var'):tx('tag.fix')}</span>` : '';
+        const gapHtml = r.gap ? `<span class="tag gap"><span class="d"></span>${r.gap==='manual' ? tx('tag.gapManual') : tx('tag.gap')}</span>` : '';
+        const liveHtml = r.live ? `<span class="tag live"><span class="d"></span>${r.live==='real'?tx('tag.real'): r.live==='manual' ? tx('tag.manual') : 'Live'}</span>` : '';
+        const estHtml = r.est ? `<span class="tag info" title="${r.estTitle || tx('tag.estDefault')}"><span class="d"></span>${tx('tag.est')}</span>` : '';
         const detailCls = r.detail ? 'detail' : '';
         html += `<tr class="line ${r.neg?'neg':''} ${detailCls} ${hiddenCls}" data-sec="${curSection||''}"><td class="label">${r.label}${tagHtml}${gapHtml}${liveHtml}${estHtml}</td>${histCells(r)}<td class="num cur grpstart">${money(r.value)}</td><td class="pct cur">${pctStr(r.pct)}</td></tr>`;
       } else if(r.t==='subtotal'){
@@ -1271,68 +1646,68 @@
     const snowballSub = (a.gaItems.find(it=>it.key==='snowball_sub')||{}).value || 0;
     const d2cAds = AD_KEYS.filter(k=>k!=='amazonads').reduce((t,k)=>t+a.ads[k],0);
     const chans = [];
-    chans.push({key:'amazon', name:'Amazon (FBA + FBM)', sub:'phí Amazon thu theo đơn, FBA, lưu kho, quảng cáo trên sàn', net: netOf('amazon'), orders: a.orders.amazon, groups:[
-      {label:'Phí bán hàng theo giao dịch', rows:[
-        {n:'Hoa hồng Amazon (referral) & phí theo đơn', s:'gồm phí xử lý hoàn tiền, điều chỉnh và khoản Amazon trả lại', v: a.amazonReferralFeesReal + a.amazonOtherFeesReal + a.amazonOtherUnclassifiedCost, est: a.amazonRefEst>0.5, gap: a.amazonOrdersReal===0 && a.orders.amazon>0},
+    chans.push({key:'amazon', name:'Amazon (FBA + FBM)', sub: tv('Amazon per-order fees, FBA, storage, marketplace ads', 'phí Amazon thu theo đơn, FBA, lưu kho, quảng cáo trên sàn'), net: netOf('amazon'), orders: a.orders.amazon, groups:[
+      {label: tx('cc.txnFees'), rows:[
+        {n: tv('Amazon commission (referral) & per-order fees', 'Hoa hồng Amazon (referral) & phí theo đơn'), s: tv('including refund administration fees, adjustments and Amazon reimbursements', 'gồm phí xử lý hoàn tiền, điều chỉnh và khoản Amazon trả lại'), v: a.amazonReferralFeesReal + a.amazonOtherFeesReal + a.amazonOtherUnclassifiedCost, est: a.amazonRefEst>0.5, gap: a.amazonOrdersReal===0 && a.orders.amazon>0},
       ]},
-      {label:'Fulfillment & kho', rows:[
+      {label: tx('cc.fulfil'), rows:[
         {n:'FBA fulfillment (pick, pack, ship)', v: a.fulfillment, est: a.amazonFbaEst>0.5},
-        {n:'ShipMonk cho đơn FBM', v: smCh.amazon},
-        {n:'Lưu kho FBA + phí dịch vụ Amazon', s:'lưu kho tháng, removal, returns, subscription', v: a.amazonLogistics},
+        {n: tv('ShipMonk for FBM orders', 'ShipMonk cho đơn FBM'), v: smCh.amazon},
+        {n: tv('FBA storage + Amazon service fees', 'Lưu kho FBA + phí dịch vụ Amazon'), s: tv('monthly storage, removal, returns, subscription', 'lưu kho tháng, removal, returns, subscription'), v: a.amazonLogistics},
       ]},
-      {label:'Marketing trên sàn', rows:[
-        {n:'Amazon Ads (SP · SB · SD)', s: a.amazonAdsProvisionalDays>0 ? a.amazonAdsProvisionalDays+' ngày sau export Sellerboard: số tạm (một phần ngày), tự cập nhật' : '', v: a.ads.amazonads, gap: !amazonAdsMatched, est: a.amazonAdsProvisionalDays>0},
+      {label: tx('cc.mktOn'), rows:[
+        {n:'Amazon Ads (SP · SB · SD)', s: a.amazonAdsProvisionalDays>0 ? a.amazonAdsProvisionalDays+tv(' days after the Sellerboard export: provisional (partial day), updates automatically', ' ngày sau export Sellerboard: số tạm (một phần ngày), tự cập nhật') : '', v: a.ads.amazonads, gap: !amazonAdsMatched, est: a.amazonAdsProvisionalDays>0},
       ]},
     ]});
-    chans.push({key:'shopify', name:'Shopify (D2C)', sub:'cổng thanh toán, ShipMonk, quảng cáo, affiliate, công cụ D2C', net: netOf('shopify'), orders: a.orders.shopify, groups:[
-      {label:'Phí bán hàng theo giao dịch', rows:[
-        {n:'Cổng thanh toán (Shopify Payments, PayPal, Afterpay ước tính)', v: a.paymentFeesAll, gap: a.paymentFeeDays===0 && a.paypalDays===0},
+    chans.push({key:'shopify', name:'Shopify (D2C)', sub: tv('payment gateways, ShipMonk, ads, affiliates, D2C tools', 'cổng thanh toán, ShipMonk, quảng cáo, affiliate, công cụ D2C'), net: netOf('shopify'), orders: a.orders.shopify, groups:[
+      {label: tx('cc.txnFees'), rows:[
+        {n: tv('Payment gateways (Shopify Payments, PayPal, Afterpay estimate)', 'Cổng thanh toán (Shopify Payments, PayPal, Afterpay ước tính)'), v: a.paymentFeesAll, gap: a.paymentFeeDays===0 && a.paypalDays===0},
       ]},
-      {label:'Fulfillment & kho', rows:[
-        {n:'ShipMonk theo đơn (cước, pick & pack, bao bì)', s:'gồm bao bì mua sỉ, credit và chênh lệch hoá đơn', v: smCh.shopify + a.shipmonkInvoiceExtras},
-        {n:'Kho ShipMonk (lưu kho, receiving, hàng trả, phí khác)', v: a.shipmonkLogistics},
+      {label: tx('cc.fulfil'), rows:[
+        {n: tv('ShipMonk per order (postage, pick & pack, packaging)', 'ShipMonk theo đơn (cước, pick & pack, bao bì)'), s: tv('including bulk packaging, credits and invoice differences', 'gồm bao bì mua sỉ, credit và chênh lệch hoá đơn'), v: smCh.shopify + a.shipmonkInvoiceExtras},
+        {n: tv('ShipMonk warehousing (storage, receiving, returns, other fees)', 'Kho ShipMonk (lưu kho, receiving, hàng trả, phí khác)'), v: a.shipmonkLogistics},
       ]},
       {label:'Marketing', rows:[
-        {n:'Quảng cáo (Meta, Google, TikTok, AppLovin)', v: d2cAds},
-        {n:'Hoa hồng affiliate / creator (Snowball)', v: a.snowballCommission},
-        {n:'Công cụ D2C: Klaviyo + gói Social Snowball', s:'trên P&L nằm ở G&A', v: a.klaviyoCost + snowballSub},
+        {n: tv('Ads (Meta, Google, TikTok, AppLovin)', 'Quảng cáo (Meta, Google, TikTok, AppLovin)'), v: d2cAds},
+        {n: tv('Affiliate / creator commission (Snowball)', 'Hoa hồng affiliate / creator (Snowball)'), v: a.snowballCommission},
+        {n: tv('D2C tools: Klaviyo + Social Snowball plan', 'Công cụ D2C: Klaviyo + gói Social Snowball'), s: tv('sits under G&A on the P&L', 'trên P&L nằm ở G&A'), v: a.klaviyoCost + snowballSub},
       ]},
     ]});
     if(a.walmartDays>0){
-      chans.push({key:'walmart', name:'Walmart', sub:'hoa hồng theo danh mục từ báo cáo đối soát; ShipMonk theo đơn', net: netOf('walmart'), orders: a.orders.walmart, groups:[
-        {label:'Phí bán hàng theo giao dịch', rows:[{n:'Hoa hồng + phí khác Walmart', s:'thật cho đơn đã đối soát, còn lại ước tính', v: a.walmartFees, est: a.walmartFeesEst>0.5}]},
-        {label:'Fulfillment & kho', rows:[{n:'ShipMonk theo đơn', v: smCh.walmart}]},
-        {label:'Marketing trên sàn', rows:[{n:'Quảng cáo Walmart Connect', v: a.walmartAds}]},
+      chans.push({key:'walmart', name:'Walmart', sub: tv('commission by category from the reconciliation report; ShipMonk per order', 'hoa hồng theo danh mục từ báo cáo đối soát; ShipMonk theo đơn'), net: netOf('walmart'), orders: a.orders.walmart, groups:[
+        {label: tx('cc.txnFees'), rows:[{n: tv('Walmart commission + other fees', 'Hoa hồng + phí khác Walmart'), s: tv('actual for reconciled orders, estimated for the rest', 'thật cho đơn đã đối soát, còn lại ước tính'), v: a.walmartFees, est: a.walmartFeesEst>0.5}]},
+        {label: tx('cc.fulfil'), rows:[{n: tx('cc.shipmonkPerOrder'), v: smCh.walmart}]},
+        {label: tx('cc.mktOn'), rows:[{n: tv('Walmart Connect ads', 'Quảng cáo Walmart Connect'), v: a.walmartAds}]},
       ]});
-    } else if(netOf('walmart') > 0.01) chans.push({key:'walmart', name:'Walmart', sub:'phí sàn chưa kết nối', net: netOf('walmart'), orders: a.orders.walmart, groups:[
-      {label:'Phí bán hàng theo giao dịch', rows:[{n:'Phí sàn Walmart', v: a.walmartFees, gap:true}]},
-      {label:'Fulfillment & kho', rows:[{n:'ShipMonk theo đơn', v: smCh.walmart}]},
+    } else if(netOf('walmart') > 0.01) chans.push({key:'walmart', name:'Walmart', sub: tv('marketplace fees not connected', 'phí sàn chưa kết nối'), net: netOf('walmart'), orders: a.orders.walmart, groups:[
+      {label: tx('cc.txnFees'), rows:[{n: tv('Walmart marketplace fees', 'Phí sàn Walmart'), v: a.walmartFees, gap:true}]},
+      {label: tx('cc.fulfil'), rows:[{n: tx('cc.shipmonkPerOrder'), v: smCh.walmart}]},
     ]});
     if(a.tiktokDays>0 || netOf('tiktok')>0.01){
-      chans.push({key:'tiktok', name:'TikTok Shop', sub:'referral, creator, Smart Promotion; ShipMonk theo đơn nếu có store TikTok', net: netOf('tiktok'), orders: a.orders.tiktok, groups:[
-        {label:'Phí bán hàng theo giao dịch', rows:[
-          {n:'Referral + phí xử lý hoàn tiền', s:'6% giá sau giảm của người bán', v: a.tiktokFees, est: a.tiktokFeesEstSelling>0.5},
+      chans.push({key:'tiktok', name:'TikTok Shop', sub: tv('referral, creator, Smart Promotion; ShipMonk per order if there is a TikTok store', 'referral, creator, Smart Promotion; ShipMonk theo đơn nếu có store TikTok'), net: netOf('tiktok'), orders: a.orders.tiktok, groups:[
+        {label: tx('cc.txnFees'), rows:[
+          {n: tv('Referral + refund administration fee', 'Referral + phí xử lý hoàn tiền'), s: tv('6% of the seller\'s discounted price', '6% giá sau giảm của người bán'), v: a.tiktokFees, est: a.tiktokFeesEstSelling>0.5},
         ]},
-        {label:'Fulfillment & kho', rows:[{n:'ShipMonk theo đơn (store TikTok)', v: smCh.tiktok||0}]},
-        {label:'Marketing trên sàn', rows:[
-          {n:'Hoa hồng creator/affiliate', v: a.tiktokAffiliate, est: a.tiktokAffiliateEst>0.5},
+        {label: tx('cc.fulfil'), rows:[{n: tv('ShipMonk per order (TikTok store)', 'ShipMonk theo đơn (store TikTok)'), v: smCh.tiktok||0}]},
+        {label: tx('cc.mktOn'), rows:[
+          {n: tv('Creator/affiliate commission', 'Hoa hồng creator/affiliate'), v: a.tiktokAffiliate, est: a.tiktokAffiliateEst>0.5},
           {n:'Smart Promotion', v: a.tiktokSmart, est: a.tiktokSmartEst>0.5},
         ]},
       ]});
     }
     const note = document.getElementById('channelCostNote');
-    if(note) note.textContent = (netOf('walmart') <= 0.01 && smCh.walmart > 0.01) ? ' ShipMonk còn ship đơn Walmart ('+money(smCh.walmart)+' trong kỳ, nằm trong COGS của P&L) — doanh thu Walmart chưa kết nối nên chưa tính take rate cho kênh này.' : '';
+    if(note) note.textContent = (netOf('walmart') <= 0.01 && smCh.walmart > 0.01) ? tv(' ShipMonk still ships Walmart orders (', ' ShipMonk còn ship đơn Walmart (')+money(smCh.walmart)+tv(' in the period, inside the P&L\'s COGS) — Walmart revenue is not connected, so no take rate is computed for this channel yet.', ' trong kỳ, nằm trong COGS của P&L) — doanh thu Walmart chưa kết nối nên chưa tính take rate cho kênh này.') : '';
     grid.innerHTML = chans.map(c=>{
       const total = c.groups.reduce((t,g)=>t+g.rows.reduce((u,r)=>u+r.v,0),0);
       const left = c.net - total;
       const pctOf = v => c.net>0 ? (v/c.net*100).toFixed(1)+'%' : '—';
-      let rows = `<tr class="rev"><td class="name">Doanh thu thuần ${CH_LABEL[c.key]}<small>${c.orders.toLocaleString('en-US')} đơn · gross − giảm giá − hoàn tiền</small></td><td class="num">${money(c.net)}</td><td class="pct">100%</td></tr>`;
+      let rows = `<tr class="rev"><td class="name">${tv('Net revenue ', 'Doanh thu thuần ')}${CH_LABEL[c.key]}<small>${c.orders.toLocaleString('en-US')} ${tx('u.orders')} · ${tv('gross − discounts − refunds', 'gross − giảm giá − hoàn tiền')}</small></td><td class="num">${money(c.net)}</td><td class="pct">100%</td></tr>`;
       c.groups.forEach(g=>{
         rows += `<tr class="grp"><td colspan="3">${g.label}</td></tr>`;
-        g.rows.forEach(r=>{ rows += `<tr><td class="name">${r.n}${r.s ? `<small>${r.s}</small>` : ''}${r.gap ? ' <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa kết nối ($0)</span>' : ''}${r.est ? ' <span class="tag info" style="margin-left:0;"><span class="d"></span>Có ước tính</span>' : ''}</td><td class="num">${money(-r.v)}</td><td class="pct">${pctOf(r.v)}</td></tr>`; });
+        g.rows.forEach(r=>{ rows += `<tr><td class="name">${r.n}${r.s ? `<small>${r.s}</small>` : ''}${r.gap ? ' <span class="tag gap" style="margin-left:0;"><span class="d"></span>'+tx('tag.gap')+'</span>' : ''}${r.est ? ' <span class="tag info" style="margin-left:0;"><span class="d"></span>'+tx('tag.est')+'</span>' : ''}</td><td class="num">${money(-r.v)}</td><td class="pct">${pctOf(r.v)}</td></tr>`; });
       });
-      rows += `<tr class="total"><td class="name">Kênh & dịch vụ đi kèm lấy (take rate)</td><td class="num">${money(-total)}</td><td class="pct">${pctOf(total)}</td></tr>`;
-      rows += `<tr class="left ${left<0 ? 'bad' : ''}"><td class="name">Còn lại để trả giá vốn sản phẩm & G&amp;A</td><td class="num">${money(left)}</td><td class="pct">${pctOf(left)}</td></tr>`;
+      rows += `<tr class="total"><td class="name">${tv('Taken by the channel & its services (take rate)', 'Kênh & dịch vụ đi kèm lấy (take rate)')}</td><td class="num">${money(-total)}</td><td class="pct">${pctOf(total)}</td></tr>`;
+      rows += `<tr class="left ${left<0 ? 'bad' : ''}"><td class="name">${tv('Left to pay for product cost & G&amp;A', 'Còn lại để trả giá vốn sản phẩm & G&amp;A')}</td><td class="num">${money(left)}</td><td class="pct">${pctOf(left)}</td></tr>`;
       return `<div class="chan" style="--c:${CH_COLOR[c.key]}"><div class="chan-head"><div><div class="chan-name">${c.name}</div><div class="chan-sub">${c.sub}</div></div><div class="chan-rate"><div class="v">${c.net>0 ? (total/c.net*100).toFixed(1)+'%' : '—'}</div><div class="l">take rate</div></div></div><table>${rows}</table></div>`;
     }).join('');
   }
@@ -1352,14 +1727,14 @@
     const keys = MONTHS.filter(m=>monthMap[m].some(d=>d.iso>=rangeFrom && d.iso<=rangeTo)); return {unit:'month', keys, sel:null};
   }
   function trendValue(unit, key){
-    const ck = unit+':'+key;
+    const ck = LANG+':'+unit+':'+key;   // labels inside are language-specific
     if(trendCache[ck]) return trendCache[ck];
     const rows = unit==='week' ? weekMap[key] : monthMap[key];
     const a = aggregate(rows);
     const lastIso = rows[rows.length-1].iso, today = days[TOTAL_DAYS-1].iso;
     const full = unit==='week' ? rows.length===7 : rows.length===new Date(parseInt(key.slice(0,4),10), parseInt(key.slice(5,7),10), 0).getDate();
     const v = {rev: a.netRevenue, varc: a.variableTotal, fixc: a.fixedTotal, cost: a.netRevenue - a.netProfit, profit: a.netProfit, days: rows.length, partial: !full || lastIso===today,
-               label: unit==='week' ? WEEK_LABEL(key) : MONTH_LABEL(key), short: unit==='week' ? fmtDate(rows[0].date) : ('T'+parseInt(key.slice(5,7),10)+'/'+key.slice(2,4))};
+               label: unit==='week' ? WEEK_LABEL(key) : MONTH_LABEL(key), short: unit==='week' ? fmtDate(rows[0].date) : tv(MONTHS_EN[parseInt(key.slice(5,7),10)-1]+' \''+key.slice(2,4), 'T'+parseInt(key.slice(5,7),10)+'/'+key.slice(2,4))};
     trendCache[ck] = v; return v;
   }
   function renderTrend(){
@@ -1368,23 +1743,23 @@
     if(!spec || spec.keys.length<2){ card.style.display='none'; return; }
     card.style.display = '';
     const pts = spec.keys.map(k=>({key:k, ...trendValue(spec.unit, k)}));
-    document.getElementById('trendTitle').textContent = spec.unit==='week' ? 'Xu hướng theo tuần' : 'Xu hướng theo tháng';
-    document.getElementById('trendNote').textContent = (spec.unit==='week' ? pts.length+' tuần (Thứ Hai → Chủ Nhật)' : pts.length+' tháng') + ' · ' + pts[0].short + ' → ' + pts[pts.length-1].short + ' · cùng số với bảng P&L bên dưới';
+    document.getElementById('trendTitle').textContent = spec.unit==='week' ? tv('Weekly trend', 'Xu hướng theo tuần') : tv('Monthly trend', 'Xu hướng theo tháng');
+    document.getElementById('trendNote').textContent = (spec.unit==='week' ? pts.length+tv(' weeks (Monday → Sunday)', ' tuần (Thứ Hai → Chủ Nhật)') : pts.length+tv(' months', ' tháng')) + ' · ' + pts[0].short + ' → ' + pts[pts.length-1].short + tv(' · same figures as the P&L table below', ' · cùng số với bảng P&L bên dưới');
     const revC = resolveVar('var(--series-1)'), varC = resolveVar('var(--series-cost)'), fixC = resolveVar('var(--series-fixed)'), profC = resolveVar('var(--series-4)');
     const grid_ = resolveVar('var(--gridline)'), muted = resolveVar('var(--ink-muted)'), ink = resolveVar('var(--ink-primary)'), accent = resolveVar('var(--accent)'), surface = resolveVar('var(--surface-card)');
     // 4 lines on one $ scale: fixed cost is dashed (second cue besides colour), each line is labelled at its last point
     const allSeries = [
-      {id:'rev', name:'Doanh thu thuần', color: revC},
-      {id:'varc', name:'Chi phí biến đổi', color: varC},
-      {id:'fixc', name:'Chi phí hoạt động (OpEx)', color: fixC, dash:'6,4'},
-      {id:'profit', name:'LN hoạt động (EBITDA)', color: profC},
+      {id:'rev', name: tx('m.netRevenue'), color: revC},
+      {id:'varc', name: tv('Variable costs', 'Chi phí biến đổi'), color: varC},
+      {id:'fixc', name: tv('Operating costs (OpEx)', 'Chi phí hoạt động (OpEx)'), color: fixC, dash:'6,4'},
+      {id:'profit', name: tv('Operating profit (EBITDA)', 'LN hoạt động (EBITDA)'), color: profC},
     ];
     const series = allSeries.filter(sr=>!trendHidden.has(sr.id));
     const legend = document.getElementById('trendLegend');
     legend.innerHTML = allSeries.map(sr=>{
       const off = trendHidden.has(sr.id);
       const sw = sr.dash ? `background:repeating-linear-gradient(90deg,${sr.color} 0 3px,transparent 3px 5px);height:3px;width:14px;border-radius:0` : `background:${sr.color}`;
-      return `<button type="button" class="li${off?' off':''}" data-series="${sr.id}" aria-pressed="${!off}" title="Bấm để ẩn/hiện đường này"><span class="sw" style="${sw}"></span>${sr.name}</button>`;
+      return `<button type="button" class="li${off?' off':''}" data-series="${sr.id}" aria-pressed="${!off}" title="${tv('Click to hide/show this line', 'Bấm để ẩn/hiện đường này')}"><span class="sw" style="${sw}"></span>${sr.name}</button>`;
     }).join('');
     legend.querySelectorAll('button[data-series]').forEach(b=>b.addEventListener('click', ()=>{
       const id = b.dataset.series;
@@ -1441,10 +1816,10 @@
       let i = Math.round((px-padL)/(n>1?plotW/(n-1):1)); i = Math.max(0, Math.min(n-1, i));
       const p = pts[i];
       cursor.setAttribute('x1', x(i)); cursor.setAttribute('x2', x(i)); cursor.setAttribute('opacity','1');
-      const pctOf = v => p.rev ? (v/p.rev*100).toFixed(1)+'% DT' : '—';
-      tip.innerHTML = `<div class="t-title">${p.label}${p.partial?' · chưa kết thúc':''}</div>`
+      const pctOf = v => p.rev ? (v/p.rev*100).toFixed(1)+tv('% of rev.', '% DT') : '—';
+      tip.innerHTML = `<div class="t-title">${p.label}${p.partial?tv(' · not finished', ' · chưa kết thúc'):''}</div>`
         + allSeries.map(sr=>`<div class="t-row"><span style="color:${sr.color}">■ ${sr.name}</span><span>${money(p[sr.id])}${sr.id==='varc'||sr.id==='fixc'?' · '+pctOf(p[sr.id]):''}</span></div>`).join('')
-        + `<div class="t-row"><span>Tổng chi phí</span><span>${money(p.cost)}</span></div><div class="t-row"><span>Biên EBITDA</span><span>${p.rev ? (p.profit/p.rev*100).toFixed(1)+'%' : '—'}</span></div>`;
+        + `<div class="t-row"><span>${tv('Total costs', 'Tổng chi phí')}</span><span>${money(p.cost)}</span></div><div class="t-row"><span>${tv('EBITDA margin', 'Biên EBITDA')}</span><span>${p.rev ? (p.profit/p.rev*100).toFixed(1)+'%' : '—'}</span></div>`;
       const left = (ev.clientX-rect.left), top = (ev.clientY-rect.top);
       const tw = tip.offsetWidth || 230;
       tip.style.left = Math.max(0, Math.min(left+14, wrap.clientWidth-tw))+'px'; tip.style.top = Math.max(0, top-70)+'px'; tip.style.opacity = '1';
@@ -1468,18 +1843,20 @@
     const rows = currentRows();
     const a = aggregate(rows);
     const grid = document.getElementById('beGrid');
-    const gap = a.netRevenue - a.breakEvenRevenue;
+    const beOk = isFinite(a.breakEvenRevenue) && a.breakEvenRevenue>=0;
+    const gap = beOk ? a.netRevenue - a.breakEvenRevenue : -Infinity;
     grid.innerHTML = `
-      <div class="be-stat"><div class="l">Chi phí hoạt động (OpEx)</div><div class="v">${money(a.fixedTotal)}</div></div>
-      <div class="be-stat"><div class="l">Biên đóng góp (CM %)</div><div class="v">${(a.cmRatio*100).toFixed(1)}%</div></div>
-      <div class="be-stat"><div class="l">Doanh thu hoà vốn</div><div class="v">${money(a.breakEvenRevenue)}</div></div>
-      <div class="be-stat"><div class="l">${gap>=0?'Vượt hoà vốn':'Còn thiếu để hoà vốn'}</div><div class="v ${gap>=0?'good':'bad'}">${money(Math.abs(gap))}</div></div>
+      <div class="be-stat"><div class="l">${tv('Operating costs (OpEx)', 'Chi phí hoạt động (OpEx)')}</div><div class="v">${money(a.fixedTotal)}</div></div>
+      <div class="be-stat"><div class="l">${tv('Contribution margin (CM %)', 'Biên đóng góp (CM %)')}</div><div class="v">${(a.cmRatio*100).toFixed(1)}%</div></div>
+      <div class="be-stat"><div class="l">${tv('Break-even revenue', 'Doanh thu hoà vốn')}</div><div class="v">${beOk ? money(a.breakEvenRevenue) : '—'}</div></div>
+      <div class="be-stat"><div class="l">${gap>=0?tv('Above break-even', 'Vượt hoà vốn'):tv('Short of break-even', 'Còn thiếu để hoà vốn')}</div><div class="v ${gap>=0?'good':'bad'}">${beOk ? money(Math.abs(gap)) : 'CM ≤ 0'}</div></div>
     `;
 
     const beWrap = document.getElementById('beChart').parentElement, bcw = Math.round(beWrap.clientWidth || 1120), bnarrow = bcw < 640;
     const W = bnarrow ? Math.max(300, bcw) : 1120, H = bnarrow ? 220 : 260, padL = bnarrow ? 50 : 56, padR = 16, padT = 16, padB = 30;
     const plotW=W-padL-padR, plotH=H-padT-padB;
-    const maxX = Math.max(a.breakEvenRevenue, a.netRevenue)*1.45;
+    const beFinite = isFinite(a.breakEvenRevenue) && a.breakEvenRevenue>=0;
+    const maxX = Math.max(beFinite ? a.breakEvenRevenue : 0, a.netRevenue, a.fixedTotal, 1)*1.45;   // CM ≤ 0 -> no finite break-even: draw costs vs revenue only
     const x = v=> padL + (v/maxX)*plotW;
     const yMax = Math.max(maxX, a.fixedTotal + a.variableRatio*maxX);
     const y = v=> padT + plotH - (v/yMax)*plotH;
@@ -1501,15 +1878,15 @@
     if(isFinite(a.breakEvenRevenue)){
       const bx = x(a.breakEvenRevenue), by = y(a.breakEvenRevenue);
       svg += `<circle cx="${bx}" cy="${by}" r="4.5" fill="${curColor}"/>`;
-      svg += `<text x="${bx}" y="${by-10}" text-anchor="middle" font-size="10.5" fill="${curColor}" font-family="var(--font-body)" font-weight="600">Hoà vốn: ${money(a.breakEvenRevenue,{compact:true})}</text>`;
+      svg += `<text x="${bx}" y="${by-10}" text-anchor="middle" font-size="10.5" fill="${curColor}" font-family="var(--font-body)" font-weight="600">${tv('Break-even: ', 'Hoà vốn: ')}${money(a.breakEvenRevenue,{compact:true})}</text>`;
     }
     // current point
     const cx_ = x(a.netRevenue), ccost = a.fixedTotal + a.variableRatio*a.netRevenue;
     svg += `<line x1="${cx_}" y1="${padT}" x2="${cx_}" y2="${H-padB}" stroke="${muted}" stroke-width="1" stroke-dasharray="3,3"/>`;
     svg += `<circle cx="${cx_}" cy="${y(a.netRevenue)}" r="4" fill="${revColor}"/>`;
-    svg += `<text x="${cx_}" y="${H-10}" text-anchor="middle" font-size="9.5" fill="${muted}" font-family="var(--font-mono)">Hiện tại</text>`;
-    svg += `<text x="${W-padR}" y="${padT+10}" text-anchor="end" font-size="10.5" fill="${revColor}" font-family="var(--font-body)" font-weight="600">■ Doanh thu</text>`;
-    svg += `<text x="${W-padR}" y="${padT+24}" text-anchor="end" font-size="10.5" fill="${costColor}" font-family="var(--font-body)" font-weight="600">■ Tổng chi phí</text>`;
+    svg += `<text x="${cx_}" y="${H-10}" text-anchor="middle" font-size="9.5" fill="${muted}" font-family="var(--font-mono)">${tv('Current', 'Hiện tại')}</text>`;
+    svg += `<text x="${W-padR}" y="${padT+10}" text-anchor="end" font-size="10.5" fill="${revColor}" font-family="var(--font-body)" font-weight="600">${tv('■ Revenue', '■ Doanh thu')}</text>`;
+    svg += `<text x="${W-padR}" y="${padT+24}" text-anchor="end" font-size="10.5" fill="${costColor}" font-family="var(--font-body)" font-weight="600">${tv('■ Total costs', '■ Tổng chi phí')}</text>`;
     svg += `</svg>`;
     document.getElementById('beChart').outerHTML = svg.replace('<svg ','<svg id="beChart" ');
   }
@@ -1558,23 +1935,23 @@
       const realPurch = k==='meta' ? a.metaAdsPurchases : k==='google' ? a.googleAdsPurchases : k==='amazonads' ? a.amazonAdsPurchases : k==='applovin' ? a.applovinPurchases : k==='tiktokads' ? a.tiktokAdsOrders : 0;
       const unconnected = !!AD_UNCONNECTED[k] || !adMatched(k);
       const tag = (cls, txt, tit) => `<span class="tag ${cls}" style="margin-left:6px;"${tit ? ` title="${tit}"` : ''}><span class="d"></span>${txt}</span>`;
-      const liveTag = unconnected ? tag('gap', 'Chưa kết nối')
-        : okDays===0 && pendDays>0 ? tag('info', 'Chờ số · có đến '+dmShort(last), k==='amazonads' ? 'Sellerboard xuất số Amazon Ads 1 lần/ngày, vài giờ sau khi ngày (giờ LA) kết thúc — ngày này chưa có trong file' : 'Nguồn chưa đồng bộ tới ngày này')
-        : okDays===0 ? tag('info', 'Ngoài cửa sổ')
+      const liveTag = unconnected ? tag('gap', tx('u.notConnected'))
+        : okDays===0 && pendDays>0 ? tag('info', tv('Waiting · data to ', 'Chờ số · có đến ')+dmShort(last), k==='amazonads' ? tv('Sellerboard exports Amazon Ads once a day, a few hours after the (LA) day ends — this day is not in the file yet', 'Sellerboard xuất số Amazon Ads 1 lần/ngày, vài giờ sau khi ngày (giờ LA) kết thúc — ngày này chưa có trong file') : tv('The source has not synced up to this day yet', 'Nguồn chưa đồng bộ tới ngày này'))
+        : okDays===0 ? tag('info', tv('Outside window', 'Ngoài cửa sổ'))
         : okDays===a.n ? tag('live', 'Live')
-        : okDays+pendDays>=a.n ? tag('live', 'Live · số đến '+dmShort(last), (pendDays)+' ngày cuối kỳ chưa có số — không tính vào MER')
-        : tag('live', 'Live một phần', (a.n-okDays-pendDays)+' ngày nằm ngoài lịch sử nguồn này');
-      const unit = k==='google' ? 'conv. quy về' : 'đơn quy về';
+        : okDays+pendDays>=a.n ? tag('live', tv('Live · data to ', 'Live · số đến ')+dmShort(last), (pendDays)+tv(' days at the end of the period have no figures yet — not counted in MER', ' ngày cuối kỳ chưa có số — không tính vào MER'))
+        : tag('live', tv('Partly live', 'Live một phần'), (a.n-okDays-pendDays)+tv(' days are outside this source\'s history', ' ngày nằm ngoài lịch sử nguồn này'));
+      const unit = k==='google' ? tv('attributed conv.', 'conv. quy về') : tv('attributed orders', 'đơn quy về');
       const extra = okDays>0 && realPurch>0 ? ` · ${Math.round(realPurch).toLocaleString('en-US')} ${unit}` : '';
-      const idle = !unconnected && okDays>0 && a.ads[k]<0.005 ? ' · không chạy trong kỳ' : '';
+      const idle = !unconnected && okDays>0 && a.ads[k]<0.005 ? tv(' · not running in the period', ' · không chạy trong kỳ') : '';
       const amzSalesNote = (k==='amazonads' && a.amazonAdsConsoleSpend>0 && a.amazonAdsSalesDays<a.amazonAdsRealDays)
-        ? `<div class="kv"><span title="Sales khớp Amazon Ads console chỉ có cho các ngày đã kéo từ PPC dashboard của Sellerboard; ROAS/ACOS ở đây chỉ tính trên chi phí của đúng những ngày đó">ROAS/ACOS tính trên ${a.amazonAdsSalesDays}/${a.amazonAdsRealDays} ngày có Sales${AMAZON_ADS_LIVE_DATA && AMAZON_ADS_LIVE_DATA.meta && AMAZON_ADS_LIVE_DATA.meta.ppc_last_day ? ' (đến '+dmShort(AMAZON_ADS_LIVE_DATA.meta.ppc_last_day)+')' : ''}</span></div>` : '';
+        ? `<div class="kv"><span title="${tv('Sales matching the Amazon Ads console exist only for the days pulled from Sellerboard\'s PPC dashboard; ROAS/ACOS here use the spend of exactly those days', 'Sales khớp Amazon Ads console chỉ có cho các ngày đã kéo từ PPC dashboard của Sellerboard; ROAS/ACOS ở đây chỉ tính trên chi phí của đúng những ngày đó')}">${tv('ROAS/ACOS on ', 'ROAS/ACOS tính trên ')}${a.amazonAdsSalesDays}/${a.amazonAdsRealDays}${tv(' days with Sales', ' ngày có Sales')}${AMAZON_ADS_LIVE_DATA && AMAZON_ADS_LIVE_DATA.meta && AMAZON_ADS_LIVE_DATA.meta.ppc_last_day ? tv(' (to ', ' (đến ')+dmShort(AMAZON_ADS_LIVE_DATA.meta.ppc_last_day)+')' : ''}</span></div>` : '';
       const roasTxt = k==='amazonads' && a.amazonAdsConsoleSpend>0 && a.amazonAdsSalesDays===0 ? '—' : (a.ads[k]>0 ? roas.toFixed(2)+'x' : '—');
       return `<div class="roas-card" style="--c:${colors[i]}">
         <div class="p">${AD_LABEL[k]}${noteStar}${liveTag}</div>
         <div class="roas">${roasTxt}</div>
-        <div class="sub">Chi: ${money(k==='amazonads' && a.amazonAdsConsoleSpend>0 ? a.amazonAdsConsoleSpend : a.ads[k])}${idle} · DT quy về: ${k==='amazonads' && a.amazonAdsConsoleSpend>0 && a.amazonAdsSalesDays===0 ? 'chưa có số' : money(a.adsAttr[k])}${extra}</div>
-        ${k==='amazonads' && a.amazonAdsConsoleSpend>0 ? `<div class="kv"><span title="ACOS = chi SP+SB+SD ÷ doanh thu Amazon gán cho quảng cáo (cùng cách tính với Amazon Ads console)"><b>ACOS</b> ${a.adsAttr[k]>0 ? (a.amazonAcos*100).toFixed(1)+'%' : '—'}</span><span title="TACOS = chi quảng cáo Amazon (SP+SB+SD) ÷ doanh thu gộp Amazon của kỳ"><b>TACOS</b> ${a.amazonTacos>0 ? (a.amazonTacos*100).toFixed(1)+'%' : '—'}</span>${a.amazonAdsImpressions>0 ? `<span title="CTR = clicks ÷ impressions">CTR ${(a.amazonAdsClicks/a.amazonAdsImpressions*100).toFixed(2)}%</span>` : ''}${a.amazonAdsSplit.stv>0.005 ? `<span title="Sellerboard ghi thêm khoản 'Sponsored Television' này nhưng Amazon Ads console không có chiến dịch nào — không tính vào P&L">Sellerboard +${money(a.amazonAdsSplit.stv)} STV (bỏ qua)</span>` : ''}</div>` : ''}
+        <div class="sub">${tv('Spend: ', 'Chi: ')}${money(k==='amazonads' && a.amazonAdsConsoleSpend>0 ? a.amazonAdsConsoleSpend : a.ads[k])}${idle}${tv(' · Attributed revenue: ', ' · DT quy về: ')}${k==='amazonads' && a.amazonAdsConsoleSpend>0 && a.amazonAdsSalesDays===0 ? tv('no figures yet', 'chưa có số') : money(a.adsAttr[k])}${extra}</div>
+        ${k==='amazonads' && a.amazonAdsConsoleSpend>0 ? `<div class="kv"><span title="${tv('ACOS = SP+SB+SD spend ÷ Amazon revenue attributed to ads (same maths as the Amazon Ads console)', 'ACOS = chi SP+SB+SD ÷ doanh thu Amazon gán cho quảng cáo (cùng cách tính với Amazon Ads console)')}"><b>ACOS</b> ${a.adsAttr[k]>0 ? (a.amazonAcos*100).toFixed(1)+'%' : '—'}</span><span title="${tv('TACOS = Amazon ad spend (SP+SB+SD) ÷ Amazon gross sales of the period', 'TACOS = chi quảng cáo Amazon (SP+SB+SD) ÷ doanh thu gộp Amazon của kỳ')}"><b>TACOS</b> ${a.amazonTacos>0 ? (a.amazonTacos*100).toFixed(1)+'%' : '—'}</span>${a.amazonAdsImpressions>0 ? `<span title="CTR = clicks ÷ impressions">CTR ${(a.amazonAdsClicks/a.amazonAdsImpressions*100).toFixed(2)}%</span>` : ''}${a.amazonAdsSplit.stv>0.005 ? `<span title="${tv('Sellerboard also records this \'Sponsored Television\' amount but the Amazon Ads console has no such campaign — not counted in the P&L', 'Sellerboard ghi thêm khoản \'Sponsored Television\' này nhưng Amazon Ads console không có chiến dịch nào — không tính vào P&L')}">Sellerboard +${money(a.amazonAdsSplit.stv)} STV ${tv('(ignored)', '(bỏ qua)')}</span>` : ''}</div>` : ''}
         ${amzSalesNote}
       </div>`;
     }).join('');
@@ -1586,18 +1963,18 @@
     const missing = {};   // source -> days it has not reported
     pendingByDay.forEach(p=> p.keys.forEach(k=>{ (missing[k] = missing[k] || []).push(p.iso); }));
     const missTxt = Object.keys(missing).map(k=> AD_LABEL[k]+' '+dmRange(missing[k])).join(', ');
-    const whyAmz = missing.amazonads ? ' (Sellerboard xuất số Amazon Ads 1 lần/ngày — thường có số ngày hôm qua sau ~18h giờ VN)' : '';
+    const whyAmz = missing.amazonads ? tv(' (Sellerboard exports Amazon Ads once a day — yesterday\'s figures usually arrive after ~18:00 Vietnam time)', ' (Sellerboard xuất số Amazon Ads 1 lần/ngày — thường có số ngày hôm qua sau ~18h giờ VN)') : '';
     const valEl = document.getElementById('merValue'), noteEl = document.getElementById('merNote');
     const spendParts = 'Meta, Google, Amazon Ads, TikTok Ads, AppLovin' + (a.walmartAds>0.005 ? ' + Walmart Connect' : '');
     let val = '—', note = '';
     if(!pendingRows.length){
       val = a.merSpend>0 ? a.merValue.toFixed(2)+'x' : '—';
-      note = a.merSpend>0 ? `Doanh thu thuần ${money(a.netRevenue)} ÷ chi quảng cáo ${money(a.merSpend)} (${spendParts}) · đủ số tất cả nguồn.` : '';
+      note = a.merSpend>0 ? tv(`Net revenue ${money(a.netRevenue)} ÷ ad spend ${money(a.merSpend)} (${spendParts}) · every source complete.`, `Doanh thu thuần ${money(a.netRevenue)} ÷ chi quảng cáo ${money(a.merSpend)} (${spendParts}) · đủ số tất cả nguồn.`) : '';
     } else if(completeRows.length){
       const m = merOf(completeRows);
       const lastOk = completeRows[completeRows.length-1].iso;
       val = m.spend>0 ? m.mer.toFixed(2)+'x' : '—';
-      note = `Tính trên ${completeRows.length}/${rows.length} ngày đủ số (đến ${dmShort(lastOk)}): doanh thu ${money(m.revenue)} ÷ chi ${money(m.spend)}. Chưa tính ${dmRange(pendingRows.map(r=>r.iso))} vì chưa có ${missTxt}${whyAmz}.`;
+      note = tv(`Based on ${completeRows.length}/${rows.length} complete days (to ${dmShort(lastOk)}): revenue ${money(m.revenue)} ÷ spend ${money(m.spend)}. ${dmRange(pendingRows.map(r=>r.iso))} not counted yet because ${missTxt} is missing${whyAmz}.`, `Tính trên ${completeRows.length}/${rows.length} ngày đủ số (đến ${dmShort(lastOk)}): doanh thu ${money(m.revenue)} ÷ chi ${money(m.spend)}. Chưa tính ${dmRange(pendingRows.map(r=>r.iso))} vì chưa có ${missTxt}${whyAmz}.`);
     } else {
       // nothing complete yet (e.g. "today" / "yesterday" before the export): provisional, missing spend at the source's last-7-day run rate
       let estSpend = 0; const estParts = [];
@@ -1607,11 +1984,11 @@
         const ref = days.filter(r=> r.iso<=last && r[AD_REAL_FLAG[k]]).slice(-7);
         const avg = ref.length ? sum(ref.map(r=>r.ads[k]))/ref.length : 0;
         estSpend += sum(missing[k].map(iso=> avg*(iso===todayIso ? dayShare : 1)));
-        estParts.push(AD_LABEL[k]+' ≈ '+money(avg)+'/ngày'+(missing[k].includes(todayIso) ? ' — hôm nay tính '+Math.round(dayShare*100)+'% ngày đã qua' : ''));
+        estParts.push(AD_LABEL[k]+' ≈ '+money(avg)+tx('u.perDay')+(missing[k].includes(todayIso) ? tv(' — today counted at '+Math.round(dayShare*100)+'% of the day elapsed', ' — hôm nay tính '+Math.round(dayShare*100)+'% ngày đã qua') : ''));
       });
       const tot = a.merSpend + estSpend;
       val = tot>0 ? '≈ '+(a.netRevenue/tot).toFixed(2)+'x' : '—';
-      note = `Tạm tính: chưa có ${missTxt}${whyAmz} — phần thiếu ước theo trung bình 7 ngày gần nhất (${estParts.join(', ')}). Số thật sẽ thay khi nguồn cập nhật. Nếu bỏ qua phần thiếu, MER sẽ hiện ${a.merSpend>0 ? a.merValue.toFixed(2)+'x' : '—'} (cao ảo).`;
+      note = tv(`Provisional: ${missTxt} missing${whyAmz} — the missing part is estimated from the last 7 days' average (${estParts.join(', ')}). Replaced by the actual figures once the source updates. Ignoring the missing part, MER would show ${a.merSpend>0 ? a.merValue.toFixed(2)+'x' : '—'} (artificially high).`, `Tạm tính: chưa có ${missTxt}${whyAmz} — phần thiếu ước theo trung bình 7 ngày gần nhất (${estParts.join(', ')}). Số thật sẽ thay khi nguồn cập nhật. Nếu bỏ qua phần thiếu, MER sẽ hiện ${a.merSpend>0 ? a.merValue.toFixed(2)+'x' : '—'} (cao ảo).`);
     }
     valEl.textContent = val;
     if(noteEl){ noteEl.textContent = note; noteEl.hidden = !note; }
@@ -1622,43 +1999,45 @@
     const rows = currentRows();
     const a = aggregate(rows);
     const shopifyNote = shopifyMatched
-      ? (a.shopifyRealDays<a.n ? ` <span style="color:var(--ink-muted);font-size:11px;">(${a.n-a.shopifyRealDays} ngày ngoài cửa sổ đồng bộ)</span>` : '')
-      : ' <span class="tag gap"><span class="d"></span>Chưa kết nối ($0)</span>';
+      ? (a.shopifyRealDays<a.n ? ` <span style="color:var(--ink-muted);font-size:11px;">(${a.n-a.shopifyRealDays} ${tv(dayWord(a.n-a.shopifyRealDays)+' outside the sync window', 'ngày ngoài cửa sổ đồng bộ')})</span>` : '')
+      : ' <span class="tag gap"><span class="d"></span>'+tx('tag.gap')+'</span>';
+    const remits = who => tv(who+' remits it', who+' nộp hộ');
+    const facil = who => tv(`(${who} collects &amp; remits it itself, not through Cattasaurus)`, `(${who} tự thu &amp; nộp hộ, không qua Cattasaurus)`);
     const body = `<tr>
-        <td class="name">Shopify — thuế thu hộ khách, đã trừ thuế hoàn lại (= Taxes trên Shopify Analytics)${shopifyNote}</td>
+        <td class="name">${tv('Shopify — tax collected from customers, net of tax refunded (= Taxes in Shopify Analytics)', 'Shopify — thuế thu hộ khách, đã trừ thuế hoàn lại (= Taxes trên Shopify Analytics)')}${shopifyNote}</td>
         <td class="num">${money(a.shopifyTax)}</td>
         <td class="num">—</td>
         <td class="num">—</td>
-        <td><span class="pill warn">Chưa nối nguồn nộp thuế</span></td>
+        <td><span class="pill warn">${tv('Tax filing source not connected', 'Chưa nối nguồn nộp thuế')}</span></td>
       </tr>
       <tr>
-        <td class="name">Amazon — marketplace facilitator <span style="color:var(--ink-muted);font-size:11px;">(Amazon tự thu &amp; nộp hộ, không qua Cattasaurus)</span></td>
+        <td class="name">Amazon — marketplace facilitator <span style="color:var(--ink-muted);font-size:11px;">${facil('Amazon')}</span></td>
         <td class="num">—</td>
         <td class="num">—</td>
         <td class="num">$0</td>
-        <td><span class="pill ok">Amazon nộp hộ</span></td>
+        <td><span class="pill ok">${remits('Amazon')}</span></td>
       </tr>
 ` + ((!walmartMatched || !tiktokMatched) ? `
       <tr>
-        <td class="name">${[!walmartMatched && 'Walmart', !tiktokMatched && 'TikTok Shop'].filter(Boolean).join(' / ')} <span class="tag gap"><span class="d"></span>Chưa kết nối ($0)</span></td>
+        <td class="name">${[!walmartMatched && 'Walmart', !tiktokMatched && 'TikTok Shop'].filter(Boolean).join(' / ')} <span class="tag gap"><span class="d"></span>${tx('tag.gap')}</span></td>
         <td class="num">$0</td>
         <td class="num">—</td>
         <td class="num">—</td>
-        <td><span class="pill warn">Chưa kết nối</span></td>
+        <td><span class="pill warn">${tx('u.notConnected')}</span></td>
       </tr>` : '') + (walmartMatched ? `
       <tr>
-        <td class="name">Walmart — marketplace facilitator <span style="color:var(--ink-muted);font-size:11px;">(Walmart tự thu &amp; nộp hộ, không qua Cattasaurus)</span></td>
+        <td class="name">Walmart — marketplace facilitator <span style="color:var(--ink-muted);font-size:11px;">${facil('Walmart')}</span></td>
         <td class="num">—</td>
         <td class="num">—</td>
         <td class="num">$0</td>
-        <td><span class="pill ok">Walmart nộp hộ</span></td>
+        <td><span class="pill ok">${remits('Walmart')}</span></td>
       </tr>` : '') + (tiktokMatched ? `
       <tr>
-        <td class="name">TikTok Shop — marketplace facilitator <span style="color:var(--ink-muted);font-size:11px;">(TikTok tự thu &amp; nộp hộ, không qua Cattasaurus)</span></td>
+        <td class="name">TikTok Shop — marketplace facilitator <span style="color:var(--ink-muted);font-size:11px;">${facil('TikTok')}</span></td>
         <td class="num">—</td>
         <td class="num">—</td>
         <td class="num">$0</td>
-        <td><span class="pill ok">TikTok nộp hộ</span></td>
+        <td><span class="pill ok">${remits('TikTok')}</span></td>
       </tr>` : '');
     document.getElementById('taxBody').innerHTML = body;
   }
@@ -1685,7 +2064,7 @@
     }
     return {lastIso, present, total, pct: total ? Math.round(present/total*100) : 0};
   }
-  function fmtLastIso(iso){ return iso ? iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(0,4) : 'chưa có ngày nào'; }
+  function fmtLastIso(iso){ return iso ? iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(0,4) : tv('no day yet', 'chưa có ngày nào'); }
 
   function renderSources(){
     const el = document.getElementById('healthGrid');
@@ -1695,7 +2074,7 @@
       const wf = HEALTH_WORKFLOW[s.key];
       const unconnected = s.level==='c' && !fresh;
       const statLine = fresh
-        ? `<div class="stat"><span>${fresh.present}/${fresh.total} ngày</span><span class="bar"><i style="width:${fresh.pct}%"></i></span><span>gần nhất ${fmtLastIso(fresh.lastIso)}</span></div>`
+        ? `<div class="stat"><span>${fresh.present}/${fresh.total} ${tx('u.days')}</span><span class="bar"><i style="width:${fresh.pct}%"></i></span><span>${tv('latest ', 'gần nhất ')}${fmtLastIso(fresh.lastIso)}</span></div>`
         : '';
       const ghLink = wf ? `<a class="gh" href="${GH_ACTIONS_BASE}${wf}" target="_blank" rel="noopener">↗ GitHub Actions</a>` : '';
       return `<div class="healthcard ${s.level}${unconnected?' unconnected':''}">
@@ -1716,17 +2095,17 @@
     const el = document.getElementById('opexTable');
     if(!el) return;
     if(!opexMeta || !OPEX_MONTHLY_LIVE_DATA || !OPEX_MONTHLY_LIVE_DATA.months){
-      el.innerHTML = '<tbody><tr><td style="padding:10px 2px;color:var(--ink-muted);">Chưa có file <code>data/opex_monthly.json</code> hoặc chưa điền tháng nào.</td></tr></tbody>';
+      el.innerHTML = '<tbody><tr><td style="padding:10px 2px;color:var(--ink-muted);">'+tv('No <code>data/opex_monthly.json</code> file yet, or no month filled in.', 'Chưa có file <code>data/opex_monthly.json</code> hoặc chưa điền tháng nào.')+'</td></tr></tbody>';
       return;
     }
     const months = OPEX_MONTHLY_LIVE_DATA.months;
     const cols = OPEX_GA_KEYS.concat(OPEX_BELOW_KEYS);
-    const LABEL = {depreciation:'Khấu hao & phân bổ (D&A)', interest:'Lãi vay & chi phí tài chính', income_tax:'Thuế TNDN'};
+    const LABEL = {depreciation: tv('Depreciation & amortisation (D&A)', 'Khấu hao & phân bổ (D&A)'), interest: tv('Interest & finance costs', 'Lãi vay & chi phí tài chính'), income_tax: tv('Income tax', 'Thuế TNDN')};
     GA_ITEMS.forEach(it=>{ if(OPEX_GA_KEYS.includes(it.key)) LABEL[it.key] = it.label; });
-    let html = `<thead><tr><th>Tháng</th>${cols.map(k=>`<th class="num">${LABEL[k]||k}</th>`).join('')}</tr></thead><tbody>`;
+    let html = `<thead><tr><th>${tv('Month', 'Tháng')}</th>${cols.map(k=>`<th class="num">${LABEL[k]||k}</th>`).join('')}</tr></thead><tbody>`;
     opexMeta.entered.slice().reverse().forEach(m=>{
       const row = months[m] || {};
-      html += `<tr><td class="name">Tháng ${parseInt(m.slice(5,7),10)}/${m.slice(0,4)}</td>${cols.map(k=>{
+      html += `<tr><td class="name">${tv(MONTHS_EN[parseInt(m.slice(5,7),10)-1]+' '+m.slice(0,4), 'Tháng '+parseInt(m.slice(5,7),10)+'/'+m.slice(0,4))}</td>${cols.map(k=>{
         const v = row[k];
         return `<td class="num">${(v===undefined||v===null||v==='') ? '<span style="color:var(--ink-muted);">—</span>' : money(parseFloat(v)||0)}</td>`;
       }).join('')}</tr>`;
@@ -1737,11 +2116,11 @@
 
   // ---------- "còn thiếu gì" gaps list (tab "Quản lý dữ liệu") ----------
   const staticGaps = () => [
-    {name:'Giá vốn hàng bán (COGS)', note: (Object.keys(COGS_ACTUAL.months).length
-        ? 'Đã có số kế toán cho tháng: '+Object.keys(COGS_ACTUAL.months).sort().join(', ')+' — các tháng khác vẫn ' + (COGS_EST ? 'ước '+(COGS_EST.rate*100).toFixed(0)+'%' : '$0') + '. Điền thêm vào data/cogs_monthly.json'
-        : (COGS_EST ? 'Đang ƯỚC TÍNH '+(COGS_EST.rate*100).toFixed(0)+'% doanh thu thuần ('+COGS_EST.basis+') — điền số kế toán theo tháng vào data/cogs_monthly.json để thay bằng số thật' : 'Cần giá vốn thật — ảnh hưởng lớn nhất còn lại tới lợi nhuận gộp'))},
-    {name:'Phí Afterpay (đang ước tính 6% + $0,30/đơn)', note:'Shopify không lộ phí Afterpay — cần báo cáo settlement của Afterpay (hoặc tỷ lệ trong hợp đồng) để thay bằng số thật'},
-    {name:'G&A chi tiết (ngoài Snowball $350/tháng + Klaviyo hoá đơn + OpEx nhập tay)', note:'Nhập tay khi có, hoặc nối QuickBooks/Xero'},
+    {name: tv('Cost of goods sold (COGS)', 'Giá vốn hàng bán (COGS)'), note: (Object.keys(COGS_ACTUAL.months).length
+        ? tv('Accountant\'s figures available for: ', 'Đã có số kế toán cho tháng: ')+Object.keys(COGS_ACTUAL.months).sort().join(', ')+tv(' — other months still ', ' — các tháng khác vẫn ') + (COGS_EST ? tv('estimated at ', 'ước ')+(COGS_EST.rate*100).toFixed(0)+'%' : '$0') + tv('. Add more to data/cogs_monthly.json', '. Điền thêm vào data/cogs_monthly.json')
+        : (COGS_EST ? tv('ESTIMATED at ', 'Đang ƯỚC TÍNH ')+(COGS_EST.rate*100).toFixed(0)+tv('% of net revenue (', '% doanh thu thuần (')+COGS_EST.basis+tv(') — enter the accountant\'s monthly figures in data/cogs_monthly.json to replace it with actuals', ') — điền số kế toán theo tháng vào data/cogs_monthly.json để thay bằng số thật') : tv('Actual product cost needed — the biggest remaining impact on gross profit', 'Cần giá vốn thật — ảnh hưởng lớn nhất còn lại tới lợi nhuận gộp')))},
+    {name: tv('Afterpay fees (estimated at 6% + $0.30/order)', 'Phí Afterpay (đang ước tính 6% + $0,30/đơn)'), note: tv('Shopify does not expose the Afterpay fee — Afterpay\'s settlement report (or the contract rate) is needed to replace it with actuals', 'Shopify không lộ phí Afterpay — cần báo cáo settlement của Afterpay (hoặc tỷ lệ trong hợp đồng) để thay bằng số thật')},
+    {name: tv('Detailed G&A (beyond Snowball $350/month + Klaviyo invoices + manual OpEx)', 'G&A chi tiết (ngoài Snowball $350/tháng + Klaviyo hoá đơn + OpEx nhập tay)'), note: tv('Enter manually when available, or connect QuickBooks/Xero', 'Nhập tay khi có, hoặc nối QuickBooks/Xero')},
   ];
   function renderGaps(){
     const el = document.getElementById('gapsList');
@@ -1750,7 +2129,7 @@
     const all = dynamic.concat(staticGaps());
     el.innerHTML = all.length
       ? all.map(g=>`<div class="gap-row"><span class="dot c"></span><span class="g-name">${g.name}</span><span class="g-note">${g.note}</span></div>`).join('')
-      : '<div class="caption" style="padding-left:0;">Không còn khoảng trống nào đã biết</div>';
+      : '<div class="caption" style="padding-left:0;">'+tv('No known gaps left', 'Không còn khoảng trống nào đã biết')+'</div>';
   }
 
   // ---------- Amazon data-quality gaps (service fees / ad spend not yet captured) ----------
@@ -1768,39 +2147,40 @@
       const sel = currentRows().filter(r=>r.amazonReal && r.amazonReal.orderBasis);
       const ordered = sum(sel.map(r=>r.channels.amazon)), posted = sum(sel.map(r=>r.amazonReal.postedGross));
       const mcfU = sum(sel.map(r=>r.amazonReal.mcfUnits)), mcfO = sum(sel.map(r=>r.amazonReal.mcfOrders)), pend = sum(sel.map(r=>r.amazonReal.pendingUnits));
-      html += `<div><span class="tag live"><span class="d"></span>Theo ngày đặt</span> <b>Doanh thu Amazon</b> trong khoảng đang xem: <b>${money(ordered)}</b> theo ngày khách đặt (All Orders report — cách Seller Central/Sellerboard tính) so với ${money(posted)} theo ngày Amazon ship &amp; ghi nhận tiền (Finances). Phí, hoàn tiền vẫn theo ngày ghi nhận.${mcfU?` Đơn MCF (Shopify do FBA ship) tách riêng: ${mcfO.toLocaleString('en-US')} đơn / ${mcfU.toLocaleString('en-US')} units — không tính vào doanh thu Amazon.`:''}${pend?` ${pend.toLocaleString('en-US')} units đang Pending chưa có giá (Amazon chưa công bố) → chưa vào doanh thu.`:''}</div>`;
+      html += tv(`<div><span class="tag live"><span class="d"></span>By order date</span> <b>Amazon revenue</b> in the selected period: <b>${money(ordered)}</b> by the day the customer ordered (All Orders report — the way Seller Central/Sellerboard count it) vs ${money(posted)} by the day Amazon shipped &amp; posted the money (Finances). Fees and refunds stay on their posting date.${mcfU?` MCF orders (Shopify orders shipped by FBA) are kept separate: ${mcfO.toLocaleString('en-US')} orders / ${mcfU.toLocaleString('en-US')} units — not counted in Amazon revenue.`:''}${pend?` ${pend.toLocaleString('en-US')} units still Pending have no price yet (Amazon has not released it) → not in revenue yet.`:''}</div>`,
+        `<div><span class="tag live"><span class="d"></span>Theo ngày đặt</span> <b>Doanh thu Amazon</b> trong khoảng đang xem: <b>${money(ordered)}</b> theo ngày khách đặt (All Orders report — cách Seller Central/Sellerboard tính) so với ${money(posted)} theo ngày Amazon ship &amp; ghi nhận tiền (Finances). Phí, hoàn tiền vẫn theo ngày ghi nhận.${mcfU?` Đơn MCF (Shopify do FBA ship) tách riêng: ${mcfO.toLocaleString('en-US')} đơn / ${mcfU.toLocaleString('en-US')} units — không tính vào doanh thu Amazon.`:''}${pend?` ${pend.toLocaleString('en-US')} units đang Pending chưa có giá (Amazon chưa công bố) → chưa vào doanh thu.`:''}</div>`);
     }
     if(svcTotal===0){
       const svcNote = schema2
-        ? 'Script v2 đã xử lý ServiceFeeEventList + removal fees nhưng SP-API Finances vẫn không trả về khoản nào trong cửa sổ đồng bộ — xem log loại sự kiện bên dưới; nếu vẫn trống sau vài lần sync, cần lấy từ Reports API (báo cáo phí lưu kho FBA hàng tháng) thay vì Finances.'
-        : 'SP-API Finances trả về $0 cho tài khoản này dù Cattasaurus đang trả phí lưu kho thật; script v2 (chờ thay file trong repo ctu-fin-sync-8x2k) sẽ log chi tiết để tìm chỗ khoản này nằm.';
-      html += `<div><span class="tag gap"><span class="d"></span>Chưa capture ($0)</span> <b>Phí dịch vụ Amazon</b> (subscription + lưu kho FBA) — ${svcNote}</div>`;
+        ? tv('Script v2 handles ServiceFeeEventList + removal fees, but SP-API Finances still returns nothing in the sync window — see the event-type log below; if it stays empty after a few syncs, these must come from the Reports API (monthly FBA storage fee report) instead of Finances.', 'Script v2 đã xử lý ServiceFeeEventList + removal fees nhưng SP-API Finances vẫn không trả về khoản nào trong cửa sổ đồng bộ — xem log loại sự kiện bên dưới; nếu vẫn trống sau vài lần sync, cần lấy từ Reports API (báo cáo phí lưu kho FBA hàng tháng) thay vì Finances.')
+        : tv('SP-API Finances returns $0 for this account although Cattasaurus does pay storage fees; script v2 (waiting to replace the file in the ctu-fin-sync-8x2k repo) will log details to find where this amount lands.', 'SP-API Finances trả về $0 cho tài khoản này dù Cattasaurus đang trả phí lưu kho thật; script v2 (chờ thay file trong repo ctu-fin-sync-8x2k) sẽ log chi tiết để tìm chỗ khoản này nằm.');
+      html += `<div><span class="tag gap"><span class="d"></span>${tv('Not captured ($0)', 'Chưa capture ($0)')}</span> <b>${tv('Amazon service fees', 'Phí dịch vụ Amazon')}</b> ${tv('(subscription + FBA storage)', '(subscription + lưu kho FBA)')} — ${svcNote}</div>`;
     } else {
-      html += `<div><span class="tag live"><span class="d"></span>Đã capture</span> <b>Phí dịch vụ Amazon</b> (subscription + lưu kho/removal FBA) — ${money(svcTotal)} trong cửa sổ đồng bộ hiện tại.</div>`;
+      html += `<div><span class="tag live"><span class="d"></span>${tv('Captured', 'Đã capture')}</span> <b>${tv('Amazon service fees', 'Phí dịch vụ Amazon')}</b> ${tv('(subscription + FBA storage/removal)', '(subscription + lưu kho/removal FBA)')} — ${money(svcTotal)} ${tv('in the current sync window.', 'trong cửa sổ đồng bộ hiện tại.')}</div>`;
     }
     if(amazonAdsMatched){
-      html += `<div><span class="tag live"><span class="d"></span>Đã có số</span> <b>Amazon Ads</b> (Sponsored Products/Brands/Display) — chi phí theo ngày ${AMAZON_ADS_LIVE_DATA.source==='sellerboard' ? 'lấy qua Sellerboard (Sellerboard kéo Amazon Ads API); sẽ chuyển sang Amazon Ads API trực tiếp khi Amazon duyệt quyền' : 'từ Amazon Ads API'}.</div>`;
-    } else html += `<div><span class="tag gap"><span class="d"></span>Chưa kết nối ($0)</span> <b>Amazon Ads</b> (Sponsored Products/Brands/Display) — SP-API Finances không trả về ad spend; hiển thị $0 cho tới khi Amazon duyệt quyền Advertising API (đã nộp hồ sơ, đang chờ).</div>`;
+      html += `<div><span class="tag live"><span class="d"></span>${tv('Data available', 'Đã có số')}</span> <b>Amazon Ads</b> (Sponsored Products/Brands/Display) — ${tv('daily spend ', 'chi phí theo ngày ')}${AMAZON_ADS_LIVE_DATA.source==='sellerboard' ? tv('via Sellerboard (Sellerboard pulls the Amazon Ads API); will switch to the Amazon Ads API directly once Amazon approves access', 'lấy qua Sellerboard (Sellerboard kéo Amazon Ads API); sẽ chuyển sang Amazon Ads API trực tiếp khi Amazon duyệt quyền') : tv('from the Amazon Ads API', 'từ Amazon Ads API')}.</div>`;
+    } else html += `<div><span class="tag gap"><span class="d"></span>${tx('tag.gap')}</span> <b>Amazon Ads</b> (Sponsored Products/Brands/Display) — ${tv('SP-API Finances does not return ad spend; shown as $0 until Amazon approves Advertising API access (application submitted, pending).', 'SP-API Finances không trả về ad spend; hiển thị $0 cho tới khi Amazon duyệt quyền Advertising API (đã nộp hồ sơ, đang chờ).')}</div>`;
     if(schema2){
-      html += `<div><span class="tag live"><span class="d"></span>Đã phân loại</span> Gift wrap (doanh thu), hoa hồng gift wrap (phí giới thiệu), phí thu hộ sales tax / shipping chargeback / holdback / phí xử lý hoàn tiền / postage nhãn trả hàng (dòng "Phí Amazon khác"), phí ship hàng trả & restocking (gộp vào hoàn tiền), removal/liquidation (phí dịch vụ + điều chỉnh), SAFE-T & bồi hoàn kho (điều chỉnh). <b>Cước &amp; thuế nhập hàng vào FBA</b> tách thành dòng riêng trong COGS (giá vốn tồn kho, Amazon xuất hoá đơn theo lô nên ngày có hoá đơn sẽ lõm sâu — đọc theo tháng). Bỏ qua có chủ đích vì không thuộc P&amp;L: debt recovery, retrocharge thuế, và Reserve credit/debit (tiền Amazon tạm giữ rồi trả).</div>`;
+      html += `<div><span class="tag live"><span class="d"></span>${tv('Classified', 'Đã phân loại')}</span> ${tv('Gift wrap (revenue), gift wrap commission (referral fee), sales tax collection / shipping chargeback / holdback / refund administration fee / return-label postage ("Other Amazon fees" line), return shipping & restocking fees (folded into refunds), removal/liquidation (service fees + adjustments), SAFE-T & inventory reimbursements (adjustments). <b>Inbound freight &amp; duty into FBA</b> is a separate line in COGS (inventory cost; Amazon invoices per shipment, so invoice days dip sharply — read it by month). Deliberately ignored because they are not P&amp;L: debt recovery, tax retrocharges, and Reserve credit/debit (money Amazon holds temporarily and returns).', 'Gift wrap (doanh thu), hoa hồng gift wrap (phí giới thiệu), phí thu hộ sales tax / shipping chargeback / holdback / phí xử lý hoàn tiền / postage nhãn trả hàng (dòng "Phí Amazon khác"), phí ship hàng trả & restocking (gộp vào hoàn tiền), removal/liquidation (phí dịch vụ + điều chỉnh), SAFE-T & bồi hoàn kho (điều chỉnh). <b>Cước &amp; thuế nhập hàng vào FBA</b> tách thành dòng riêng trong COGS (giá vốn tồn kho, Amazon xuất hoá đơn theo lô nên ngày có hoá đơn sẽ lõm sâu — đọc theo tháng). Bỏ qua có chủ đích vì không thuộc P&amp;L: debt recovery, retrocharge thuế, và Reserve credit/debit (tiền Amazon tạm giữ rồi trả).')}</div>`;
     }
     html += '</div>';
     if(warnings.length){
       const cap = schema2
-        ? 'Loại phí/sự kiện script v2 vẫn chưa map được ở lần đồng bộ gần nhất (đang nằm ở dòng "Điều chỉnh & chưa phân loại" hoặc "Phí dịch vụ" — cần bổ sung vào bảng map):'
-        : 'Loại phí/sự kiện "chưa phân loại" script gặp phải ở lần đồng bộ gần nhất (tạm gộp vào dòng "Phí Amazon khác/chưa phân loại" ở trên — script v2 đã map toàn bộ các loại này, chờ thay file trong repo):';
+        ? tv('Fee/event types script v2 still could not map in the latest sync (currently in the "Adjustments & unclassified" or "Service fees" line — add them to the mapping table):', 'Loại phí/sự kiện script v2 vẫn chưa map được ở lần đồng bộ gần nhất (đang nằm ở dòng "Điều chỉnh & chưa phân loại" hoặc "Phí dịch vụ" — cần bổ sung vào bảng map):')
+        : tv('"Unclassified" fee/event types the script met in the latest sync (folded into the "Other / unclassified Amazon fees" line above for now — script v2 maps all of them, waiting to replace the file in the repo):', 'Loại phí/sự kiện "chưa phân loại" script gặp phải ở lần đồng bộ gần nhất (tạm gộp vào dòng "Phí Amazon khác/chưa phân loại" ở trên — script v2 đã map toàn bộ các loại này, chờ thay file trong repo):');
       html += `<div class="caption" style="padding-left:0;margin:10px 0 6px;">${cap}</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;">${warnings.map(w=>`<span class="pill warn">${w}</span>`).join('')}</div>`;
     }
     if(diag){
       const fmtMap = (obj, moneyVals) => Object.keys(obj||{}).length
         ? Object.keys(obj).map(k=>`<span class="pill ok" style="font-weight:500;">${k}: ${moneyVals ? money(obj[k]) : obj[k]}</span>`).join('')
-        : '<span class="pill warn">không có</span>';
-      html += `<div class="caption" style="padding-left:0;margin:12px 0 6px;">Log lần đồng bộ gần nhất — loại phí dịch vụ Amazon gửi về (nơi phí subscription/lưu kho phải xuất hiện):</div>
+        : '<span class="pill warn">'+tv('none', 'không có')+'</span>';
+      html += `<div class="caption" style="padding-left:0;margin:12px 0 6px;">${tv('Latest sync log — service fee types Amazon sent (where subscription/storage fees should appear):', 'Log lần đồng bộ gần nhất — loại phí dịch vụ Amazon gửi về (nơi phí subscription/lưu kho phải xuất hiện):')}</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;">${fmtMap(diag.service_fee_types, true)}</div>
-        <div class="caption" style="padding-left:0;margin:10px 0 6px;">Loại điều chỉnh (adjustment) theo tổng tiền:</div>
+        <div class="caption" style="padding-left:0;margin:10px 0 6px;">${tv('Adjustment types by total amount:', 'Loại điều chỉnh (adjustment) theo tổng tiền:')}</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;">${fmtMap(diag.adjustment_types, true)}</div>
-        <div class="caption" style="padding-left:0;margin:10px 0 6px;">Số sự kiện theo danh sách (kể cả danh sách trống) · bỏ qua có chủ đích: ${fmtMap(diag.ignored_event_lists, false)}</div>
+        <div class="caption" style="padding-left:0;margin:10px 0 6px;">${tv('Event counts per list (including empty lists) · deliberately ignored: ', 'Số sự kiện theo danh sách (kể cả danh sách trống) · bỏ qua có chủ đích: ')}${fmtMap(diag.ignored_event_lists, false)}</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;">${fmtMap(diag.event_lists, false)}</div>`;
     }
     document.getElementById('amazonGapsBody').innerHTML = html;
@@ -1839,7 +2219,7 @@
     const back = (mode==='day' || mode==='week') ? 364 : 365;
     return rowsBetween(shiftIso(cur[0].iso, back), shiftIso(cur[cur.length-1].iso, back));
   }
-  function likeLabel(){ return (mode==='month' || monthLikeRange()) ? 'cùng số ngày tháng trước' : mode==='week' ? 'tuần trước' : mode==='day' ? 'hôm trước' : 'kỳ liền trước'; }
+  function likeLabel(){ return (mode==='month' || monthLikeRange()) ? tv('same days last month', 'cùng số ngày tháng trước') : mode==='week' ? tv('last week', 'tuần trước') : mode==='day' ? tv('the day before', 'hôm trước') : tv('previous period', 'kỳ liền trước'); }
   function aggOrNull(rows){ if(!rows || !rows.length) return null; const a = aggregate(rows); return a.netRevenue>0 || a.adSpend>0 ? a : null; }
   function dAbs(cur, ref){ return (ref===null || ref===undefined) ? null : (ref!==0 ? (cur-ref)/Math.abs(ref)*100 : null); }
   function deltaLine(label, d, opts){
@@ -1848,7 +2228,7 @@
     const good = opts.lowerIsBetter ? d<=0 : d>=0;
     const cls = Math.abs(d)<0.05 ? 'flat' : (good ? 'up' : 'down');
     const arrow = Math.abs(d)<0.05 ? '•' : (d>=0 ? '▲' : '▼');
-    return `<div class="delta ${cls}"><span class="k">${label}:</span> ${arrow} ${Math.abs(d).toFixed(1)}${opts.pts?' đpt':'%'}</div>`;
+    return `<div class="delta ${cls}"><span class="k">${label}:</span> ${arrow} ${Math.abs(d).toFixed(1)}${opts.pts?' '+tx('u.pts'):'%'}</div>`;
   }
   // new Shopify customers in the period (customer-journey blocks) -> nCAC
   function newCustomersOf(rows){
@@ -1865,6 +2245,25 @@
     return {value: m.spend>0 ? m.mer : null, days: complete.length, of: rows.length, spend: m.spend};
   }
 
+  // ---------- V10 dictionary for the second half of the file (overview, alerts, inventory, data sources) ----------
+  Object.assign(L.en, {
+    'u.orders':'orders', 'u.order':'order', 'u.vs':'vs', 'u.lastYear':'last year', 'u.plan':'plan', 'u.breakEven':'break-even', 'u.margin':'margin', 'u.pts':'pts',
+    'u.netRev':'Net revenue', 'u.grossRev':'Gross sales', 'u.attrRev':'Attributed revenue', 'u.netRevLc':'net revenue', 'u.thisPeriod':'this period', 'u.selPeriod':'selected period',
+    'u.none':'none', 'u.manual':'Manual entry', 'u.manualLc':'manual entry', 'u.notEntered':'not entered', 'u.spend':'Spend', 'u.spendPct':'% of spend', 'u.product2':'Product / campaign', 'u.other':'Other',
+    'u.noPrior':'No prior period to compare', 'u.seeData':'See the Data page', 'u.source':'Source',
+    'age.just':'Live · just updated', 'age.min':'Live · {n} minutes ago', 'age.hour':'Live · {n} hours ago', 'age.from':' · from {d}', 'age.missing':' ({n} days missing)',
+    'u.unitsSold':'units sold',
+  });
+  Object.assign(L.vi, {
+    'u.orders':'đơn', 'u.order':'đơn', 'u.vs':'so', 'u.lastYear':'năm trước', 'u.plan':'kế hoạch', 'u.breakEven':'hoà vốn', 'u.margin':'biên', 'u.pts':'đpt',
+    'u.netRev':'DT thuần', 'u.grossRev':'DT gộp', 'u.attrRev':'DT quy về', 'u.netRevLc':'doanh thu thuần', 'u.thisPeriod':'kỳ này', 'u.selPeriod':'kỳ đang xem',
+    'u.none':'chưa có', 'u.manual':'Nhập tay', 'u.manualLc':'nhập tay', 'u.notEntered':'chưa nhập', 'u.spend':'Chi', 'u.spendPct':'% chi', 'u.product2':'Sản phẩm / campaign', 'u.other':'Khác',
+    'u.noPrior':'Chưa có kỳ trước để so', 'u.seeData':'Xem trang Dữ liệu', 'u.source':'Nguồn',
+    'age.just':'Live · vừa cập nhật', 'age.min':'Live · {n} phút trước', 'age.hour':'Live · {n} giờ trước', 'age.from':' · từ {d}', 'age.missing':' (thiếu {n} ngày)',
+    'u.unitsSold':'units bán',
+  });
+  let _bannerPaint = null;   // V10: repaints the live banner in the active language (set once the banner is first shown)
+  const nDays = n => n+' '+(n===1 ? tx('u.day') : tx('u.days'));   // "1 day" / "2 days"; Vietnamese is "N ngày" either way
   function setNote(id, txt){ const el = document.getElementById(id); if(el) el.textContent = txt; }
   // ---- V7: period strip (Sellerboard-style): yesterday · last 7 days · month to date · month forecast · last month ----
   function renderPeriodStrip(){
@@ -1879,11 +2278,11 @@
     const fcNet = aM.netRevenue + avg7('netRevenue')*rem, fcCm = aM.contributionProfit + avg7('contributionProfit')*rem;
     const tile = (l, v, sub, cls) => `<div class="st ${cls||''}"><div class="l" title="${l}">${l}</div><div class="v">${v}</div><div class="s">${sub}</div></div>`;
     const cm = x => 'CM3 '+money(x,{compact:true});
-    el.innerHTML = tile('Hôm qua · '+fmtDate(lastC.date), money(aY.netRevenue,{compact:true}), cm(aY.contributionProfit))
-      + tile('7 ngày qua', money(a7.netRevenue,{compact:true}), cm(a7.contributionProfit))
-      + tile('Tháng này · '+done+'/'+dim+' ngày', money(aM.netRevenue,{compact:true}), cm(aM.contributionProfit))
-      + tile('Dự báo cuối tháng', money(fcNet,{compact:true}), cm(fcCm)+' · nhịp 7 ngày', 'fc')
-      + (aPM ? tile('Tháng trước', money(aPM.netRevenue,{compact:true}), cm(aPM.contributionProfit)) : tile('Tháng trước', '—', ''));
+    el.innerHTML = tile(tv('Yesterday','Hôm qua')+' · '+fmtDate(lastC.date), money(aY.netRevenue,{compact:true}), cm(aY.contributionProfit))
+      + tile(tv('Last 7 days','7 ngày qua'), money(a7.netRevenue,{compact:true}), cm(a7.contributionProfit))
+      + tile(tv('This month','Tháng này')+' · '+done+'/'+dim+' '+tx('u.days'), money(aM.netRevenue,{compact:true}), cm(aM.contributionProfit))
+      + tile(tv('Month-end forecast','Dự báo cuối tháng'), money(fcNet,{compact:true}), cm(fcCm)+tv(' · 7-day pace',' · nhịp 7 ngày'), 'fc')
+      + (aPM ? tile(tv('Last month','Tháng trước'), money(aPM.netRevenue,{compact:true}), cm(aPM.contributionProfit)) : tile(tv('Last month','Tháng trước'), '—', ''));
   }
   // ---- V7: profit bridge. CM3 = O·g·(1−dsc−rf)·(1−c−fe) − O·f − mk; swap one driver at a time from the reference
   // period to the current one, so the eight effects add up to the change in CM3 exactly. ----
@@ -1894,14 +2293,14 @@
     // so a shift between channels lands in the volume rows and never distorts the price / discount rates
     const par = (x, e, k) => { const O = e[k].orders, gross = x.gross[k], net = e[k].net; return {O, g: O>0 ? gross/O : 0, dsc: gross>0 ? x.discountBy[k]/gross : 0, rf: gross>0 ? x.refund[k]/gross : 0, c: net>0 ? e[k].cogs/net : 0, fe: net>0 ? e[k].fees/net : 0, f: O>0 ? e[k].fulfil/O : 0, mk: e[k].adsAll}; };
     const cm3 = q => q.O*q.g*(1-q.dsc-q.rf)*(1-q.c-q.fe) - q.O*q.f - q.mk;
-    const DRV = [['g','Giá gộp mỗi đơn'],['dsc','Tỷ lệ giảm giá'],['rf','Tỷ lệ hoàn tiền'],['c','Tỷ lệ giá vốn'],['fe','Phí sàn & thanh toán / doanh thu'],['f','Fulfillment mỗi đơn'],['mk','Chi marketing']];
+    const DRV = [['g',tv('Gross price per order','Giá gộp mỗi đơn')],['dsc',tv('Discount rate','Tỷ lệ giảm giá')],['rf',tv('Refund rate','Tỷ lệ hoàn tiền')],['c',tv('Product cost rate','Tỷ lệ giá vốn')],['fe',tv('Marketplace & payment fees / revenue','Phí sàn & thanh toán / doanh thu')],['f',tv('Fulfillment per order','Fulfillment mỗi đơn')],['mk',tv('Marketing spend','Chi marketing')]];
     const vol = [], drv = {}; DRV.forEach(([k])=>drv[k]={value:0, from:0, to:0});
     CH_KEYS.forEach(k=>{
       const P = par(p, ep, k), A = par(a, ea, k);
       if(P.O===0 && A.O===0) return;
-      if(P.O===0 || A.O===0){ vol.push({key:'O:'+k, label:'Số đơn '+CH_LABEL[k], value: ep[k].cm===undefined ? 0 : (ea[k].cm - ep[k].cm), from:P.O, to:A.O}); return; }
+      if(P.O===0 || A.O===0){ vol.push({key:'O:'+k, label:tv(CH_LABEL[k]+' orders','Số đơn '+CH_LABEL[k]), value: ep[k].cm===undefined ? 0 : (ea[k].cm - ep[k].cm), from:P.O, to:A.O}); return; }
       const q = {...P}; let prev = cm3(q);
-      q.O = A.O; let v = cm3(q); vol.push({key:'O:'+k, label:'Số đơn '+CH_LABEL[k], value: v-prev, from:P.O, to:A.O}); prev = v;
+      q.O = A.O; let v = cm3(q); vol.push({key:'O:'+k, label:tv(CH_LABEL[k]+' orders','Số đơn '+CH_LABEL[k]), value: v-prev, from:P.O, to:A.O}); prev = v;
       DRV.forEach(([kk])=>{ q[kk] = A[kk]; v = cm3(q); drv[kk].value += v-prev; prev = v; });
     });
     // display values of the rate rows = company level (per-channel detail lives in the volume rows)
@@ -1910,14 +2309,14 @@
     const effects = vol.sort((x,y)=>Math.abs(y.value)-Math.abs(x.value)).concat(DRV.map(([k,label])=>({key:k, label, value:drv[k].value, from:TP[k], to:TA[k]})));
     return {start: p.contributionProfit, end: a.contributionProfit, effects};
   }
-  function effDetail(e){ const f = (v,k)=> ['dsc','rf','c','fe'].includes(k) ? (v*100).toFixed(1)+'%' : k.startsWith('O') ? intFmt(v)+' đơn' : money(v); return f(e.from,e.key)+' → '+f(e.to,e.key); }
+  function effDetail(e){ const f = (v,k)=> ['dsc','rf','c','fe'].includes(k) ? (v*100).toFixed(1)+'%' : k.startsWith('O') ? intFmt(v)+' '+tx('u.orders') : money(v); return f(e.from,e.key)+' → '+f(e.to,e.key); }
   function renderBridge(a, p, lk){
     const svg = document.getElementById('bridgeChart'); if(!svg) return null;
     const br = profitBridge(a, p);
     const note = document.getElementById('bridgeNote'), cap = document.getElementById('bridgeCaption');
-    if(!br){ svg.innerHTML = ''; svg.setAttribute('height', 0); if(note) note.textContent = 'Chưa có kỳ trước để so'; if(cap) cap.textContent = ''; return null; }
+    if(!br){ svg.innerHTML = ''; svg.setAttribute('height', 0); if(note) note.textContent = tx('u.noPrior'); if(cap) cap.textContent = ''; return null; }
     const d = br.end - br.start;
-    if(note) note.textContent = `CM3 ${money(br.start,{compact:true})} (${lk}) → ${money(br.end,{compact:true})} (kỳ này): ${d>=0?'+':'−'}${money(Math.abs(d),{compact:true})}`;
+    if(note) note.textContent = `CM3 ${money(br.start,{compact:true})} (${lk}) → ${money(br.end,{compact:true})} (${tx('u.thisPeriod')}): ${d>=0?'+':'−'}${money(Math.abs(d),{compact:true})}`;
     const W = Math.max(560, svg.clientWidth || svg.parentNode.clientWidth || 760), rowH = 26, padL = 230, padR = 96, padT = 8;
     const H = padT + rowH*br.effects.length + 8;
     const maxAbs = Math.max(1, ...br.effects.map(e=>Math.abs(e.value)));
@@ -1932,7 +2331,7 @@
       g += `<text x="${W-padR+8}" y="${y+rowH/2+4}" font-size="10.5" fill="${muted}">${effDetail(e)}</text>`;
     });
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('height', H); svg.innerHTML = g;
-    if(cap) cap.textContent = 'Các hiệu ứng cộng đúng bằng thay đổi CM3. Tính riêng từng kênh rồi cộng lại: số đơn mỗi kênh (gồm cả dịch chuyển giữa các kênh) ở các dòng đầu, các tỷ lệ bên dưới là hiệu ứng tổng của mọi kênh. Hiệu ứng số đơn tính theo biên đóng góp trước marketing của kênh đó; chi marketing (không tính theo đơn) tách riêng ở dòng cuối. Cột phải: giá trị kỳ trước → kỳ này ở mức toàn công ty.';
+    if(cap) cap.textContent = tv('The effects add up exactly to the change in CM3. Computed per channel and then summed: orders per channel (including shifts between channels) in the first rows, the rates below are the total effect across all channels. The order effect uses that channel\'s contribution margin before marketing; marketing spend (not per order) sits on its own in the last row. Right column: value in the prior period → this period at company level.', 'Các hiệu ứng cộng đúng bằng thay đổi CM3. Tính riêng từng kênh rồi cộng lại: số đơn mỗi kênh (gồm cả dịch chuyển giữa các kênh) ở các dòng đầu, các tỷ lệ bên dưới là hiệu ứng tổng của mọi kênh. Hiệu ứng số đơn tính theo biên đóng góp trước marketing của kênh đó; chi marketing (không tính theo đơn) tách riêng ở dòng cuối. Cột phải: giá trị kỳ trước → kỳ này ở mức toàn công ty.');
     return br;
   }
   // ---- V7: "in brief" block: a two-sentence summary, the top 3 profit drivers, the top 3 things to decide ----
@@ -1943,44 +2342,47 @@
     const top = bridge ? [...bridge.effects].sort(byAbs)[0] : null;
     const crit = alerts.filter(i=>i.lvl!=='ok' && i.stake>0).sort((x,y)=>y.stake-x.stake)[0];
     const cmPct = a.netRevenue>0 ? (a.contributionProfit/a.netRevenue*100).toFixed(1)+'%' : '—';
-    sEl.innerHTML = `<b>CM3 ${money(a.contributionProfit,{compact:true})}</b> (${cmPct} doanh thu thuần)` + (cmD!==null && isFinite(cmD) ? ', '+(cmD>=0?'tăng ':'giảm ')+Math.abs(cmD).toFixed(0)+'% so '+lk : '') + `. Doanh thu thuần ${money(a.netRevenue,{compact:true})}` + (nrD!==null && isFinite(nrD) ? ' ('+(nrD>=0?'+':'')+nrD.toFixed(0)+'%)' : '') + `, MER ${merNow.value!==null ? merNow.value.toFixed(2)+'x' : '—'}, EBITDA ${money(a.netProfit,{compact:true})}.` + (top ? ` Yếu tố đổi lớn nhất: ${top.label} ${top.value>=0?'+':'−'}${money(Math.abs(top.value),{compact:true})}.` : '') + (crit ? ` Rủi ro lớn nhất: ${crit.name} — ${money(crit.stake,{compact:true})}.` : '');
-    setNote('briefSummarySub', (document.getElementById('rangeLbl')||{}).textContent + (a.productCostEst ? ' · giá vốn còn ước tính' : '') + (merNow.days<merNow.of ? ' · Amazon Ads thiếu '+(merNow.of-merNow.days)+' ngày' : ''));
+    sEl.innerHTML = `<b>CM3 ${money(a.contributionProfit,{compact:true})}</b> (${cmPct} ${tv('of net revenue','doanh thu thuần')})` + (cmD!==null && isFinite(cmD) ? ', '+(cmD>=0?tv('up ','tăng '):tv('down ','giảm '))+Math.abs(cmD).toFixed(0)+'% '+tx('u.vs')+' '+lk : '') + `. ${tv('Net revenue','Doanh thu thuần')} ${money(a.netRevenue,{compact:true})}` + (nrD!==null && isFinite(nrD) ? ' ('+(nrD>=0?'+':'')+nrD.toFixed(0)+'%)' : '') + `, MER ${merNow.value!==null ? merNow.value.toFixed(2)+'x' : '—'}, EBITDA ${money(a.netProfit,{compact:true})}.` + (top ? ` ${tv('Biggest driver','Yếu tố đổi lớn nhất')}: ${top.label} ${top.value>=0?'+':'−'}${money(Math.abs(top.value),{compact:true})}.` : '') + (crit ? ` ${tv('Biggest risk','Rủi ro lớn nhất')}: ${crit.name} — ${money(crit.stake,{compact:true})}.` : '');
+    setNote('briefSummarySub', (document.getElementById('rangeLbl')||{}).textContent + (a.productCostEst ? tv(' · product cost still estimated',' · giá vốn còn ước tính') : '') + (merNow.days<merNow.of ? tv(' · Amazon Ads missing ',' · Amazon Ads thiếu ')+nDays(merNow.of-merNow.days) : ''));
     const mv = document.getElementById('briefMoved');
     if(bridge){
       const eff = [...bridge.effects].sort(byAbs).slice(0,3);
       mv.innerHTML = eff.map(e=>`<div class="r"><span class="n">${e.label}<small>${effDetail(e)}</small></span><span class="v ${e.value>=0?'d-up':'d-down'}">${e.value>=0?'+':'−'}${money(Math.abs(e.value),{compact:true})}</span></div>`).join('');
       const dd = bridge.end-bridge.start;
-      setNote('briefMovedSub', 'ΔCM3 '+(dd>=0?'+':'−')+money(Math.abs(dd),{compact:true})+' so '+lk+' · đủ các yếu tố ở thẻ "Cầu lợi nhuận" bên dưới');
-    } else { mv.innerHTML = '<div class="r"><span class="n">Chưa có kỳ trước để so</span></div>'; setNote('briefMovedSub', ''); }
+      setNote('briefMovedSub', 'ΔCM3 '+(dd>=0?'+':'−')+money(Math.abs(dd),{compact:true})+' '+tx('u.vs')+' '+lk+tv(' · every effect in the "Profit bridge" card below',' · đủ các yếu tố ở thẻ "Cầu lợi nhuận" bên dưới'));
+    } else { mv.innerHTML = '<div class="r"><span class="n">'+tx('u.noPrior')+'</span></div>'; setNote('briefMovedSub', ''); }
+    const rk = document.getElementById('briefRisks');
+    const risks = alerts.filter(i=>i.lvl!=='ok' && i.stake>0).sort((x,y)=>(y.stake||0)-(x.stake||0)).slice(0,3);
+    if(rk){ rk.innerHTML = risks.length ? risks.map(i=>`<div class="r"><span class="n">${i.name}</span><span class="v">${money(i.stake,{compact:true})}</span></div>`).join('') : `<div class="r"><span class="n">${tv('No money at risk this period','Không có rủi ro tiền trong kỳ')}</span></div>`; setNote('briefRisksSub', risks.length ? tv('$ at stake = what the threshold breach costs this period','$ đặt cược = phần vượt ngưỡng tính ra tiền trong kỳ') : ''); }
     const dc = document.getElementById('briefDecide');
-    const acts = alerts.filter(i=>i.lvl!=='ok').sort((x,y)=>(y.stake||0)-(x.stake||0) || (x.lvl==='crit'?-1:1)).slice(0,3);
-    dc.innerHTML = acts.length ? acts.map(i=>`<div class="r"><span class="n">${i.name}<small>${i.action||i.note}</small></span><span class="v">${i.stake>0 ? money(i.stake,{compact:true}) : ''}</span></div>`).join('') : '<div class="r"><span class="n">Không có việc gấp</span></div>';
-    setNote('briefDecideSub', acts.length ? 'Xếp theo số tiền đang bị ảnh hưởng · đủ danh sách ở thẻ "Cảnh báo"' : '');
+    const acts = alerts.filter(i=>i.lvl!=='ok' && i.action).sort((x,y)=>(y.stake||0)-(x.stake||0) || (x.lvl==='crit'?-1:1)).slice(0,3);
+    dc.innerHTML = acts.length ? acts.map(i=>`<div class="r"><span class="n">${i.action}<small>${i.name}</small></span><span class="v">${i.stake>0 ? money(i.stake,{compact:true}) : ''}</span></div>`).join('') : '<div class="r"><span class="n">'+tv('Nothing urgent','Không có việc gấp')+'</span></div>';
+    setNote('briefDecideSub', acts.length ? tv('Sorted by the money affected · full list in the "Alerts" card','Xếp theo số tiền đang bị ảnh hưởng · đủ danh sách ở thẻ "Cảnh báo"') : '');
   }
   // ---- V7: unit economics (P&L page): what one average order earns, per channel ----
   function renderUnitEconomics(){
     const t = document.getElementById('ueTable'); if(!t) return;
     const rows = currentRows(), a = aggregate(rows), ce = channelEcon(a);
-    const cols = [['total','Tổng']].concat(CH_KEYS.filter(k=>ce[k].orders>0).map(k=>[k, CH_LABEL[k]]));
+    const cols = [['total',tx('u.total')]].concat(CH_KEYS.filter(k=>ce[k].orders>0).map(k=>[k, CH_LABEL[k]]));
     const tot = {net:a.netRevenue, orders:a.totalOrders, cogs:a.productCost, fulfil:a.packaging+a.fulfillment+a.shipmonkPickPack+a.postage+a.shipmonkInvoiceExtras, fees:a.feesTotal, adsAll:a.marketingTotal, cm:a.contributionProfit};
     const get = k => k==='total' ? tot : {net:ce[k].net, orders:ce[k].orders, cogs:ce[k].cogs, fulfil:ce[k].fulfil, fees:ce[k].fees, adsAll:ce[k].adsAll, cm:ce[k].cm};
     const per = (v,o) => o>0 ? money(v/o) : '—';
     const lines = [
-      ['Doanh thu thuần / đơn', x=>per(x.net,x.orders)],
-      ['Giá vốn sản phẩm / đơn', x=>per(-x.cogs,x.orders)],
-      ['Fulfillment / đơn', x=>per(-x.fulfil,x.orders)],
-      ['Phí sàn & thanh toán / đơn', x=>per(-x.fees,x.orders)],
-      ['= Kiếm được / đơn trước marketing', x=>per(x.net-x.cogs-x.fulfil-x.fees,x.orders)],
-      ['Ads + affiliate / đơn', x=>per(-x.adsAll,x.orders)],
-      ['= CM3 / đơn', x=>per(x.cm,x.orders)],
-      ['Giá sàn (doanh thu thuần/đơn để CM3 = 0)', x=>per(x.net-x.cm,x.orders)],
-      ['Chi phí 1 lần trả hàng (CM3 mất + fulfillment đã chi)', x=>per(Math.max(0, x.cm+x.fulfil),x.orders)],
+      [tv('Net revenue / order','Doanh thu thuần / đơn'), x=>per(x.net,x.orders)],
+      [tv('Product cost / order','Giá vốn sản phẩm / đơn'), x=>per(-x.cogs,x.orders)],
+      [tv('Fulfillment / order','Fulfillment / đơn'), x=>per(-x.fulfil,x.orders)],
+      [tv('Marketplace & payment fees / order','Phí sàn & thanh toán / đơn'), x=>per(-x.fees,x.orders)],
+      [tv('= Earned / order before marketing','= Kiếm được / đơn trước marketing'), x=>per(x.net-x.cogs-x.fulfil-x.fees,x.orders)],
+      [tv('Ads + affiliate / order','Ads + affiliate / đơn'), x=>per(-x.adsAll,x.orders)],
+      [tv('= CM3 / order','= CM3 / đơn'), x=>per(x.cm,x.orders)],
+      [tv('Floor price (net revenue/order for CM3 = 0)','Giá sàn (doanh thu thuần/đơn để CM3 = 0)'), x=>per(x.net-x.cm,x.orders)],
+      [tv('Cost of one return (CM3 lost + fulfillment already spent)','Chi phí 1 lần trả hàng (CM3 mất + fulfillment đã chi)'), x=>per(Math.max(0, x.cm+x.fulfil),x.orders)],
     ];
-    t.innerHTML = '<thead><tr><th>Một đơn trung bình</th>'+cols.map(c=>`<th class="num">${c[1]}</th>`).join('')+'</tr></thead><tbody>'
+    t.innerHTML = '<thead><tr><th>'+tv('One average order','Một đơn trung bình')+'</th>'+cols.map(c=>`<th class="num">${c[1]}</th>`).join('')+'</tr></thead><tbody>'
       + lines.map(l=>`<tr${l[0].startsWith('=')?' class="sub"':''}><td>${l[0]}</td>`+cols.map(c=>`<td class="num">${l[1](get(c[0]))}</td>`).join('')+'</tr>').join('')+'</tbody>';
     const be = breakEvenMer(a), mer = merComplete(rows), head = (be && mer.value) ? mer.value/be : null;
-    setNote('ueNote', `Tính trên ${intFmt(a.totalOrders)} đơn kỳ đang xem` + (head ? ` · MER ${mer.value.toFixed(2)}x so hoà vốn ${be.toFixed(2)}x → quảng cáo được phép kém đi ${head.toFixed(2)} lần nữa mới lỗ` : ''));
-    setNote('ueCaption', 'Giá sàn = doanh thu thuần mỗi đơn cần có để CM3 = 0 với cơ cấu chi phí hiện tại. Chi phí 1 lần trả hàng = CM3 mất + fulfillment đã chi, chưa gồm cước trả về. Giá vốn theo ' + (a.productCostHasActual ? 'sổ kho kế toán' : 'ước tính '+(a.cogsEstRate*100).toFixed(0)+'%') + '. Amazon tính theo đơn, không theo sản phẩm.');
+    setNote('ueNote', tv(`Based on ${intFmt(a.totalOrders)} orders in the selected period`, `Tính trên ${intFmt(a.totalOrders)} đơn kỳ đang xem`) + (head ? tv(` · MER ${mer.value.toFixed(2)}x vs break-even ${be.toFixed(2)}x → ads can get ${head.toFixed(2)}× worse before losing money`, ` · MER ${mer.value.toFixed(2)}x so hoà vốn ${be.toFixed(2)}x → quảng cáo được phép kém đi ${head.toFixed(2)} lần nữa mới lỗ`) : ''));
+    setNote('ueCaption', tv('Floor price = net revenue per order needed for CM3 = 0 with the current cost structure. Cost of one return = CM3 lost + fulfillment already spent, excluding return postage. Product cost from ', 'Giá sàn = doanh thu thuần mỗi đơn cần có để CM3 = 0 với cơ cấu chi phí hiện tại. Chi phí 1 lần trả hàng = CM3 mất + fulfillment đã chi, chưa gồm cước trả về. Giá vốn theo ') + (a.productCostHasActual ? tv('the accounting inventory ledger','sổ kho kế toán') : tv('an estimate of ','ước tính ')+(a.cogsEstRate*100).toFixed(0)+'%') + tv('. Amazon is counted per order, not per product.', '. Amazon tính theo đơn, không theo sản phẩm.'));
   }
   // ---- V7: one-line finding under a few card titles ----
   // ---------- V8: sensitivity (±10% one lever at a time) + what-if scenario ----------
@@ -1990,7 +2392,7 @@
     const a = aggregate(currentRows());
     const net = a.netRevenue, O = a.totalOrders;
     const box = document.getElementById('scenBox'), out = document.getElementById('scenOut');
-    if(net<=0 || O<=0){ t.innerHTML=''; box.innerHTML=''; out.innerHTML=''; setNote('sensNote','Chưa có doanh thu trong kỳ'); setNote('sensCaption',''); return; }
+    if(net<=0 || O<=0){ t.innerHTML=''; box.innerHTML=''; out.innerHTML=''; setNote('sensNote',tv('No revenue in this period','Chưa có doanh thu trong kỳ')); setNote('sensCaption',''); return; }
     const feeRate = a.feesTotal/net;                                  // marketplace + payment fees move with revenue
     const aff = a.marketingTotal - a.merSpend, affRate = aff/net;      // affiliate / creator commissions move with revenue
     const fulfil = a.fulfillment + a.shipmonkPickPack + a.postage + a.packaging + a.shipmonkInvoiceExtras;
@@ -1999,23 +2401,23 @@
     const mer = a.merSpend>0 ? net/a.merSpend : 0;
     const d = 0.10, keepRate = 1 - feeRate - affRate;
     const levers = [
-      {name:'Số đơn hàng', now: intFmt(O)+' đơn', how:'giá, giá vốn/đơn, fulfillment/đơn, phí % giữ nguyên; chi quảng cáo không đổi', dn: -d*cmVar, up: d*cmVar},
-      {name:'Giá bán gộp mỗi đơn', now: money(a.grossSales/O), how:'số đơn giữ nguyên; giảm giá, hoàn tiền, phí sàn/thanh toán, hoa hồng theo % không đổi', dn: -d*net*keepRate, up: d*net*keepRate},
-      {name:'Tỷ lệ giảm giá', now: pct1(a.discount, a.grossSales)+' doanh thu gộp', how:'±10% tương đối: '+pct1(a.discount*0.9, a.grossSales)+' ↔ '+pct1(a.discount*1.1, a.grossSales), dn: d*a.discount*keepRate, up: -d*a.discount*keepRate},
-      {name:'Tỷ lệ hoàn tiền', now: pct1(a.refundsTotal, a.grossSales)+' doanh thu gộp', how:'±10% tương đối: '+pct1(a.refundsTotal*0.9, a.grossSales)+' ↔ '+pct1(a.refundsTotal*1.1, a.grossSales), dn: d*a.refundsTotal*keepRate, up: -d*a.refundsTotal*keepRate},
-      {name:'Giá vốn sản phẩm', now: money(a.productCost,{compact:true})+' · '+pct1(a.productCost, net)+' DT thuần', how: a.productCostHasActual ? 'theo sổ kho (phần còn lại ước tính)' : (a.productCostEst ? 'đang ước '+(a.cogsEstRate*100).toFixed(0)+'% — điền cogs_monthly.json để có số thật' : 'chưa có giá vốn'), dn: d*a.productCost, up: -d*a.productCost},
-      {name:'Fulfillment mỗi đơn', now: money(fulfil/O), how:'FBA + ShipMonk pick/pack, cước, đóng gói — '+money(fulfil,{compact:true})+' cả kỳ', dn: d*fulfil, up: -d*fulfil},
-      {name:'Chi quảng cáo — doanh thu giữ nguyên', now: money(a.merSpend,{compact:true}), how:'cắt / thêm ngân sách mà doanh thu không đổi (sàn dưới và trần trên của tác động)', dn: d*a.merSpend, up: -d*a.merSpend},
-      {name:'Chi quảng cáo — doanh thu đổi theo MER '+(mer ? mer.toFixed(2)+'x' : '—'), now: money(a.merSpend,{compact:true}), how: mer ? 'mỗi $1 quảng cáo kéo theo '+money(mer)+' doanh thu thuần, giữ lại '+money(mer*cmVarRate)+' trước quảng cáo' : 'chưa có chi quảng cáo', dn: -d*a.merSpend*(mer*cmVarRate-1), up: d*a.merSpend*(mer*cmVarRate-1)},
+      {name:tv('Number of orders','Số đơn hàng'), now: intFmt(O)+' '+tx('u.orders'), how:tv('price, product cost/order, fulfillment/order, fee % unchanged; ad spend unchanged','giá, giá vốn/đơn, fulfillment/đơn, phí % giữ nguyên; chi quảng cáo không đổi'), dn: -d*cmVar, up: d*cmVar},
+      {name:tv('Gross price per order','Giá bán gộp mỗi đơn'), now: money(a.grossSales/O), how:tv('orders unchanged; discounts, refunds, marketplace/payment fees, commissions keep their %','số đơn giữ nguyên; giảm giá, hoàn tiền, phí sàn/thanh toán, hoa hồng theo % không đổi'), dn: -d*net*keepRate, up: d*net*keepRate},
+      {name:tv('Discount rate','Tỷ lệ giảm giá'), now: pct1(a.discount, a.grossSales)+tv(' of gross sales',' doanh thu gộp'), how:tv('±10% relative: ','±10% tương đối: ')+pct1(a.discount*0.9, a.grossSales)+' ↔ '+pct1(a.discount*1.1, a.grossSales), dn: d*a.discount*keepRate, up: -d*a.discount*keepRate},
+      {name:tv('Refund rate','Tỷ lệ hoàn tiền'), now: pct1(a.refundsTotal, a.grossSales)+tv(' of gross sales',' doanh thu gộp'), how:tv('±10% relative: ','±10% tương đối: ')+pct1(a.refundsTotal*0.9, a.grossSales)+' ↔ '+pct1(a.refundsTotal*1.1, a.grossSales), dn: d*a.refundsTotal*keepRate, up: -d*a.refundsTotal*keepRate},
+      {name:tv('Product cost','Giá vốn sản phẩm'), now: money(a.productCost,{compact:true})+' · '+pct1(a.productCost, net)+' '+tv('of net revenue','DT thuần'), how: a.productCostHasActual ? tv('from the inventory ledger (the rest estimated)','theo sổ kho (phần còn lại ước tính)') : (a.productCostEst ? tv('estimated at ','đang ước ')+(a.cogsEstRate*100).toFixed(0)+tv('% — fill in cogs_monthly.json for actuals','% — điền cogs_monthly.json để có số thật') : tv('no product cost yet','chưa có giá vốn')), dn: d*a.productCost, up: -d*a.productCost},
+      {name:tv('Fulfillment per order','Fulfillment mỗi đơn'), now: money(fulfil/O), how:tv('FBA + ShipMonk pick/pack, postage, packaging — ','FBA + ShipMonk pick/pack, cước, đóng gói — ')+money(fulfil,{compact:true})+tv(' for the period',' cả kỳ'), dn: d*fulfil, up: -d*fulfil},
+      {name:tv('Ad spend — revenue unchanged','Chi quảng cáo — doanh thu giữ nguyên'), now: money(a.merSpend,{compact:true}), how:tv('cut / add budget with revenue unchanged (lower and upper bound of the effect)','cắt / thêm ngân sách mà doanh thu không đổi (sàn dưới và trần trên của tác động)'), dn: d*a.merSpend, up: -d*a.merSpend},
+      {name:tv('Ad spend — revenue follows MER ','Chi quảng cáo — doanh thu đổi theo MER ')+(mer ? mer.toFixed(2)+'x' : '—'), now: money(a.merSpend,{compact:true}), how: mer ? tv('every $1 of ads brings ','mỗi $1 quảng cáo kéo theo ')+money(mer)+tv(' net revenue, keeping ',' doanh thu thuần, giữ lại ')+money(mer*cmVarRate)+tv(' before ads',' trước quảng cáo') : tv('no ad spend yet','chưa có chi quảng cáo'), dn: -d*a.merSpend*(mer*cmVarRate-1), up: d*a.merSpend*(mer*cmVarRate-1)},
     ].sort((x,y)=> Math.max(Math.abs(y.dn),Math.abs(y.up)) - Math.max(Math.abs(x.dn),Math.abs(x.up)));
     const cell = v => `<td class="num ${v>=0.5?'d-up':(v<=-0.5?'d-down':'d-flat')}">${v>=0?'+':'−'}${money(Math.abs(v),{compact:true})}</td>`;
-    t.innerHTML = '<thead><tr><th>Yếu tố</th><th>Hiện tại</th><th class="num">−10%</th><th class="num">+10%</th><th>Giả định</th></tr></thead><tbody>' +
+    t.innerHTML = '<thead><tr><th>'+tv('Lever','Yếu tố')+'</th><th>'+tv('Current','Hiện tại')+'</th><th class="num">−10%</th><th class="num">+10%</th><th>'+tv('Assumption','Giả định')+'</th></tr></thead><tbody>' +
       levers.map(l=>`<tr><td class="name">${l.name}</td><td style="font-variant-numeric:tabular-nums;white-space:nowrap;">${l.now}</td>${cell(l.dn)}${cell(l.up)}<td style="color:var(--ink-muted);font-size:11.5px;">${l.how}</td></tr>`).join('') + '</tbody>';
-    setNote('sensNote', 'CM3 kỳ này '+money(a.contributionProfit,{compact:true})+' · EBITDA '+money(a.netProfit,{compact:true})+' · đòn bẩy lớn nhất: '+levers[0].name.toLowerCase());
+    setNote('sensNote', tv('CM3 this period ','CM3 kỳ này ')+money(a.contributionProfit,{compact:true})+' · EBITDA '+money(a.netProfit,{compact:true})+tv(' · biggest lever: ',' · đòn bẩy lớn nhất: ')+levers[0].name.toLowerCase());
     // what-if: the same linear model with every lever at once
-    const sl = [['orders','Số đơn'],['price','Giá bán gộp/đơn'],['discount','Tỷ lệ giảm giá'],['refund','Tỷ lệ hoàn tiền'],['cogs','Giá vốn/đơn'],['fulfil','Fulfillment/đơn'],['ads','Chi quảng cáo']];
+    const sl = [['orders',tv('Orders','Số đơn')],['price',tv('Gross price/order','Giá bán gộp/đơn')],['discount',tv('Discount rate','Tỷ lệ giảm giá')],['refund',tv('Refund rate','Tỷ lệ hoàn tiền')],['cogs',tv('Product cost/order','Giá vốn/đơn')],['fulfil',tv('Fulfillment/order','Fulfillment/đơn')],['ads',tv('Ad spend','Chi quảng cáo')]];
     box.innerHTML = sl.map(([k,l])=>`<label><span>${l} <b id="scv_${k}">${SCEN[k]>0?'+':''}${SCEN[k]}%</b></span><input type="range" min="-30" max="30" step="1" value="${SCEN[k]}" id="sc_${k}"></label>`).join('')
-      + `<label class="chk"><input type="checkbox" id="sc_adsMer" ${SCEN.adsMer?'checked':''}> Doanh thu đổi theo MER khi đổi quảng cáo</label><label class="chk"><button class="btn mini" type="button" id="sc_reset" style="margin-left:0;">Đặt lại</button></label>`;
+      + `<label class="chk"><input type="checkbox" id="sc_adsMer" ${SCEN.adsMer?'checked':''}> ${tv('Revenue follows MER when ads change','Doanh thu đổi theo MER khi đổi quảng cáo')}</label><label class="chk"><button class="btn mini" type="button" id="sc_reset" style="margin-left:0;">${tv('Reset','Đặt lại')}</button></label>`;
     const base = {net, cm3: a.contributionProfit, ebitda: a.netProfit, mer: mer||null, orders: O};
     const scenario = () => {
       const o = 1+SCEN.orders/100, pr = 1+SCEN.price/100, dd = 1+SCEN.discount/100, rr = 1+SCEN.refund/100, cc = 1+SCEN.cogs/100, ff = 1+SCEN.fulfil/100, ad = 1+SCEN.ads/100;
@@ -2028,28 +2430,28 @@
     };
     const paint = () => {
       const r = scenario();
-      const dv = (x,y,m) => y===null||x===null ? '' : (Math.abs(x-y) < (m ? 0.5 : 0.005) ? '<div class="d">= hiện tại</div>' : `<div class="d">${x-y>=0?'+':'−'}${m ? money(Math.abs(x-y),{compact:true}) : Math.abs(x-y).toFixed(2)+'x'} so hiện tại</div>`);
+      const dv = (x,y,m) => y===null||x===null ? '' : (Math.abs(x-y) < (m ? 0.5 : 0.005) ? '<div class="d">'+tv('= current','= hiện tại')+'</div>' : `<div class="d">${x-y>=0?'+':'−'}${m ? money(Math.abs(x-y),{compact:true}) : Math.abs(x-y).toFixed(2)+'x'} ${tv('vs current','so hiện tại')}</div>`);
       out.innerHTML = [
-        {l:'Doanh thu thuần', v: money(r.net,{compact:true}), d: dv(r.net, base.net, true)},
+        {l:tv('Net revenue','Doanh thu thuần'), v: money(r.net,{compact:true}), d: dv(r.net, base.net, true)},
         {l:'CM3', v: money(r.cm3,{compact:true}), d: dv(r.cm3, base.cm3, true)},
         {l:'EBITDA', v: money(r.ebitda,{compact:true}), d: dv(r.ebitda, base.ebitda, true)},
         {l:'MER', v: r.mer ? r.mer.toFixed(2)+'x' : '—', d: dv(r.mer, base.mer, false)},
-        {l:'Số đơn', v: intFmt(r.orders), d: dv(r.orders, base.orders, true).replace(/\$/g,'')},
+        {l:tv('Orders','Số đơn'), v: intFmt(r.orders), d: dv(r.orders, base.orders, true).replace(/\$/g,'')},
       ].map(x=>`<div class="so"><div class="l">${x.l}</div><div class="v">${x.v}</div>${x.d}</div>`).join('');
     };
     sl.forEach(([k])=>{ const el = document.getElementById('sc_'+k); el.addEventListener('input', ()=>{ SCEN[k] = parseInt(el.value,10)||0; document.getElementById('scv_'+k).textContent = (SCEN[k]>0?'+':'')+SCEN[k]+'%'; paint(); }); });
     document.getElementById('sc_adsMer').addEventListener('change', e=>{ SCEN.adsMer = e.target.checked; paint(); });
     document.getElementById('sc_reset').addEventListener('click', ()=>{ sl.forEach(([k])=>{ SCEN[k] = 0; }); SCEN.adsMer = true; renderSensitivity(); });
     paint();
-    setNote('sensCaption', 'Mỗi dòng đổi một yếu tố, các yếu tố khác giữ nguyên; mô hình tuyến tính trên số kỳ đang xem (đủ đúng cho ±10–20%, không tính co giãn cầu theo giá). Kéo thanh để thử nhiều yếu tố cùng lúc — số đơn nhân với mức đổi quảng cáo khi bật "doanh thu đổi theo MER".');
+    setNote('sensCaption', tv('Each row changes one lever with the others held constant; a linear model on the selected period\'s numbers (good enough for ±10–20%, no price elasticity of demand). Drag the sliders to try several levers at once — orders are multiplied by the ad-spend change when "revenue follows MER" is on.', 'Mỗi dòng đổi một yếu tố, các yếu tố khác giữ nguyên; mô hình tuyến tính trên số kỳ đang xem (đủ đúng cho ±10–20%, không tính co giãn cầu theo giá). Kéo thanh để thử nhiều yếu tố cùng lúc — số đơn nhân với mức đổi quảng cáo khi bật "doanh thu đổi theo MER".'));
   }
   function renderFindings(){
     const rows = currentRows(), a = aggregate(rows), p = aggOrNull(prevLikeRows()), lk = likeLabel();
     const mer = merComplete(rows), be = breakEvenMer(a);
     let worst = null; rows.filter(r=>adPendingKeys(r).length===0).forEach(r=>{ const m = merOf([r]); if(m.spend>0 && (worst===null || m.mer<worst.mer)) worst = {mer:m.mer, iso:r.iso}; });
-    setNote('roasFinding', mer.value!==null ? `MER ${mer.value.toFixed(2)}x` + (be ? (mer.value>=be ? ', trên' : ', DƯỚI')+' hoà vốn '+be.toFixed(2)+'x' : '') + (worst && rows.length>1 ? ` · ngày thấp nhất ${worst.iso.slice(8,10)}/${worst.iso.slice(5,7)}: ${worst.mer.toFixed(2)}x` : '') : 'Chưa có ngày nào đủ số mọi nguồn quảng cáo');
+    setNote('roasFinding', mer.value!==null ? `MER ${mer.value.toFixed(2)}x` + (be ? (mer.value>=be ? tv(', above',', trên') : tv(', BELOW',', DƯỚI'))+tv(' break-even ',' hoà vốn ')+be.toFixed(2)+'x' : '') + (worst && rows.length>1 ? ` · ${tv('lowest day','ngày thấp nhất')} ${worst.iso.slice(8,10)}/${worst.iso.slice(5,7)}: ${worst.mer.toFixed(2)}x` : '') : tv('No day yet with every ad source reported','Chưa có ngày nào đủ số mọi nguồn quảng cáo'));
     setNote('stmtFinding', `CM3 ${money(a.contributionProfit,{compact:true})} (${a.netRevenue>0?(a.contributionProfit/a.netRevenue*100).toFixed(1):'—'}%) · EBITDA ${money(a.netProfit,{compact:true})}` + (p ? ` · CM3 ${lk}: ${money(p.contributionProfit,{compact:true})}` : ''));
-    setNote('opexFinding', `OpEx ${money(a.fixedTotal,{compact:true})} = ${a.netRevenue>0?(a.fixedTotal/a.netRevenue*100).toFixed(1):'—'}% doanh thu thuần · G&A ${money(a.gaTotal,{compact:true})} · kho bãi ${money(a.inventoryHolding+a.logisticsTotal,{compact:true})}`);
+    setNote('opexFinding', `OpEx ${money(a.fixedTotal,{compact:true})} = ${a.netRevenue>0?(a.fixedTotal/a.netRevenue*100).toFixed(1):'—'}% ${tv('of net revenue','doanh thu thuần')} · G&A ${money(a.gaTotal,{compact:true})} · ${tv('warehousing','kho bãi')} ${money(a.inventoryHolding+a.logisticsTotal,{compact:true})}`);
   }
   // ---- V7: CSV export of any rendered table ----
   function exportTable(tableId, name){
@@ -2062,6 +2464,199 @@
   }
   document.addEventListener('click', (e)=>{ const b = e.target.closest('[data-export]'); if(b){ e.preventDefault(); exportTable(b.dataset.export, b.dataset.name||b.dataset.export); } });
 
+  // ---------- V10: overview building blocks — daily series, sparklines, revenue chart, channel donut, product lines, stock risk ----------
+  let _dailyCache = {key:null, list:null};
+  function dailyAgg(rows){
+    const key = (rows[0] ? rows[0].iso : '')+'|'+rows.length+'|'+_maskVer;
+    if(_dailyCache.key===key) return _dailyCache.list;
+    const list = rows.map(r=>aggregate([r]));
+    _dailyCache = {key, list};
+    return list;
+  }
+  function sparkSvg(values, opts){
+    opts = opts||{};
+    const vs = values.filter(v=> v!==null && v!==undefined && isFinite(v));
+    if(vs.length<2) return '';
+    const W = 160, H = 34, pad = 2;
+    let min = Math.min(...vs), max = Math.max(...vs); if(max===min){ max = min + 1; }
+    if(max-min < Math.abs(max)*0.02) { min -= Math.abs(max)*0.01; max += Math.abs(max)*0.01; }   // flat series: keep a visible mid line
+    const n = values.length, X = i => pad + i/(n-1)*(W-2*pad), Y = v => pad + (1 - (v-min)/(max-min))*(H-2*pad);
+    const pts = []; values.forEach((v,i)=>{ if(v===null || v===undefined || !isFinite(v)) return; pts.push([X(i), Y(v)]); });
+    const line = pts.map((p,i)=> (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+    const base = Y(Math.max(min, 0));
+    const area = line + ' L'+pts[pts.length-1][0].toFixed(1)+' '+base.toFixed(1)+' L'+pts[0][0].toFixed(1)+' '+base.toFixed(1)+' Z';
+    const c = opts.color || 'var(--accent)';
+    const last = pts[pts.length-1];
+    return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><path d="${area}" fill="${c}" fill-opacity=".07"/><path d="${line}" fill="none" stroke="${c}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/><circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="2.2" fill="${c}"/></svg>`;
+  }
+  const pillOf = (d, lowerIsBetter) => { if(d===null || d===undefined || !isFinite(d)) return ''; const good = lowerIsBetter ? d<=0 : d>=0; const cls = Math.abs(d)<0.05 ? 'flat' : (good ? 'up' : 'down'); const arrow = Math.abs(d)<0.05 ? '' : (d>=0 ? '↑ ' : '↓ '); return `<span class="pill-d ${cls}">${arrow}${Math.abs(d).toFixed(1)}%</span>`; };
+
+  // ---- revenue performance: net revenue + CM3 on one $ axis, daily / weekly / monthly buckets of the period ----
+  const REV_STATE = {g:'day'};
+  function bucketRows(rows, g){
+    if(g==='day') return rows.map(r=>({label: r.iso, rows:[r]}));
+    const map = {}, order = [];
+    rows.forEach(r=>{ let k; if(g==='month') k = r.iso.slice(0,7); else { const dow = (r.date.getDay()+6)%7; const mon = new Date(r.date.getFullYear(), r.date.getMonth(), r.date.getDate()-dow); k = isoDate(mon); } if(!map[k]){ map[k] = []; order.push(k); } map[k].push(r); });
+    return order.map(k=>({label:k, rows:map[k]}));
+  }
+  function renderRev(){
+    const svg = document.getElementById('revChart'); if(!svg) return;
+    const rows = currentRows();
+    const seg = document.getElementById('revSeg');
+    if(seg && !seg._wired){ seg._wired = true; seg.addEventListener('click', e=>{ const b = e.target.closest('button'); if(!b) return; REV_STATE.g = b.dataset.g; renderRev(); }); }
+    if(seg) [...seg.querySelectorAll('button')].forEach(b=>b.classList.toggle('active', b.dataset.g===REV_STATE.g));
+    const g = rows.length<14 ? 'day' : REV_STATE.g;
+    const buckets = bucketRows(rows, g);
+    const daily = g==='day' ? dailyAgg(rows) : null;
+    const series = buckets.map((b,i)=>{ const x = daily ? daily[i] : aggregate(b.rows); return {label: b.label, n: b.rows.length, net: x.netRevenue, cm: x.contributionProfit, orders: x.totalOrders, ads: x.merSpend}; });
+    const W = Math.max(320, svg.clientWidth || svg.parentNode.clientWidth || 800), H = 240, padL = 52, padR = 14, padT = 18, padB = 26;
+    const vals = series.map(s=>s.net).concat(series.map(s=>s.cm));
+    const maxY = Math.max(1, ...vals)*1.1, minY = Math.min(0, ...vals)*1.1;
+    const n = series.length, X = i => padL + (n>1 ? i/(n-1) : 0.5)*(W-padL-padR), Y = v => padT + (1-(v-minY)/(maxY-minY))*(H-padT-padB);
+    const grid = resolveVar('var(--gridline)'), ink = resolveVar('var(--ink-muted)'), c1 = resolveVar('var(--series-1)'), c4 = resolveVar('var(--series-4)');
+    let out = '';
+    for(let i=0;i<=4;i++){ const v = minY + (maxY-minY)*i/4; out += `<line x1="${padL}" x2="${W-padR}" y1="${Y(v)}" y2="${Y(v)}" stroke="${grid}" stroke-width="1"/><text x="${padL-6}" y="${Y(v)+4}" text-anchor="end" font-size="10" fill="${ink}">${money(v,{compact:true})}</text>`; }
+    const labelOf = s => g==='month' ? (LANG==='vi' ? 'T'+parseInt(s.label.slice(5,7),10) : MONTHS_EN[+s.label.slice(5,7)-1]) : fmtDate(new Date(+s.label.slice(0,4), +s.label.slice(5,7)-1, +s.label.slice(8,10)));
+    const step = Math.max(1, Math.ceil(n/8));
+    series.forEach((s,i)=>{ if(i%step===0 || i===n-1) out += `<text x="${X(i)}" y="${H-8}" text-anchor="middle" font-size="10" fill="${ink}">${labelOf(s)}</text>`; });
+    if(minY<0) out += `<line x1="${padL}" x2="${W-padR}" y1="${Y(0)}" y2="${Y(0)}" stroke="${ink}" stroke-width="1" stroke-dasharray="3 3"/>`;
+    const path = key => series.map((s,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(s[key]).toFixed(1)).join(' ');
+    out += `<path d="${path('net')} L${X(n-1).toFixed(1)} ${Y(Math.max(0,minY)).toFixed(1)} L${X(0).toFixed(1)} ${Y(Math.max(0,minY)).toFixed(1)} Z" fill="${c1}" fill-opacity=".08"/>`;
+    out += `<path d="${path('net')}" fill="none" stroke="${c1}" stroke-width="2.2" stroke-linejoin="round"/>`;
+    out += `<path d="${path('cm')}" fill="none" stroke="${c4}" stroke-width="2" stroke-linejoin="round"/>`;
+    // peak label
+    let pi = 0; series.forEach((s,i)=>{ if(s.net>series[pi].net) pi = i; });
+    if(n>1){ const px = X(pi), py = Y(series[pi].net); out += `<circle cx="${px}" cy="${py}" r="3.5" fill="${c1}"/><text x="${px}" y="${Math.max(10, py-9)}" text-anchor="${pi>n*0.8?'end':(pi<n*0.2?'start':'middle')}" font-size="10.5" font-weight="600" fill="${resolveVar('var(--ink-primary)')}">${tx('rev.peak')} ${money(series[pi].net,{compact:true})}</text>`; }
+    // hover
+    out += series.map((s,i)=>`<rect data-i="${i}" x="${(X(i)-(W-padL-padR)/Math.max(1,n-1)/2).toFixed(1)}" y="${padT}" width="${((W-padL-padR)/Math.max(1,n-1)).toFixed(1)}" height="${H-padT-padB}" fill="transparent"/>`).join('');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('height', H); svg.innerHTML = out;
+    const tip = document.getElementById('revTip');
+    if(tip){ svg.onmousemove = e=>{ const r = e.target.closest('rect[data-i]'); if(!r){ tip.style.opacity = 0; return; } const s = series[+r.dataset.i]; tip.innerHTML = `<div class="t-title">${labelOf(s)}${s.n>1 ? ' · '+s.n+' '+tx('u.days') : ''}</div><div class="t-row"><span>${tx('m.netRevenue')}</span><b>${money(s.net)}</b></div><div class="t-row"><span>CM3</span><b>${money(s.cm)}</b></div><div class="t-row"><span>${tx('m.orders')}</span><b>${intFmt(s.orders)}</b></div><div class="t-row"><span>${tx('m.adSpend')}</span><b>${money(s.ads)}</b></div>`; tip.style.opacity = 1; const bx = svg.getBoundingClientRect(); tip.style.left = Math.min(bx.width-170, Math.max(0, e.clientX-bx.left+12))+'px'; tip.style.top = Math.max(0, e.clientY-bx.top-70)+'px'; }; svg.onmouseleave = ()=>{ tip.style.opacity = 0; }; }
+    const best = series[pi];
+    setNote('revNote', n>1 ? tx('rev.note', {best: money(best.net,{compact:true}), day: labelOf(best)}) : '');
+    const lg = document.getElementById('revLegend'); if(lg) lg.innerHTML = `<span class="li"><span class="sw" style="background:${c1}"></span>${tx('m.netRevenue')}</span><span class="li"><span class="sw" style="background:${c4}"></span>CM3</span>`;
+    setNote('revCaption', tx('rev.caption'));
+  }
+
+  // ---- sales channels: donut + list (CH_COLOR defined with the other channel constants) ----
+  function renderChannels(){
+    const el = document.getElementById('chanList'); if(!el) return;
+    const rows = currentRows(), a = aggregate(rows), ce = channelEcon(a);
+    const keys = CH_KEYS.filter(k=> ce[k].net>0.005).sort((x,y)=>ce[y].net-ce[x].net);
+    const tot = sum(keys.map(k=>ce[k].net));
+    const svg = document.getElementById('chanDonut');
+    if(svg){
+      let out = '', acc = 0; const R = 62, r = 44, cx = 75, cy = 75;
+      keys.forEach(k=>{ const f = tot>0 ? ce[k].net/tot : 0; if(f<=0) return; const a0 = acc*2*Math.PI - Math.PI/2, a1 = (acc+f)*2*Math.PI - Math.PI/2; acc += f; const big = f>0.5 ? 1 : 0; const p = (ang, rad) => [cx+rad*Math.cos(ang), cy+rad*Math.sin(ang)]; const [x0,y0] = p(a0,R), [x1,y1] = p(a1,R), [x2,y2] = p(a1,r), [x3,y3] = p(a0,r); out += `<path d="M${x0.toFixed(2)} ${y0.toFixed(2)} A${R} ${R} 0 ${big} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} L${x2.toFixed(2)} ${y2.toFixed(2)} A${r} ${r} 0 ${big} 0 ${x3.toFixed(2)} ${y3.toFixed(2)} Z" fill="${resolveVar(CH_COLOR[k])}" stroke="${resolveVar('var(--surface-card)')}" stroke-width="2"><title>${CH_LABEL[k]} ${money(ce[k].net)}</title></path>`; });
+      out += `<text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="17" font-weight="600" fill="${resolveVar('var(--ink-primary)')}" font-family="var(--font-display)">${money(tot,{compact:true})}</text><text x="${cx}" y="${cy+14}" text-anchor="middle" font-size="10" fill="${resolveVar('var(--ink-muted)')}">${tx('m.netRevenue')}</text>`;
+      svg.innerHTML = out;
+    }
+    el.innerHTML = keys.map(k=>`<div class="r"><span class="sw" style="background:${CH_COLOR[k]}"></span><span><div style="font-weight:600;">${CH_LABEL[k]}</div><div class="bar"><i style="width:${tot>0?(ce[k].net/tot*100).toFixed(1):0}%;background:${CH_COLOR[k]}"></i></div></span><span class="v">${money(ce[k].net,{compact:true})}</span><span class="p">${tot>0?Math.round(ce[k].net/tot*100):0}%</span></div>`).join('') || `<div class="r"><span>${tx('u.noData')}</span></div>`;
+    setNote('chanNote', tx('chan.note', {total: money(tot,{compact:true}), n: keys.length}));
+    const st = document.getElementById('chanStats'); if(st) st.innerHTML = `<div class="ms"><div class="l">${tx('chan.avgDay')}</div><div class="v">${money(rows.length ? tot/rows.length : 0,{compact:true})}</div></div><div class="ms"><div class="l">${tx('chan.perOrder')}</div><div class="v">${money(a.blendedAOV)}</div></div>`;
+  }
+
+  // ---- per-SKU economics (shared by the product P&L table and the product-lines card) ----
+  function skuEconomics(rows){
+    const sa = skuAggregate(rows);
+    const keys = FUNNEL_CH.filter(k=> CH_MASK[k] && sa[k].days>0);
+    const items = {}; let chCm = 0, covMin = 1e9, realCost = 0, allSkus = 0;
+    keys.forEach(k=>{
+      const o = sa[k]; covMin = Math.min(covMin, o.days);
+      const rk = rows.filter(r=> r.sku && r.sku[k]);
+      const ak = aggregate(rk), ck = channelEcon(ak)[k]; chCm += ck.cm;
+      const skus = [...new Set(Object.keys(o.units).concat(Object.keys(o.sales)))];
+      const G = sum(skus.map(x=>o.sales[x]||0)), U = sum(skus.map(x=>o.units[x]||0));
+      const rw = {}; let RW = 0; skus.forEach(x=>{ const u = o.units[x]||0, g = o.sales[x]||0; rw[x] = u>0 ? (o.refunds[x]||0)*(g/u) : 0; RW += rw[x]; });
+      skus.forEach(x=>{
+        const g = G>0 ? (o.sales[x]||0)/G : 0, us = U>0 ? (o.units[x]||0)/U : 0, rs = RW>0 ? rw[x]/RW : g;
+        const units = o.units[x]||0, cost = skuCost(x);
+        const gross = ak.gross[k]*g, disc = ak.discountBy[k]*g, ref = ak.refund[k]*rs, net = gross - disc - ref;
+        const cogs = cost!==null ? units*cost : ck.cogs*g;
+        const fulfil = ck.fulfil*us, fees = ck.fees*g, ads = ck.adsAll*g;
+        const it = items[x] = items[x] || {sku:x, line: productLineOf(x), ch:{}, units:0, refunds:0, gross:0, disc:0, ref:0, net:0, cogs:0, cogsReal:0, fulfil:0, fees:0, ads:0, cm:0};
+        it.ch[k] = true; it.units += units; it.refunds += o.refunds[x]||0; it.gross += gross; it.disc += disc; it.ref += ref; it.net += net; it.cogs += cogs; if(cost!==null) it.cogsReal += cogs; it.fulfil += fulfil; it.fees += fees; it.ads += ads; it.cm += net - cogs - fulfil - fees - ads;
+        allSkus++; if(cost!==null) realCost++;
+      });
+    });
+    return {items, keys, chCm, covMin: keys.length ? covMin : 0, realCost, allSkus, n: rows.length};
+  }
+  function lineEconomics(rows){
+    const e = skuEconomics(rows); const lines = {};
+    Object.values(e.items).forEach(it=>{ const l = lines[it.line] = lines[it.line] || {id: it.line, skus:0, units:0, refunds:0, gross:0, net:0, cogs:0, cogsReal:0, fulfil:0, fees:0, ads:0, cm:0}; l.skus++; ['units','refunds','gross','net','cogs','cogsReal','fulfil','fees','ads','cm'].forEach(f=>{ l[f] += it[f]; }); });
+    return {lines, keys: e.keys, covMin: e.covMin, n: e.n, realCost: e.realCost, allSkus: e.allSkus};
+  }
+
+  // ---- stock on hand + velocity per SKU across FBA and ShipMonk (for product lines, risks, inventory page) ----
+  let _stockCache = {ver:null, rows:null};
+  function stockRows(){
+    const key = _maskVer+'|'+TODAY_ISO;
+    if(_stockCache.ver===key) return _stockCache.rows;
+    const out = {};
+    const get = sku => out[sku] = out[sku] || {sku, line: productLineOf(sku), fba:0, fbaInbound:0, smk:0, smkIncoming:0, unitsAz:0, unitsSh:0, days:0, sales:0};
+    const skipSku = sku => /^amzn\.gr\./i.test(sku) || sku==='(no sku)' || sku==='RETURN-OFFSET';
+    const snap = AMAZON_STORAGE_LIVE_DATA && AMAZON_STORAGE_LIVE_DATA.inventory && AMAZON_STORAGE_LIVE_DATA.inventory.snapshot;
+    if(snap) Object.keys(snap).forEach(sku=>{ if(skipSku(sku)) return; const s = snap[sku], o = get(sku); o.fba += s.fulfillable||0; o.fbaInbound += (s.inbound_working||0)+(s.inbound_shipped||0)+(s.inbound_receiving||0); });
+    if(SHIPMONK_INVENTORY && SHIPMONK_INVENTORY.skus) Object.keys(SHIPMONK_INVENTORY.skus).forEach(sku=>{ const s = SHIPMONK_INVENTORY.skus[sku], o = get(sku); const av = Math.max(0, Math.min(+s.available||0, (+s.on_hand||0) - (+s.quarantined||0) - (+s.unavailable||0))); o.smk += isFinite(av) ? av : 0; o.smkIncoming += +s.incoming||0; });
+    // velocity: last 30 closed days with per-SKU units (either sync)
+    const from = shiftIso(TODAY_ISO, 30), to = shiftIso(TODAY_ISO, 1);
+    let dAz = 0, dSh = 0;
+    days.forEach(r=>{ if(r.iso<from || r.iso>to || !r.sku) return; if(r.sku.amazon){ dAz++; Object.entries(r.sku.amazon.units||{}).forEach(([k,v])=>{ if(skipSku(k)) return; get(k).unitsAz += +v||0; }); Object.entries(r.sku.amazon.sales||{}).forEach(([k,v])=>{ if(!skipSku(k)) get(k).sales += +v||0; }); } if(r.sku.shopify){ dSh++; Object.entries(r.sku.shopify.units||{}).forEach(([k,v])=>{ if(skipSku(k)) return; get(k).unitsSh += +v||0; }); Object.entries(r.sku.shopify.sales||{}).forEach(([k,v])=>{ if(!skipSku(k)) get(k).sales += +v||0; }); } });
+    const skuFees = (AMAZON_LIVE_DATA && AMAZON_LIVE_DATA.meta && AMAZON_LIVE_DATA.meta.sku_fees) || {}, win = (AMAZON_LIVE_DATA && AMAZON_LIVE_DATA.window_days) || 45;
+    const list = Object.values(out).map(o=>{
+      let perDay = 0;
+      if(dAz>=14 || dSh>=14) perDay = (dAz>=14 ? o.unitsAz/dAz : 0) + (dSh>=14 ? o.unitsSh/dSh : 0);
+      else if(skuFees[o.sku]) perDay = skuFees[o.sku].units/win;
+      const units = o.unitsAz + o.unitsSh;
+      const price = units>0 ? o.sales/units : 0;
+      const stock = o.fba + o.smk, cover = perDay>0 ? stock/perDay : null;
+      const atRisk = (cover!==null && cover<30) ? Math.max(0, (30-cover))*perDay*price : 0;
+      return Object.assign(o, {perDay, price, stock, cover, atRisk});
+    });
+    _stockCache = {ver:key, rows:list};
+    return list;
+  }
+  function stockRisk(){
+    const list = stockRows().filter(r=> r.perDay>=0.2 && r.cover!==null && r.cover<30).sort((x,y)=>y.atRisk-x.atRisk);
+    return {count: list.length, atRisk: sum(list.map(r=>r.atRisk)), top: list.slice(0,3)};
+  }
+
+  // ---- product lines card (overview) ----
+  function renderProductLines(){
+    const t = document.getElementById('plTable'); if(!t) return;
+    const rows = currentRows(), le = lineEconomics(rows);
+    const caption = document.getElementById('plCaption');
+    if(!le.keys.length){ t.innerHTML = ''; setNote('plNote', tx('u.waiting')); if(caption) caption.textContent = sinceText('sku'); renderDollar(); return; }
+    const pr = prevLikeRows(); let lp = pr ? lineEconomics(pr) : null;
+    if(lp && lp.covMin < le.covMin*0.9) lp = null;   // prior period lacks per-SKU days -> no fair comparison
+    const stock = stockRows();
+    const list = Object.values(le.lines).filter(l=>l.net>0.005 || l.units>0).sort((a,b)=>b.net-a.net);
+    const totNet = sum(list.map(l=>l.net)), totCm = sum(list.map(l=>l.cm)), totUnits = sum(list.map(l=>l.units));
+    const coverOf = id => { const rs = stock.filter(s=>s.line===id); const pd = sum(rs.map(s=>s.perDay)), st = sum(rs.map(s=>s.stock)); return pd>0 ? st/pd : null; };
+    const dcell = (cur, prev) => (prev===null || prev===undefined || !isFinite(prev) || prev<=0) ? '<td class="num d-flat">—</td>' : `<td class="num">${pillOf((cur/prev-1)*100)}</td>`;
+    t.innerHTML = `<thead><tr><th>${tx('pl.line')}</th><th class="num">${tx('m.units')}</th><th class="num">${tx('m.netRevenue')}</th><th>${tx('pl.share')}</th><th class="num">${tx('pl.vsPrior')}</th><th class="num">CM3</th><th class="num">CM3 %</th><th class="num">${tx('pl.cover')}</th></tr></thead><tbody>` +
+      list.map(l=>{ const cv = coverOf(l.id); const pv = lp && lp.lines[l.id] ? lp.lines[l.id].net : null; return `<tr><td class="name">${productLineName(l.id)}<small style="display:block;font-weight:400;color:var(--ink-muted);">${l.skus} SKU</small></td><td class="num">${intFmt(l.units)}</td><td class="num">${money(l.net,{compact:true})}</td><td><div class="bar"><i style="width:${totNet>0?(l.net/totNet*100).toFixed(1):0}%"></i></div></td>${dcell(l.net, pv)}<td class="num ${l.cm<0?'d-down':''}">${money(l.cm,{compact:true})}</td><td class="num">${l.net>0 ? (l.cm/l.net*100).toFixed(0)+'%' : '—'}</td><td class="num ${cv!==null && cv<30 ? 'd-down' : ''}">${cv===null ? '—' : (cv>365 ? '>1y' : Math.round(cv)+' '+tx('u.d'))}</td></tr>`; }).join('') +
+      `<tr style="font-weight:700;"><td class="name">${tx('u.total')}</td><td class="num">${intFmt(totUnits)}</td><td class="num">${money(totNet,{compact:true})}</td><td></td><td class="num"></td><td class="num">${money(totCm,{compact:true})}</td><td class="num">${totNet>0 ? (totCm/totNet*100).toFixed(0)+'%' : '—'}</td><td class="num"></td></tr></tbody>`;
+    setNote('plNote', tx('pl.note', {n: list.length, ch: le.keys.map(k=>CH_LABEL[k]).join(' + '), cov: le.covMin<le.n ? ' · '+le.covMin+'/'+le.n+' '+tx('u.daysWithSku') : ''}));
+    if(caption) caption.textContent = tx('pl.caption') + (le.realCost>0 ? ' '+tx('pl.realCost', {n: le.realCost, of: le.allSkus}) : ' '+tx('pl.estCost'));
+    renderDollar();
+  }
+  function renderDollar(){
+    const bar = document.getElementById('dollarBar'), rowsEl = document.getElementById('dollarRows'); if(!bar || !rowsEl) return;
+    const a = aggregate(currentRows()); const net = a.netRevenue;
+    if(net<=0){ bar.innerHTML=''; rowsEl.innerHTML = `<div class="r"><span>${tx('u.noData')}</span></div>`; return; }
+    const parts = [
+      {k:'cogs', l: tx('d.productCost'), v: a.productCost, c:'var(--series-2)'},
+      {k:'ful', l: tx('d.fulfillment'), v: a.cogs - a.productCost, c:'var(--series-3)'},
+      {k:'fees', l: tx('d.fees'), v: a.feesTotal, c:'var(--series-5)'},
+      {k:'mkt', l: tx('d.marketing'), v: a.marketingTotal, c:'var(--series-6)'},
+      {k:'opex', l: tx('d.opex'), v: a.fixedTotal, c:'var(--series-fixed)'},
+    ];
+    const keep = a.netProfit;
+    const per = v => v/net*100;
+    bar.innerHTML = parts.map(p=>`<i style="width:${Math.max(0,per(p.v)).toFixed(1)}%;background:${p.c}" title="${p.l} ${money(p.v,{compact:true})}"></i>`).join('') + (keep>0 ? `<i style="width:${per(keep).toFixed(1)}%;background:var(--series-1)" title="EBITDA"></i>` : '');
+    rowsEl.innerHTML = parts.map(p=>`<div class="r"><span class="sw" style="background:${p.c}"></span><span>${p.l}</span><span class="v">$${per(p.v).toFixed(2)}</span><span class="p">${per(p.v).toFixed(0)}%</span></div>`).join('') + `<div class="r keep"><span class="sw" style="background:var(--series-1)"></span><span>${tx('d.keep')}</span><span class="v">$${per(keep).toFixed(2)}</span><span class="p">${per(keep).toFixed(0)}%</span></div>`;
+  }
   function renderExec(){
     const el = document.getElementById('execKpis'); if(!el) return;
     const rows = currentRows();
@@ -2078,27 +2673,33 @@
     const dl = (dPrev, dYear, dFix) => cmp==='none' ? [dFix||''] : (cmp==='year' ? [dYear, dPrev, dFix||''] : [dPrev, dYear, dFix||'']);
     const ncacNow = ncac({a, newC});
     const tiles = [
-      {label:'Doanh thu thuần', value: money(a.netRevenue, {compact:true}), title: money(a.netRevenue),
-        deltas: dl(deltaLine(lk, p && dAbs(a.netRevenue, p.netRevenue)), deltaLine('năm trước', ly && dAbs(a.netRevenue, ly.netRevenue)), deltaLine('kế hoạch', planNet!==null ? dAbs(a.netRevenue, planNet) : null)),
-        foot: (planNet===null ? 'Kế hoạch tổng: chưa nhập' : 'Kế hoạch kỳ này '+money(planNet,{compact:true})) + (refundPct(a)!==null ? ' · hoàn tiền '+refundPct(a).toFixed(1)+'% doanh thu gộp' : ''), alert: refundPct(a)!==null && refundPct(a)>8},
-      {label:'CM3 — LN đóng góp', value: money(a.contributionProfit, {compact:true}), title: money(a.contributionProfit),
-        deltas: dl(deltaLine(lk, p && dAbs(a.contributionProfit, p.contributionProfit)), deltaLine('năm trước', ly && dAbs(a.contributionProfit, ly.contributionProfit)), deltaLine('kế hoạch', planCm3!==null ? dAbs(a.contributionProfit, planCm3) : null)),
-        foot: (a.netRevenue>0 ? (a.contributionProfit/a.netRevenue*100).toFixed(1)+'% doanh thu thuần' : '') + (a.productCostHasActual ? (a.productCostEst ? ' · giá vốn phần lớn theo sổ kho' : ' · giá vốn theo sổ kho') : (a.productCostEst ? ' · giá vốn ước '+(a.cogsEstRate*100).toFixed(0)+'%' : ' · chưa trừ giá vốn'))},
+      {label:tv('Net revenue','Doanh thu thuần'), value: money(a.netRevenue, {compact:true}), title: money(a.netRevenue),
+        deltas: dl(deltaLine(lk, p && dAbs(a.netRevenue, p.netRevenue)), deltaLine(tx('u.lastYear'), ly && dAbs(a.netRevenue, ly.netRevenue)), deltaLine(tx('u.plan'), planNet!==null ? dAbs(a.netRevenue, planNet) : null)),
+        foot: (planNet===null ? tv('Company plan: not entered','Kế hoạch tổng: chưa nhập') : tv('Plan for this period ','Kế hoạch kỳ này ')+money(planNet,{compact:true})) + (refundPct(a)!==null ? tv(' · refunds ',' · hoàn tiền ')+refundPct(a).toFixed(1)+tv('% of gross sales','% doanh thu gộp') : ''), alert: refundPct(a)!==null && refundPct(a)>8},
+      {label:tv('CM3 — contribution margin','CM3 — LN đóng góp'), value: money(a.contributionProfit, {compact:true}), title: money(a.contributionProfit),
+        deltas: dl(deltaLine(lk, p && dAbs(a.contributionProfit, p.contributionProfit)), deltaLine(tx('u.lastYear'), ly && dAbs(a.contributionProfit, ly.contributionProfit)), deltaLine(tx('u.plan'), planCm3!==null ? dAbs(a.contributionProfit, planCm3) : null)),
+        foot: (a.netRevenue>0 ? (a.contributionProfit/a.netRevenue*100).toFixed(1)+tv('% of net revenue','% doanh thu thuần') : '') + (a.productCostHasActual ? (a.productCostEst ? tv(' · product cost mostly from the ledger',' · giá vốn phần lớn theo sổ kho') : tv(' · product cost from the ledger',' · giá vốn theo sổ kho')) : (a.productCostEst ? tv(' · product cost estimated at ',' · giá vốn ước ')+(a.cogsEstRate*100).toFixed(0)+'%' : tv(' · product cost not deducted',' · chưa trừ giá vốn')))},
       {label:'EBITDA', value: money(a.netProfit, {compact:true}), title: money(a.netProfit),
-        deltas: dl(deltaLine(lk, p && dAbs(a.netProfit, p.netProfit)), deltaLine('năm trước', ly && dAbs(a.netProfit, ly.netProfit)), deltaLine('biên', a.netRevenue>0 && p && p.netRevenue>0 ? (a.netProfit/a.netRevenue - p.netProfit/p.netRevenue)*100 : null, {pts:true})),
-        foot: (a.netRevenue>0 ? 'Biên '+(a.netProfit/a.netRevenue*100).toFixed(1)+'%' : '') + (a.opexDays>0 ? ' · G&A nhập tay' : ' · chưa có G&A') + ((a.productCostEst||a.productCostHasActual) ? '' : ' · chưa trừ giá vốn')},
+        deltas: dl(deltaLine(lk, p && dAbs(a.netProfit, p.netProfit)), deltaLine(tx('u.lastYear'), ly && dAbs(a.netProfit, ly.netProfit)), deltaLine(tx('u.margin'), a.netRevenue>0 && p && p.netRevenue>0 ? (a.netProfit/a.netRevenue - p.netProfit/p.netRevenue)*100 : null, {pts:true})),
+        foot: (a.netRevenue>0 ? tv('Margin ','Biên ')+(a.netProfit/a.netRevenue*100).toFixed(1)+'%' : '') + (a.opexDays>0 ? tv(' · G&A entered manually',' · G&A nhập tay') : tv(' · no G&A yet',' · chưa có G&A')) + ((a.productCostEst||a.productCostHasActual) ? '' : tv(' · product cost not deducted',' · chưa trừ giá vốn'))},
       {label:'MER', value: merNow.value!==null ? merNow.value.toFixed(2)+'x' : '—',
-        deltas: dl(deltaLine(lk, (merPrev && merPrev.value!==null && merNow.value!==null) ? dAbs(merNow.value, merPrev.value) : null), deltaLine('năm trước', (merLy && merLy.value!==null && merNow.value!==null) ? dAbs(merNow.value, merLy.value) : null), (()=>{ const be = breakEvenMer(a); return be ? `<div class="delta ${merNow.value!==null && merNow.value>=be ? 'up':'down'}"><span class="k">hoà vốn:</span> ${be.toFixed(2)}x</div>` : deltaLine('hoà vốn', null); })()),
-        foot: merNow.days<merNow.of ? 'Tính trên '+merNow.days+'/'+merNow.of+' ngày đủ số (Amazon Ads về sau ~18h VN)' : 'Đủ số mọi nguồn quảng cáo', alert: merNow.value!==null && breakEvenMer(a) && merNow.value<breakEvenMer(a)},
-      {label:'Chi marketing', value: money(a.marketingTotal, {compact:true}), title: money(a.marketingTotal),
-        deltas: dl(deltaLine(lk, p && dAbs(a.marketingTotal, p.marketingTotal), {lowerIsBetter:true}), deltaLine('năm trước', ly && dAbs(a.marketingTotal, ly.marketingTotal), {lowerIsBetter:true}), deltaLine('kế hoạch', planMkt!==null ? dAbs(a.marketingTotal, planMkt) : null, {lowerIsBetter:true})),
-        foot: (a.netRevenue>0 ? (a.marketingTotal/a.netRevenue*100).toFixed(1)+'% doanh thu thuần' : '') + (ncacNow!==null ? ' · nCAC Shopify '+money(ncacNow)+' ('+intFmt(newC)+' khách mới)' : ' · quảng cáo '+money(a.merSpend,{compact:true}))},
-      {label:'Đơn hàng · AOV', value: intFmt(a.totalOrders), title: a.totalOrders+' đơn',
-        deltas: dl(deltaLine(lk, p && dAbs(a.totalOrders, p.totalOrders)), deltaLine('năm trước', ly && dAbs(a.totalOrders, ly.totalOrders)), deltaLine('kế hoạch', planOrders!==null ? dAbs(a.totalOrders, planOrders) : null)),
+        deltas: dl(deltaLine(lk, (merPrev && merPrev.value!==null && merNow.value!==null) ? dAbs(merNow.value, merPrev.value) : null), deltaLine(tx('u.lastYear'), (merLy && merLy.value!==null && merNow.value!==null) ? dAbs(merNow.value, merLy.value) : null), (()=>{ const be = breakEvenMer(a); return be ? `<div class="delta ${merNow.value!==null && merNow.value>=be ? 'up':'down'}"><span class="k">${tx('u.breakEven')}:</span> ${be.toFixed(2)}x</div>` : deltaLine(tx('u.breakEven'), null); })()),
+        foot: merNow.days<merNow.of ? tv('Based on ','Tính trên ')+merNow.days+'/'+merNow.of+tv(' days with complete data (Amazon Ads arrives after ~18:00 VN)',' ngày đủ số (Amazon Ads về sau ~18h VN)') : tv('Every ad source reported','Đủ số mọi nguồn quảng cáo'), alert: merNow.value!==null && breakEvenMer(a) && merNow.value<breakEvenMer(a)},
+      {label:tv('Marketing spend','Chi marketing'), value: money(a.marketingTotal, {compact:true}), title: money(a.marketingTotal),
+        deltas: dl(deltaLine(lk, p && dAbs(a.marketingTotal, p.marketingTotal), {lowerIsBetter:true}), deltaLine(tx('u.lastYear'), ly && dAbs(a.marketingTotal, ly.marketingTotal), {lowerIsBetter:true}), deltaLine(tx('u.plan'), planMkt!==null ? dAbs(a.marketingTotal, planMkt) : null, {lowerIsBetter:true})),
+        foot: (a.netRevenue>0 ? (a.marketingTotal/a.netRevenue*100).toFixed(1)+tv('% of net revenue','% doanh thu thuần') : '') + (ncacNow!==null ? ' · nCAC Shopify '+money(ncacNow)+' ('+intFmt(newC)+tv(' new customers)',' khách mới)') : tv(' · ads ',' · quảng cáo ')+money(a.merSpend,{compact:true}))},
+      {label:tv('Orders · AOV','Đơn hàng · AOV'), value: intFmt(a.totalOrders), title: a.totalOrders+' '+tx('u.orders'),
+        deltas: dl(deltaLine(lk, p && dAbs(a.totalOrders, p.totalOrders)), deltaLine(tx('u.lastYear'), ly && dAbs(a.totalOrders, ly.totalOrders)), deltaLine(tx('u.plan'), planOrders!==null ? dAbs(a.totalOrders, planOrders) : null)),
         foot: 'AOV '+money(a.blendedAOV)+(p ? ' · '+lk+' '+money(p.blendedAOV) : '')},
     ];
-    el.innerHTML = tiles.map(t=>`<div class="kpi${t.alert?' alert':''}"><div class="label">${t.label}</div><div class="value" title="${t.title||''}">${t.value}</div><div class="deltas">${t.deltas.join('')}</div>${t.foot ? `<div class="foot">${t.foot}</div>` : ''}</div>`).join('');
-    const defCogs = document.getElementById('defCogs'); if(defCogs) defCogs.textContent = (Object.keys(COGS_ACTUAL.months).length ? 'số thật từ sổ kho kế toán cho '+Object.keys(COGS_ACTUAL.months).sort().join(', ')+'; các tháng còn lại ' : '') + (COGS_EST ? 'ước '+(COGS_EST.rate*100).toFixed(0)+'% — '+COGS_EST.basis : 'chưa bật — giá vốn $0');
+    // V10: primary comparison as a pill (top right) + sparkline of the period's daily values
+    const prim = cmp==='year' ? ly : (cmp==='none' ? null : p), primMer = cmp==='year' ? merLy : (cmp==='none' ? null : merPrev);
+    const pd = [prim && dAbs(a.netRevenue, prim.netRevenue), prim && dAbs(a.contributionProfit, prim.contributionProfit), prim && dAbs(a.netProfit, prim.netProfit), (primMer && primMer.value!==null && merNow.value!==null) ? dAbs(merNow.value, primMer.value) : null, prim && dAbs(a.marketingTotal, prim.marketingTotal), prim && dAbs(a.totalOrders, prim.totalOrders)];
+    const lower = [false, false, false, false, true, false];
+    const daily = rows.length>=3 ? dailyAgg(rows) : null;
+    const sparks = daily ? [daily.map(x=>x.netRevenue), daily.map(x=>x.contributionProfit), daily.map(x=>x.netProfit), daily.map(x=> x.merSpend>0 ? x.merValue : null), daily.map(x=>x.marketingTotal), daily.map(x=>x.totalOrders)] : null;
+    el.innerHTML = tiles.map((t,i)=>`<div class="kpi${t.alert?' alert':''}"><div class="kh"><span class="label">${t.label}</span>${pillOf(pd[i], lower[i])}</div><div class="value" title="${t.title||''}">${t.value}</div><div class="deltas">${t.deltas.slice(1).join('')}</div>${t.foot ? `<div class="foot">${t.foot}</div>` : ''}${sparks ? sparkSvg(sparks[i], {free: i===3}) : ''}</div>`).join('');
+    const defCogs = document.getElementById('defCogs'); if(defCogs) defCogs.textContent = (Object.keys(COGS_ACTUAL.months).length ? tv('actuals from the accounting inventory ledger for ','số thật từ sổ kho kế toán cho ')+Object.keys(COGS_ACTUAL.months).sort().join(', ')+tv('; the remaining months ','; các tháng còn lại ') : '') + (COGS_EST ? tv('estimated at ','ước ')+(COGS_EST.rate*100).toFixed(0)+'% — '+COGS_EST.basis : tv('not enabled — product cost $0','chưa bật — giá vốn $0'));
     renderPace(rows, a);
     renderMatrix(rows, a, prevRows, lyRows);
     const alertItems = renderAlerts(rows, a, merNow);
@@ -2116,10 +2717,10 @@
     const dim = daysInMonth(m);
     const plan = PLAN.months[m] || null;
     // what to pace: company net revenue vs total plan; else Amazon gross vs the Amazon plan; else actual only
-    let series = 'net', planTotal = plan ? plan.net_revenue : null, label = 'Doanh thu thuần toàn công ty';
+    let series = 'net', planTotal = plan ? plan.net_revenue : null, label = tv('Company net revenue','Doanh thu thuần toàn công ty');
     const amazonOnly = CH_MASK.amazon && CH_KEYS.every(k=> k==='amazon' || !CH_MASK[k]);
-    if(maskPartial()){ planTotal = null; label = 'Doanh thu thuần — '+maskLabel()+' (kế hoạch tổng không so khi lọc kênh)'; }
-    if(planTotal===null && plan && plan.channels.amazon && plan.channels.amazon.gross!==null && (!maskPartial() || amazonOnly)){ series = 'amazon'; planTotal = plan.channels.amazon.gross; label = 'Amazon — doanh thu gộp theo ngày đặt (kế hoạch tổng chưa nhập)'; }
+    if(maskPartial()){ planTotal = null; label = tv('Net revenue — ','Doanh thu thuần — ')+maskLabel()+tv(' (company plan not compared while filtering channels)',' (kế hoạch tổng không so khi lọc kênh)'); }
+    if(planTotal===null && plan && plan.channels.amazon && plan.channels.amazon.gross!==null && (!maskPartial() || amazonOnly)){ series = 'amazon'; planTotal = plan.channels.amazon.gross; label = tv('Amazon — gross sales by order date (company plan not entered)','Amazon — doanh thu gộp theo ngày đặt (kế hoạch tổng chưa nhập)'); }
     const valOf = r => series==='amazon' ? r.channels.amazon : (r.channels.shopify+r.channels.amazon+r.channels.walmart+r.channels.tiktok) - sum(CH_KEYS.map(k=>r.discounts[k])) - sum(CH_KEYS.map(k=>r.refunds[k]));
     const closed = mrows.filter(r=>!r._syncing);
     const actualByDom = new Array(dim+1).fill(null); let cum = 0;
@@ -2129,16 +2730,16 @@
     const tail = closed.slice(-7); const rate = tail.length ? sum(tail.map(valOf))/tail.length : 0;
     const forecast = mtd + rate*(dim-lastDom);
     const planToDate = planTotal!==null ? planTotal*lastDom/dim : null;
-    const monthLabel = 'tháng '+parseInt(m.slice(5,7),10)+'/'+m.slice(0,4);
-    document.getElementById('paceTitle').textContent = 'Nhịp độ '+monthLabel+(planTotal!==null ? ' vs kế hoạch' : '');
+    const monthLabel = tv(MONTHS_EN[parseInt(m.slice(5,7),10)-1]+' '+m.slice(0,4), 'tháng '+parseInt(m.slice(5,7),10)+'/'+m.slice(0,4));
+    document.getElementById('paceTitle').textContent = tv('Pacing ','Nhịp độ ')+monthLabel+(planTotal!==null ? tv(' vs plan',' vs kế hoạch') : '');
     document.getElementById('paceNote').textContent = label;
     const k = document.getElementById('paceKpis');
     const pc = (x,y)=> y ? ((x/y-1)*100) : null;
-    const fmtD = d => d===null ? '' : `<div class="delta ${d>=0?'up':'down'}">${d>=0?'▲':'▼'} ${Math.abs(d).toFixed(1)}% so kế hoạch</div>`;
+    const fmtD = d => d===null ? '' : `<div class="delta ${d>=0?'up':'down'}">${d>=0?'▲':'▼'} ${Math.abs(d).toFixed(1)}% ${tv('vs plan','so kế hoạch')}</div>`;
     k.innerHTML = `
-      <div class="kpi"><div class="label">Đến ngày ${lastDom||'—'}</div><div class="value">${money(mtd,{compact:true})}</div>${planToDate!==null ? fmtD(pc(mtd, planToDate)) : '<div class="delta flat">kế hoạch: chưa nhập</div>'}<div class="foot">${planToDate!==null ? 'Kế hoạch đến ngày '+lastDom+': '+money(planToDate,{compact:true}) : 'Điền vào data/targets_monthly.json'}</div></div>
-      <div class="kpi"><div class="label">Kế hoạch cả tháng</div><div class="value">${planTotal!==null ? money(planTotal,{compact:true}) : '—'}</div><div class="foot">${planTotal!==null ? money(planTotal/dim,{compact:true})+'/ngày' : 'Chưa có'}</div></div>
-      <div class="kpi"><div class="label">Dự báo cuối tháng</div><div class="value">${money(forecast,{compact:true})}</div>${planTotal!==null ? fmtD(pc(forecast, planTotal)) : ''}<div class="foot">Đã có ${money(mtd,{compact:true})} + ${money(rate,{compact:true})}/ngày × ${dim-lastDom} ngày còn lại (nhịp 7 ngày gần nhất)</div></div>`;
+      <div class="kpi"><div class="label">${tv('Through day','Đến ngày')} ${lastDom||'—'}</div><div class="value">${money(mtd,{compact:true})}</div>${planToDate!==null ? fmtD(pc(mtd, planToDate)) : '<div class="delta flat">'+tv('plan: not entered','kế hoạch: chưa nhập')+'</div>'}<div class="foot">${planToDate!==null ? tv('Plan through day ','Kế hoạch đến ngày ')+lastDom+': '+money(planToDate,{compact:true}) : tv('Fill in data/targets_monthly.json','Điền vào data/targets_monthly.json')}</div></div>
+      <div class="kpi"><div class="label">${tv('Full-month plan','Kế hoạch cả tháng')}</div><div class="value">${planTotal!==null ? money(planTotal,{compact:true}) : '—'}</div><div class="foot">${planTotal!==null ? money(planTotal/dim,{compact:true})+tv('/day','/ngày') : tv('None','Chưa có')}</div></div>
+      <div class="kpi"><div class="label">${tv('Month-end forecast','Dự báo cuối tháng')}</div><div class="value">${money(forecast,{compact:true})}</div>${planTotal!==null ? fmtD(pc(forecast, planTotal)) : ''}<div class="foot">${tv('So far','Đã có')} ${money(mtd,{compact:true})} + ${money(rate,{compact:true})}${tv('/day','/ngày')} × ${dim-lastDom} ${tv((dim-lastDom)===1 ? 'day left (last 7-day pace)' : 'days left (last 7-day pace)','ngày còn lại (nhịp 7 ngày gần nhất)')}</div></div>`;
     // chart
     const W = Math.max(320, svg.clientWidth || svg.parentNode.clientWidth || 600), H = 220, padL = 56, padR = 14, padT = 14, padB = 28;
     const maxY = Math.max(planTotal||0, forecast, mtd, 1)*1.08;
@@ -2157,8 +2758,8 @@
       if(lastDom<dim) g += `<line x1="${lp[0]}" y1="${lp[1]}" x2="${X(dim)}" y2="${Y(forecast)}" stroke="${accent}" stroke-width="2" stroke-dasharray="2 4"/>`;
     }
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('height', H); svg.innerHTML = g;
-    document.getElementById('paceLegend').innerHTML = `<span class="li"><span class="sw" style="background:${accent}"></span>thực tế (luỹ kế theo ngày)</span>`+(planTotal!==null ? `<span class="li"><span class="sw" style="background:${plan_c};height:2px;"></span>kế hoạch (rải đều)</span>` : '')+`<span class="li"><span class="sw" style="background:${accent};opacity:.5;height:2px;"></span>dự báo</span>`;
-    document.getElementById('paceCaption').textContent = (series==='amazon' ? 'Kế hoạch Amazon 2026 = "Revenue FC by KA" (doanh thu gộp theo ngày đặt, so được với dòng Amazon trong P&L). ' : '') + 'Ngày hôm nay chưa chốt nên không tính vào thực tế. Dự báo = nhịp 7 ngày gần nhất, chưa tính mùa vụ hay sự kiện (Prime Day, Black Friday).';
+    document.getElementById('paceLegend').innerHTML = `<span class="li"><span class="sw" style="background:${accent}"></span>${tv('actual (cumulative by day)','thực tế (luỹ kế theo ngày)')}</span>`+(planTotal!==null ? `<span class="li"><span class="sw" style="background:${plan_c};height:2px;"></span>${tv('plan (spread evenly)','kế hoạch (rải đều)')}</span>` : '')+`<span class="li"><span class="sw" style="background:${accent};opacity:.5;height:2px;"></span>${tv('forecast','dự báo')}</span>`;
+    document.getElementById('paceCaption').textContent = (series==='amazon' ? tv('Amazon 2026 plan = "Revenue FC by KA" (gross sales by order date, comparable with the Amazon line in the P&L). ','Kế hoạch Amazon 2026 = "Revenue FC by KA" (doanh thu gộp theo ngày đặt, so được với dòng Amazon trong P&L). ') : '') + tv('Today is not final, so it is left out of the actuals. Forecast = last 7-day pace, with no seasonality or events (Prime Day, Black Friday).','Ngày hôm nay chưa chốt nên không tính vào thực tế. Dự báo = nhịp 7 ngày gần nhất, chưa tính mùa vụ hay sự kiện (Prime Day, Black Friday).');
   }
 
   // ---------- channel matrix ----------
@@ -2185,12 +2786,12 @@
     const planGross = k => planForRows(rows, x=> x.channels[k] ? x.channels[k].gross : null, true);
     const dcell = d => d===null ? '<td class="num d-flat">—</td>' : `<td class="num ${Math.abs(d)<0.05?'d-flat':(d>=0?'d-up':'d-down')}">${d>=0?'+':''}${d.toFixed(1)}%</td>`;
     const keys = CH_KEYS.filter(k=> cur[k].net>0.005 || a.gross[k]>0.005 || (pe && pe[k].net>0.005)).sort((x,y)=>cur[y].net-cur[x].net);
-    const head = `<thead><tr><th>Kênh</th><th class="num">DT thuần</th><th class="num">Mix</th><th class="num">${likeLabel()}</th><th class="num">Năm trước</th><th class="num">Kế hoạch (gộp)</th><th class="num">Hoàn tiền</th><th class="num">Ads + affiliate</th><th class="num">Ads/DT</th><th class="num">CM3${a.productCostEst?'*':''}</th><th class="num">CM3 %</th></tr></thead>`;
+    const head = `<thead><tr><th>${tx('f.channel')}</th><th class="num">${tx('u.netRev')}</th><th class="num">Mix</th><th class="num">${likeLabel()}</th><th class="num">${tv('Last year','Năm trước')}</th><th class="num">${tv('Plan (gross)','Kế hoạch (gộp)')}</th><th class="num">${tv('Refunds','Hoàn tiền')}</th><th class="num">Ads + affiliate</th><th class="num">${tv('Ads/revenue','Ads/DT')}</th><th class="num">CM3${a.productCostEst?'*':''}</th><th class="num">CM3 %</th></tr></thead>`;
     const body = keys.map(k=>{
       const c = cur[k];
       const pg = planGross(k);
-      const planTxt = pg!==null ? `${money(pg,{compact:true})} · ${a.gross[k]>0 ? '<span class="'+(a.gross[k]>=pg?'d-up':'d-down')+'">'+(a.gross[k]/pg*100).toFixed(0)+'%</span>' : '—'}` : '<span class="d-flat">chưa có</span>';
-      return `<tr><td class="name">${CH_LABEL[k]}<small style="display:block;font-weight:400;color:var(--ink-muted);">${intFmt(c.orders)} đơn · AOV ${c.orders>0 ? money(c.net/c.orders) : '—'}</small></td>
+      const planTxt = pg!==null ? `${money(pg,{compact:true})} · ${a.gross[k]>0 ? '<span class="'+(a.gross[k]>=pg?'d-up':'d-down')+'">'+(a.gross[k]/pg*100).toFixed(0)+'%</span>' : '—'}` : '<span class="d-flat">'+tx('u.none')+'</span>';
+      return `<tr><td class="name">${CH_LABEL[k]}<small style="display:block;font-weight:400;color:var(--ink-muted);">${intFmt(c.orders)} ${tx('u.orders')} · AOV ${c.orders>0 ? money(c.net/c.orders) : '—'}</small></td>
         <td class="num">${money(c.net,{compact:true})}</td><td class="num">${totalNet>0 ? (c.net/totalNet*100).toFixed(0)+'%' : '—'}</td>
         ${dcell(pe ? dAbs(c.net, pe[k].net) : null)}${dcell(le ? dAbs(c.net, le[k].net) : null)}
         <td class="num">${planTxt}</td>
@@ -2199,9 +2800,9 @@
         <td class="num ${c.cm>=0?'':'d-down'}">${money(c.cm,{compact:true})}</td><td class="num">${c.net>0 ? (c.cm/c.net*100).toFixed(0)+'%' : '—'}</td></tr>`;
     }).join('');
     const tot = keys.reduce((s,k)=>({net:s.net+cur[k].net, ads:s.ads+cur[k].adsAll, cm:s.cm+cur[k].cm}), {net:0, ads:0, cm:0});
-    const foot = `<tr style="font-weight:700;"><td class="name">Tổng</td><td class="num">${money(tot.net,{compact:true})}</td><td class="num">100%</td>${dcell(p ? dAbs(a.netRevenue, p.netRevenue) : null)}${dcell(ly ? dAbs(a.netRevenue, ly.netRevenue) : null)}<td class="num"></td><td class="num">${a.grossSales>0 ? (sum(CH_KEYS.map(k=>a.refund[k]))/a.grossSales*100).toFixed(1)+'%' : '—'}</td><td class="num">${money(tot.ads,{compact:true})}</td><td class="num">${tot.net>0 ? (tot.ads/tot.net*100).toFixed(0)+'%' : '—'}</td><td class="num">${money(tot.cm,{compact:true})}</td><td class="num">${tot.net>0 ? (tot.cm/tot.net*100).toFixed(0)+'%' : '—'}</td></tr>`;
+    const foot = `<tr style="font-weight:700;"><td class="name">${tx('u.total')}</td><td class="num">${money(tot.net,{compact:true})}</td><td class="num">100%</td>${dcell(p ? dAbs(a.netRevenue, p.netRevenue) : null)}${dcell(ly ? dAbs(a.netRevenue, ly.netRevenue) : null)}<td class="num"></td><td class="num">${a.grossSales>0 ? (sum(CH_KEYS.map(k=>a.refund[k]))/a.grossSales*100).toFixed(1)+'%' : '—'}</td><td class="num">${money(tot.ads,{compact:true})}</td><td class="num">${tot.net>0 ? (tot.ads/tot.net*100).toFixed(0)+'%' : '—'}</td><td class="num">${money(tot.cm,{compact:true})}</td><td class="num">${tot.net>0 ? (tot.cm/tot.net*100).toFixed(0)+'%' : '—'}</td></tr>`;
     t.innerHTML = head + '<tbody>' + body + foot + '</tbody>';
-    document.getElementById('matrixCaption').innerHTML = 'Ads gắn kênh: Meta + Google + AppLovin → Shopify; Amazon Ads → Amazon; GMV Max → TikTok Shop; Walmart Connect → Walmart. CM3 = doanh thu thuần − giá vốn' + (a.productCostEst ? ' (*ước '+(a.cogsEstRate*100).toFixed(0)+'%'+(a.productCostHasActual?', một phần theo sổ kho kế toán':'')+')' : (a.productCostHasActual ? ' (theo sổ kho kế toán)' : ' ($0, chưa có)')) + ' − fulfillment theo đơn (FBA, ShipMonk) − phí sàn/cổng − ads − affiliate; chưa trừ lưu kho và G&amp;A (tổng cột = CM3 trên ô chỉ số). Kế hoạch: % = doanh thu gộp kỳ này ÷ kế hoạch rải đều theo ngày.';
+    document.getElementById('matrixCaption').innerHTML = tv('Ads by channel: Meta + Google + AppLovin → Shopify; Amazon Ads → Amazon; GMV Max → TikTok Shop; Walmart Connect → Walmart. CM3 = net revenue − product cost','Ads gắn kênh: Meta + Google + AppLovin → Shopify; Amazon Ads → Amazon; GMV Max → TikTok Shop; Walmart Connect → Walmart. CM3 = doanh thu thuần − giá vốn') + (a.productCostEst ? tv(' (*estimated at ',' (*ước ')+(a.cogsEstRate*100).toFixed(0)+'%'+(a.productCostHasActual?tv(', partly from the accounting inventory ledger',', một phần theo sổ kho kế toán'):'')+')' : (a.productCostHasActual ? tv(' (from the accounting inventory ledger)',' (theo sổ kho kế toán)') : tv(' ($0, not available)',' ($0, chưa có)'))) + tv(' − per-order fulfillment (FBA, ShipMonk) − marketplace/payment fees − ads − affiliate; storage and G&amp;A not deducted (column total = the CM3 tile). Plan: % = gross sales this period ÷ plan spread evenly by day.',' − fulfillment theo đơn (FBA, ShipMonk) − phí sàn/cổng − ads − affiliate; chưa trừ lưu kho và G&amp;A (tổng cột = CM3 trên ô chỉ số). Kế hoạch: % = doanh thu gộp kỳ này ÷ kế hoạch rải đều theo ngày.');
   }
 
   // ---------- alerts ----------
@@ -2210,30 +2811,31 @@
     const items = [];
     const be = breakEvenMer(a);
     if(merNow.value!==null && be){
-      if(merNow.value < be) items.push({lvl:'crit', name:'MER '+merNow.value.toFixed(2)+'x dưới mức hoà vốn '+be.toFixed(2)+'x', note:'Mỗi $1 quảng cáo đang không đủ bù CM2 — xem trang Marketing', stake:(be-merNow.value)*merNow.spend, action:'Cắt chi ở kênh ROAS thấp nhất hoặc nâng AOV; cần thêm '+money((be-merNow.value)*merNow.spend,{compact:true})+' doanh thu để hoà vốn'});
-      else if(merNow.value < be*1.15) items.push({lvl:'warn', name:'MER '+merNow.value.toFixed(2)+'x sát mức hoà vốn '+be.toFixed(2)+'x', note:'Biên an toàn dưới 15% · còn '+money((merNow.value-be)*merNow.spend,{compact:true})+' trước khi lỗ', stake:null, action:'Theo dõi từng ngày; đừng tăng ngân sách khi ROAS chưa cải thiện'});
+      if(merNow.value < be) items.push({lvl:'crit', name:'MER '+merNow.value.toFixed(2)+tv('x below break-even ','x dưới mức hoà vốn ')+be.toFixed(2)+'x', note:tv('Every $1 of ads is not covering CM2 — see the Marketing page','Mỗi $1 quảng cáo đang không đủ bù CM2 — xem trang Marketing'), stake:(be-merNow.value)*merNow.spend, action:tv('Cut spend on the lowest-ROAS channel or raise AOV; ','Cắt chi ở kênh ROAS thấp nhất hoặc nâng AOV; cần thêm ')+money((be-merNow.value)*merNow.spend,{compact:true})+tv(' more revenue needed to break even',' doanh thu để hoà vốn')});
+      else if(merNow.value < be*1.15) items.push({lvl:'warn', name:'MER '+merNow.value.toFixed(2)+tv('x close to break-even ','x sát mức hoà vốn ')+be.toFixed(2)+'x', note:tv('Safety margin under 15% · ','Biên an toàn dưới 15% · còn ')+money((merNow.value-be)*merNow.spend,{compact:true})+tv(' left before a loss',' trước khi lỗ'), stake:null, action:tv('Watch daily; do not raise budgets until ROAS improves','Theo dõi từng ngày; đừng tăng ngân sách khi ROAS chưa cải thiện')});
     }
     const last = rows[rows.length-1], m = last.iso.slice(0,7), plan = PLAN.months[m];
     if(plan){
       const closed = (monthMap[m]||[]).filter(r=>!r._syncing), lastDom = closed.length ? closed[closed.length-1].date.getDate() : 0, dim = daysInMonth(m);
-      const check = (label, actual, planV) => { if(planV===null || !lastDom) return; const exp = planV*lastDom/dim; const d = (actual/exp-1)*100; if(d < -10) items.push({lvl: d<-25?'crit':'warn', name: label+' đến ngày '+lastDom+' thấp hơn kế hoạch '+Math.abs(d).toFixed(0)+'%', note: money(actual,{compact:true})+' so với '+money(exp,{compact:true})+' kế hoạch rải đều', stake: exp-actual, action:'Thiếu '+money(exp-actual,{compact:true})+' so kế hoạch rải đều — quyết thúc đẩy hay hạ kế hoạch'}); };
-      check('Doanh thu thuần', sum(closed.map(r=> sum(CH_KEYS.map(k=>r.channels[k]-r.discounts[k]-r.refunds[k])))), plan.net_revenue);
-      if(plan.channels.amazon) check('Amazon (doanh thu gộp)', sum(closed.map(r=>r.channels.amazon)), plan.channels.amazon.gross);
-    } else items.push({lvl:'warn', name:'Chưa có kế hoạch tháng '+parseInt(m.slice(5,7),10)+'/'+m.slice(0,4), note:'Điền data/targets_monthly.json để có cột "so kế hoạch" và cảnh báo nhịp độ', stake:null});
+      const check = (label, actual, planV) => { if(planV===null || !lastDom) return; const exp = planV*lastDom/dim; const d = (actual/exp-1)*100; if(d < -10) items.push({lvl: d<-25?'crit':'warn', name: label+tv(' through day ',' đến ngày ')+lastDom+tv(' is below plan by ',' thấp hơn kế hoạch ')+Math.abs(d).toFixed(0)+'%', note: money(actual,{compact:true})+tv(' vs ',' so với ')+money(exp,{compact:true})+tv(' plan spread evenly',' kế hoạch rải đều'), stake: exp-actual, action:tv('Short ','Thiếu ')+money(exp-actual,{compact:true})+tv(' vs the evenly spread plan — decide to push or lower the plan',' so kế hoạch rải đều — quyết thúc đẩy hay hạ kế hoạch')}); };
+      check(tv('Net revenue','Doanh thu thuần'), sum(closed.map(r=> sum(CH_KEYS.map(k=>r.channels[k]-r.discounts[k]-r.refunds[k])))), plan.net_revenue);
+      if(plan.channels.amazon) check(tv('Amazon (gross sales)','Amazon (doanh thu gộp)'), sum(closed.map(r=>r.channels.amazon)), plan.channels.amazon.gross);
+    } else items.push({lvl:'warn', name:tv('No plan for ','Chưa có kế hoạch tháng ')+(LANG==='vi' ? parseInt(m.slice(5,7),10)+'/'+m.slice(0,4) : MONTHS_EN[parseInt(m.slice(5,7),10)-1]+' '+m.slice(0,4)), note:tv('Fill in data/targets_monthly.json to get the "vs plan" column and pacing alerts','Điền data/targets_monthly.json để có cột "so kế hoạch" và cảnh báo nhịp độ'), stake:null});
     const refundPct = a.grossSales>0 ? sum(CH_KEYS.map(k=>a.refund[k]))/a.grossSales*100 : 0;
-    if(refundPct>8) items.push({lvl: refundPct>12?'crit':'warn', name:'Hoàn tiền '+refundPct.toFixed(1)+'% doanh thu gộp', note:'Ngưỡng cảnh báo 8% · '+CH_KEYS.filter(k=>a.gross[k]>0).map(k=>CH_LABEL[k]+' '+(a.refund[k]/a.gross[k]*100).toFixed(1)+'%').join(', '), stake:(refundPct-8)/100*a.grossSales, action:'Phần vượt ngưỡng 8% = '+money((refundPct-8)/100*a.grossSales,{compact:true})+' — xem lý do trả theo kênh/sản phẩm'});
+    if(refundPct>8) items.push({lvl: refundPct>12?'crit':'warn', name:tv('Refunds ','Hoàn tiền ')+refundPct.toFixed(1)+tv('% of gross sales','% doanh thu gộp'), note:tv('Alert threshold 8% · ','Ngưỡng cảnh báo 8% · ')+CH_KEYS.filter(k=>a.gross[k]>0).map(k=>CH_LABEL[k]+' '+(a.refund[k]/a.gross[k]*100).toFixed(1)+'%').join(', '), stake:(refundPct-8)/100*a.grossSales, action:tv('Excess over the 8% threshold = ','Phần vượt ngưỡng 8% = ')+money((refundPct-8)/100*a.grossSales,{compact:true})+tv(' — review return reasons by channel/product',' — xem lý do trả theo kênh/sản phẩm')});
     const discPct = a.gross.shopify>0 ? a.discountBy.shopify/a.gross.shopify*100 : 0;
-    if(discPct>40) items.push({lvl:'warn', name:'Giảm giá Shopify '+discPct.toFixed(0)+'% doanh thu gộp Shopify', note:'Ngưỡng 40% · mã giảm giá, KM tự động, B1G2F — xem trang Lãi lỗ', stake:(discPct-40)/100*a.gross.shopify, action:'Phần vượt ngưỡng 40% = '+money((discPct-40)/100*a.gross.shopify,{compact:true})+' — rà mã giảm giá và B1G2F'});
-    if(a.amazonAdsProvisionalDays>0 || merNow.days<merNow.of) items.push({lvl:'warn', name:'Amazon Ads chưa có số cho '+(merNow.of-merNow.days)+' ngày cuối kỳ', note:'Sellerboard xuất 1 lần/ngày (~18h giờ VN) — MER và chi marketing kỳ này sẽ tăng khi số về', stake:null, action: a.amazonAdsProvisionalAmt>0 ? 'Đang tạm tính '+money(a.amazonAdsProvisionalAmt,{compact:true})+' chi phí' : 'Chờ số về rồi xem lại MER'});
-    SOURCES.filter(s0=> s0.level==='w' || s0.level==='c').forEach(s0=>{ if(s0.level==='c' && !HEALTH_FLAG[s0.key]) return; items.push({lvl: s0.level==='c'?'crit':'warn', name:'Nguồn '+s0.name, note: s0.age, stake:null, action:'Xem trang Dữ liệu'}); });
-    if(!a.productCostEst && !a.productCostHasActual) items.push({lvl:'warn', name:'Chưa trừ giá vốn sản phẩm', note:'CM3 và EBITDA đang cao hơn thực tế — điền data/cogs_monthly.json (số kế toán) hoặc bật cogs_estimate trong data/targets_monthly.json', stake:null});
-    else if(a.productCostEst && a.productCostHasActual) items.push({lvl:'ok', name:'Giá vốn: một phần còn ước tính', note:money(a.productCostActual,{compact:true})+' theo sổ kho kế toán, '+money(a.productCostEstAmount,{compact:true})+' còn ước '+(a.cogsEstRate*100).toFixed(0)+'% — điền nốt các kênh/tháng còn trống trong data/cogs_monthly.json', stake:null});
-    else if(a.productCostEst) items.push({lvl:'warn', name:'Giá vốn còn là ước tính '+(a.cogsEstRate*100).toFixed(0)+'%', note:'Chưa có số kế toán kỳ này — CM3, EBITDA và biên theo kênh chỉ là xấp xỉ ('+money(a.productCostEstAmount,{compact:true})+' đang ước). Điền data/cogs_monthly.json khi có báo cáo tồn kho.', stake:null, action:'Gửi CAU_HOI_GUI_KE_TOAN.txt cho kế toán'});
-    if(a.opexDays===0) items.push({lvl:'warn', name:'Chưa có G&A kỳ này', note:'EBITDA chưa trừ lương/văn phòng — điền data/opex_monthly.json', stake:null});
-    if(!items.length) items.push({lvl:'ok', name:'Không có cảnh báo', note:'MER trên hoà vốn, nhịp độ trong kế hoạch, mọi nguồn đủ số', stake:null});
+    if(discPct>40) items.push({lvl:'warn', name:tv('Shopify discounts ','Giảm giá Shopify ')+discPct.toFixed(0)+tv('% of Shopify gross sales','% doanh thu gộp Shopify'), note:tv('Threshold 40% · discount codes, automatic promotions, B1G2F — see the P&L page','Ngưỡng 40% · mã giảm giá, KM tự động, B1G2F — xem trang Lãi lỗ'), stake:(discPct-40)/100*a.gross.shopify, action:tv('Excess over the 40% threshold = ','Phần vượt ngưỡng 40% = ')+money((discPct-40)/100*a.gross.shopify,{compact:true})+tv(' — review discount codes and B1G2F',' — rà mã giảm giá và B1G2F')});
+    if(a.amazonAdsProvisionalDays>0 || merNow.days<merNow.of) items.push({lvl:'warn', name:tv('Amazon Ads has no data for the last ','Amazon Ads chưa có số cho ')+(merNow.of-merNow.days)+tv((merNow.of-merNow.days)===1 ? ' day of the period' : ' days of the period',' ngày cuối kỳ'), note:tv('Sellerboard exports once a day (~18:00 VN) — MER and marketing spend for this period will rise when it lands','Sellerboard xuất 1 lần/ngày (~18h giờ VN) — MER và chi marketing kỳ này sẽ tăng khi số về'), stake:null, action: a.amazonAdsProvisionalAmt>0 ? tv('Provisionally counting ','Đang tạm tính ')+money(a.amazonAdsProvisionalAmt,{compact:true})+tv(' of cost',' chi phí') : tv('Wait for the data, then recheck MER','Chờ số về rồi xem lại MER')});
+    SOURCES.filter(s0=> s0.level==='w' || s0.level==='c').forEach(s0=>{ if(s0.level==='c' && !HEALTH_FLAG[s0.key]) return; items.push({lvl: s0.level==='c'?'crit':'warn', name:tx('u.source')+' '+s0.name, note: s0.age, stake:null, action:tx('u.seeData')}); });
+    if(!a.productCostEst && !a.productCostHasActual) items.push({lvl:'warn', name:tv('Product cost not deducted','Chưa trừ giá vốn sản phẩm'), note:tv('CM3 and EBITDA are overstated — fill in data/cogs_monthly.json (accounting figures) or enable cogs_estimate in data/targets_monthly.json','CM3 và EBITDA đang cao hơn thực tế — điền data/cogs_monthly.json (số kế toán) hoặc bật cogs_estimate trong data/targets_monthly.json'), stake:null});
+    else if(a.productCostEst && a.productCostHasActual) items.push({lvl:'ok', name:tv('Product cost: partly still estimated','Giá vốn: một phần còn ước tính'), note:money(a.productCostActual,{compact:true})+tv(' from the accounting inventory ledger, ',' theo sổ kho kế toán, ')+money(a.productCostEstAmount,{compact:true})+tv(' still estimated at ',' còn ước ')+(a.cogsEstRate*100).toFixed(0)+tv('% — fill in the remaining channels/months in data/cogs_monthly.json','% — điền nốt các kênh/tháng còn trống trong data/cogs_monthly.json'), stake:null});
+    else if(a.productCostEst) items.push({lvl:'warn', name:tv('Product cost is still an estimate of ','Giá vốn còn là ước tính ')+(a.cogsEstRate*100).toFixed(0)+'%', note:tv('No accounting figures for this period — CM3, EBITDA and channel margins are approximations (','Chưa có số kế toán kỳ này — CM3, EBITDA và biên theo kênh chỉ là xấp xỉ (')+money(a.productCostEstAmount,{compact:true})+tv(' estimated). Fill in data/cogs_monthly.json once the inventory report is available.',' đang ước). Điền data/cogs_monthly.json khi có báo cáo tồn kho.'), stake:null, action:tv('Send CAU_HOI_GUI_KE_TOAN.txt to the accountant','Gửi CAU_HOI_GUI_KE_TOAN.txt cho kế toán')});
+    try{ const sr = stockRisk(); if(sr.count>0){ const list = sr.top.map(r=>r.sku).join(', '); items.push({lvl: sr.atRisk>5000 ? 'crit' : 'warn', name: tx('risk.stockout', {n: sr.count}), note: tx('risk.stockoutNote', {list}), stake: sr.atRisk, action: tx('risk.stockoutAction', {list})}); } }catch(e){}
+    if(a.opexDays===0) items.push({lvl:'warn', name:tv('No G&A for this period','Chưa có G&A kỳ này'), note:tv('EBITDA does not yet deduct salaries/office — fill in data/opex_monthly.json','EBITDA chưa trừ lương/văn phòng — điền data/opex_monthly.json'), stake:null});
+    if(!items.length) items.push({lvl:'ok', name:tv('No alerts','Không có cảnh báo'), note:tv('MER above break-even, pacing on plan, every source reported','MER trên hoà vốn, nhịp độ trong kế hoạch, mọi nguồn đủ số'), stake:null});
     const order = {crit:0, warn:1, ok:2};
     items.sort((x,y)=> (order[x.lvl]-order[y.lvl]) || ((y.stake||0)-(x.stake||0)));
-    el.innerHTML = items.map(i=>`<div class="gap-row ${i.lvl}"><span class="dot ${i.lvl==='crit'?'c':i.lvl==='warn'?'w':'g'}"></span><span class="g-name">${i.name}${i.stake>0 ? ' <span class="stake" title="Số tiền đang bị ảnh hưởng">'+money(i.stake,{compact:true})+'</span>' : ''}</span><span class="g-note">${i.action ? i.action+' · ' : ''}${i.note}</span></div>`).join('');
+    el.innerHTML = items.map(i=>`<div class="gap-row ${i.lvl}"><span class="dot ${i.lvl==='crit'?'c':i.lvl==='warn'?'w':'g'}"></span><span class="g-name">${i.name}${i.stake>0 ? ' <span class="stake" title="'+tv('Money affected','Số tiền đang bị ảnh hưởng')+'">'+money(i.stake,{compact:true})+'</span>' : ''}</span><span class="g-note">${i.action ? i.action+' · ' : ''}${i.note}</span></div>`).join('');
     return items;
   }
 
@@ -2270,7 +2872,7 @@
   }
   // first day a sync carries per-SKU units (sync v2.0 Shopify / v2.8 Amazon), null before the first run
   function skuUnitsSince(data){ const si = data && data.meta && data.meta.schema_info; return (si && si.sku_units_since) || null; }
-  const fmtDmy = d => String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
+  const fmtDmy = d => LANG==='vi' ? String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0') : MONTHS_EN[d.getMonth()]+' '+d.getDate();
   function renderInventory(){
     const t = document.getElementById('invTable'); if(!t) return;
     const inv = AMAZON_STORAGE_LIVE_DATA && AMAZON_STORAGE_LIVE_DATA.inventory;
@@ -2278,13 +2880,13 @@
     const azSince = skuUnitsSince(AMAZON_LIVE_DATA), shSince = skuUnitsSince(SHOPIFY_LIVE_DATA);
     const gaps = document.getElementById('invGaps');
     gaps.innerHTML = [
-      {name:'Tồn kho ShipMonk (Shopify, Walmart, FBM)', note:'ShipMonk API có inventory levels — chưa kéo; hiện chỉ có FBA', dot:'c'},
-      {name:'Giá vốn landed theo SKU', note: costKnown ? Object.keys(COGS_SKUS).length+' SKU trong data/cogs_skus.json — dùng cho vốn tồn kho và lãi theo sản phẩm' : 'Điền data/cogs_skus.json (từ báo cáo tồn kho kế toán) để tính vốn nằm trong tồn kho và lãi theo sản phẩm', dot: costKnown ? 'g' : 'c'},
-      {name:'Số lượng bán theo SKU mỗi ngày (Amazon, Shopify)', note: (azSince||shSince) ? 'Có từ '+[azSince ? 'Amazon '+azSince : null, shSince ? 'Shopify '+shSince : null].filter(Boolean).join(' · ') : 'Script đồng bộ Shopify 2.0 / Amazon 2.8 ghi units theo SKU mỗi ngày — chờ lần chạy đầu sau khi up', dot: (azSince||shSince) ? 'g' : 'w'},
-      {name:'Hàng đang đặt (PO) ngoài Amazon inbound', note: PURCHASE_ORDERS.length ? PURCHASE_ORDERS.length+' PO trong data/purchase_orders.json' : 'Nhập tay vào data/purchase_orders.json (SKU, số lượng, ngày về) — tính vào ngày hết hàng', dot: PURCHASE_ORDERS.length ? 'g' : 'w'},
+      {name:tv('ShipMonk inventory (Shopify, Walmart, FBM)','Tồn kho ShipMonk (Shopify, Walmart, FBM)'), note: SHIPMONK_INVENTORY ? Object.keys(SHIPMONK_INVENTORY.skus||{}).length+' SKU · snapshot '+String(SHIPMONK_INVENTORY.as_of||'').slice(0,10) : tv('Waiting for the ShipMonk 1.4 script to run (stock by SKU / warehouse)','Chờ script ShipMonk 1.4 chạy (tồn kho theo SKU / kho)'), dot: SHIPMONK_INVENTORY ? 'g' : 'w'},
+      {name:tv('Landed cost per SKU','Giá vốn landed theo SKU'), note: costKnown ? Object.keys(COGS_SKUS).length+tv(' SKUs in data/cogs_skus.json — used for inventory capital and profit by product',' SKU trong data/cogs_skus.json — dùng cho vốn tồn kho và lãi theo sản phẩm') : tv('Fill in data/cogs_skus.json (from the accounting inventory report) to compute capital tied up in inventory and profit by product','Điền data/cogs_skus.json (từ báo cáo tồn kho kế toán) để tính vốn nằm trong tồn kho và lãi theo sản phẩm'), dot: costKnown ? 'g' : 'c'},
+      {name:tv('Units sold per SKU per day (Amazon, Shopify)','Số lượng bán theo SKU mỗi ngày (Amazon, Shopify)'), note: (azSince||shSince) ? tv('Available from ','Có từ ')+[azSince ? 'Amazon '+azSince : null, shSince ? 'Shopify '+shSince : null].filter(Boolean).join(' · ') : tv('The Shopify 2.0 / Amazon 2.8 sync scripts write units per SKU per day — waiting for the first run after upload','Script đồng bộ Shopify 2.0 / Amazon 2.8 ghi units theo SKU mỗi ngày — chờ lần chạy đầu sau khi up'), dot: (azSince||shSince) ? 'g' : 'w'},
+      {name:tv('Purchase orders (PO) outside Amazon inbound','Hàng đang đặt (PO) ngoài Amazon inbound'), note: PURCHASE_ORDERS.length ? PURCHASE_ORDERS.length+tv(' POs in data/purchase_orders.json',' PO trong data/purchase_orders.json') : tv('Enter by hand in data/purchase_orders.json (SKU, quantity, ETA) — counted in the stock-out date','Nhập tay vào data/purchase_orders.json (SKU, số lượng, ngày về) — tính vào ngày hết hàng'), dot: PURCHASE_ORDERS.length ? 'g' : 'w'},
     ].map(g=>`<div class="gap-row"><span class="dot ${g.dot}"></span><span class="g-name">${g.name}</span><span class="g-note">${g.note}</span></div>`).join('');
     renderPurchaseOrders(inv && inv.snapshot ? inv.snapshot : {});
-    if(!inv || !inv.snapshot){ document.getElementById('invNote').textContent = 'Chưa có snapshot tồn kho FBA'; t.innerHTML=''; document.getElementById('invKpis').innerHTML=''; document.getElementById('invCaption').textContent=''; return; }
+    if(!inv || !inv.snapshot){ document.getElementById('invNote').textContent = tv('No FBA inventory snapshot yet','Chưa có snapshot tồn kho FBA'); t.innerHTML=''; document.getElementById('invKpis').innerHTML=''; document.getElementById('invCaption').textContent=''; return; }
     const snap = inv.snapshot, win = (AMAZON_LIVE_DATA && AMAZON_LIVE_DATA.window_days) || 45;
     const skuFees = (AMAZON_LIVE_DATA && AMAZON_LIVE_DATA.meta && AMAZON_LIVE_DATA.meta.sku_fees) || {};
     // sales velocity: units per SKU over the last 30 closed days from the sync's per-SKU units (v2.8+), else the 45-day fee basis
@@ -2335,28 +2937,30 @@
     const waiting = rows.filter(r=> !r.virtual && r.outD!==null && r.outD<30 && r.perDay>=0.2 && !(r.outAllD!==null && r.outAllD<30));
     const high = rows.filter(r=> r.perDay>0 && r.coverIn!==null && r.coverIn>180 && r.total>50), dead = rows.filter(r=> r.perDay===0 && r.total>0);
     const kp = document.getElementById('invKpis');
-    const soonFoot = soon.length ? 'sớm nhất '+fmtDmy(addDays(soon[0].outAllD))+' · '+soon.slice(0,3).map(r=>r.sku).join(', ') : (waiting.length ? waiting.length+' SKU chờ hàng về / PO' : '—');
+    const soonFoot = soon.length ? tx('inv.earliest')+' '+fmtDmy(addDays(soon[0].outAllD))+' · '+soon.slice(0,3).map(r=>r.sku).join(', ') : (waiting.length ? waiting.length+tv(' SKUs waiting on inbound / PO',' SKU chờ hàng về / PO') : '—');
     kp.innerHTML = `
-      <div class="kpi"><div class="label">FBA bán được</div><div class="value">${intFmt(inv.fulfillable||0)}</div><div class="foot">${intFmt(inv.reserved||0)} đang giữ (đơn/chuyển kho) · ${intFmt(inv.unfulfillable||0)} không bán được · snapshot ${inv.as_of||''}</div></div>
-      <div class="kpi"><div class="label">Đang về FBA + PO</div><div class="value">${intFmt((inv.inbound||0)+poUnits)}</div><div class="foot">${intFmt(inv.inbound||0)} Amazon inbound · ${intFmt(poUnits)} PO nhập tay (${Object.keys(poBySku).length} SKU)</div></div>
-      <div class="kpi${soon.length?' alert':''}"><div class="label">Hết hàng trong 30 ngày</div><div class="value">${soon.length}</div><div class="foot">${soonFoot}</div></div>
-      <div class="kpi"><div class="label">${costKnown ? 'Vốn nằm trong FBA' : 'Phí lưu kho '+(stKey ? stKey.slice(5,7)+'/'+stKey.slice(0,4) : '')}</div><div class="value">${costKnown ? money(capitalTotal,{compact:true}) : money(stTotal,{compact:true})}</div><div class="foot">${costKnown ? capitalSkus+'/'+rows.length+' SKU có giá vốn · lưu kho '+(stKey ? stKey.slice(5,7)+'/'+stKey.slice(0,4)+' '+money(stTotal,{compact:true}) : '—') : (ltKey ? 'LTSF '+ltKey.slice(5,7)+'/'+ltKey.slice(0,4)+': '+money(ltTotal)+' · ' : '')+high.length+' SKU tồn &gt; 180 ngày · '+dead.length+' SKU không bán trong '+velWin+' ngày'}</div></div>`;
-    document.getElementById('invNote').textContent = 'Snapshot FBA Inventory API '+(inv.as_of||'')+' · tốc độ bán = '+(useDaily ? 'units theo SKU '+skuDays+' ngày gần nhất (sync 2.8)' : 'đơn vị đã ship trong '+win+' ngày đồng bộ Amazon ÷ '+win);
-    const flag = r => r.virtual ? '<span class="tag info"><span class="d"></span>bundle ảo — tồn theo SKU thành phần</span>' : r.perDay===0 ? '<span class="tag info"><span class="d"></span>không bán</span>' : r.fulfillable<=0 ? '<span class="tag gap"><span class="d"></span>hết hàng</span>' : (r.outAllD!==null && r.outAllD<30) ? '<span class="tag gap"><span class="d"></span>sắp hết — đặt ngay</span>' : (r.outD!==null && r.outD<30) ? '<span class="tag info"><span class="d"></span>chờ hàng về</span>' : (r.coverIn!==null && r.coverIn>180) ? '<span class="tag info"><span class="d"></span>tồn lâu</span>' : '<span class="tag live"><span class="d"></span>ổn</span>';
-    const fmtOut = d => d===null ? '—' : d>=730 ? '>2 năm' : fmtDmy(addDays(d))+' <small style="color:var(--ink-muted)">'+d+' ng</small>';
+      <div class="kpi"><div class="label">${tv('FBA fulfillable','FBA bán được')}</div><div class="value">${intFmt(inv.fulfillable||0)}</div><div class="foot">${intFmt(inv.reserved||0)} ${tv('reserved (orders/transfers)','đang giữ (đơn/chuyển kho)')} · ${intFmt(inv.unfulfillable||0)} ${tv('unfulfillable','không bán được')} · snapshot ${inv.as_of||''}</div></div>
+      <div class="kpi"><div class="label">${tv('Inbound to FBA + PO','Đang về FBA + PO')}</div><div class="value">${intFmt((inv.inbound||0)+poUnits)}</div><div class="foot">${intFmt(inv.inbound||0)} Amazon inbound · ${intFmt(poUnits)} ${tv('manual PO','PO nhập tay')} (${Object.keys(poBySku).length} SKU)</div></div>
+      <div class="kpi${soon.length?' alert':''}"><div class="label">${tx('inv.soon')}</div><div class="value">${soon.length}</div><div class="foot">${soonFoot}</div></div>
+      <div class="kpi"><div class="label">${costKnown ? tv('Capital tied up in FBA','Vốn nằm trong FBA') : tv('Storage fee ','Phí lưu kho ')+(stKey ? stKey.slice(5,7)+'/'+stKey.slice(0,4) : '')}</div><div class="value">${costKnown ? money(capitalTotal,{compact:true}) : money(stTotal,{compact:true})}</div><div class="foot">${costKnown ? capitalSkus+'/'+rows.length+tv(' SKUs with a cost · storage ',' SKU có giá vốn · lưu kho ')+(stKey ? stKey.slice(5,7)+'/'+stKey.slice(0,4)+' '+money(stTotal,{compact:true}) : '—') : (ltKey ? 'LTSF '+ltKey.slice(5,7)+'/'+ltKey.slice(0,4)+': '+money(ltTotal)+' · ' : '')+high.length+tv(' SKUs with &gt; 180 days of stock · ',' SKU tồn &gt; 180 ngày · ')+dead.length+tv(' SKUs with no sales in ',' SKU không bán trong ')+velWin+' '+tx('u.days')}</div></div>`;
+    document.getElementById('invNote').textContent = 'Snapshot FBA Inventory API '+(inv.as_of||'')+tv(' · sales velocity = ',' · tốc độ bán = ')+(useDaily ? tv('units per SKU over the last ','units theo SKU ')+skuDays+tv(' days (sync 2.8)',' ngày gần nhất (sync 2.8)') : tv('units shipped in the ','đơn vị đã ship trong ')+win+tv('-day Amazon sync window ÷ ',' ngày đồng bộ Amazon ÷ ')+win);
+    const flag = r => r.virtual ? '<span class="tag info"><span class="d"></span>'+tv('virtual bundle — stock held by its component SKUs','bundle ảo — tồn theo SKU thành phần')+'</span>' : r.perDay===0 ? '<span class="tag info"><span class="d"></span>'+tx('inv.tagNoSales')+'</span>' : r.fulfillable<=0 ? '<span class="tag gap"><span class="d"></span>'+tx('inv.tagOut')+'</span>' : (r.outAllD!==null && r.outAllD<30) ? '<span class="tag gap"><span class="d"></span>'+tx('inv.tagSoon')+'</span>' : (r.outD!==null && r.outD<30) ? '<span class="tag info"><span class="d"></span>'+tx('inv.tagWaiting')+'</span>' : (r.coverIn!==null && r.coverIn>180) ? '<span class="tag info"><span class="d"></span>'+tv('overstocked','tồn lâu')+'</span>' : '<span class="tag live"><span class="d"></span>'+tx('inv.tagOk')+'</span>';
+    const fmtOut = d => d===null ? '—' : d>=730 ? tv('>2 years','>2 năm') : fmtDmy(addDays(d))+' <small style="color:var(--ink-muted)">'+d+' '+tx('u.d')+'</small>';
     const fmtPo = r => r.pos.length ? r.pos.map(p=>intFmt(p.qty)+(p.eta ? ' · '+p.eta.slice(8,10)+'/'+p.eta.slice(5,7) : '')).join('<br>') : '—';
-    t.innerHTML = `<thead><tr><th>SKU</th><th>Sản phẩm</th><th class="num">/ngày</th><th class="num">Bán được</th><th class="num">Đang về</th><th class="num">PO nhập tay</th><th class="num">Hết hàng (tồn)</th><th class="num">Hết hàng (tồn + về + PO)</th><th class="num">Vốn tồn</th><th class="num">Lưu kho/tháng</th><th>Trạng thái</th></tr></thead><tbody>`+
-      rows.slice(0,60).map(r=>`<tr><td style="font-family:var(--font-mono);font-size:11.5px;">${r.sku}</td><td title="${r.name.replace(/"/g,'&quot;')}">${r.name.slice(0,44)}${r.name.length>44?'…':''}</td><td class="num" title="${intFmt(r.units)} units / ${velWin} ngày">${r.perDay.toFixed(1)}</td><td class="num">${intFmt(r.fulfillable)}</td><td class="num">${intFmt(r.inbound)}</td><td class="num">${fmtPo(r)}</td><td class="num" style="white-space:nowrap;">${fmtOut(r.outD)}</td><td class="num" style="white-space:nowrap;">${fmtOut(r.outAllD)}</td><td class="num">${r.capital!==null ? money(r.capital,{compact:true}) : '—'}</td><td class="num">${r.fee ? money(r.fee) : '—'}</td><td>${flag(r)}</td></tr>`).join('')+'</tbody>';
-    document.getElementById('invCaption').textContent = (rows.length>60 ? 'Hiện 60/'+rows.length+' SKU bán chạy nhất. ' : '') + '"Hết hàng" = ngày tồn về 0 với tốc độ bán hiện tại (chưa tính mùa vụ); cột thứ hai cộng thêm hàng Amazon đang nhận và PO nhập tay đúng ngày về. ' + (costKnown ? 'Vốn tồn = tổng units tại/đang về Amazon × giá vốn landed trong data/cogs_skus.json. ' : 'Chưa có giá vốn theo SKU (data/cogs_skus.json) nên chưa tính vốn nằm trong tồn kho và lãi theo sản phẩm. ') + 'Lưu kho = phí Amazon tháng gần nhất có báo cáo theo SKU.';
+    t.innerHTML = `<thead><tr><th>SKU</th><th>${tx('u.product')}</th><th class="num">/${tx('u.day')}</th><th class="num">${tv('Fulfillable','Bán được')}</th><th class="num">${tv('Inbound','Đang về')}</th><th class="num">${tv('Manual PO','PO nhập tay')}</th><th class="num">${tx('inv.outStock')}</th><th class="num">${tx('inv.outAll')}</th><th class="num">${tv('Stock capital','Vốn tồn')}</th><th class="num">${tv('Storage/month','Lưu kho/tháng')}</th><th>${tx('u.status')}</th></tr></thead><tbody>`+
+      rows.slice(0,60).map(r=>`<tr><td style="font-family:var(--font-mono);font-size:11.5px;">${r.sku}</td><td title="${r.name.replace(/"/g,'&quot;')}">${r.name.slice(0,44)}${r.name.length>44?'…':''}</td><td class="num" title="${intFmt(r.units)} units / ${velWin} ${tx('u.days')}">${r.perDay.toFixed(1)}</td><td class="num">${intFmt(r.fulfillable)}</td><td class="num">${intFmt(r.inbound)}</td><td class="num">${fmtPo(r)}</td><td class="num" style="white-space:nowrap;">${fmtOut(r.outD)}</td><td class="num" style="white-space:nowrap;">${fmtOut(r.outAllD)}</td><td class="num">${r.capital!==null ? money(r.capital,{compact:true}) : '—'}</td><td class="num">${r.fee ? money(r.fee) : '—'}</td><td>${flag(r)}</td></tr>`).join('')+'</tbody>';
+    document.getElementById('invCaption').textContent = (rows.length>60 ? tv('Showing the 60 best-selling of ','Hiện 60/')+rows.length+tv(' SKUs. ',' SKU bán chạy nhất. ') : '') + tv('"Stock-out" = the day stock reaches 0 at the current sales velocity (no seasonality); the second column adds Amazon inbound and manual POs on their ETA. ','"Hết hàng" = ngày tồn về 0 với tốc độ bán hiện tại (chưa tính mùa vụ); cột thứ hai cộng thêm hàng Amazon đang nhận và PO nhập tay đúng ngày về. ') + (costKnown ? tv('Stock capital = total units at/inbound to Amazon × landed cost in data/cogs_skus.json. ','Vốn tồn = tổng units tại/đang về Amazon × giá vốn landed trong data/cogs_skus.json. ') : tv('No per-SKU cost yet (data/cogs_skus.json), so capital tied up in inventory and profit by product are not computed. ','Chưa có giá vốn theo SKU (data/cogs_skus.json) nên chưa tính vốn nằm trong tồn kho và lãi theo sản phẩm. ')) + tv('Storage = Amazon fee for the latest month with a per-SKU report.','Lưu kho = phí Amazon tháng gần nhất có báo cáo theo SKU.');
   }
   // ---------- V9: order funnel + returns by SKU + product P&L (sync Shopify 2.0 / Amazon 2.8 + data/cogs_skus.json) ----------
   const FUNNEL_CH = ['shopify','amazon'];
-  function funnelAggregate(rows){
+  function funnelAggregate(rowsIn){
+    const rows = maskPartial() ? rowsIn.map(maskRow) : rowsIn;
     const out = {}; FUNNEL_CH.forEach(k=>{ out[k] = {days:0, placed:0, paid:0, paidKnown:false, fulfilled:0, partial:0, cancelled:0, refunded:0, refundedKnown:false}; });
     rows.forEach(r=>{ if(!r.funnel) return; FUNNEL_CH.forEach(k=>{ if(!CH_MASK[k]) return; const f = r.funnel[k]; if(!f) return; const o = out[k]; o.days++; o.placed += f.placed; o.fulfilled += f.fulfilled; o.partial += f.partial; o.cancelled += f.cancelled; if(f.paid!==null){ o.paid += f.paid; o.paidKnown = true; } if(f.refunded!==null){ o.refunded += f.refunded; o.refundedKnown = true; } }); });
     return out;
   }
-  function skuAggregate(rows){
+  function skuAggregate(rowsIn){
+    const rows = maskPartial() ? rowsIn.map(maskRow) : rowsIn;
     const out = {}; FUNNEL_CH.forEach(k=>{ out[k] = {days:0, units:{}, sales:{}, refunds:{}}; });
     const addTo = (o, f, src) => Object.entries(src||{}).forEach(([sku,v])=>{ o[f][sku] = (o[f][sku]||0) + (parseFloat(v)||0); });
     rows.forEach(r=>{ if(!r.sku) return; FUNNEL_CH.forEach(k=>{ if(!CH_MASK[k]) return; const d = r.sku[k]; if(!d) return; const o = out[k]; o.days++; addTo(o,'units',d.units); addTo(o,'sales',d.sales); addTo(o,'refunds',d.refunds); }); });
@@ -2366,41 +2970,41 @@
   function sinceText(kind){
     const f = kind==='sku' ? 'sku_units_since' : 'statuses_since';
     const si = d => (d && d.meta && d.meta.schema_info && d.meta.schema_info[f]) || null;
-    const parts = [si(SHOPIFY_LIVE_DATA) ? 'Shopify từ '+si(SHOPIFY_LIVE_DATA) : null, si(AMAZON_LIVE_DATA) ? 'Amazon từ '+si(AMAZON_LIVE_DATA) : null].filter(Boolean);
-    const masked = FUNNEL_CH.filter(k=>CH_MASK[k]).length===0 ? ' (đang lọc kênh không có dữ liệu này — chỉ Shopify và Amazon có)' : '';
-    return parts.length ? 'Kỳ đang xem chưa có ngày nào mang dữ liệu này ('+parts.join(' · ')+') — chọn kỳ muộn hơn.'+masked : 'Chờ script đồng bộ Shopify 2.0 / Amazon 2.8 chạy lần đầu (sau khi up 2 file .py, ≤ 30 phút) — dữ liệu có cho 45 ngày gần nhất, cũ hơn cần backfill.'+masked;
+    const parts = [si(SHOPIFY_LIVE_DATA) ? tv('Shopify from ','Shopify từ ')+si(SHOPIFY_LIVE_DATA) : null, si(AMAZON_LIVE_DATA) ? tv('Amazon from ','Amazon từ ')+si(AMAZON_LIVE_DATA) : null].filter(Boolean);
+    const masked = FUNNEL_CH.filter(k=>CH_MASK[k]).length===0 ? tv(' (the selected channel has no such data — only Shopify and Amazon do)',' (đang lọc kênh không có dữ liệu này — chỉ Shopify và Amazon có)') : '';
+    return parts.length ? tv('No day in the selected period carries this data yet (','Kỳ đang xem chưa có ngày nào mang dữ liệu này (')+parts.join(' · ')+tv(') — pick a later period.',') — chọn kỳ muộn hơn.')+masked : tv('Waiting for the first run of the Shopify 2.0 / Amazon 2.8 sync scripts (≤ 30 minutes after uploading the 2 .py files) — data covers the last 45 days, older needs a backfill.','Chờ script đồng bộ Shopify 2.0 / Amazon 2.8 chạy lần đầu (sau khi up 2 file .py, ≤ 30 phút) — dữ liệu có cho 45 ngày gần nhất, cũ hơn cần backfill.')+masked;
   }
   const pctOf = (x, y) => y>0 ? (x/y*100).toFixed(1)+'%' : '—';
   function renderFunnel(){
     const t = document.getElementById('funnelTable'), kp = document.getElementById('funnelKpis'); if(!t || !kp) return;
     const rows = currentRows(), f = funnelAggregate(rows), pr = prevLikeRows(), fp = pr ? funnelAggregate(pr) : null;
     const keys = FUNNEL_CH.filter(k=> CH_MASK[k] && f[k].days>0);
-    if(!keys.length){ kp.innerHTML=''; t.innerHTML=''; setNote('funnelNote','Chờ dữ liệu'); setNote('funnelCaption', sinceText('statuses')); return; }
+    if(!keys.length){ kp.innerHTML=''; t.innerHTML=''; setNote('funnelNote',tx('u.waiting')); setNote('funnelCaption', sinceText('statuses')); return; }
     const tot = o => keys.reduce((s,k)=>{ const x = o[k]; s.placed += x.placed; s.fulfilled += x.fulfilled; s.partial += x.partial; s.cancelled += x.cancelled; if(x.paidKnown){ s.paid += x.paid; s.paidBase += x.placed; } if(x.refundedKnown){ s.refunded += x.refunded; s.refBase += x.placed; } return s; }, {placed:0, paid:0, paidBase:0, fulfilled:0, partial:0, cancelled:0, refunded:0, refBase:0});
     const T = tot(f), P = fp ? tot(fp) : null;
     const rate = (x, y) => y>0 ? x/y*100 : null;
-    const dpts = (cur, prev, lowerBetter) => (cur===null || prev===null) ? '' : ` · <span class="${(cur-prev)*(lowerBetter?-1:1)>=0 ? 'd-up' : 'd-down'}">${cur-prev>=0?'+':''}${(cur-prev).toFixed(1)} đpt</span> so ${likeLabel()}`;
+    const dpts = (cur, prev, lowerBetter) => (cur===null || prev===null) ? '' : ` · <span class="${(cur-prev)*(lowerBetter?-1:1)>=0 ? 'd-up' : 'd-down'}">${cur-prev>=0?'+':''}${(cur-prev).toFixed(1)} ${tx('u.pts')}</span> ${tx('u.vs')} ${likeLabel()}`;
     const tiles = [
-      {l:'Đặt hàng', v: intFmt(T.placed), s: keys.map(k=>CH_LABEL[k]+' '+intFmt(f[k].placed)).join(' · '), pct: 100},
-      {l:'Đã thanh toán', v: T.paidBase>0 ? pctOf(T.paid, T.paidBase) : '—', s: T.paidBase>0 ? intFmt(T.paid)+' đơn'+(T.paidBase<T.placed ? ' (chỉ Shopify)' : '')+dpts(rate(T.paid,T.paidBase), P ? rate(P.paid,P.paidBase) : null, false) : 'Amazon không có trạng thái thanh toán', pct: rate(T.paid,T.paidBase)},
-      {l:'Đã giao đủ', v: pctOf(T.fulfilled, T.placed), s: intFmt(T.fulfilled)+' đơn · '+intFmt(T.partial)+' giao một phần'+dpts(rate(T.fulfilled,T.placed), P ? rate(P.fulfilled,P.placed) : null, false), pct: rate(T.fulfilled,T.placed)},
-      {l:'Huỷ', v: pctOf(T.cancelled, T.placed), s: intFmt(T.cancelled)+' đơn'+dpts(rate(T.cancelled,T.placed), P ? rate(P.cancelled,P.placed) : null, true), pct: rate(T.cancelled,T.placed), bad: rate(T.cancelled,T.placed)>5},
-      {l:'Có hoàn tiền', v: T.refBase>0 ? pctOf(T.refunded, T.refBase) : '—', s: T.refBase>0 ? intFmt(T.refunded)+' đơn'+(T.refBase<T.placed ? ' (chỉ Shopify)' : '')+dpts(rate(T.refunded,T.refBase), P ? rate(P.refunded,P.refBase) : null, true) : 'Amazon: xem tiền hoàn ở P&L', pct: rate(T.refunded,T.refBase), bad: rate(T.refunded,T.refBase)>8},
+      {l:tv('Placed','Đặt hàng'), v: intFmt(T.placed), s: keys.map(k=>CH_LABEL[k]+' '+intFmt(f[k].placed)).join(' · '), pct: 100},
+      {l:tv('Paid','Đã thanh toán'), v: T.paidBase>0 ? pctOf(T.paid, T.paidBase) : '—', s: T.paidBase>0 ? intFmt(T.paid)+' '+tx('u.orders')+(T.paidBase<T.placed ? tv(' (Shopify only)',' (chỉ Shopify)') : '')+dpts(rate(T.paid,T.paidBase), P ? rate(P.paid,P.paidBase) : null, false) : tv('Amazon has no payment status','Amazon không có trạng thái thanh toán'), pct: rate(T.paid,T.paidBase)},
+      {l:tv('Fully fulfilled','Đã giao đủ'), v: pctOf(T.fulfilled, T.placed), s: intFmt(T.fulfilled)+' '+tx('u.orders')+' · '+intFmt(T.partial)+tv(' partially fulfilled',' giao một phần')+dpts(rate(T.fulfilled,T.placed), P ? rate(P.fulfilled,P.placed) : null, false), pct: rate(T.fulfilled,T.placed)},
+      {l:tv('Cancelled','Huỷ'), v: pctOf(T.cancelled, T.placed), s: intFmt(T.cancelled)+' '+tx('u.orders')+dpts(rate(T.cancelled,T.placed), P ? rate(P.cancelled,P.placed) : null, true), pct: rate(T.cancelled,T.placed), bad: rate(T.cancelled,T.placed)>5},
+      {l:tv('With a refund','Có hoàn tiền'), v: T.refBase>0 ? pctOf(T.refunded, T.refBase) : '—', s: T.refBase>0 ? intFmt(T.refunded)+' '+tx('u.orders')+(T.refBase<T.placed ? tv(' (Shopify only)',' (chỉ Shopify)') : '')+dpts(rate(T.refunded,T.refBase), P ? rate(P.refunded,P.refBase) : null, true) : tv('Amazon: see refund amounts in the P&L','Amazon: xem tiền hoàn ở P&L'), pct: rate(T.refunded,T.refBase), bad: rate(T.refunded,T.refBase)>8},
     ];
     kp.innerHTML = tiles.map(x=>`<div class="fstage${x.bad?' bad':''}"><div class="l">${x.l}</div><div class="v">${x.v}</div><div class="s">${x.s}</div><div class="bar"><i style="width:${Math.max(0, Math.min(100, x.pct||0)).toFixed(1)}%"></i></div></div>`).join('');
     const n = rows.length;
-    t.innerHTML = '<thead><tr><th>Kênh</th><th class="num">Đặt</th><th class="num">Thanh toán</th><th class="num">Giao đủ</th><th class="num">Giao một phần</th><th class="num">Chưa giao</th><th class="num">Huỷ</th><th class="num">Có hoàn</th><th class="num">Tỷ lệ huỷ</th><th class="num">Tỷ lệ hoàn</th><th class="num">Ngày có số</th></tr></thead><tbody>' +
+    t.innerHTML = '<thead><tr><th>'+tx('f.channel')+'</th><th class="num">'+tv('Placed','Đặt')+'</th><th class="num">'+tv('Paid','Thanh toán')+'</th><th class="num">'+tv('Fulfilled','Giao đủ')+'</th><th class="num">'+tv('Partial','Giao một phần')+'</th><th class="num">'+tv('Unfulfilled','Chưa giao')+'</th><th class="num">'+tv('Cancelled','Huỷ')+'</th><th class="num">'+tv('Refunded','Có hoàn')+'</th><th class="num">'+tv('Cancel rate','Tỷ lệ huỷ')+'</th><th class="num">'+tv('Refund rate','Tỷ lệ hoàn')+'</th><th class="num">'+tv('Days with data','Ngày có số')+'</th></tr></thead><tbody>' +
       keys.map(k=>{ const o = f[k]; const open = Math.max(0, o.placed - o.fulfilled - o.partial - o.cancelled); return `<tr><td class="name">${CH_LABEL[k]}</td><td class="num">${intFmt(o.placed)}</td><td class="num">${o.paidKnown ? intFmt(o.paid) : '—'}</td><td class="num">${intFmt(o.fulfilled)}</td><td class="num">${intFmt(o.partial)}</td><td class="num">${intFmt(open)}</td><td class="num">${intFmt(o.cancelled)}</td><td class="num">${o.refundedKnown ? intFmt(o.refunded) : '—'}</td><td class="num ${rate(o.cancelled,o.placed)>5?'d-down':''}">${pctOf(o.cancelled,o.placed)}</td><td class="num ${o.refundedKnown && rate(o.refunded,o.placed)>8?'d-down':''}">${o.refundedKnown ? pctOf(o.refunded,o.placed) : '—'}</td><td class="num">${o.days}/${n}</td></tr>`; }).join('') +
-      (keys.length>1 ? `<tr style="font-weight:700;"><td class="name">Tổng</td><td class="num">${intFmt(T.placed)}</td><td class="num">${T.paidBase>0 ? intFmt(T.paid) : '—'}</td><td class="num">${intFmt(T.fulfilled)}</td><td class="num">${intFmt(T.partial)}</td><td class="num">${intFmt(Math.max(0, T.placed-T.fulfilled-T.partial-T.cancelled))}</td><td class="num">${intFmt(T.cancelled)}</td><td class="num">${T.refBase>0 ? intFmt(T.refunded) : '—'}</td><td class="num">${pctOf(T.cancelled,T.placed)}</td><td class="num">${T.refBase>0 ? pctOf(T.refunded,T.refBase) : '—'}</td><td class="num"></td></tr>` : '') + '</tbody>';
+      (keys.length>1 ? `<tr style="font-weight:700;"><td class="name">${tx('u.total')}</td><td class="num">${intFmt(T.placed)}</td><td class="num">${T.paidBase>0 ? intFmt(T.paid) : '—'}</td><td class="num">${intFmt(T.fulfilled)}</td><td class="num">${intFmt(T.partial)}</td><td class="num">${intFmt(Math.max(0, T.placed-T.fulfilled-T.partial-T.cancelled))}</td><td class="num">${intFmt(T.cancelled)}</td><td class="num">${T.refBase>0 ? intFmt(T.refunded) : '—'}</td><td class="num">${pctOf(T.cancelled,T.placed)}</td><td class="num">${T.refBase>0 ? pctOf(T.refunded,T.refBase) : '—'}</td><td class="num"></td></tr>` : '') + '</tbody>';
     const cov = keys.map(k=>f[k].days).reduce((x,y)=>Math.min(x,y), 1e9);
-    setNote('funnelNote', intFmt(T.placed)+' đơn đặt · huỷ '+pctOf(T.cancelled,T.placed)+(T.refBase>0 ? ' · có hoàn '+pctOf(T.refunded,T.refBase) : '')+(cov<n ? ' · '+cov+'/'+n+' ngày có số' : ''));
-    setNote('funnelCaption', 'Đếm theo ngày đặt hàng, trạng thái tại lần đồng bộ gần nhất (chỉ làm mới cho 45 ngày gần nhất — đơn cũ hơn giữ trạng thái lúc đó). "Đặt" gồm cả đơn huỷ trước khi thanh toán (không nằm trong doanh thu). Shopify: thanh toán = PAID / đã hoàn một phần hoặc toàn bộ; Amazon: từ All Orders report, không có trạng thái thanh toán. Ngưỡng cảnh báo: huỷ > 5%, hoàn > 8%.');
+    setNote('funnelNote', intFmt(T.placed)+tv(' orders placed · cancelled ',' đơn đặt · huỷ ')+pctOf(T.cancelled,T.placed)+(T.refBase>0 ? tv(' · refunded ',' · có hoàn ')+pctOf(T.refunded,T.refBase) : '')+(cov<n ? ' · '+cov+'/'+n+tv(' days with data',' ngày có số') : ''));
+    setNote('funnelCaption', tv('Counted by order date, status as of the latest sync (only the last 45 days are refreshed — older orders keep the status they had). "Placed" includes orders cancelled before payment (not in revenue). Shopify: paid = PAID / partially or fully refunded; Amazon: from the All Orders report, no payment status. Alert thresholds: cancelled > 5%, refunded > 8%.','Đếm theo ngày đặt hàng, trạng thái tại lần đồng bộ gần nhất (chỉ làm mới cho 45 ngày gần nhất — đơn cũ hơn giữ trạng thái lúc đó). "Đặt" gồm cả đơn huỷ trước khi thanh toán (không nằm trong doanh thu). Shopify: thanh toán = PAID / đã hoàn một phần hoặc toàn bộ; Amazon: từ All Orders report, không có trạng thái thanh toán. Ngưỡng cảnh báo: huỷ > 5%, hoàn > 8%.'));
   }
   function renderReturnsBySku(){
     const t = document.getElementById('returnsTable'); if(!t) return;
     const rows = currentRows(), sa = skuAggregate(rows), pr = prevLikeRows(), sp = pr ? skuAggregate(pr) : null;
     const keys = FUNNEL_CH.filter(k=> CH_MASK[k] && sa[k].days>0);
-    if(!keys.length){ t.innerHTML=''; setNote('returnsNote','Chờ dữ liệu'); setNote('returnsCaption', sinceText('sku')); return; }
+    if(!keys.length){ t.innerHTML=''; setNote('returnsNote',tx('u.waiting')); setNote('returnsCaption', sinceText('sku')); return; }
     const m = {};
     keys.forEach(k=>{ const o = sa[k]; const add = (sku, fld, v)=>{ const x = m[sku] = m[sku]||{sku, units:0, refunds:0, sales:0, ch:{}}; x[fld] += v; x.ch[k] = true; }; Object.entries(o.units).forEach(([sku,v])=>add(sku,'units',v)); Object.entries(o.refunds).forEach(([sku,v])=>add(sku,'refunds',v)); Object.entries(o.sales).forEach(([sku,v])=>add(sku,'sales',v)); });
     const list = Object.values(m);
@@ -2408,18 +3012,18 @@
     const prevRate = sku => { if(!sp) return null; let u=0, r=0; keys.forEach(k=>{ u += sp[k].units[sku]||0; r += sp[k].refunds[sku]||0; }); return u>0 ? r/u*100 : null; };
     const withR = list.filter(x=>x.refunds>0).sort((a,b)=> b.refunds - a.refunds || b.units - a.units).slice(0,15);
     const dcell = (cur, prev) => prev===null ? '<td class="num d-flat">—</td>' : `<td class="num ${cur-prev<=0?'d-up':'d-down'}">${prev.toFixed(1)}% → ${cur.toFixed(1)}%</td>`;
-    t.innerHTML = '<thead><tr><th>SKU</th><th>Sản phẩm</th><th>Kênh</th><th class="num">Bán (units)</th><th class="num">Trả (units)</th><th class="num">Tỷ lệ trả</th><th class="num">So '+likeLabel()+'</th><th class="num">DT gộp</th></tr></thead><tbody>' +
-      (withR.length ? withR.map(x=>{ const r = x.units>0 ? x.refunds/x.units*100 : null; return `<tr><td style="font-family:var(--font-mono);font-size:11.5px;">${x.sku}</td><td title="${skuName(x.sku).replace(/"/g,'&quot;')}">${skuName(x.sku).slice(0,40)}</td><td>${Object.keys(x.ch).map(k=>CH_LABEL[k]).join(', ')}</td><td class="num">${intFmt(x.units)}</td><td class="num">${intFmt(x.refunds)}</td><td class="num ${r!==null && r>8 ? 'd-down' : ''}">${r===null ? '—' : r.toFixed(1)+'%'}</td>${dcell(r===null?0:r, prevRate(x.sku))}<td class="num">${money(x.sales,{compact:true})}</td></tr>`; }).join('') : '<tr><td colspan="8" style="color:var(--ink-muted)">Không có đơn vị nào bị trả trong kỳ</td></tr>') +
-      `<tr style="font-weight:700;"><td class="name" colspan="3">Tổng ${list.length} SKU</td><td class="num">${intFmt(totU)}</td><td class="num">${intFmt(totR)}</td><td class="num">${pctOf(totR,totU)}</td><td class="num"></td><td class="num">${money(sum(list.map(x=>x.sales)),{compact:true})}</td></tr></tbody>`;
-    setNote('returnsNote', intFmt(totR)+' units trả / '+intFmt(totU)+' units bán = '+pctOf(totR,totU)+' · '+list.filter(x=>x.refunds>0).length+' SKU có trả');
-    setNote('returnsCaption', 'Units trả ghi theo ngày xử lý hoàn tiền (có thể thuộc đơn đặt trước kỳ), units bán theo ngày đặt — tỷ lệ là xấp xỉ theo kỳ. Hiện 15 SKU trả nhiều nhất; tên sản phẩm lấy từ snapshot FBA hoặc trường "name" trong data/cogs_skus.json. Shopify: refundLineItems; Amazon: số lượng trong RefundEvent.');
+    t.innerHTML = '<thead><tr><th>SKU</th><th>'+tx('u.product')+'</th><th>'+tx('f.channel')+'</th><th class="num">'+tv('Sold (units)','Bán (units)')+'</th><th class="num">'+tv('Returned (units)','Trả (units)')+'</th><th class="num">'+tv('Return rate','Tỷ lệ trả')+'</th><th class="num">'+tv('Vs ','So ')+likeLabel()+'</th><th class="num">'+tx('u.grossRev')+'</th></tr></thead><tbody>' +
+      (withR.length ? withR.map(x=>{ const r = x.units>0 ? x.refunds/x.units*100 : null; return `<tr><td style="font-family:var(--font-mono);font-size:11.5px;">${x.sku}</td><td title="${skuName(x.sku).replace(/"/g,'&quot;')}">${skuName(x.sku).slice(0,40)}</td><td>${Object.keys(x.ch).map(k=>CH_LABEL[k]).join(', ')}</td><td class="num">${intFmt(x.units)}</td><td class="num">${intFmt(x.refunds)}</td><td class="num ${r!==null && r>8 ? 'd-down' : ''}">${r===null ? '—' : r.toFixed(1)+'%'}</td>${dcell(r===null?0:r, prevRate(x.sku))}<td class="num">${money(x.sales,{compact:true})}</td></tr>`; }).join('') : '<tr><td colspan="8" style="color:var(--ink-muted)">'+tv('No units returned in this period','Không có đơn vị nào bị trả trong kỳ')+'</td></tr>') +
+      `<tr style="font-weight:700;"><td class="name" colspan="3">${tx('u.total')} ${list.length} SKU</td><td class="num">${intFmt(totU)}</td><td class="num">${intFmt(totR)}</td><td class="num">${pctOf(totR,totU)}</td><td class="num"></td><td class="num">${money(sum(list.map(x=>x.sales)),{compact:true})}</td></tr></tbody>`;
+    setNote('returnsNote', intFmt(totR)+tv(' units returned / ',' units trả / ')+intFmt(totU)+' '+tx('u.unitsSold')+' = '+pctOf(totR,totU)+' · '+list.filter(x=>x.refunds>0).length+tv(' SKUs with returns',' SKU có trả'));
+    setNote('returnsCaption', tv('Returned units are booked on the refund processing date (they may belong to orders placed before the period), units sold by order date — the rate is an approximation per period. Showing the 15 most-returned SKUs; product names come from the FBA snapshot or the "name" field in data/cogs_skus.json. Shopify: refundLineItems; Amazon: quantity in RefundEvent.','Units trả ghi theo ngày xử lý hoàn tiền (có thể thuộc đơn đặt trước kỳ), units bán theo ngày đặt — tỷ lệ là xấp xỉ theo kỳ. Hiện 15 SKU trả nhiều nhất; tên sản phẩm lấy từ snapshot FBA hoặc trường "name" trong data/cogs_skus.json. Shopify: refundLineItems; Amazon: số lượng trong RefundEvent.'));
   }
   const PROD_STATE = {group:'sku', q:''};
   function renderProductPnl(){
     const t = document.getElementById('prodTable'), ctl = document.getElementById('prodCtl'); if(!t || !ctl) return;
     const rows = currentRows(), sa = skuAggregate(rows);
     const keys = FUNNEL_CH.filter(k=> CH_MASK[k] && sa[k].days>0);
-    if(!keys.length){ ctl.innerHTML=''; t.innerHTML=''; setNote('prodNote','Chờ dữ liệu'); setNote('prodCaption', sinceText('sku')); return; }
+    if(!keys.length){ ctl.innerHTML=''; t.innerHTML=''; setNote('prodNote',tx('u.waiting')); setNote('prodCaption', sinceText('sku')); return; }
     const anyCode = Object.values(COGS_SKUS).some(v=>v.code);
     // allocation per channel over the days that carry SKU data for that channel (so partial coverage does not inflate costs)
     const items = {}; let realCost = 0, allSkus = 0, covMin = 1e9, chCm = 0;
@@ -2448,34 +3052,76 @@
     if(q) list = list.filter(it=> it.key.toLowerCase().includes(q) || it.skus.some(x=>x.toLowerCase().includes(q) || skuName(x).toLowerCase().includes(q)));
     list.sort((a,b)=> b.cm - a.cm);
     const n = rows.length;
-    ctl.innerHTML = `<input type="search" id="prodQ" placeholder="Tìm SKU / tên…" value="${PROD_STATE.q.replace(/"/g,'&quot;')}">` + (anyCode ? `<div class="seg" id="prodGroup"><button type="button" data-g="sku" class="${PROD_STATE.group==='sku'?'active':''}">SKU sàn</button><button type="button" data-g="code" class="${PROD_STATE.group==='code'?'active':''}">Mã nội bộ</button></div>` : '<span>Gộp theo mã nội bộ: thêm "code" vào data/cogs_skus.json</span>') + `<span>${list.length} dòng · sắp theo CM3</span>`;
+    ctl.innerHTML = `<input type="search" id="prodQ" placeholder="${tv('Search SKU / name…','Tìm SKU / tên…')}" value="${PROD_STATE.q.replace(/"/g,'&quot;')}">` + (anyCode ? `<div class="seg" id="prodGroup"><button type="button" data-g="sku" class="${PROD_STATE.group==='sku'?'active':''}">${tv('Platform SKU','SKU sàn')}</button><button type="button" data-g="code" class="${PROD_STATE.group==='code'?'active':''}">${tv('Internal code','Mã nội bộ')}</button></div>` : '<span>'+tv('Group by internal code: add "code" to data/cogs_skus.json','Gộp theo mã nội bộ: thêm "code" vào data/cogs_skus.json')+'</span>') + `<span>${list.length} ${tv('rows · sorted by CM3','dòng · sắp theo CM3')}</span>`;
     const qi = document.getElementById('prodQ'); qi.addEventListener('input', ()=>{ PROD_STATE.q = qi.value; const pos = qi.selectionStart; renderProductPnl(); const q2 = document.getElementById('prodQ'); if(q2){ q2.focus(); try{ q2.setSelectionRange(pos,pos); }catch(e){} } });
     const pg = document.getElementById('prodGroup'); if(pg) pg.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ PROD_STATE.group = b.dataset.g; renderProductPnl(); }));
     const show = list.slice(0,40);
     const tot = list.reduce((s,it)=>{ ['units','refunds','gross','net','cogs','fulfil','fees','ads','cm'].forEach(f=>{ s[f] += it[f]; }); return s; }, {units:0, refunds:0, gross:0, net:0, cogs:0, fulfil:0, fees:0, ads:0, cm:0});
     const nameOf = it => PROD_STATE.group==='code' ? (it.skus.map(skuName).find(Boolean)||'') : skuName(it.key);
-    t.innerHTML = '<thead><tr><th>'+(PROD_STATE.group==='code' ? 'Mã nội bộ' : 'SKU')+'</th><th>Sản phẩm</th><th>Kênh</th><th class="num">Units</th><th class="num">Trả</th><th class="num">DT gộp (pb)</th><th class="num">DT thuần (pb)</th><th class="num">Giá vốn</th><th class="num">Fulfillment (pb)</th><th class="num">Phí (pb)</th><th class="num">Ads + aff (pb)</th><th class="num">CM3</th><th class="num">CM3 / unit</th><th class="num">% DT thuần</th></tr></thead><tbody>' +
-      show.map(it=>`<tr><td style="font-family:var(--font-mono);font-size:11.5px;" title="${it.skus.join(', ')}">${it.key}${PROD_STATE.group==='code' && it.skus.length>1 ? ' <small style="color:var(--ink-muted)">'+it.skus.length+' SKU</small>' : ''}</td><td title="${nameOf(it).replace(/"/g,'&quot;')}">${nameOf(it).slice(0,36)}</td><td>${Object.keys(it.ch).map(k=>CH_LABEL[k]).join(', ')}</td><td class="num">${intFmt(it.units)}</td><td class="num">${intFmt(it.refunds)}</td><td class="num">${money(it.gross,{compact:true})}</td><td class="num">${money(it.net,{compact:true})}</td><td class="num" title="${it.cogsReal>0 ? (Math.abs(it.cogsReal-it.cogs)<0.5 ? 'giá vốn thật (cogs_skus.json)' : 'một phần giá vốn thật') : 'phân bổ từ giá vốn ước tính của kênh'}">${money(it.cogs,{compact:true})}${it.cogsReal>0 ? '' : ' <small style="color:var(--ink-muted)">ước</small>'}</td><td class="num">${money(it.fulfil,{compact:true})}</td><td class="num">${money(it.fees,{compact:true})}</td><td class="num">${money(it.ads,{compact:true})}</td><td class="num ${it.cm<0?'d-down':''}">${money(it.cm,{compact:true})}</td><td class="num ${it.cm<0?'d-down':''}">${it.units>0 ? money(it.cm/it.units) : '—'}</td><td class="num">${it.net>0 ? (it.cm/it.net*100).toFixed(0)+'%' : '—'}</td></tr>`).join('') +
-      `<tr style="font-weight:700;"><td class="name" colspan="3">Tổng ${list.length} dòng${list.length>40 ? ' (hiện 40)' : ''}</td><td class="num">${intFmt(tot.units)}</td><td class="num">${intFmt(tot.refunds)}</td><td class="num">${money(tot.gross,{compact:true})}</td><td class="num">${money(tot.net,{compact:true})}</td><td class="num">${money(tot.cogs,{compact:true})}</td><td class="num">${money(tot.fulfil,{compact:true})}</td><td class="num">${money(tot.fees,{compact:true})}</td><td class="num">${money(tot.ads,{compact:true})}</td><td class="num ${tot.cm<0?'d-down':''}">${money(tot.cm,{compact:true})}</td><td class="num">${tot.units>0 ? money(tot.cm/tot.units) : '—'}</td><td class="num">${tot.net>0 ? (tot.cm/tot.net*100).toFixed(0)+'%' : '—'}</td></tr></tbody>`;
+    t.innerHTML = '<thead><tr><th>'+(PROD_STATE.group==='code' ? tv('Internal code','Mã nội bộ') : 'SKU')+'</th><th>'+tx('u.product')+'</th><th>'+tx('f.channel')+'</th><th class="num">Units</th><th class="num">'+tv('Returned','Trả')+'</th><th class="num">'+tx('u.grossRev')+' (pb)</th><th class="num">'+tx('u.netRev')+' (pb)</th><th class="num">'+tv('Product cost','Giá vốn')+'</th><th class="num">Fulfillment (pb)</th><th class="num">'+tv('Fees','Phí')+' (pb)</th><th class="num">Ads + aff (pb)</th><th class="num">CM3</th><th class="num">CM3 / unit</th><th class="num">'+tv('% of net revenue','% DT thuần')+'</th></tr></thead><tbody>' +
+      show.map(it=>`<tr><td style="font-family:var(--font-mono);font-size:11.5px;" title="${it.skus.join(', ')}">${it.key}${PROD_STATE.group==='code' && it.skus.length>1 ? ' <small style="color:var(--ink-muted)">'+it.skus.length+' SKU</small>' : ''}</td><td title="${nameOf(it).replace(/"/g,'&quot;')}">${nameOf(it).slice(0,36)}</td><td>${Object.keys(it.ch).map(k=>CH_LABEL[k]).join(', ')}</td><td class="num">${intFmt(it.units)}</td><td class="num">${intFmt(it.refunds)}</td><td class="num">${money(it.gross,{compact:true})}</td><td class="num">${money(it.net,{compact:true})}</td><td class="num" title="${it.cogsReal>0 ? (Math.abs(it.cogsReal-it.cogs)<0.5 ? tv('actual cost (cogs_skus.json)','giá vốn thật (cogs_skus.json)') : tv('partly actual cost','một phần giá vốn thật')) : tv('allocated from the channel\'s estimated product cost','phân bổ từ giá vốn ước tính của kênh')}">${money(it.cogs,{compact:true})}${it.cogsReal>0 ? '' : ' <small style="color:var(--ink-muted)">'+tv('est.','ước')+'</small>'}</td><td class="num">${money(it.fulfil,{compact:true})}</td><td class="num">${money(it.fees,{compact:true})}</td><td class="num">${money(it.ads,{compact:true})}</td><td class="num ${it.cm<0?'d-down':''}">${money(it.cm,{compact:true})}</td><td class="num ${it.cm<0?'d-down':''}">${it.units>0 ? money(it.cm/it.units) : '—'}</td><td class="num">${it.net>0 ? (it.cm/it.net*100).toFixed(0)+'%' : '—'}</td></tr>`).join('') +
+      `<tr style="font-weight:700;"><td class="name" colspan="3">${tx('u.total')} ${list.length} ${tv('rows','dòng')}${list.length>40 ? tv(' (showing 40)',' (hiện 40)') : ''}</td><td class="num">${intFmt(tot.units)}</td><td class="num">${intFmt(tot.refunds)}</td><td class="num">${money(tot.gross,{compact:true})}</td><td class="num">${money(tot.net,{compact:true})}</td><td class="num">${money(tot.cogs,{compact:true})}</td><td class="num">${money(tot.fulfil,{compact:true})}</td><td class="num">${money(tot.fees,{compact:true})}</td><td class="num">${money(tot.ads,{compact:true})}</td><td class="num ${tot.cm<0?'d-down':''}">${money(tot.cm,{compact:true})}</td><td class="num">${tot.units>0 ? money(tot.cm/tot.units) : '—'}</td><td class="num">${tot.net>0 ? (tot.cm/tot.net*100).toFixed(0)+'%' : '—'}</td></tr></tbody>`;
     const best = list[0], worst = list.length>1 ? list[list.length-1] : null;
-    setNote('prodNote', allSkus+' SKU trên '+keys.map(k=>CH_LABEL[k]).join(' + ')+' · giá vốn thật cho '+realCost+'/'+allSkus+(covMin<n ? ' · '+covMin+'/'+n+' ngày có dữ liệu SKU' : '')+(best ? ' · tốt nhất '+best.key+' '+money(best.cm,{compact:true}) : '')+(worst && worst.cm<0 ? ' · kém nhất '+worst.key+' '+money(worst.cm,{compact:true}) : ''));
-    setNote('prodCaption', '(pb) = phân bổ từ tổng của kênh trong những ngày có dữ liệu SKU: doanh thu gộp, giảm giá, phí và ads theo tỷ trọng doanh thu gộp của SKU; hoàn tiền theo units trả × giá bình quân; fulfillment theo units. Giá vốn = units × giá landed trong data/cogs_skus.json khi có, nếu không phân bổ từ giá vốn '+(COGS_EST ? 'ước '+(COGS_EST.rate*100).toFixed(0)+'%' : 'của kênh')+' ("ước"). Tổng CM3 các SKU'+(Math.abs(tot.cm - chCm) > Math.max(50, Math.abs(chCm)*0.01) && !q ? ' lệch '+money(tot.cm - chCm,{compact:true})+' so CM3 kênh vì giá vốn thật thay cho ước tính' : ' = CM3 của kênh trên cùng số ngày')+'.');
+    setNote('prodNote', allSkus+tv(' SKUs on ',' SKU trên ')+keys.map(k=>CH_LABEL[k]).join(' + ')+tv(' · actual cost for ',' · giá vốn thật cho ')+realCost+'/'+allSkus+(covMin<n ? ' · '+covMin+'/'+n+' '+tx('u.daysWithSku') : '')+(best ? tv(' · best ',' · tốt nhất ')+best.key+' '+money(best.cm,{compact:true}) : '')+(worst && worst.cm<0 ? tv(' · worst ',' · kém nhất ')+worst.key+' '+money(worst.cm,{compact:true}) : ''));
+    setNote('prodCaption', tv('(pb) = allocated from the channel total over the days with SKU data: gross sales, discounts, fees and ads by the SKU\'s share of gross sales; refunds by units returned × average price; fulfillment by units. Product cost = units × landed cost in data/cogs_skus.json when available, otherwise allocated from the channel\'s ','(pb) = phân bổ từ tổng của kênh trong những ngày có dữ liệu SKU: doanh thu gộp, giảm giá, phí và ads theo tỷ trọng doanh thu gộp của SKU; hoàn tiền theo units trả × giá bình quân; fulfillment theo units. Giá vốn = units × giá landed trong data/cogs_skus.json khi có, nếu không phân bổ từ giá vốn ')+(COGS_EST ? tv('estimated cost of ','ước ')+(COGS_EST.rate*100).toFixed(0)+'%' : tv('product cost','của kênh'))+tv(' ("est."). Total CM3 of the SKUs',' ("ước"). Tổng CM3 các SKU')+(Math.abs(tot.cm - chCm) > Math.max(50, Math.abs(chCm)*0.01) && !q ? tv(' differs by ',' lệch ')+money(tot.cm - chCm,{compact:true})+tv(' from the channel CM3 because actual costs replace the estimate',' so CM3 kênh vì giá vốn thật thay cho ước tính') : tv(' = the channel CM3 over the same days',' = CM3 của kênh trên cùng số ngày'))+'.');
+  }
+  // ---------- V10: ShipMonk warehouse stock (sync v1.4+ `inventory` block) ----------
+  function runOutDays(stock0, perDay, arrivals){
+    if(perDay<=0) return null;
+    let stock = stock0; const arr = (arrivals||[]).map(a=>({d: a.eta ? Math.max(0, dayDiff(TODAY_ISO, a.eta)) : 0, q: a.qty}));
+    for(let d=0; d<=730; d++){ arr.forEach(a=>{ if(a.d===d) stock += a.q; }); stock -= perDay; if(stock<0) return d; }
+    return 730;
+  }
+  function renderShipmonkInventory(){
+    const card = document.getElementById('smkInvCard'), t = document.getElementById('smkInvTable'); if(!card || !t) return;
+    const inv = SHIPMONK_INVENTORY;
+    if(!inv || !inv.skus || !Object.keys(inv.skus).length){ card.hidden = false; t.innerHTML = ''; document.getElementById('smkInvKpis').innerHTML = ''; setNote('smkInvNote', tx('u.waiting')); setNote('smkInvCaption', tx('smk.waiting')); return; }
+    card.hidden = false;
+    const stock = stockRows(); const byStock = {}; stock.forEach(r=>{ byStock[r.sku] = r; });
+    const todayD = days[TOTAL_DAYS-1].date, addDays = k => { const d = new Date(todayD); d.setDate(d.getDate()+k); return d; };
+    const poBySku = {}; PURCHASE_ORDERS.forEach(po=>{ if(po.dest!=='shipmonk' || po.received) return; (poBySku[po.sku] = poBySku[po.sku]||[]).push(po); });
+    const whs = (inv.warehouses||[]).map(w=>w.identifier||w.name||String(w.id));
+    const rows = Object.keys(inv.skus).map(sku=>{
+      const s = inv.skus[sku], st = byStock[sku];
+      const available = Math.max(0, Math.min(+s.available||0, (+s.on_hand||0) - (+s.quarantined||0) - (+s.unavailable||0)));
+      const perDay = st ? (st.unitsSh>0 || st.unitsAz>0 ? (st.perDay * (st.unitsSh/((st.unitsSh+st.unitsAz)||1))) : 0) : 0;   // ShipMonk serves the Shopify (D2C) orders
+      const pos = poBySku[sku]||[], poQty = sum(pos.map(p=>p.qty));
+      const incoming = +s.incoming||0;
+      const outD = runOutDays(available, perDay, []), outAllD = runOutDays(available + incoming, perDay, pos);
+      const bw = s.by_warehouse||{};
+      return {sku, name: s.name||skuName(sku), line: productLineOf(sku), available, onHand: +s.on_hand||0, allocated: +s.allocated||0, incoming, backordered: +s.backordered||0, perDay, outD, outAllD, pos, poQty, bw, active: s.active!==false};
+    }).filter(r=> r.onHand>0 || r.available>0 || r.perDay>0 || r.incoming>0);
+    rows.sort((x,y)=> (y.perDay - x.perDay) || (y.available - x.available));
+    const soon = rows.filter(r=> r.perDay>=0.2 && r.outAllD!==null && r.outAllD<30).sort((x,y)=>x.outAllD-y.outAllD);
+    const back = rows.filter(r=>r.backordered>0);
+    const tot = inv.totals||{};
+    document.getElementById('smkInvKpis').innerHTML = `
+      <div class="kpi"><div class="label">${tx('smk.available')}</div><div class="value">${intFmt(tot.available!==undefined ? tot.available : sum(rows.map(r=>r.available)))}</div><div class="foot">${intFmt(tot.on_hand||0)} ${tx('smk.onHand')} · ${intFmt(tot.allocated||0)} ${tx('smk.allocated')}</div></div>
+      <div class="kpi"><div class="label">${tx('smk.incoming')}</div><div class="value">${intFmt((tot.incoming||0) + sum(Object.values(poBySku).flat().map(p=>p.qty)))}</div><div class="foot">${intFmt(tot.incoming||0)} ${tx('smk.receivings')} · ${intFmt(sum(Object.values(poBySku).flat().map(p=>p.qty)))} PO</div></div>
+      <div class="kpi${soon.length?' alert':''}"><div class="label">${tx('inv.soon')}</div><div class="value">${soon.length}</div><div class="foot">${soon.length ? tx('inv.earliest')+' '+fmtDmy(addDays(soon[0].outAllD))+' · '+soon.slice(0,3).map(r=>r.sku).join(', ') : '—'}</div></div>
+      <div class="kpi${back.length?' alert':''}"><div class="label">${tx('smk.backordered')}</div><div class="value">${back.length}</div><div class="foot">${back.length ? intFmt(sum(back.map(r=>r.backordered)))+' '+tx('smk.unitsShort')+' · '+back.slice(0,3).map(r=>r.sku).join(', ') : tx('smk.noBackorder')}</div></div>`;
+    setNote('smkInvNote', tx('smk.note', {as_of: (inv.as_of||'').slice(0,10), wh: whs.join(' · '), n: rows.length}));
+    const fmtOut = d => d===null ? '—' : d>=730 ? '>2y' : fmtDmy(addDays(d))+' <small style="color:var(--ink-muted)">'+d+' '+tx('u.d')+'</small>';
+    const flag = r => r.backordered>0 ? `<span class="tag gap"><span class="d"></span>${tx('smk.tagBack')}</span>` : r.perDay===0 ? `<span class="tag info"><span class="d"></span>${tx('inv.tagNoSales')}</span>` : r.available<=0 ? `<span class="tag gap"><span class="d"></span>${tx('inv.tagOut')}</span>` : (r.outAllD!==null && r.outAllD<30) ? `<span class="tag gap"><span class="d"></span>${tx('inv.tagSoon')}</span>` : (r.outD!==null && r.outD<30) ? `<span class="tag info"><span class="d"></span>${tx('inv.tagWaiting')}</span>` : `<span class="tag live"><span class="d"></span>${tx('inv.tagOk')}</span>`;
+    t.innerHTML = `<thead><tr><th>SKU</th><th>${tx('u.product')}</th><th class="num">/${tx('u.day')}</th><th class="num">${tx('smk.available')}</th><th class="num">${tx('smk.onHand')}</th><th class="num">${tx('smk.allocated')}</th><th class="num">${tx('smk.incoming')}</th><th class="num">PO</th><th class="num">${tx('inv.outStock')}</th><th class="num">${tx('inv.outAll')}</th><th>${tx('smk.byWarehouse')}</th><th>${tx('u.status')}</th></tr></thead><tbody>` +
+      rows.slice(0,60).map(r=>`<tr><td style="font-family:var(--font-mono);font-size:11.5px;">${r.sku}</td><td title="${(r.name||'').replace(/"/g,'&quot;')}">${(r.name||'').slice(0,34)}${r.name && r.name.length>34?'…':''}<small style="display:block;color:var(--ink-muted)">${productLineName(r.line)}</small></td><td class="num">${r.perDay.toFixed(1)}</td><td class="num">${intFmt(r.available)}</td><td class="num">${intFmt(r.onHand)}</td><td class="num">${intFmt(r.allocated)}</td><td class="num">${intFmt(r.incoming)}</td><td class="num">${r.poQty ? intFmt(r.poQty) : '—'}</td><td class="num" style="white-space:nowrap;">${fmtOut(r.outD)}</td><td class="num" style="white-space:nowrap;">${fmtOut(r.outAllD)}</td><td style="font-size:11.5px;color:var(--ink-muted);white-space:nowrap;">${whs.map(w=> r.bw[w] ? w+' '+intFmt(r.bw[w].available||0) : '').filter(Boolean).join(' · ')||'—'}</td><td>${flag(r)}</td></tr>`).join('') + '</tbody>';
+    setNote('smkInvCaption', (rows.length>60 ? tx('inv.showing', {n: rows.length})+' ' : '') + tx('smk.caption'));
   }
   function renderPurchaseOrders(snap){
     const t = document.getElementById('poTable'); if(!t) return;
     const n = PURCHASE_ORDERS.length;
     if(!n){
-      setNote('poNote', 'Chưa có PO — file data/purchase_orders.json trống');
+      setNote('poNote', tv('No POs — data/purchase_orders.json is empty','Chưa có PO — file data/purchase_orders.json trống'));
       t.innerHTML = '';
-      document.getElementById('poCaption').innerHTML = 'Nhập mỗi lô hàng đã đặt vào <code>data/purchase_orders.json</code>: <code>{"sku":"SKU trên Amazon/Shopify","qty":500,"eta":"2026-11-20","destination":"fba","supplier":"…","note":"…"}</code>. PO đích FBA được cộng vào ngày hết hàng của bảng trên; đích ShipMonk chỉ liệt kê (chưa có tồn kho ShipMonk). Đặt <code>"received": true</code> khi hàng đã nhập kho để bỏ qua.';
+      document.getElementById('poCaption').innerHTML = tv('Enter each ordered batch in <code>data/purchase_orders.json</code>: <code>{"sku":"SKU on Amazon/Shopify","qty":500,"eta":"2026-11-20","destination":"fba","supplier":"…","note":"…"}</code>. POs bound for FBA are added to the stock-out date in the table above; ShipMonk-bound ones are only listed (no ShipMonk stock yet). Set <code>"received": true</code> once the goods are in the warehouse to skip it.','Nhập mỗi lô hàng đã đặt vào <code>data/purchase_orders.json</code>: <code>{"sku":"SKU trên Amazon/Shopify","qty":500,"eta":"2026-11-20","destination":"fba","supplier":"…","note":"…"}</code>. PO đích FBA được cộng vào ngày hết hàng của bảng trên; đích ShipMonk chỉ liệt kê (chưa có tồn kho ShipMonk). Đặt <code>"received": true</code> khi hàng đã nhập kho để bỏ qua.');
       return;
     }
     const late = PURCHASE_ORDERS.filter(p=> !p.received && p.eta && p.eta<TODAY_ISO).length, open = PURCHASE_ORDERS.filter(p=>!p.received).length;
-    setNote('poNote', open+' PO đang mở · '+intFmt(sum(PURCHASE_ORDERS.filter(p=>!p.received).map(p=>p.qty)))+' units'+(late ? ' · '+late+' PO quá ngày về' : '')+(PO_LIVE_DATA && PO_LIVE_DATA.updated_at ? ' · cập nhật '+PO_LIVE_DATA.updated_at : ''));
-    const st = p => p.received ? '<span class="tag live"><span class="d"></span>đã nhận</span>' : !p.eta ? '<span class="tag info"><span class="d"></span>chưa có ngày về</span>' : p.eta<TODAY_ISO ? '<span class="tag gap"><span class="d"></span>trễ '+dayDiff(p.eta, TODAY_ISO)+' ngày</span>' : '<span class="tag info"><span class="d"></span>còn '+dayDiff(TODAY_ISO, p.eta)+' ngày</span>';
-    t.innerHTML = '<thead><tr><th>SKU</th><th>Sản phẩm</th><th class="num">Số lượng</th><th>Ngày về</th><th>Đích</th><th>Nhà cung cấp / PO</th><th>Ghi chú</th><th>Trạng thái</th></tr></thead><tbody>' +
+    setNote('poNote', open+tv(open===1 ? ' open PO · ' : ' open POs · ',' PO đang mở · ')+intFmt(sum(PURCHASE_ORDERS.filter(p=>!p.received).map(p=>p.qty)))+' units'+(late ? ' · '+late+tv(late===1 ? ' PO past its ETA' : ' POs past their ETA',' PO quá ngày về') : '')+(PO_LIVE_DATA && PO_LIVE_DATA.updated_at ? tv(' · updated ',' · cập nhật ')+PO_LIVE_DATA.updated_at : ''));
+    const st = p => p.received ? '<span class="tag live"><span class="d"></span>'+tv('received','đã nhận')+'</span>' : !p.eta ? '<span class="tag info"><span class="d"></span>'+tv('no ETA','chưa có ngày về')+'</span>' : p.eta<TODAY_ISO ? '<span class="tag gap"><span class="d"></span>'+tv('late by ','trễ ')+nDays(dayDiff(p.eta, TODAY_ISO))+'</span>' : '<span class="tag info"><span class="d"></span>'+tv('due in ','còn ')+nDays(dayDiff(TODAY_ISO, p.eta))+'</span>';
+    t.innerHTML = '<thead><tr><th>SKU</th><th>'+tx('u.product')+'</th><th class="num">'+tv('Quantity','Số lượng')+'</th><th>'+tv('ETA','Ngày về')+'</th><th>'+tv('Destination','Đích')+'</th><th>'+tv('Supplier / PO','Nhà cung cấp / PO')+'</th><th>'+tv('Note','Ghi chú')+'</th><th>'+tx('u.status')+'</th></tr></thead><tbody>' +
       PURCHASE_ORDERS.map(p=>`<tr><td style="font-family:var(--font-mono);font-size:11.5px;">${p.sku}</td><td>${((snap[p.sku]||{}).name||'').slice(0,40)}</td><td class="num">${intFmt(p.qty)}</td><td>${p.eta ? p.eta.slice(8,10)+'/'+p.eta.slice(5,7)+'/'+p.eta.slice(0,4) : '—'}</td><td>${p.dest==='fba' ? 'Amazon FBA' : 'ShipMonk'}</td><td>${[p.supplier, p.po].filter(Boolean).join(' · ')||'—'}</td><td style="color:var(--ink-muted)">${p.note||''}</td><td>${st(p)}</td></tr>`).join('') + '</tbody>';
-    document.getElementById('poCaption').textContent = 'Nhập tay trong data/purchase_orders.json. PO đích FBA được cộng vào "Hết hàng (tồn + về + PO)" đúng ngày về; PO quá ngày coi như về hôm nay.';
+    document.getElementById('poCaption').textContent = tv('Entered by hand in data/purchase_orders.json. POs bound for FBA are added to "Stock-out (stock + incoming + PO)" on their ETA; a late PO counts as arriving today.','Nhập tay trong data/purchase_orders.json. PO đích FBA được cộng vào "Hết hàng (tồn + về + PO)" đúng ngày về; PO quá ngày coi như về hôm nay.');
   }
 
   // ---------- page 6: OpEx by month + cash gaps ----------
@@ -2484,24 +3130,24 @@
     const a = aggregate(currentRows());
     const ga = a.gaTotal, logi = a.logisticsTotal, opex = a.fixedTotal;
     kp.innerHTML = `
-      <div class="kpi"><div class="label">OpEx kỳ này</div><div class="value">${money(opex,{compact:true})}</div><div class="foot">${a.netRevenue>0 ? (opex/a.netRevenue*100).toFixed(1)+'% doanh thu thuần' : ''}</div></div>
-      <div class="kpi"><div class="label">Kho bãi & dịch vụ</div><div class="value">${money(logi,{compact:true})}</div><div class="foot">ShipMonk lưu kho/receiving/hàng trả ${money(a.shipmonkLogistics,{compact:true})} · Amazon lưu kho & dịch vụ ${money(a.amazonLogistics,{compact:true})}</div></div>
-      <div class="kpi"><div class="label">G&A</div><div class="value">${money(ga,{compact:true})}</div><div class="foot">${a.opexDays>0 ? 'Nhập tay'+(a.opexCarriedDays>0 ? ' ('+a.opexCarriedDays+' ngày lấy theo tháng gần nhất đã nhập)' : '') : 'Chưa nhập G&A cho kỳ này'} · Klaviyo ${money(a.klaviyoCost,{compact:true})}</div></div>
-      <div class="kpi"><div class="label">EBITDA</div><div class="value">${money(a.netProfit,{compact:true})}</div><div class="foot">${a.netRevenue>0 ? 'Biên '+(a.netProfit/a.netRevenue*100).toFixed(1)+'%' : ''} · = CM3 ${money(a.contributionProfit,{compact:true})} − OpEx</div></div>`;
+      <div class="kpi"><div class="label">${tv('OpEx this period','OpEx kỳ này')}</div><div class="value">${money(opex,{compact:true})}</div><div class="foot">${a.netRevenue>0 ? (opex/a.netRevenue*100).toFixed(1)+tv('% of net revenue','% doanh thu thuần') : ''}</div></div>
+      <div class="kpi"><div class="label">${tv('Warehousing & services','Kho bãi & dịch vụ')}</div><div class="value">${money(logi,{compact:true})}</div><div class="foot">${tv('ShipMonk storage/receiving/returns','ShipMonk lưu kho/receiving/hàng trả')} ${money(a.shipmonkLogistics,{compact:true})} · ${tv('Amazon storage & services','Amazon lưu kho & dịch vụ')} ${money(a.amazonLogistics,{compact:true})}</div></div>
+      <div class="kpi"><div class="label">G&A</div><div class="value">${money(ga,{compact:true})}</div><div class="foot">${a.opexDays>0 ? tx('u.manual')+(a.opexCarriedDays>0 ? ' ('+a.opexCarriedDays+tv(' days carried from the latest entered month)',' ngày lấy theo tháng gần nhất đã nhập)') : '') : tv('No G&A entered for this period','Chưa nhập G&A cho kỳ này')} · Klaviyo ${money(a.klaviyoCost,{compact:true})}</div></div>
+      <div class="kpi"><div class="label">EBITDA</div><div class="value">${money(a.netProfit,{compact:true})}</div><div class="foot">${a.netRevenue>0 ? tv('Margin ','Biên ')+(a.netProfit/a.netRevenue*100).toFixed(1)+'%' : ''} · = CM3 ${money(a.contributionProfit,{compact:true})} − OpEx</div></div>`;
     const t = document.getElementById('opexMonthsTable');
     const ms = MONTHS.slice(-13);
-    t.innerHTML = `<thead><tr><th>Tháng</th><th class="num">DT thuần</th><th class="num">CM3</th><th class="num">Kho bãi</th><th class="num">G&A</th><th class="num">OpEx</th><th class="num">OpEx/DT</th><th class="num">EBITDA</th><th class="num">Biên</th><th>G&A</th></tr></thead><tbody>`+
+    t.innerHTML = `<thead><tr><th>${tv('Month','Tháng')}</th><th class="num">${tx('u.netRev')}</th><th class="num">CM3</th><th class="num">${tv('Warehousing','Kho bãi')}</th><th class="num">G&A</th><th class="num">OpEx</th><th class="num">${tv('OpEx/revenue','OpEx/DT')}</th><th class="num">EBITDA</th><th class="num">${tv('Margin','Biên')}</th><th>G&A</th></tr></thead><tbody>`+
       ms.slice().reverse().map(m=>{
         const x = aggregate(monthMap[m]);
         if(x.netRevenue<=0) return '';
         const entered = x.opexDays>0 && x.opexCarriedDays<x.opexDays, carried = x.opexDays>0 && x.opexCarriedDays>0;
-        return `<tr><td>${MONTH_LABEL(m)}</td><td class="num">${money(x.netRevenue,{compact:true})}</td><td class="num">${money(x.contributionProfit,{compact:true})}</td><td class="num">${money(x.logisticsTotal,{compact:true})}</td><td class="num">${money(x.gaTotal,{compact:true})}</td><td class="num">${money(x.fixedTotal,{compact:true})}</td><td class="num">${(x.fixedTotal/x.netRevenue*100).toFixed(1)}%</td><td class="num ${x.netProfit<0?'d-down':''}">${money(x.netProfit,{compact:true})}</td><td class="num">${(x.netProfit/x.netRevenue*100).toFixed(1)}%</td><td>${entered ? '<span class="tag live"><span class="d"></span>nhập tay</span>' : carried ? '<span class="tag info"><span class="d"></span>theo tháng gần nhất</span>' : '<span class="tag gap"><span class="d"></span>chưa nhập</span>'}</td></tr>`;
+        return `<tr><td>${MONTH_LABEL(m)}</td><td class="num">${money(x.netRevenue,{compact:true})}</td><td class="num">${money(x.contributionProfit,{compact:true})}</td><td class="num">${money(x.logisticsTotal,{compact:true})}</td><td class="num">${money(x.gaTotal,{compact:true})}</td><td class="num">${money(x.fixedTotal,{compact:true})}</td><td class="num">${(x.fixedTotal/x.netRevenue*100).toFixed(1)}%</td><td class="num ${x.netProfit<0?'d-down':''}">${money(x.netProfit,{compact:true})}</td><td class="num">${(x.netProfit/x.netRevenue*100).toFixed(1)}%</td><td>${entered ? '<span class="tag live"><span class="d"></span>'+tx('u.manualLc')+'</span>' : carried ? '<span class="tag info"><span class="d"></span>'+tv('carried from latest month','theo tháng gần nhất')+'</span>' : '<span class="tag gap"><span class="d"></span>'+tx('u.notEntered')+'</span>'}</td></tr>`;
       }).join('')+'</tbody>';
-    document.getElementById('opexMonthsCaption').textContent = 'G&A nhập tay = chi phí VN (lương, BHXH, mặt bằng, văn phòng…) từ data/opex_monthly.json + Klaviyo hoá đơn + gói Snowball; chưa có chi phí Mỹ (phần mềm, kế toán, bảo hiểm). Tháng chưa nhập lấy theo tháng gần nhất đã nhập (gắn nhãn).';
+    document.getElementById('opexMonthsCaption').textContent = tv('Manual G&A = Vietnam costs (salaries, social insurance, premises, office…) from data/opex_monthly.json + Klaviyo invoices + the Snowball plan; no US costs yet (software, accounting, insurance). Months not entered are carried from the latest entered month (tagged).','G&A nhập tay = chi phí VN (lương, BHXH, mặt bằng, văn phòng…) từ data/opex_monthly.json + Klaviyo hoá đơn + gói Snowball; chưa có chi phí Mỹ (phần mềm, kế toán, bảo hiểm). Tháng chưa nhập lấy theo tháng gần nhất đã nhập (gắn nhãn).');
     document.getElementById('cashGaps').innerHTML = [
-      {name:'Số dư ngân hàng & runway', note:'Chưa nối ngân hàng/Mercury/QuickBooks — nhập tay hoặc nối API khi sẵn sàng'},
-      {name:'Tiền đang trên đường về (Amazon, Walmart, TikTok payout)', note:'Amazon Finances có số liệu quyết toán — chưa dựng thành dòng tiền'},
-      {name:'Chi phí Mỹ (phần mềm, kế toán, bảo hiểm, freelancer)', note:'Điền thêm vào data/opex_monthly.json (software, accounting, insurance, other)'},
+      {name:tv('Bank balance & runway','Số dư ngân hàng & runway'), note:tv('Bank/Mercury/QuickBooks not connected — enter by hand or connect the API when ready','Chưa nối ngân hàng/Mercury/QuickBooks — nhập tay hoặc nối API khi sẵn sàng')},
+      {name:tv('Cash in transit (Amazon, Walmart, TikTok payouts)','Tiền đang trên đường về (Amazon, Walmart, TikTok payout)'), note:tv('Amazon Finances has settlement data — not yet built into a cash flow','Amazon Finances có số liệu quyết toán — chưa dựng thành dòng tiền')},
+      {name:tv('US costs (software, accounting, insurance, freelancers)','Chi phí Mỹ (phần mềm, kế toán, bảo hiểm, freelancer)'), note:tv('Add them to data/opex_monthly.json (software, accounting, insurance, other)','Điền thêm vào data/opex_monthly.json (software, accounting, insurance, other)')},
     ].map(g=>`<div class="gap-row"><span class="dot c"></span><span class="g-name">${g.name}</span><span class="g-note">${g.note}</span></div>`).join('');
   }
 
@@ -2509,8 +3155,19 @@
   let lastVw = window.innerWidth;
   window.addEventListener('resize', ()=>{ clearTimeout(window.__rsz); window.__rsz = setTimeout(()=>{ if(window.innerWidth!==lastVw){ lastVw = window.innerWidth; renderTrend(); renderBreakeven(); renderExec(); } }, 150); });
   function renderAll(){
+    applySourceAges();   // V10: source "age" lines in the active language
     renderSubCtl(); renderKpis(); renderTrend(); renderStatement(); renderChannelCosts(); renderBreakeven(); renderRoas(); renderAttribution(); renderKlaviyo(); renderLoopSubscriptions(); renderTax(); renderSources(); renderOpexTable(); renderGaps(); renderAmazonGaps(); renderShipmonk(); renderShopifyRecon(); renderSnowball(); renderMetaCampaigns(); renderGoogleCampaigns();
-    renderExec(); renderInventory(); renderOpexPage(); renderUnitEconomics(); renderSensitivity(); renderFunnel(); renderReturnsBySku(); renderProductPnl(); renderFindings();
+    renderExec(); renderRev(); renderChannels(); renderProductLines(); renderInventory(); renderShipmonkInventory(); renderOpexPage(); renderUnitEconomics(); renderSensitivity(); renderFunnel(); renderReturnsBySku(); renderProductPnl(); renderFindings(); renderPageHead();
+    if(_bannerPaint) _bannerPaint();
+  }
+  function renderPageHead(){
+    const h = document.getElementById('pageTitle'); if(h) h.textContent = tx('page.'+currentView);
+    const c = document.getElementById('pageCtx'); if(!c) return;
+    const parts = [];
+    if(maskPartial()) parts.push(maskLabel());
+    if(!onPnl() && EXEC_STATE.cmp!=='none') parts.push(tx('ctx.vs', {cmp: likeLabel()}));
+    const rows = currentRows(); if(rows.length && rows[rows.length-1]._syncing) parts.push(tx('ctx.today'));
+    c.textContent = parts.join(' · ');
   }
   const VIEWS = ['exec','sales','marketing','pnl','inventory','opex','data'];
   let booted = false;
@@ -2523,6 +3180,9 @@
     try{ localStorage.setItem('ctu_view', view); }catch(e){}
     if(booted) renderAll();   // the period control and the row selection differ per page, so everything re-renders
   }
+  document.querySelectorAll('[data-lang]').forEach(b=>b.addEventListener('click', ()=>setLang(b.dataset.lang)));
+  (()=>{ const tb = document.getElementById('themeBtn'); if(!tb) return; const apply = v => { if(v) document.documentElement.setAttribute('data-theme', v); else document.documentElement.removeAttribute('data-theme'); }; try{ apply(localStorage.getItem('ctu_theme')||''); }catch(e){} tb.addEventListener('click', ()=>{ const cur = document.documentElement.getAttribute('data-theme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); const next = cur==='dark' ? 'light' : 'dark'; apply(next); try{ localStorage.setItem('ctu_theme', next); }catch(e){} renderAll(); }); })();
+  renderStatic();
   document.getElementById('mainTabs').addEventListener('click', (e)=>{ const btn = e.target.closest('button'); if(!btn) return; if(btn.dataset.view!==currentView) showView(btn.dataset.view); });
   (()=>{ let v0 = 'exec'; try{ const s1 = localStorage.getItem('ctu_view'); if(s1 && VIEWS.includes(s1)) v0 = s1; }catch(e){} showView(v0); })();
   [...document.querySelectorAll('#modeSeg button')].forEach(b=>b.classList.toggle('active', b.dataset.mode===mode));   // default / remembered period
@@ -2539,133 +3199,135 @@
   // synchronously here before the very first render.
   const amazonMatched = AMAZON_LIVE_DATA ? applyAmazonRows(AMAZON_LIVE_DATA) : false;
   const amazonStorageMatched = (amazonMatched && AMAZON_STORAGE_LIVE_DATA) ? applyAmazonStorageRows(AMAZON_STORAGE_LIVE_DATA) : false;
-  if(amazonStorageMatched){
-    const st = AMAZON_STORAGE_LIVE_DATA.storage || {}, iv = AMAZON_STORAGE_LIVE_DATA.inventory || {};
-    const mr = st.months_with_report || [];
-    setSource('amazon_storage', ageLevel(AMAZON_STORAGE_LIVE_DATA.generated_at), fmtAmazonAge(AMAZON_STORAGE_LIVE_DATA.generated_at) + ' · tồn kho ' + (iv.on_hand||0).toLocaleString('en-US') + ' units / ' + (iv.skus||0) + ' SKU' + (mr.length ? ' · report phí lưu kho ' + mr[0].slice(5,7)+'/'+mr[0].slice(0,4) + ' → ' + mr[mr.length-1].slice(5,7)+'/'+mr[mr.length-1].slice(0,4) : ' · chưa có report tháng nào'));
-  }
-  if(amazonMatched){
-    setSource('amazon',ageLevel(AMAZON_LIVE_DATA.generated_at), fmtAmazonAge(AMAZON_LIVE_DATA.generated_at)+fmtCoverage(AMAZON_LIVE_DATA));
-    setSource('amazonfin',ageLevel(AMAZON_LIVE_DATA.generated_at), fmtAmazonAge(AMAZON_LIVE_DATA.generated_at)+fmtCoverage(AMAZON_LIVE_DATA));
-  }
   const metaMatched = META_ADS_LIVE_DATA ? applyMetaAdsRows(META_ADS_LIVE_DATA) : false;
-  if(metaMatched){
-    setSource('meta',ageLevel(META_ADS_LIVE_DATA.generated_at), fmtAmazonAge(META_ADS_LIVE_DATA.generated_at)+fmtCoverage(META_ADS_LIVE_DATA));
-  }
   const googleMatched = GOOGLE_ADS_LIVE_DATA ? applyGoogleAdsRows(GOOGLE_ADS_LIVE_DATA) : false;
-  if(googleMatched){
-    setSource('google',ageLevel(GOOGLE_ADS_LIVE_DATA.generated_at), fmtAmazonAge(GOOGLE_ADS_LIVE_DATA.generated_at)+fmtCoverage(GOOGLE_ADS_LIVE_DATA));
-  }
   const applovinMatched = APPLOVIN_LIVE_DATA ? applyApplovinRows(APPLOVIN_LIVE_DATA) : false;
-  if(applovinMatched){
-    AD_UNCONNECTED.applovin = false;
-    const acov = APPLOVIN_LIVE_DATA.coverage || {}, am = APPLOVIN_LIVE_DATA.meta || {};
-    const aFmt = k => k ? k.slice(8,10)+'/'+k.slice(5,7)+'/'+k.slice(0,4) : '';
-    const aErr = am.api_errors && am.api_errors.length && am.time_basis!=='utc_day';
-    setSource('applovin', aErr ? 'w' : ageLevel(APPLOVIN_LIVE_DATA.generated_at), fmtAmazonAge(APPLOVIN_LIVE_DATA.generated_at)+(acov.first_day ? ' · từ '+aFmt(acov.first_day) : '')+' · '+(am.time_basis==='hour_to_la' ? 'ngày theo giờ LA' : 'ngày theo UTC (API không trả giờ — lệch tối đa vài giờ so với giờ LA)')+' · API chỉ giữ 45 ngày, cũ hơn lấy từ file export');
-  }
+  if(applovinMatched){ AD_UNCONNECTED.applovin = false; }
   const tiktokAdsMatched = TIKTOK_ADS_LIVE_DATA ? applyTiktokAdsRows(TIKTOK_ADS_LIVE_DATA) : false;
-  if(tiktokAdsMatched){
-    AD_UNCONNECTED.tiktokads = false;
-    const tm = TIKTOK_ADS_LIVE_DATA.meta || {};
-    const tErr = tm.api_errors && tm.api_errors.length;
-    setSource('tiktokads', tErr ? 'w' : ageLevel(TIKTOK_ADS_LIVE_DATA.generated_at), fmtAmazonAge(TIKTOK_ADS_LIVE_DATA.generated_at)+fmtCoverage(TIKTOK_ADS_LIVE_DATA)+' · GMV Max (TikTok Shop) + quảng cáo thường · ngày theo giờ tài khoản (UTC−8)'+(tErr ? ' · lỗi lần chạy gần nhất: '+tm.api_errors[tm.api_errors.length-1] : ''));
-  }
+  if(tiktokAdsMatched){ AD_UNCONNECTED.tiktokads = false; }
   const amazonAdsMatched = AMAZON_ADS_LIVE_DATA ? applyAmazonAdsRows(AMAZON_ADS_LIVE_DATA) : false;
-  if(amazonAdsMatched){
-    AD_UNCONNECTED.amazonads = false;
-    const cov = AMAZON_ADS_LIVE_DATA.coverage || {};
-    const via = AMAZON_ADS_LIVE_DATA.source==='sellerboard' ? 'qua Sellerboard' : 'Amazon Ads API';
-    const auto = AMAZON_ADS_LIVE_DATA.meta && AMAZON_ADS_LIVE_DATA.meta.automation;
-    setSource('amazonads', ageLevel(AMAZON_ADS_LIVE_DATA.generated_at), fmtAmazonAge(AMAZON_ADS_LIVE_DATA.generated_at)+' · '+via+(cov.first_day ? ' · từ '+cov.first_day.slice(8,10)+'/'+cov.first_day.slice(5,7)+'/'+cov.first_day.slice(0,4) : '')+(auto && auto.fetched_last_day ? ' · export chốt đến '+auto.fetched_last_day.slice(8,10)+'/'+auto.fetched_last_day.slice(5,7) : ''));
-    const cap = document.getElementById('adsCaptionAmazon');
-    if(cap) cap.outerHTML = `<span id="adsCaptionAmazon">Amazon Ads: "Chi" và "DT quy về" trên thẻ = Total cost và Sales trong Amazon Ads console (SP+SB+SD, doanh thu Amazon gán cho quảng cáo trong cửa sổ 7/14 ngày, được cập nhật thêm vài ngày sau khi click) — ROAS = Sales ÷ Total cost, ACOS = Total cost ÷ Sales, TACOS = chi quảng cáo Amazon ÷ doanh thu gộp Amazon của kỳ. Khoản "Sponsored Television" Sellerboard ghi từ 31/08 không có trong Ads console nên không tính. </span>`;
-  }
+  if(amazonAdsMatched){ AD_UNCONNECTED.amazonads = false; }
   // ShipMonk fulfillment costs baked in by the same sync.
   const paypalMatched = PAYPAL_LIVE_DATA ? applyPaypalRows(PAYPAL_LIVE_DATA) : false;
-  if(paypalMatched){
-    setSource('paypal',ageLevel(PAYPAL_LIVE_DATA.generated_at), fmtAmazonAge(PAYPAL_LIVE_DATA.generated_at)+fmtCoverage(PAYPAL_LIVE_DATA));
-  }
   const loopMatched = LOOP_LIVE_DATA ? applyLoopRows(LOOP_LIVE_DATA) : false;
-  if(loopMatched){
-    const lc = LOOP_LIVE_DATA.coverage || {};
-    const fmtD = k => k ? k.slice(8,10)+'/'+k.slice(5,7)+'/'+k.slice(0,4) : '';
-    setSource('loop', ageLevel(LOOP_LIVE_DATA.generated_at), fmtAmazonAge(LOOP_LIVE_DATA.generated_at)+(lc.first_day ? ' · từ '+fmtD(lc.first_day) : ''));
-  }
   const tiktokMatched = TIKTOK_SHOP_LIVE_DATA ? applyTiktokShopRows(TIKTOK_SHOP_LIVE_DATA) : false;
-  if(tiktokMatched){
-    CH_UNCONNECTED.tiktok = false;
-    const tm = TIKTOK_SHOP_LIVE_DATA.meta || {}, tc = TIKTOK_SHOP_LIVE_DATA.coverage || {};
-    const od = Object.keys(TIKTOK_SHOP_LIVE_DATA.orders_daily||{}).sort();
-    const fmtD = k => k ? k.slice(8,10)+'/'+k.slice(5,7)+'/'+k.slice(0,4) : '';
-    const feeErr = tm.order_fee_calls && tm.order_fee_calls.errors>0;
-    const lvl = (tm.orders_status && tm.orders_status.status==='ok' && !feeErr) ? ageLevel(TIKTOK_SHOP_LIVE_DATA.generated_at) : 'w';
-    setSource('tiktokshop', lvl, fmtAmazonAge(TIKTOK_SHOP_LIVE_DATA.generated_at)+(od.length ? ' · đơn từ '+fmtD(od[0]) : '')+' · '+(tm.orders_total||0)+' đơn bán ('+(tm.orders_settled||0)+' đã quyết toán, phí thật; còn lại ước tính theo tỷ lệ)'+(lvl==='w' ? ' · Orders/Finance API báo lỗi — xem GitHub Actions' : ''));
-  }
+  if(tiktokMatched){ CH_UNCONNECTED.tiktok = false; }
   const walmartMatched = WALMART_LIVE_DATA ? applyWalmartRows(WALMART_LIVE_DATA) : false;
-  if(walmartMatched){
-    CH_UNCONNECTED.walmart = false;
-    const wm = WALMART_LIVE_DATA.meta || {};
-    const wod = Object.keys(WALMART_LIVE_DATA.orders_daily||{}).sort();
-    const fmtDW = k => k ? k.slice(8,10)+'/'+k.slice(5,7)+'/'+k.slice(0,4) : '';
-    const wErr = (wm.orders_status && !wm.orders_status.ok) || (wm.recon && (!wm.recon.ok || wm.recon.errors>0));
-    const wl = wErr ? 'w' : ageLevel(WALMART_LIVE_DATA.generated_at);
-    setSource('walmart', wl, fmtAmazonAge(WALMART_LIVE_DATA.generated_at)+(wod.length ? ' · đơn từ '+fmtDW(wod[0]) : '')+' · '+(wm.orders_total||0)+' đơn bán ('+(wm.orders_settled||0)+' đã đối soát, phí thật; còn lại ước tính theo tỷ lệ)'+(wm.orders_from_recon>0 ? ' · '+wm.orders_from_recon+' đơn cũ (API chỉ giữ 180 ngày) dựng lại từ báo cáo đối soát, ngày ≈ ngày giao hàng/ghi sổ' : '')+(wErr ? ' · Orders/Recon API báo lỗi — xem GitHub Actions' : ''));
-  }
+  if(walmartMatched){ CH_UNCONNECTED.walmart = false; }
   const shipmonkMatched = SHIPMONK_LIVE_DATA ? applyShipmonkRows(SHIPMONK_LIVE_DATA) : false;
-  if(shipmonkMatched){
-    setSource('shipmonk',ageLevel(SHIPMONK_LIVE_DATA.generated_at), fmtAmazonAge(SHIPMONK_LIVE_DATA.generated_at)+fmtCoverage(SHIPMONK_LIVE_DATA));
-  }
   const shipmonkStorageMatched = SHIPMONK_STORAGE_LIVE_DATA ? applyShipmonkStorageRows(SHIPMONK_STORAGE_LIVE_DATA) : false;   // before the invoices: they reallocate storage by it
   const shipmonkInvMatched = SHIPMONK_INVOICES_LIVE_DATA ? applyShipmonkInvoiceRows(SHIPMONK_INVOICES_LIVE_DATA) : false;
-  if(shipmonkInvMatched){
-    const im = SHIPMONK_INVOICES_LIVE_DATA.meta || {};
-    const fmtD = k => k ? k.slice(8,10)+'/'+k.slice(5,7)+'/'+k.slice(0,4) : '';
-    setSource('shipmonk_inv',(SHIPMONK_INVOICES_LIVE_DATA.meta && SHIPMONK_INVOICES_LIVE_DATA.meta.current_period ? 'g' : 'w'), fmtAmazonAge(SHIPMONK_INVOICES_LIVE_DATA.generated_at) + (im.first_day ? ' · hoá đơn '+fmtD(im.first_day)+' → '+fmtD(im.last_day) : '') + (im.missing_count ? ' (thiếu '+im.missing_count+' ngày)' : '') + (shipmonkStorageMatched ? ' · lưu kho theo ngày đến '+fmtD(SHIPMONK_STORAGE_LIVE_DATA.last_day) : ''));
-  }
   // Klaviyo (email + SMS) attribution + campaign/flow performance, and the Klaviyo invoices (cost).
   const klaviyoMatched = KLAVIYO_LIVE_DATA ? applyKlaviyoRows(KLAVIYO_LIVE_DATA) : false;
   const klaviyoInvMatched = KLAVIYO_INVOICES_LIVE_DATA ? applyKlaviyoInvoiceRows(KLAVIYO_INVOICES_LIVE_DATA) : false;
-  if(klaviyoMatched || klaviyoInvMatched){
-    const km = (KLAVIYO_INVOICES_LIVE_DATA && KLAVIYO_INVOICES_LIVE_DATA.meta) || {};
-    const fmtD = k => k ? k.slice(8,10)+'/'+k.slice(5,7)+'/'+k.slice(0,4) : '';
-    setSource('klaviyo',(klaviyoMatched ? ageLevel(KLAVIYO_LIVE_DATA.generated_at) : 'w'), (klaviyoMatched ? fmtAmazonAge(KLAVIYO_LIVE_DATA.generated_at)+fmtCoverage(KLAVIYO_LIVE_DATA) : 'API chưa có') + (klaviyoInvMatched ? ' · hoá đơn đến '+fmtD(km.last_day) : ' · chưa có hoá đơn'));
-  }
   // Monthly OpEx entered by hand in the repo (data/opex_monthly.json).
   const opexMatched = OPEX_MONTHLY_LIVE_DATA ? applyOpexRows(OPEX_MONTHLY_LIVE_DATA) : false;
   const targetsMatched = TARGETS_LIVE_DATA ? applyTargets(TARGETS_LIVE_DATA) : false;
   const cogsMatched = COGS_LIVE_DATA ? applyCogsActual(COGS_LIVE_DATA) : false;
-  if(opexMatched){
-    const e = opexMeta.entered;
-    const fmtM = m => m.slice(5,7)+'/'+m.slice(0,4);
-    const anyNum = e.some(m => OPEX_GA_KEYS.concat(OPEX_BELOW_KEYS).some(k => parseFloat(OPEX_MONTHLY_LIVE_DATA.months[m][k])>0));
-    setSource('ga', anyNum ? 'g' : 'w', 'nhập tay data/opex_monthly.json · ' + (e.length===1 ? 'tháng '+fmtM(e[0]) : fmtM(e[0])+' → '+fmtM(e[e.length-1])) + (anyNum ? '' : ' (toàn $0 — chưa điền số)'));
-  }
   // Shopify + Snowball baked in by the same hourly sync.
   const shopifyMatched = SHOPIFY_LIVE_DATA ? applyShopifyLive(SHOPIFY_LIVE_DATA) : false;
-  if(shopifyMatched){
-    setSource('shopify',ageLevel(SHOPIFY_LIVE_DATA.generated_at), fmtAmazonAge(SHOPIFY_LIVE_DATA.generated_at)+fmtCoverage(SHOPIFY_LIVE_DATA));
-    setSource('snowball',ageLevel(SHOPIFY_LIVE_DATA.generated_at), fmtAmazonAge(SHOPIFY_LIVE_DATA.generated_at)+fmtCoverage(SHOPIFY_LIVE_DATA));
+  // V10: the "age" line of every baked-in source (Data page) is text in the active language, so it is written here
+  // once at boot and again at the start of every renderAll() (the language toggle re-renders everything).
+  function applySourceAges(){
+    const fmtD = k => k ? k.slice(8,10)+'/'+k.slice(5,7)+'/'+k.slice(0,4) : '';
+    if(amazonStorageMatched){
+      const st = AMAZON_STORAGE_LIVE_DATA.storage || {}, iv = AMAZON_STORAGE_LIVE_DATA.inventory || {};
+      const mr = st.months_with_report || [];
+      setSource('amazon_storage', ageLevel(AMAZON_STORAGE_LIVE_DATA.generated_at), fmtAmazonAge(AMAZON_STORAGE_LIVE_DATA.generated_at) + tv(' · stock ',' · tồn kho ') + (iv.on_hand||0).toLocaleString('en-US') + ' units / ' + (iv.skus||0) + ' SKU' + (mr.length ? tv(' · storage fee reports ',' · report phí lưu kho ') + mr[0].slice(5,7)+'/'+mr[0].slice(0,4) + ' → ' + mr[mr.length-1].slice(5,7)+'/'+mr[mr.length-1].slice(0,4) : tv(' · no monthly report yet',' · chưa có report tháng nào')));
+    }
+    if(amazonMatched){
+      setSource('amazon',ageLevel(AMAZON_LIVE_DATA.generated_at), fmtAmazonAge(AMAZON_LIVE_DATA.generated_at)+fmtCoverage(AMAZON_LIVE_DATA));
+      setSource('amazonfin',ageLevel(AMAZON_LIVE_DATA.generated_at), fmtAmazonAge(AMAZON_LIVE_DATA.generated_at)+fmtCoverage(AMAZON_LIVE_DATA));
+    }
+    if(metaMatched){
+      setSource('meta',ageLevel(META_ADS_LIVE_DATA.generated_at), fmtAmazonAge(META_ADS_LIVE_DATA.generated_at)+fmtCoverage(META_ADS_LIVE_DATA));
+    }
+    if(googleMatched){
+      setSource('google',ageLevel(GOOGLE_ADS_LIVE_DATA.generated_at), fmtAmazonAge(GOOGLE_ADS_LIVE_DATA.generated_at)+fmtCoverage(GOOGLE_ADS_LIVE_DATA));
+    }
+    if(applovinMatched){
+      const acov = APPLOVIN_LIVE_DATA.coverage || {}, am = APPLOVIN_LIVE_DATA.meta || {};
+      const aFmt = fmtD;
+      const aErr = am.api_errors && am.api_errors.length && am.time_basis!=='utc_day';
+      setSource('applovin', aErr ? 'w' : ageLevel(APPLOVIN_LIVE_DATA.generated_at), fmtAmazonAge(APPLOVIN_LIVE_DATA.generated_at)+(acov.first_day ? tx('age.from', {d: aFmt(acov.first_day)}) : '')+' · '+(am.time_basis==='hour_to_la' ? tv('days in LA time','ngày theo giờ LA') : tv('days in UTC (the API returns no hour — off by a few hours at most vs LA time)','ngày theo UTC (API không trả giờ — lệch tối đa vài giờ so với giờ LA)'))+tv(' · the API keeps only 45 days, older comes from the export file',' · API chỉ giữ 45 ngày, cũ hơn lấy từ file export'));
+    }
+    if(tiktokAdsMatched){
+      const tm = TIKTOK_ADS_LIVE_DATA.meta || {};
+      const tErr = tm.api_errors && tm.api_errors.length;
+      setSource('tiktokads', tErr ? 'w' : ageLevel(TIKTOK_ADS_LIVE_DATA.generated_at), fmtAmazonAge(TIKTOK_ADS_LIVE_DATA.generated_at)+fmtCoverage(TIKTOK_ADS_LIVE_DATA)+tv(' · GMV Max (TikTok Shop) + regular ads · days in account time (UTC−8)',' · GMV Max (TikTok Shop) + quảng cáo thường · ngày theo giờ tài khoản (UTC−8)')+(tErr ? tv(' · error on the latest run: ',' · lỗi lần chạy gần nhất: ')+tm.api_errors[tm.api_errors.length-1] : ''));
+    }
+    if(amazonAdsMatched){
+      const cov = AMAZON_ADS_LIVE_DATA.coverage || {};
+      const via = AMAZON_ADS_LIVE_DATA.source==='sellerboard' ? tv('via Sellerboard','qua Sellerboard') : 'Amazon Ads API';
+      const auto = AMAZON_ADS_LIVE_DATA.meta && AMAZON_ADS_LIVE_DATA.meta.automation;
+      setSource('amazonads', ageLevel(AMAZON_ADS_LIVE_DATA.generated_at), fmtAmazonAge(AMAZON_ADS_LIVE_DATA.generated_at)+' · '+via+(cov.first_day ? tx('age.from', {d: cov.first_day.slice(8,10)+'/'+cov.first_day.slice(5,7)+'/'+cov.first_day.slice(0,4)}) : '')+(auto && auto.fetched_last_day ? tv(' · export final through ',' · export chốt đến ')+auto.fetched_last_day.slice(8,10)+'/'+auto.fetched_last_day.slice(5,7) : ''));
+      const cap = document.getElementById('adsCaptionAmazon');
+      if(cap) cap.outerHTML = `<span id="adsCaptionAmazon">${tv('Amazon Ads: "Spend" and "Attributed revenue" on the card = Total cost and Sales in the Amazon Ads console (SP+SB+SD, Amazon revenue attributed to ads within the 7/14-day window, updated for a few more days after the click) — ROAS = Sales ÷ Total cost, ACOS = Total cost ÷ Sales, TACOS = Amazon ad spend ÷ Amazon gross sales for the period. The "Sponsored Television" item Sellerboard books from 31/08 is not in the Ads console, so it is not counted. ','Amazon Ads: "Chi" và "DT quy về" trên thẻ = Total cost và Sales trong Amazon Ads console (SP+SB+SD, doanh thu Amazon gán cho quảng cáo trong cửa sổ 7/14 ngày, được cập nhật thêm vài ngày sau khi click) — ROAS = Sales ÷ Total cost, ACOS = Total cost ÷ Sales, TACOS = chi quảng cáo Amazon ÷ doanh thu gộp Amazon của kỳ. Khoản "Sponsored Television" Sellerboard ghi từ 31/08 không có trong Ads console nên không tính. ')}</span>`;
+    }
+    if(paypalMatched){
+      setSource('paypal',ageLevel(PAYPAL_LIVE_DATA.generated_at), fmtAmazonAge(PAYPAL_LIVE_DATA.generated_at)+fmtCoverage(PAYPAL_LIVE_DATA));
+    }
+    if(loopMatched){
+      const lc = LOOP_LIVE_DATA.coverage || {};
+      setSource('loop', ageLevel(LOOP_LIVE_DATA.generated_at), fmtAmazonAge(LOOP_LIVE_DATA.generated_at)+(lc.first_day ? tx('age.from', {d: fmtD(lc.first_day)}) : ''));
+    }
+    if(tiktokMatched){
+      const tm = TIKTOK_SHOP_LIVE_DATA.meta || {}, tc = TIKTOK_SHOP_LIVE_DATA.coverage || {};
+      const od = Object.keys(TIKTOK_SHOP_LIVE_DATA.orders_daily||{}).sort();
+      const feeErr = tm.order_fee_calls && tm.order_fee_calls.errors>0;
+      const lvl = (tm.orders_status && tm.orders_status.status==='ok' && !feeErr) ? ageLevel(TIKTOK_SHOP_LIVE_DATA.generated_at) : 'w';
+      setSource('tiktokshop', lvl, fmtAmazonAge(TIKTOK_SHOP_LIVE_DATA.generated_at)+(od.length ? tv(' · orders from ',' · đơn từ ')+fmtD(od[0]) : '')+' · '+(tm.orders_total||0)+tv(' orders sold (',' đơn bán (')+(tm.orders_settled||0)+tv(' settled, actual fees; the rest estimated by rate)',' đã quyết toán, phí thật; còn lại ước tính theo tỷ lệ)')+(lvl==='w' ? tv(' · Orders/Finance API reported an error — see GitHub Actions',' · Orders/Finance API báo lỗi — xem GitHub Actions') : ''));
+    }
+    if(walmartMatched){
+      const wm = WALMART_LIVE_DATA.meta || {};
+      const wod = Object.keys(WALMART_LIVE_DATA.orders_daily||{}).sort();
+      const fmtDW = fmtD;
+      const wErr = (wm.orders_status && !wm.orders_status.ok) || (wm.recon && (!wm.recon.ok || wm.recon.errors>0));
+      const wl = wErr ? 'w' : ageLevel(WALMART_LIVE_DATA.generated_at);
+      setSource('walmart', wl, fmtAmazonAge(WALMART_LIVE_DATA.generated_at)+(wod.length ? tv(' · orders from ',' · đơn từ ')+fmtDW(wod[0]) : '')+' · '+(wm.orders_total||0)+tv(' orders sold (',' đơn bán (')+(wm.orders_settled||0)+tv(' reconciled, actual fees; the rest estimated by rate)',' đã đối soát, phí thật; còn lại ước tính theo tỷ lệ)')+(wm.orders_from_recon>0 ? ' · '+wm.orders_from_recon+tv(' older orders (the API keeps only 180 days) rebuilt from the reconciliation report, date ≈ ship/posting date',' đơn cũ (API chỉ giữ 180 ngày) dựng lại từ báo cáo đối soát, ngày ≈ ngày giao hàng/ghi sổ') : '')+(wErr ? tv(' · Orders/Recon API reported an error — see GitHub Actions',' · Orders/Recon API báo lỗi — xem GitHub Actions') : ''));
+    }
+    if(shipmonkMatched){
+      setSource('shipmonk',ageLevel(SHIPMONK_LIVE_DATA.generated_at), fmtAmazonAge(SHIPMONK_LIVE_DATA.generated_at)+fmtCoverage(SHIPMONK_LIVE_DATA));
+    }
+    if(shipmonkInvMatched){
+      const im = SHIPMONK_INVOICES_LIVE_DATA.meta || {};
+      setSource('shipmonk_inv',(SHIPMONK_INVOICES_LIVE_DATA.meta && SHIPMONK_INVOICES_LIVE_DATA.meta.current_period ? 'g' : 'w'), fmtAmazonAge(SHIPMONK_INVOICES_LIVE_DATA.generated_at) + (im.first_day ? tv(' · invoices ',' · hoá đơn ')+fmtD(im.first_day)+' → '+fmtD(im.last_day) : '') + (im.missing_count ? tx('age.missing', {n: im.missing_count}) : '') + (shipmonkStorageMatched ? tv(' · daily storage through ',' · lưu kho theo ngày đến ')+fmtD(SHIPMONK_STORAGE_LIVE_DATA.last_day) : ''));
+    }
+    if(klaviyoMatched || klaviyoInvMatched){
+      const km = (KLAVIYO_INVOICES_LIVE_DATA && KLAVIYO_INVOICES_LIVE_DATA.meta) || {};
+      setSource('klaviyo',(klaviyoMatched ? ageLevel(KLAVIYO_LIVE_DATA.generated_at) : 'w'), (klaviyoMatched ? fmtAmazonAge(KLAVIYO_LIVE_DATA.generated_at)+fmtCoverage(KLAVIYO_LIVE_DATA) : tv('API not available','API chưa có')) + (klaviyoInvMatched ? tv(' · invoices through ',' · hoá đơn đến ')+fmtD(km.last_day) : tv(' · no invoices yet',' · chưa có hoá đơn')));
+    }
+    if(opexMatched){
+      const e = opexMeta.entered;
+      const fmtM = m => m.slice(5,7)+'/'+m.slice(0,4);
+      const anyNum = e.some(m => OPEX_GA_KEYS.concat(OPEX_BELOW_KEYS).some(k => parseFloat(OPEX_MONTHLY_LIVE_DATA.months[m][k])>0));
+      setSource('ga', anyNum ? 'g' : 'w', tv('entered by hand in data/opex_monthly.json · ','nhập tay data/opex_monthly.json · ') + (e.length===1 ? tv('month ','tháng ')+fmtM(e[0]) : fmtM(e[0])+' → '+fmtM(e[e.length-1])) + (anyNum ? '' : tv(' (all $0 — no figures entered)',' (toàn $0 — chưa điền số)')));
+    }
+    if(shopifyMatched){
+      setSource('shopify',ageLevel(SHOPIFY_LIVE_DATA.generated_at), fmtAmazonAge(SHOPIFY_LIVE_DATA.generated_at)+fmtCoverage(SHOPIFY_LIVE_DATA));
+      setSource('snowball',ageLevel(SHOPIFY_LIVE_DATA.generated_at), fmtAmazonAge(SHOPIFY_LIVE_DATA.generated_at)+fmtCoverage(SHOPIFY_LIVE_DATA));
+    }
   }
+  applySourceAges();
   // Human-readable list of the sources that are baked in live, for the banner text.
   function bakedLiveNames(){
     const names = [];
-    if(shopifyMatched) names.push('Shopify (Admin API thật)');
-    if(shopifyMatched) names.push('Snowball (hoa hồng từ tag Shopify)');
-    if(amazonMatched) names.push('Amazon (SP-API thật)');
-    if(amazonStorageMatched) names.push('Amazon FBA tồn kho & phí lưu kho (Inventory API + report tháng)');
-    if(metaMatched) names.push('Meta Ads (Marketing API thật)');
-    if(googleMatched) names.push('Google Ads (Google Ads API thật)');
-    if(applovinMatched) names.push('AppLovin (Reporting API thật — chi phí quảng cáo)');
-    if(tiktokAdsMatched) names.push('TikTok Ads (Marketing API — GMV Max cho TikTok Shop)');
-    if(amazonAdsMatched) names.push(AMAZON_ADS_LIVE_DATA.source==='sellerboard' ? 'Amazon Ads (chi phí SP/SB/SD qua Sellerboard)' : 'Amazon Ads (Ads API thật)');
-    if(shipmonkMatched) names.push('ShipMonk (API thật — phí fulfillment theo đơn)');
-    if(shipmonkInvMatched) names.push('ShipMonk hoá đơn (lưu kho, receiving, hàng trả, bao bì)');
-    if(paypalMatched) names.push('PayPal (API thật — phí giao dịch)');
-    if(tiktokMatched) names.push('TikTok Shop (Open API thật — đơn theo ngày đặt, phí thật đơn đã quyết toán)');
-    if(walmartMatched) names.push('Walmart (Marketplace API thật — đơn theo ngày đặt, hoa hồng thật từ báo cáo đối soát)');
-    if(klaviyoMatched) names.push('Klaviyo (API thật — email & SMS)');
-    if(klaviyoInvMatched) names.push('hoá đơn Klaviyo (chi phí gói)');
+    if(shopifyMatched) names.push(tv('Shopify (real Admin API)','Shopify (Admin API thật)'));
+    if(shopifyMatched) names.push(tv('Snowball (commission from Shopify tags)','Snowball (hoa hồng từ tag Shopify)'));
+    if(amazonMatched) names.push(tv('Amazon (real SP-API)','Amazon (SP-API thật)'));
+    if(amazonStorageMatched) names.push(tv('Amazon FBA inventory & storage fees (Inventory API + monthly report)','Amazon FBA tồn kho & phí lưu kho (Inventory API + report tháng)'));
+    if(metaMatched) names.push(tv('Meta Ads (real Marketing API)','Meta Ads (Marketing API thật)'));
+    if(googleMatched) names.push(tv('Google Ads (real Google Ads API)','Google Ads (Google Ads API thật)'));
+    if(applovinMatched) names.push(tv('AppLovin (real Reporting API — ad spend)','AppLovin (Reporting API thật — chi phí quảng cáo)'));
+    if(tiktokAdsMatched) names.push(tv('TikTok Ads (Marketing API — GMV Max for TikTok Shop)','TikTok Ads (Marketing API — GMV Max cho TikTok Shop)'));
+    if(amazonAdsMatched) names.push(AMAZON_ADS_LIVE_DATA.source==='sellerboard' ? tv('Amazon Ads (SP/SB/SD spend via Sellerboard)','Amazon Ads (chi phí SP/SB/SD qua Sellerboard)') : tv('Amazon Ads (real Ads API)','Amazon Ads (Ads API thật)'));
+    if(shipmonkMatched) names.push(tv('ShipMonk (real API — per-order fulfillment fees)','ShipMonk (API thật — phí fulfillment theo đơn)'));
+    if(shipmonkInvMatched) names.push(tv('ShipMonk invoices (storage, receiving, returns, packaging)','ShipMonk hoá đơn (lưu kho, receiving, hàng trả, bao bì)'));
+    if(paypalMatched) names.push(tv('PayPal (real API — transaction fees)','PayPal (API thật — phí giao dịch)'));
+    if(tiktokMatched) names.push(tv('TikTok Shop (real Open API — orders by order date, actual fees on settled orders)','TikTok Shop (Open API thật — đơn theo ngày đặt, phí thật đơn đã quyết toán)'));
+    if(walmartMatched) names.push(tv('Walmart (real Marketplace API — orders by order date, actual commission from the reconciliation report)','Walmart (Marketplace API thật — đơn theo ngày đặt, hoa hồng thật từ báo cáo đối soát)'));
+    if(klaviyoMatched) names.push(tv('Klaviyo (real API — email & SMS)','Klaviyo (API thật — email & SMS)'));
+    if(klaviyoInvMatched) names.push(tv('Klaviyo invoices (plan cost)','hoá đơn Klaviyo (chi phí gói)'));
     return names;
   }
   booted = true;
@@ -2822,6 +3484,7 @@
   function applyShipmonkRows(data){
     if(!data || !data.daily) return false;
     shipmonkMeta = data;
+    if(data.inventory && typeof data.inventory==='object' && data.inventory.skus) SHIPMONK_INVENTORY = data.inventory;
     let matched = 0;
     Object.keys(data.daily).forEach(iso=>{
       const idx = days.findIndex(d=>d.iso===iso);
@@ -2940,12 +3603,12 @@
   // "n8n Return Action" (Generic System v2 - reships from the returns flow), "Cattasaurus ShipMonk API".
   function shipmonkStoreLabel(name){
     const n = String(name||'');
-    if(/amazon|fbm|mcf/i.test(n)) return 'Amazon FBM qua ShipMonk — store "'+n+'"';
-    if(/walmart/i.test(n)) return 'Walmart qua ShipMonk — store "'+n+'"';
-    if(/tiktok/i.test(n)) return 'TikTok Shop qua ShipMonk — store "'+n+'"';
-    if(/manual/i.test(n)) return 'Đơn tạo tay trên ShipMonk — store "'+n+'"';
-    if(/return|reship|claim/i.test(n)) return 'Gửi lại hàng trả / claim — store "'+n+'"';
-    if(/shopify|shop|cattasaurus\.com|web/i.test(n)) return 'Shopify qua ShipMonk — store "'+n+'"';
+    if(/amazon|fbm|mcf/i.test(n)) return tv('Amazon FBM via ShipMonk — store "','Amazon FBM qua ShipMonk — store "')+n+'"';
+    if(/walmart/i.test(n)) return tv('Walmart via ShipMonk — store "','Walmart qua ShipMonk — store "')+n+'"';
+    if(/tiktok/i.test(n)) return tv('TikTok Shop via ShipMonk — store "','TikTok Shop qua ShipMonk — store "')+n+'"';
+    if(/manual/i.test(n)) return tv('Orders created by hand in ShipMonk — store "','Đơn tạo tay trên ShipMonk — store "')+n+'"';
+    if(/return|reship|claim/i.test(n)) return tv('Return reships / claims — store "','Gửi lại hàng trả / claim — store "')+n+'"';
+    if(/shopify|shop|cattasaurus\.com|web/i.test(n)) return tv('Shopify via ShipMonk — store "','Shopify qua ShipMonk — store "')+n+'"';
     return 'ShipMonk store "'+n+'"';
   }
 
@@ -2992,6 +3655,7 @@
       // sync v2.0+: order funnel counters (status as of the sync) + per-SKU units / pre-discount sales / refund units
       if(r.orders_placed !== undefined) (days[idx].funnel = days[idx].funnel||{}).shopify = {placed: Math.round(+r.orders_placed||0), paid: r.orders_paid===undefined ? null : Math.round(+r.orders_paid||0), fulfilled: Math.round(+r.orders_fulfilled||0), partial: Math.round(+r.orders_partially_fulfilled||0), cancelled: Math.round(+r.orders_cancelled||0), refunded: r.orders_refunded===undefined ? null : Math.round(+r.orders_refunded||0)};
       if(r.sku_units && typeof r.sku_units==='object') (days[idx].sku = days[idx].sku||{}).shopify = {units: r.sku_units, sales: r.sku_sales||{}, refunds: r.sku_refund_units||{}};
+      if(r.markets && typeof r.markets==='object') (days[idx].markets = days[idx].markets||{}).shopify = r.markets;   // sync v2.1+: per-country split
       matched++; sumGross += gross;
     });
     return matched>0;
@@ -3117,7 +3781,7 @@
     const cap = document.getElementById('attrCaption');
     if(!t.attrDays){
       kpis.innerHTML = ''; bar.innerHTML = ''; legend.innerHTML = ''; table.innerHTML = ''; ew.innerHTML = '';
-      jr.innerHTML = `<span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa có dữ liệu hành trình</span> Các ngày trong kỳ này được đồng bộ trước bản Shopify v1.8 — chạy backfill (2025-01-01 → 2025-06-30, 2025-07-01 → 2025-12-31, 2026-01-01 → nay) để có phân kênh cho toàn bộ lịch sử.`;
+      jr.innerHTML = `<span class="tag gap" style="margin-left:0;"><span class="d"></span>${tv('No journey data yet','Chưa có dữ liệu hành trình')}</span> ${tv('The days in this period were synced before Shopify sync v1.8 — run a backfill (2025-01-01 → 2025-06-30, 2025-07-01 → 2025-12-31, 2026-01-01 → today) to get channel attribution for the whole history.','Các ngày trong kỳ này được đồng bộ trước bản Shopify v1.8 — chạy backfill (2025-01-01 → 2025-06-30, 2025-07-01 → 2025-12-31, 2026-01-01 → nay) để có phân kênh cho toàn bộ lịch sử.')}`;
       cap.textContent = '';
       return;
     }
@@ -3128,12 +3792,12 @@
     const own = ['email','sms','email_other','organic_search','direct','referral','ai_search','social_other','meta_organic','meta_shop','tiktok_organic','tiktok_shop','shop_app','other_channel','snowball','other_utm'];
     const ownSales = sum(chans.filter(k=>own.includes(k)).map(k=>t.last[k].sales));
     const shopOrders = a.orders.shopify;
-    const cov = t.attrDays<t.shopifyDays ? ` · ${t.attrDays}/${t.shopifyDays} ngày có hành trình` : '';
+    const cov = t.attrDays<t.shopifyDays ? ` · ${t.attrDays}/${t.shopifyDays} ${tv('days with journeys','ngày có hành trình')}` : '';
     kpis.innerHTML = `
-      <div class="be-stat"><div class="l">Đơn đã phân kênh</div><div class="v">${intFmt(t.classified)}<span style="font-size:12px;color:var(--ink-muted);font-weight:500;"> / ${intFmt(shopOrders)} đơn</span></div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${t.pending ? intFmt(t.pending)+' đơn Shopify chưa attribute (đơn mới)' : 'mọi đơn trong kỳ đã có hành trình'}${cov}</div></div>
-      <div class="be-stat"><div class="l">Chạm cuối = quảng cáo trả tiền</div><div class="v">${pct1(paidSales, t.sales)}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${intFmt(paidOrders)} đơn · ${money(paidSales)} doanh thu thuần</div></div>
-      <div class="be-stat"><div class="l">Chạm cuối = Email + SMS (Klaviyo)</div><div class="v">${pct1(klv.sales+sms.sales, t.sales)}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${intFmt(klv.orders+sms.orders)} đơn · ${money(klv.sales+sms.sales)}${klv.paidFirst||sms.paidFirst ? ' · '+intFmt((klv.paidFirst||0)+(sms.paidFirst||0))+' đơn mở bằng quảng cáo' : ''}</div></div>
-      <div class="be-stat"><div class="l">Kênh không trả tiền (organic, direct, email…)</div><div class="v">${pct1(ownSales, t.sales)}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${money(ownSales)} · gồm cả email/SMS ở cột bên</div></div>`;
+      <div class="be-stat"><div class="l">${tv('Orders attributed','Đơn đã phân kênh')}</div><div class="v">${intFmt(t.classified)}<span style="font-size:12px;color:var(--ink-muted);font-weight:500;"> / ${intFmt(shopOrders)} ${tx('u.orders')}</span></div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${t.pending ? intFmt(t.pending)+tv(' Shopify orders not attributed yet (new orders)',' đơn Shopify chưa attribute (đơn mới)') : tv('every order in the period has a journey','mọi đơn trong kỳ đã có hành trình')}${cov}</div></div>
+      <div class="be-stat"><div class="l">${tv('Last touch = paid ads','Chạm cuối = quảng cáo trả tiền')}</div><div class="v">${pct1(paidSales, t.sales)}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${intFmt(paidOrders)} ${tx('u.orders')} · ${money(paidSales)} ${tx('u.netRevLc')}</div></div>
+      <div class="be-stat"><div class="l">${tv('Last touch = Email + SMS (Klaviyo)','Chạm cuối = Email + SMS (Klaviyo)')}</div><div class="v">${pct1(klv.sales+sms.sales, t.sales)}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${intFmt(klv.orders+sms.orders)} ${tx('u.orders')} · ${money(klv.sales+sms.sales)}${klv.paidFirst||sms.paidFirst ? ' · '+intFmt((klv.paidFirst||0)+(sms.paidFirst||0))+tv(' orders opened by ads',' đơn mở bằng quảng cáo') : ''}</div></div>
+      <div class="be-stat"><div class="l">${tv('Unpaid channels (organic, direct, email…)','Kênh không trả tiền (organic, direct, email…)')}</div><div class="v">${pct1(ownSales, t.sales)}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${money(ownSales)} · ${tv('including email/SMS in the next column','gồm cả email/SMS ở cột bên')}</div></div>`;
     // 100% bar of net sales by last-touch channel (label the segments >= 7%, everything is in the legend + table)
     bar.innerHTML = chans.map(k=>{
       const c = ATTR_BY_KEY[k] || {color:'var(--gridline)'}; const w = t.sales>0 ? 100*t.last[k].sales/t.sales : 0;
@@ -3149,38 +3813,38 @@
       email: kl && kl.days>0 ? {orders: kl.splitKnown ? kl.emailOrders : kl.attributedOrders, sales: kl.splitKnown ? kl.emailRevenue : kl.attributedRevenue, who: kl.splitKnown ? 'Klaviyo' : 'Klaviyo (email+SMS)'} : null,
       sms: kl && kl.days>0 && kl.splitKnown ? {orders: kl.smsOrders, sales: kl.smsRevenue, who:'Klaviyo'} : null,
     };
-    let html = `<thead><tr><th>Kênh (điểm chạm cuối)</th><th style="text-align:right">Đơn</th><th style="text-align:right">% đơn</th><th style="text-align:right">Doanh thu thuần</th><th style="text-align:right">% DT</th><th style="text-align:right">AOV</th><th style="text-align:right">Khách mới</th><th style="text-align:right">Mở bằng QC trả tiền</th><th style="text-align:right">Chi phí kênh</th><th style="text-align:right">DT ÷ chi (last-touch)</th><th style="text-align:right">Nền tảng tự nhận</th></tr></thead><tbody>`;
+    let html = `<thead><tr><th>${tv('Channel (last touch)','Kênh (điểm chạm cuối)')}</th><th style="text-align:right">${tv('Orders','Đơn')}</th><th style="text-align:right">${tv('% of orders','% đơn')}</th><th style="text-align:right">${tv('Net revenue','Doanh thu thuần')}</th><th style="text-align:right">${tv('% of revenue','% DT')}</th><th style="text-align:right">AOV</th><th style="text-align:right">${tv('New customers','Khách mới')}</th><th style="text-align:right">${tv('Opened by paid ads','Mở bằng QC trả tiền')}</th><th style="text-align:right">${tv('Channel cost','Chi phí kênh')}</th><th style="text-align:right">${tv('Revenue ÷ cost (last-touch)','DT ÷ chi (last-touch)')}</th><th style="text-align:right">${tv('Platform self-reported','Nền tảng tự nhận')}</th></tr></thead><tbody>`;
     chans.forEach(k=>{
       const v = t.last[k]; const c = ATTR_BY_KEY[k] || {};
       const costKey = c.cost; const cost = costKey ? costOf[costKey] : null;
-      const costTxt = cost===null || cost===undefined ? '<span style="color:var(--ink-muted)">—</span>' : (cost>0 ? money(cost) : '<span class="tag gap" style="margin-left:0;"><span class="d"></span>$0 chưa nối</span>');
+      const costTxt = cost===null || cost===undefined ? '<span style="color:var(--ink-muted)">—</span>' : (cost>0 ? money(cost) : '<span class="tag gap" style="margin-left:0;"><span class="d"></span>'+tv('$0 not connected','$0 chưa nối')+'</span>');
       const roasTxt = cost>0 ? (v.sales/cost).toFixed(2)+'x' : '<span style="color:var(--ink-muted)">—</span>';
       const cl = claimOf[k];
-      const claimTxt = cl ? `${intFmt(cl.orders)} đơn · ${money(cl.sales)}` : '<span style="color:var(--ink-muted)">—</span>';
+      const claimTxt = cl ? `${intFmt(cl.orders)} ${tx('u.orders')} · ${money(cl.sales)}` : '<span style="color:var(--ink-muted)">—</span>';
       html += `<tr><td class="name"><span class="sw" style="background:${c.color||'var(--gridline)'};"></span>${ATTR_LABEL(k)}</td><td class="num">${intFmt(v.orders)}</td><td class="num">${pct1(v.orders, t.classified)}</td><td class="num">${money(v.sales)}</td><td class="num">${pct1(v.sales, t.sales)}</td><td class="num">${v.orders>0 ? money(v.sales/v.orders) : '—'}</td><td class="num">${v.newC+v.returning>0 ? pct0(v.newC, v.newC+v.returning) : '—'}</td><td class="num">${v.orders>0 ? pct0(v.paidFirst, v.orders) : '—'}</td><td class="num">${costTxt}</td><td class="num">${roasTxt}</td><td class="num sub" style="text-align:right;">${claimTxt}</td></tr>`;
     });
-    html += `<tr style="font-weight:700;"><td class="name">Tổng đã phân kênh</td><td class="num">${intFmt(t.classified)}</td><td class="num">100%</td><td class="num">${money(t.sales)}</td><td class="num">100%</td><td class="num">${t.classified>0 ? money(t.sales/t.classified) : '—'}</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td></tr></tbody>`;
+    html += `<tr style="font-weight:700;"><td class="name">${tv('Total attributed','Tổng đã phân kênh')}</td><td class="num">${intFmt(t.classified)}</td><td class="num">100%</td><td class="num">${money(t.sales)}</td><td class="num">100%</td><td class="num">${t.classified>0 ? money(t.sales/t.classified) : '—'}</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td></tr></tbody>`;
     table.innerHTML = html;
     // cross-channel journeys: first session != last session
     const jkeys = Object.keys(t.journeys).filter(k=>{ const [f,l] = k.split('>'); return f!==l && !['direct','unknown'].includes(f); }).sort((x,y)=>t.journeys[y].orders - t.journeys[x].orders).slice(0,6);
     const firstPaidOrders = sum(Object.keys(t.first).filter(k=>ATTR_PAID[k]).map(k=>t.first[k].orders));
-    let jhtml = `<b>Hành trình đổi kênh</b> (lượt ghé đầu → chạm cuối): ${jkeys.length ? jkeys.map(k=>{ const [f,l] = k.split('>'); const v = t.journeys[k]; return `${ATTR_LABEL(f).split(' (')[0]} → <b>${ATTR_LABEL(l).split(' (')[0]}</b> ${intFmt(v.orders)} đơn (${money(v.sales)})`; }).join(' · ') : 'không có'}.`;
-    jhtml += ` Trong ${intFmt(t.classified)} đơn, <b>${pct0(firstPaidOrders, t.classified)}</b> có lượt ghé đầu từ quảng cáo trả tiền.`;
+    let jhtml = `<b>${tv('Cross-channel journeys','Hành trình đổi kênh')}</b> ${tv('(first visit → last touch)','(lượt ghé đầu → chạm cuối)')}: ${jkeys.length ? jkeys.map(k=>{ const [f,l] = k.split('>'); const v = t.journeys[k]; return `${ATTR_LABEL(f).split(' (')[0]} → <b>${ATTR_LABEL(l).split(' (')[0]}</b> ${intFmt(v.orders)} ${tx('u.orders')} (${money(v.sales)})`; }).join(' · ') : tv('none','không có')}.`;
+    jhtml += tv(` Of ${intFmt(t.classified)} orders, <b>${pct0(firstPaidOrders, t.classified)}</b> had their first visit from paid ads.`, ` Trong ${intFmt(t.classified)} đơn, <b>${pct0(firstPaidOrders, t.classified)}</b> có lượt ghé đầu từ quảng cáo trả tiền.`);
     const m2e = t.journeys['meta_paid>email'] || t.journeys['meta_paid>sms'] ? (t.journeys['meta_paid>email']||{orders:0,sales:0}).orders + (t.journeys['meta_paid>sms']||{orders:0,sales:0}).orders : 0;
-    if(m2e) jhtml += ` <b>Meta mở → email/SMS chốt: ${intFmt(m2e)} đơn</b> — Meta cũng nhận, Klaviyo cũng nhận; ở bảng này chỉ tính cho email/SMS.`;
+    if(m2e) jhtml += tv(` <b>Meta opened → email/SMS closed: ${intFmt(m2e)} orders</b> — Meta claims them, Klaviyo claims them too; this table counts them for email/SMS only.`, ` <b>Meta mở → email/SMS chốt: ${intFmt(m2e)} đơn</b> — Meta cũng nhận, Klaviyo cũng nhận; ở bảng này chỉ tính cho email/SMS.`);
     jr.innerHTML = jhtml;
     // Klaviyo campaign / flow names behind the email + sms last-touch orders
     const enames = Object.keys(t.email).sort((x,y)=>t.email[y].sales - t.email[x].sales);
     if(enames.length){
       const top = enames.slice(0, 12); const rest = enames.slice(12);
-      let eh = `<div class="subhead">Email / SMS chạm cuối theo campaign hoặc flow (tên trong utm_campaign của Klaviyo)</div><div style="overflow-x:auto;"><table class="simple" style="min-width:640px;"><thead><tr><th>Campaign / flow message</th><th>Kênh</th><th style="text-align:right">Đơn</th><th style="text-align:right">Doanh thu thuần</th><th style="text-align:right">AOV</th></tr></thead><tbody>`;
+      let eh = `<div class="subhead">${tv('Email / SMS last touch by campaign or flow (name in the Klaviyo utm_campaign)','Email / SMS chạm cuối theo campaign hoặc flow (tên trong utm_campaign của Klaviyo)')}</div><div style="overflow-x:auto;"><table class="simple" style="min-width:640px;"><thead><tr><th>Campaign / flow message</th><th>${tx('f.channel')}</th><th style="text-align:right">${tv('Orders','Đơn')}</th><th style="text-align:right">${tv('Net revenue','Doanh thu thuần')}</th><th style="text-align:right">AOV</th></tr></thead><tbody>`;
       top.forEach(nm=>{ const v = t.email[nm]; eh += `<tr><td class="name">${nm.replace(/</g,'&lt;')}</td><td>${v.medium==='sms'?'SMS':'Email'}</td><td class="num">${intFmt(v.orders)}</td><td class="num">${money(v.sales)}</td><td class="num">${money(v.sales/v.orders)}</td></tr>`; });
-      if(rest.length){ const ro = sum(rest.map(n=>t.email[n].orders)), rs = sum(rest.map(n=>t.email[n].sales)); eh += `<tr><td class="name" style="color:var(--ink-muted);">+ ${rest.length} tên khác</td><td></td><td class="num">${intFmt(ro)}</td><td class="num">${money(rs)}</td><td class="num">${ro>0?money(rs/ro):'—'}</td></tr>`; }
+      if(rest.length){ const ro = sum(rest.map(n=>t.email[n].orders)), rs = sum(rest.map(n=>t.email[n].sales)); eh += `<tr><td class="name" style="color:var(--ink-muted);">+ ${rest.length} ${tv('more names','tên khác')}</td><td></td><td class="num">${intFmt(ro)}</td><td class="num">${money(rs)}</td><td class="num">${ro>0?money(rs/ro):'—'}</td></tr>`; }
       eh += '</tbody></table></div>';
       ew.innerHTML = eh;
     } else ew.innerHTML = '';
     const basis = (shopifyMeta.attribution && shopifyMeta.attribution.basis) || '';
-    cap.innerHTML = `Nguồn: <code>Order.customerJourneySummary</code> của Shopify Admin API (sync v1.8) — cùng mô hình "last non-direct click" mà Shopify dùng cho báo cáo <i>Sales attributed to marketing</i>. Đơn có lượt cuối là direct / quay về từ Shop Pay, PayPal, Amazon Pay thì lấy lượt ghé trước đó không phải direct. Doanh thu = net sales (sau giảm giá, trước hoàn) ghi theo ngày đặt — cùng số với dòng Shopify trong P&amp;L, nên các % cộng đúng 100%. "Nền tảng tự nhận" = con số Meta / Google / Klaviyo tự báo cho cùng kỳ theo cửa sổ attribution riêng của họ (7 ngày click Meta, 5 ngày Klaviyo…) nên có thể cộng vượt 100% — dùng để so, không cộng vào doanh thu. Google Ads không gửi UTM (auto-tagging gclid bị Shopify ẩn) nên từ sync v1.9 lượt ghé từ Google đáp xuống trang đích chỉ dùng cho quảng cáo (<code>/pages/cats-love-it-2025</code>, trang sản phẩm đuôi <code>-gg</code>) được tính là Google Ads; đơn không có phiên web nào (mua ngay trong Facebook/Instagram Shop, Shop app…) tính theo kênh bán. Đơn mới trong 1–3 giờ đầu chưa được Shopify gắn hành trình (đếm ở "chưa attribute") và tự cập nhật ở lần đồng bộ sau.`;
+    cap.innerHTML = tv(`Source: <code>Order.customerJourneySummary</code> from the Shopify Admin API (sync v1.8) — the same "last non-direct click" model Shopify uses for its <i>Sales attributed to marketing</i> report. An order whose last visit is direct / a return from Shop Pay, PayPal, Amazon Pay takes the previous non-direct visit. Revenue = net sales (after discounts, before refunds) by order date — the same figure as the Shopify line in the P&amp;L, so the percentages add up to 100%. "Platform self-reported" = what Meta / Google / Klaviyo report for the same period under their own attribution windows (7-day click for Meta, 5 days for Klaviyo…), so they can add up to more than 100% — for comparison only, never added to revenue. Google Ads sends no UTM (the gclid auto-tag is hidden by Shopify), so from sync v1.9 a visit from Google landing on an ads-only page (<code>/pages/cats-love-it-2025</code>, product pages ending in <code>-gg</code>) counts as Google Ads; orders with no web session (bought inside Facebook/Instagram Shop, the Shop app…) go by sales channel. Orders from the first 1–3 hours have no journey from Shopify yet (counted under "not attributed") and update on the next sync.`, `Nguồn: <code>Order.customerJourneySummary</code> của Shopify Admin API (sync v1.8) — cùng mô hình "last non-direct click" mà Shopify dùng cho báo cáo <i>Sales attributed to marketing</i>. Đơn có lượt cuối là direct / quay về từ Shop Pay, PayPal, Amazon Pay thì lấy lượt ghé trước đó không phải direct. Doanh thu = net sales (sau giảm giá, trước hoàn) ghi theo ngày đặt — cùng số với dòng Shopify trong P&amp;L, nên các % cộng đúng 100%. "Nền tảng tự nhận" = con số Meta / Google / Klaviyo tự báo cho cùng kỳ theo cửa sổ attribution riêng của họ (7 ngày click Meta, 5 ngày Klaviyo…) nên có thể cộng vượt 100% — dùng để so, không cộng vào doanh thu. Google Ads không gửi UTM (auto-tagging gclid bị Shopify ẩn) nên từ sync v1.9 lượt ghé từ Google đáp xuống trang đích chỉ dùng cho quảng cáo (<code>/pages/cats-love-it-2025</code>, trang sản phẩm đuôi <code>-gg</code>) được tính là Google Ads; đơn không có phiên web nào (mua ngay trong Facebook/Instagram Shop, Shop app…) tính theo kênh bán. Đơn mới trong 1–3 giờ đầu chưa được Shopify gắn hành trình (đếm ở "chưa attribute") và tự cập nhật ở lần đồng bộ sau.`);
   }
 
   // ---------- Klaviyo card: its own attribution next to the last-touch view, campaigns of the period, flows ----------
@@ -3192,18 +3856,18 @@
     const l = loopAggregate(rows);
     const mrr = loopMeta.mrr_estimate || {};
     const note = document.getElementById('loopNote');
-    note.textContent = 'Loop Admin API + Shopify order feed, theo ngày America/Los_Angeles · ' + fmtAmazonAge(loopMeta.generated_at) + (l.days<rows.length ? ` · ${rows.length-l.days} ngày trong kỳ chưa có dữ liệu Loop` : '');
+    note.textContent = tv('Loop Admin API + Shopify order feed, by America/Los_Angeles day · ','Loop Admin API + Shopify order feed, theo ngày America/Los_Angeles · ') + fmtAmazonAge(loopMeta.generated_at) + (l.days<rows.length ? tv(` · ${nDays(rows.length-l.days)} in the period ${rows.length-l.days===1?'has':'have'} no Loop data yet`, ` · ${rows.length-l.days} ngày trong kỳ chưa có dữ liệu Loop`) : '');
     const kp = document.getElementById('loopKpis');
     const rrReal = l.recurringRevenueActual;
     const rrTile = rrReal!=null
-      ? `<div class="be-stat"><div class="l">Recurring revenue (kỳ đang xem)</div><div class="v">${money(rrReal)}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${mrr.weekly_run_rate!=null ? 'run-rate hiện tại ~'+money(mrr.weekly_run_rate)+'/tuần' : ''}${mrr.active_subscriptions!=null ? ' · '+intFmt(mrr.active_subscriptions)+' sub active' : ''}</div></div>`
-      : `<div class="be-stat"><div class="l">Recurring revenue — ước tính hiện tại</div><div class="v">${mrr.weekly_run_rate!=null ? money(mrr.weekly_run_rate)+'/tuần' : '—'}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${mrr.active_subscriptions!=null ? intFmt(mrr.active_subscriptions)+' subscription đang active · ' : ''}chưa có số thật cho kỳ này — ước tính run-rate, KHÔNG phải số đã charge thật</div></div>`;
+      ? `<div class="be-stat"><div class="l">Recurring revenue (${tx('u.selPeriod')})</div><div class="v">${money(rrReal)}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${mrr.weekly_run_rate!=null ? tv('current run-rate ~','run-rate hiện tại ~')+money(mrr.weekly_run_rate)+tv('/week','/tuần') : ''}${mrr.active_subscriptions!=null ? ' · '+intFmt(mrr.active_subscriptions)+tv(' active subs',' sub active') : ''}</div></div>`
+      : `<div class="be-stat"><div class="l">${tv('Recurring revenue — current estimate','Recurring revenue — ước tính hiện tại')}</div><div class="v">${mrr.weekly_run_rate!=null ? money(mrr.weekly_run_rate)+tv('/week','/tuần') : '—'}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${mrr.active_subscriptions!=null ? intFmt(mrr.active_subscriptions)+tv(' active subscriptions · ',' subscription đang active · ') : ''}${tv('no actuals for this period yet — a run-rate estimate, NOT what was actually charged','chưa có số thật cho kỳ này — ước tính run-rate, KHÔNG phải số đã charge thật')}</div></div>`;
     kp.innerHTML = `
-      <div class="be-stat"><div class="l">Subscription mới (kỳ đang xem)</div><div class="v">${intFmt(l.newSubscriptions)}</div></div>
-      <div class="be-stat"><div class="l">Khách đăng ký lần đầu</div><div class="v">${intFmt(l.newSubscribers)}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${pct0(l.newSubscribers, l.newSubscriptions)} subscription mới là khách hoàn toàn mới</div></div>
-      <div class="be-stat"><div class="l">Checkout revenue (đơn đầu, kỳ đang xem)</div><div class="v">${money(l.checkoutRevenue)}</div></div>
+      <div class="be-stat"><div class="l">${tv('New subscriptions','Subscription mới')} (${tx('u.selPeriod')})</div><div class="v">${intFmt(l.newSubscriptions)}</div></div>
+      <div class="be-stat"><div class="l">${tv('First-time subscribers','Khách đăng ký lần đầu')}</div><div class="v">${intFmt(l.newSubscribers)}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${pct0(l.newSubscribers, l.newSubscriptions)} ${tv('of new subscriptions are brand-new customers','subscription mới là khách hoàn toàn mới')}</div></div>
+      <div class="be-stat"><div class="l">Checkout revenue (${tv('first order, selected period','đơn đầu, kỳ đang xem')})</div><div class="v">${money(l.checkoutRevenue)}</div></div>
       ${rrTile}`;
-    document.getElementById('loopCaption').innerHTML = `Nguồn: Loop Admin API (subscription mới/khách mới/checkout revenue) + Shopify order feed (recurring revenue). "Subscription mới" và "Checkout revenue" tính theo subscription có ngày tạo (<code>createdAt</code>) trong kỳ đang xem; "Khách đăng ký lần đầu" = khách có <code>allSubscriptionsCount == 1</code> (chưa từng có subscription nào trước đó). "Recurring revenue" = SỐ THẬT đã charge trong kỳ — mỗi lần Loop charge lại một subscription, Loop tạo 1 đơn Shopify thật (tag <code>Subscription Recurring Order</code>, app <code>Loop Subscriptions</code>); cộng đúng các đơn đó theo ngày tạo ra số này, đã đối chiếu khớp tới từng cent với "Recurring revenue" Loop tự hiển thị trên Home dashboard của họ. Dòng nhỏ bên dưới là run-rate hiện tại (giá mỗi chu kỳ ÷ độ dài chu kỳ, cộng mọi subscription đang active) — không đổi khi bạn đổi kỳ xem, chỉ để so sánh.`;
+    document.getElementById('loopCaption').innerHTML = tv(`Source: Loop Admin API (new subscriptions / new subscribers / checkout revenue) + Shopify order feed (recurring revenue). "New subscriptions" and "Checkout revenue" count subscriptions created (<code>createdAt</code>) in the selected period; "First-time subscribers" = customers with <code>allSubscriptionsCount == 1</code> (never had a subscription before). "Recurring revenue" = the ACTUAL amount charged in the period — every time Loop re-charges a subscription it creates a real Shopify order (tag <code>Subscription Recurring Order</code>, app <code>Loop Subscriptions</code>); summing those orders by creation date gives this figure, reconciled to the cent with the "Recurring revenue" Loop shows on its own Home dashboard. The small line below is the current run-rate (price per cycle ÷ cycle length, over every active subscription) — it does not change with the selected period, for comparison only.`, `Nguồn: Loop Admin API (subscription mới/khách mới/checkout revenue) + Shopify order feed (recurring revenue). "Subscription mới" và "Checkout revenue" tính theo subscription có ngày tạo (<code>createdAt</code>) trong kỳ đang xem; "Khách đăng ký lần đầu" = khách có <code>allSubscriptionsCount == 1</code> (chưa từng có subscription nào trước đó). "Recurring revenue" = SỐ THẬT đã charge trong kỳ — mỗi lần Loop charge lại một subscription, Loop tạo 1 đơn Shopify thật (tag <code>Subscription Recurring Order</code>, app <code>Loop Subscriptions</code>); cộng đúng các đơn đó theo ngày tạo ra số này, đã đối chiếu khớp tới từng cent với "Recurring revenue" Loop tự hiển thị trên Home dashboard của họ. Dòng nhỏ bên dưới là run-rate hiện tại (giá mỗi chu kỳ ÷ độ dài chu kỳ, cộng mọi subscription đang active) — không đổi khi bạn đổi kỳ xem, chỉ để so sánh.`);
   }
 
   function renderKlaviyo(){
@@ -3216,48 +3880,48 @@
     const t = attrAggregate(rows);
     const meta = klaviyoMeta.meta || {};
     const note = document.getElementById('klaviyoNote');
-    note.textContent = 'Attribution riêng của Klaviyo (mặc định 5 ngày sau khi bấm/mở email, 1 ngày với SMS) · trùng với attribution của quảng cáo nên không cộng vào doanh thu P&L · ' + fmtAmazonAge(klaviyoMeta.generated_at) + (k.days<a.n ? ` · ${a.n-k.days} ngày trong kỳ chưa có dữ liệu Klaviyo` : '');
+    note.textContent = tv('Klaviyo\'s own attribution (default 5 days after an email click/open, 1 day for SMS) · overlaps with ad attribution, so it is not added to P&L revenue · ','Attribution riêng của Klaviyo (mặc định 5 ngày sau khi bấm/mở email, 1 ngày với SMS) · trùng với attribution của quảng cáo nên không cộng vào doanh thu P&L · ') + fmtAmazonAge(klaviyoMeta.generated_at) + (k.days<a.n ? tv(` · ${nDays(a.n-k.days)} in the period ${a.n-k.days===1?'has':'have'} no Klaviyo data yet`, ` · ${a.n-k.days} ngày trong kỳ chưa có dữ liệu Klaviyo`) : '');
     const kp = document.getElementById('klaviyoKpis');
     const cost = a.klaviyoCostDays>0 ? a.klaviyoCost : null;
     const lt = (t.last.email||{orders:0,sales:0}); const ls = (t.last.sms||{orders:0,sales:0});
     const ltOrders = lt.orders + ls.orders, ltSales = lt.sales + ls.sales;
     const shopNet = a.netRevenue;
     kp.innerHTML = `
-      <div class="be-stat"><div class="l">Klaviyo tự nhận (attributed)</div><div class="v">${money(k.attributedRevenue)}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${intFmt(k.attributedOrders)} đơn · flow ${pct0(k.flowRevenue, k.attributedRevenue)} / campaign ${pct0(k.campaignRevenue, k.attributedRevenue)}${k.splitKnown && k.smsOrders>0 ? ' · SMS '+intFmt(k.smsOrders)+' đơn' : ''}</div></div>
-      <div class="be-stat"><div class="l">Điểm chạm cuối = email/SMS (Shopify)</div><div class="v">${t.attrDays ? money(ltSales) : '—'}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${t.attrDays ? intFmt(ltOrders)+' đơn · '+pct1(ltSales, shopNet)+' doanh thu thuần Shopify' : 'chưa có hành trình cho kỳ này (backfill v1.8)'}</div></div>
-      <div class="be-stat"><div class="l">Tỷ lệ đơn Klaviyo nhận / tổng đơn</div><div class="v">${k.storeKnown ? pct1(k.attributedOrders, k.storeOrders) : pct1(k.attributedOrders, a.orders.shopify)}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${k.storeKnown ? intFmt(k.storeOrders)+' đơn Klaviyo nhận từ Shopify' : 'trên '+intFmt(a.orders.shopify)+' đơn Shopify (tổng của Klaviyo có từ sync v1.1)'}</div></div>
-      <div class="be-stat"><div class="l">Chi phí Klaviyo (hoá đơn) &amp; ROI</div><div class="v">${cost!==null ? money(cost) : '<span class="tag gap" style="margin-left:0;font-size:11px;"><span class="d"></span>chưa có hoá đơn</span>'}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${cost!==null && cost>0 ? (t.attrDays ? 'DT last-touch ÷ chi = <b>'+(ltSales/cost).toFixed(1)+'x</b> · ' : '')+'Klaviyo tự nhận ÷ chi = '+(k.attributedRevenue/cost).toFixed(1)+'x' + (a.klaviyoCostParts.upgrades||a.klaviyoCostParts.flex ? ' · gồm nâng gói '+money(a.klaviyoCostParts.upgrades)+(a.klaviyoCostParts.flex?' + vượt email '+money(a.klaviyoCostParts.flex):'') : '') : 'ROI = doanh thu email/SMS ÷ phí Klaviyo theo kỳ'}</div></div>`;
+      <div class="be-stat"><div class="l">${tv('Klaviyo self-reported (attributed)','Klaviyo tự nhận (attributed)')}</div><div class="v">${money(k.attributedRevenue)}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${intFmt(k.attributedOrders)} ${tx('u.orders')} · flow ${pct0(k.flowRevenue, k.attributedRevenue)} / campaign ${pct0(k.campaignRevenue, k.attributedRevenue)}${k.splitKnown && k.smsOrders>0 ? ' · SMS '+intFmt(k.smsOrders)+' '+tx('u.orders') : ''}</div></div>
+      <div class="be-stat"><div class="l">${tv('Last touch = email/SMS (Shopify)','Điểm chạm cuối = email/SMS (Shopify)')}</div><div class="v">${t.attrDays ? money(ltSales) : '—'}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${t.attrDays ? intFmt(ltOrders)+' '+tx('u.orders')+' · '+pct1(ltSales, shopNet)+tv(' of Shopify net revenue',' doanh thu thuần Shopify') : tv('no journeys for this period yet (backfill v1.8)','chưa có hành trình cho kỳ này (backfill v1.8)')}</div></div>
+      <div class="be-stat"><div class="l">${tv('Klaviyo-attributed orders / all orders','Tỷ lệ đơn Klaviyo nhận / tổng đơn')}</div><div class="v">${k.storeKnown ? pct1(k.attributedOrders, k.storeOrders) : pct1(k.attributedOrders, a.orders.shopify)}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${k.storeKnown ? intFmt(k.storeOrders)+tv(' orders Klaviyo received from Shopify',' đơn Klaviyo nhận từ Shopify') : tv('of ','trên ')+intFmt(a.orders.shopify)+tv(' Shopify orders (Klaviyo\'s total available from sync v1.1)',' đơn Shopify (tổng của Klaviyo có từ sync v1.1)')}</div></div>
+      <div class="be-stat"><div class="l">${tv('Klaviyo cost (invoices) &amp; ROI','Chi phí Klaviyo (hoá đơn) &amp; ROI')}</div><div class="v">${cost!==null ? money(cost) : '<span class="tag gap" style="margin-left:0;font-size:11px;"><span class="d"></span>'+tv('no invoices yet','chưa có hoá đơn')+'</span>'}</div><div class="sub" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${cost!==null && cost>0 ? (t.attrDays ? tv('last-touch revenue ÷ cost = <b>','DT last-touch ÷ chi = <b>')+(ltSales/cost).toFixed(1)+'x</b> · ' : '')+tv('Klaviyo self-reported ÷ cost = ','Klaviyo tự nhận ÷ chi = ')+(k.attributedRevenue/cost).toFixed(1)+'x' + (a.klaviyoCostParts.upgrades||a.klaviyoCostParts.flex ? tv(' · incl. plan upgrades ',' · gồm nâng gói ')+money(a.klaviyoCostParts.upgrades)+(a.klaviyoCostParts.flex?tv(' + email overage ',' + vượt email ')+money(a.klaviyoCostParts.flex):'') : '') : tv('ROI = email/SMS revenue ÷ Klaviyo fees for the period','ROI = doanh thu email/SMS ÷ phí Klaviyo theo kỳ')}</div></div>`;
     const cmp = document.getElementById('klaviyoCompare');
     if(t.attrDays && k.days){
       const diff = k.attributedOrders - ltOrders;
-      cmp.innerHTML = `<b>Hai cách đếm cùng kỳ:</b> Klaviyo tự nhận <b>${intFmt(k.attributedOrders)} đơn</b> (đơn đặt trong ${meta.attribution && /5-day/.test(meta.attribution) ? '5 ngày' : 'cửa sổ attribution'} sau khi khách bấm/mở email) so với <b>${intFmt(ltOrders)} đơn</b> có email/SMS là điểm chạm cuối theo Shopify. ${diff>0 ? `Chênh ${intFmt(diff)} đơn = khách có mở/bấm email nhưng cú chạm cuối trước khi mua là kênh khác (thường là quảng cáo Meta) hoặc vào thẳng — Meta cũng đang nhận những đơn đó.` : diff<0 ? `Shopify thấy nhiều đơn email hơn Klaviyo ${intFmt(-diff)} đơn (link email không có UTM Klaviyo hoặc ngoài cửa sổ attribution của Klaviyo).` : 'Hai cách đếm trùng nhau.'} Giá trị đơn của Klaviyo là tổng đơn (gồm ship + thuế) nên không so tiền trực tiếp với doanh thu thuần.`;
+      cmp.innerHTML = tv(`<b>Two counts for the same period:</b> Klaviyo claims <b>${intFmt(k.attributedOrders)} orders</b> (placed within ${meta.attribution && /5-day/.test(meta.attribution) ? '5 days' : 'the attribution window'} after the customer clicked/opened an email) vs <b>${intFmt(ltOrders)} orders</b> whose last touch is email/SMS according to Shopify. ${diff>0 ? `The ${intFmt(diff)}-order gap = customers who opened/clicked an email but whose last touch before buying was another channel (usually Meta ads) or direct — Meta claims those orders too.` : diff<0 ? `Shopify sees ${intFmt(-diff)} more email orders than Klaviyo (email links without Klaviyo UTMs or outside Klaviyo's attribution window).` : 'The two counts match.'} Klaviyo's order value is the order total (incl. shipping + tax), so it is not directly comparable with net revenue.`, `<b>Hai cách đếm cùng kỳ:</b> Klaviyo tự nhận <b>${intFmt(k.attributedOrders)} đơn</b> (đơn đặt trong ${meta.attribution && /5-day/.test(meta.attribution) ? '5 ngày' : 'cửa sổ attribution'} sau khi khách bấm/mở email) so với <b>${intFmt(ltOrders)} đơn</b> có email/SMS là điểm chạm cuối theo Shopify. ${diff>0 ? `Chênh ${intFmt(diff)} đơn = khách có mở/bấm email nhưng cú chạm cuối trước khi mua là kênh khác (thường là quảng cáo Meta) hoặc vào thẳng — Meta cũng đang nhận những đơn đó.` : diff<0 ? `Shopify thấy nhiều đơn email hơn Klaviyo ${intFmt(-diff)} đơn (link email không có UTM Klaviyo hoặc ngoài cửa sổ attribution của Klaviyo).` : 'Hai cách đếm trùng nhau.'} Giá trị đơn của Klaviyo là tổng đơn (gồm ship + thuế) nên không so tiền trực tiếp với doanh thu thuần.`);
     } else cmp.innerHTML = '';
     // campaigns sent inside the selected period (local send date)
     const keys = new Set(rows.map(r=>r.iso));
     const camps = Object.entries(klaviyoMeta.campaigns||{}).map(([id,c])=>({id, ...c})).filter(c=>c.send_time && keys.has(c.send_time.slice(0,10))).sort((x,y)=> (y.send_time||'').localeCompare(x.send_time||''));
     const ct = document.getElementById('klaviyoCampaignTable');
-    document.getElementById('klaviyoCampaignHead').textContent = `Campaign gửi trong kỳ (${camps.length})`;
+    document.getElementById('klaviyoCampaignHead').textContent = tv(`Campaigns sent in the period (${camps.length})`, `Campaign gửi trong kỳ (${camps.length})`);
     if(camps.length){
-      let h = `<thead><tr><th>Campaign</th><th>Kênh</th><th>Gửi</th><th style="text-align:right">Người nhận</th><th style="text-align:right">Mở</th><th style="text-align:right">Click</th><th style="text-align:right">Đơn (Klaviyo)</th><th style="text-align:right">DT quy về</th><th style="text-align:right">$/người nhận</th><th style="text-align:right">Huỷ đăng ký</th></tr></thead><tbody>`;
+      let h = `<thead><tr><th>Campaign</th><th>${tx('f.channel')}</th><th>${tv('Sent','Gửi')}</th><th style="text-align:right">${tv('Recipients','Người nhận')}</th><th style="text-align:right">${tv('Opens','Mở')}</th><th style="text-align:right">Click</th><th style="text-align:right">${tv('Orders (Klaviyo)','Đơn (Klaviyo)')}</th><th style="text-align:right">${tx('u.attrRev')}</th><th style="text-align:right">${tv('$/recipient','$/người nhận')}</th><th style="text-align:right">${tv('Unsubscribes','Huỷ đăng ký')}</th></tr></thead><tbody>`;
       camps.forEach(c=>{ h += `<tr><td class="name">${(c.name||c.id).replace(/</g,'&lt;')}</td><td>${c.channel==='sms'?'SMS':'Email'}</td><td>${c.send_time.slice(8,10)}/${c.send_time.slice(5,7)}</td><td class="num">${intFmt(c.recipients||0)}</td><td class="num">${c.open_rate!=null ? (100*c.open_rate).toFixed(1)+'%' : '—'}</td><td class="num">${c.click_rate!=null ? (100*c.click_rate).toFixed(2)+'%' : '—'}</td><td class="num">${intFmt(c.conversions||0)}</td><td class="num">${money(c.conversion_value||0)}</td><td class="num">${c.recipients>0 ? '$'+((c.conversion_value||0)/c.recipients).toFixed(3) : '—'}</td><td class="num">${intFmt(c.unsubscribes||0)}</td></tr>`; });
       const tc = {r: sum(camps.map(c=>c.recipients||0)), o: sum(camps.map(c=>c.conversions||0)), v: sum(camps.map(c=>c.conversion_value||0)), u: sum(camps.map(c=>c.unsubscribes||0))};
-      h += `<tr style="font-weight:700;"><td class="name">Tổng</td><td></td><td></td><td class="num">${intFmt(tc.r)}</td><td></td><td></td><td class="num">${intFmt(tc.o)}</td><td class="num">${money(tc.v)}</td><td class="num">${tc.r>0 ? '$'+(tc.v/tc.r).toFixed(3) : '—'}</td><td class="num">${intFmt(tc.u)}</td></tr></tbody>`;
+      h += `<tr style="font-weight:700;"><td class="name">${tx('u.total')}</td><td></td><td></td><td class="num">${intFmt(tc.r)}</td><td></td><td></td><td class="num">${intFmt(tc.o)}</td><td class="num">${money(tc.v)}</td><td class="num">${tc.r>0 ? '$'+(tc.v/tc.r).toFixed(3) : '—'}</td><td class="num">${intFmt(tc.u)}</td></tr></tbody>`;
       ct.innerHTML = h;
-    } else ct.innerHTML = `<tbody><tr><td class="name" style="color:var(--ink-muted);">Không có campaign nào gửi trong kỳ đang xem.</td></tr></tbody>`;
+    } else ct.innerHTML = `<tbody><tr><td class="name" style="color:var(--ink-muted);">${tv('No campaign was sent in the selected period.','Không có campaign nào gửi trong kỳ đang xem.')}</td></tr></tbody>`;
     // flows: values over the sync window (Klaviyo reports flows per window, not per day)
     const flows = Object.entries(klaviyoMeta.flows||{}).map(([id,f])=>({id, ...f})).sort((x,y)=>(y.conversion_value||0)-(x.conversion_value||0));
     const win = (flows[0] && flows[0].window) || (klaviyoMeta.window) || null;
     const winTxt = win && win.start ? ` ${win.start.slice(8,10)}/${win.start.slice(5,7)} → ${win.end.slice(8,10)}/${win.end.slice(5,7)}` : '';
-    document.getElementById('klaviyoFlowHead').textContent = `Flow tự động (${flows.length}) — số của cửa sổ đồng bộ${winTxt}, không theo kỳ đang chọn`;
+    document.getElementById('klaviyoFlowHead').textContent = tv(`Automated flows (${flows.length}) — figures for the sync window${winTxt}, not the selected period`, `Flow tự động (${flows.length}) — số của cửa sổ đồng bộ${winTxt}, không theo kỳ đang chọn`);
     const ft = document.getElementById('klaviyoFlowTable');
     if(flows.length){
-      let h = `<thead><tr><th>Flow</th><th>Kênh</th><th>Trạng thái</th><th style="text-align:right">Tin gửi</th><th style="text-align:right">Mở</th><th style="text-align:right">Click</th><th style="text-align:right">Đơn (Klaviyo)</th><th style="text-align:right">DT quy về</th><th style="text-align:right">$/tin</th></tr></thead><tbody>`;
+      let h = `<thead><tr><th>Flow</th><th>${tx('f.channel')}</th><th>${tx('u.status')}</th><th style="text-align:right">${tv('Messages sent','Tin gửi')}</th><th style="text-align:right">${tv('Opens','Mở')}</th><th style="text-align:right">Click</th><th style="text-align:right">${tv('Orders (Klaviyo)','Đơn (Klaviyo)')}</th><th style="text-align:right">${tx('u.attrRev')}</th><th style="text-align:right">${tv('$/message','$/tin')}</th></tr></thead><tbody>`;
       flows.slice(0, 15).forEach(f=>{ h += `<tr><td class="name">${(f.name||f.id).replace(/</g,'&lt;')}</td><td>${f.channel==='sms'?'SMS':'Email'}</td><td>${f.status||''}</td><td class="num">${intFmt(f.recipients||0)}</td><td class="num">${f.open_rate!=null ? (100*f.open_rate).toFixed(1)+'%' : '—'}</td><td class="num">${f.click_rate!=null ? (100*f.click_rate).toFixed(2)+'%' : '—'}</td><td class="num">${intFmt(f.conversions||0)}</td><td class="num">${money(f.conversion_value||0)}</td><td class="num">${f.recipients>0 ? '$'+((f.conversion_value||0)/f.recipients).toFixed(2) : '—'}</td></tr>`; });
-      if(flows.length>15){ const rest = flows.slice(15); h += `<tr><td class="name" style="color:var(--ink-muted);">+ ${rest.length} flow khác</td><td></td><td></td><td class="num">${intFmt(sum(rest.map(f=>f.recipients||0)))}</td><td></td><td></td><td class="num">${intFmt(sum(rest.map(f=>f.conversions||0)))}</td><td class="num">${money(sum(rest.map(f=>f.conversion_value||0)))}</td><td></td></tr>`; }
+      if(flows.length>15){ const rest = flows.slice(15); h += `<tr><td class="name" style="color:var(--ink-muted);">+ ${rest.length} ${tv('more flows','flow khác')}</td><td></td><td></td><td class="num">${intFmt(sum(rest.map(f=>f.recipients||0)))}</td><td></td><td></td><td class="num">${intFmt(sum(rest.map(f=>f.conversions||0)))}</td><td class="num">${money(sum(rest.map(f=>f.conversion_value||0)))}</td><td></td></tr>`; }
       h += '</tbody>';
       ft.innerHTML = h;
     } else ft.innerHTML = '';
-    document.getElementById('klaviyoCaption').innerHTML = `Nguồn: Klaviyo API (metric "${(meta.conversion_metric||{}).label||'Placed Order'}", Query Metric Aggregates theo ngày giờ LA; Campaign/Flow Values Reports). "Đơn (Klaviyo)" và "DT quy về" là attribution của Klaviyo — trùng với attribution của Meta/Google và với chính số Shopify, nên <b>không cộng vào doanh thu</b>; doanh thu thật của kênh email nằm ở bảng "Kênh theo điểm chạm cuối" phía trên. Mở/Click là tỷ lệ unique trên số đã gửi thành công.`;
+    document.getElementById('klaviyoCaption').innerHTML = tv(`Source: Klaviyo API (metric "${(meta.conversion_metric||{}).label||'Placed Order'}", Query Metric Aggregates by LA-time day; Campaign/Flow Values Reports). "Orders (Klaviyo)" and "Attributed revenue" are Klaviyo's attribution — they overlap with Meta/Google attribution and with the Shopify figures themselves, so they are <b>not added to revenue</b>; the email channel's real revenue is in the "Channels by last touch" table above. Opens/Click are unique rates over messages delivered.`, `Nguồn: Klaviyo API (metric "${(meta.conversion_metric||{}).label||'Placed Order'}", Query Metric Aggregates theo ngày giờ LA; Campaign/Flow Values Reports). "Đơn (Klaviyo)" và "DT quy về" là attribution của Klaviyo — trùng với attribution của Meta/Google và với chính số Shopify, nên <b>không cộng vào doanh thu</b>; doanh thu thật của kênh email nằm ở bảng "Kênh theo điểm chạm cuối" phía trên. Mở/Click là tỷ lệ unique trên số đã gửi thành công.`);
   }
 
   // ---------- Meta Ads: product / campaign breakdown for the selected period ----------
@@ -3283,7 +3947,7 @@
       const c = camps[id]; const agg = zero(); let days = 0;
       Object.keys(c.daily||{}).forEach(iso=>{ if(!isoSet.has(iso)) return; const d=c.daily[iso]; F.forEach(f=>agg[f]+= (parseFloat(d[f])||0)); days++; });
       if(days===0 || agg.spend<=0) return;
-      rows.push({id, name:c.name, product:c.product||'Khác', market:c.market||'', stage:c.stage||'', status:c.status||'', budget:c.daily_budget, ...derive(agg)});
+      rows.push({id, name:c.name, product:c.product||tx('u.other'), market:c.market||'', stage:c.stage||'', status:c.status||'', budget:c.daily_budget, ...derive(agg)});
     });
     if(!rows.length){ card.style.display='none'; return; }
     const products = {};
@@ -3294,7 +3958,7 @@
     const warnCls = r => (r.roas && r.roas<META_ROAS_WARN) || (r.cpa && r.cpa>META_CPA_WARN) ? 'style="color:var(--status-critical);font-weight:600;"' : '';
     const stagePill = s => s && s!=='Other' ? `<span class="pill ${s==='Scaling'?'ok':'warn'}" style="font-weight:500;margin-left:4px;">${s}</span>` : '';
     const statusDot = st => `<span class="dot ${st==='ACTIVE'?'g':'w'}" style="display:inline-block;margin-right:6px;vertical-align:middle;" title="${st}"></span>`;
-    let html = `<thead><tr><th>Sản phẩm / campaign</th><th style="text-align:right">Chi</th><th style="text-align:right">% chi</th><th style="text-align:right">Đơn quy về</th><th style="text-align:right">CPA</th><th style="text-align:right">DT quy về</th><th style="text-align:right">ROAS</th><th style="text-align:right">AOV</th><th style="text-align:right">CTR</th><th style="text-align:right">CPM</th><th style="text-align:right">Freq≈</th></tr></thead><tbody>`;
+    let html = `<thead><tr><th>${tx('u.product2')}</th><th style="text-align:right">${tx('u.spend')}</th><th style="text-align:right">${tx('u.spendPct')}</th><th style="text-align:right">${tv('Attributed orders','Đơn quy về')}</th><th style="text-align:right">CPA</th><th style="text-align:right">${tx('u.attrRev')}</th><th style="text-align:right">ROAS</th><th style="text-align:right">AOV</th><th style="text-align:right">CTR</th><th style="text-align:right">CPM</th><th style="text-align:right">Freq≈</th></tr></thead><tbody>`;
     const cell = (r, bold) => `<td class="num" ${bold?'style="font-weight:700;color:var(--ink-primary);"':''}>${money(r.spend)}</td><td class="num">${totalSpend? (r.spend/totalSpend*100).toFixed(0):0}%</td><td class="num">${fmtN(r.purchases)}</td><td class="num" ${warnCls(r)}>${r.cpa?money(r.cpa):'—'}</td><td class="num">${money(r.purchase_value)}</td><td class="num" ${warnCls(r)}>${r.roas.toFixed(2)}x</td><td class="num">${r.aov?money(r.aov):'—'}</td><td class="num">${r.ctr.toFixed(2)}%</td><td class="num">${money(r.cpm)}</td><td class="num">${r.freq?r.freq.toFixed(2):'—'}</td>`;
     Object.keys(products).sort((a,b)=>products[b].spend-products[a].spend).forEach(p=>{
       const pr = products[p];
@@ -3304,9 +3968,9 @@
       });
     });
     const all = zero(); rows.forEach(r=>F.forEach(f=>all[f]+=r[f])); derive(all);
-    html += `<tr style="border-top:1.5px solid var(--baseline);"><td class="name" style="font-weight:700;">Tổng Meta (${rows.length} campaign có chi)</td>${cell(all,true)}</tr></tbody>`;
+    html += `<tr style="border-top:1.5px solid var(--baseline);"><td class="name" style="font-weight:700;">${tv(`Total Meta (${rows.length} campaigns with spend)`, `Tổng Meta (${rows.length} campaign có chi)`)}</td>${cell(all,true)}</tr></tbody>`;
     document.getElementById('metaCampaignTable').innerHTML = html;
-    document.getElementById('metaCampaignNote').textContent = 'Marketing API · attribution '+(META_ADS_LIVE_DATA.attribution||'account default')+' · '+fmtAmazonAge(META_ADS_LIVE_DATA.generated_at)+' · chấm xanh = đang chạy, vàng = tạm dừng';
+    document.getElementById('metaCampaignNote').textContent = 'Marketing API · attribution '+(META_ADS_LIVE_DATA.attribution||'account default')+' · '+fmtAmazonAge(META_ADS_LIVE_DATA.generated_at)+tv(' · green dot = running, amber = paused',' · chấm xanh = đang chạy, vàng = tạm dừng');
   }
 
   function renderShipmonk(){
@@ -3323,28 +3987,28 @@
     const n = currentRows().length, outside = n - sel.length;
     const line = (label, v, opts) => `<tr><td class="name" ${opts&&opts.bold?'style="font-weight:700;"':''}>${label}</td><td class="num" ${opts&&opts.bold?'style="font-weight:700;color:var(--ink-primary);"':''}>${typeof v==='number' ? money(v) : v}</td><td class="num">${opts&&opts.per!==undefined ? (orders? money(opts.per/orders) : '—') : ''}</td></tr>`;
     const hdrRows = sel.length ? sel : invSel;
-    let html = `<thead><tr><th>Khoản</th><th style="text-align:right">${hdrRows.length===1 ? fmtDateLong(hdrRows[0].date) : hdrRows.length+' ngày'}</th><th style="text-align:right">/ đơn</th></tr></thead><tbody>`;
-    if(!sel.length) html += line('Ước tính theo từng đơn (API ShipMonk) — chưa có dữ liệu cho khoảng này (chờ backfill)', '—');
+    let html = `<thead><tr><th>${tv('Item','Khoản')}</th><th style="text-align:right">${hdrRows.length===1 ? fmtDateLong(hdrRows[0].date) : hdrRows.length+' '+tx('u.days')}</th><th style="text-align:right">/ ${tx('u.order')}</th></tr></thead><tbody>`;
+    if(!sel.length) html += line(tv('Per-order estimate (ShipMonk API) — no data for this range yet (waiting for a backfill)','Ước tính theo từng đơn (API ShipMonk) — chưa có dữ liệu cho khoảng này (chờ backfill)'), '—');
     const orderBasis = shipmonkOrderBasis();
     if(sel.length){
     const shippedN = S(r=>r.shipmonkReal.shipped), unshippedN = S(r=>r.shipmonkReal.unshipped), onholdN = S(r=>r.shipmonkReal.onhold||0);
-    html += line(orderBasis ? 'Đơn ShipMonk nhận (theo ngày đặt hàng)' : 'Đơn đã ship', orders.toLocaleString('en-US'));
-    if(orderBasis) html += line('… trong đó đã ship · chưa ship (ước tính ShipMonk)' + (onholdN ? ' · đang On Hold trong ShipMonk' : ''), shippedN.toLocaleString('en-US')+' · '+unshippedN.toLocaleString('en-US') + (onholdN ? ' · '+onholdN.toLocaleString('en-US') : ''));
-    html += line('Units · kiện', units.toLocaleString('en-US')+' · '+packages.toLocaleString('en-US'));
-    html += line('Cước vận chuyển (postage / carrier)', ship, {per: ship});
-    html += line('Pick & pack (nhân công fulfillment)', pick, {per: pick});
-    html += line('Vật liệu đóng gói (packaging)', pack, {per: pack});
-    html += line('= Tổng chi phí fulfillment ShipMonk', total, {bold:true, per: total});
-    if(missing) html += line('Đơn ShipMonk chưa có ước tính chi phí (tạm $0)', missing.toLocaleString('en-US'));
+    html += line(orderBasis ? tv('Orders received by ShipMonk (by order date)','Đơn ShipMonk nhận (theo ngày đặt hàng)') : tv('Orders shipped','Đơn đã ship'), orders.toLocaleString('en-US'));
+    if(orderBasis) html += line(tv('… of which shipped · not yet shipped (ShipMonk estimate)','… trong đó đã ship · chưa ship (ước tính ShipMonk)') + (onholdN ? tv(' · On Hold in ShipMonk',' · đang On Hold trong ShipMonk') : ''), shippedN.toLocaleString('en-US')+' · '+unshippedN.toLocaleString('en-US') + (onholdN ? ' · '+onholdN.toLocaleString('en-US') : ''));
+    html += line(tv('Units · packages','Units · kiện'), units.toLocaleString('en-US')+' · '+packages.toLocaleString('en-US'));
+    html += line(tv('Shipping (postage / carrier)','Cước vận chuyển (postage / carrier)'), ship, {per: ship});
+    html += line(tv('Pick & pack (fulfillment labor)','Pick & pack (nhân công fulfillment)'), pick, {per: pick});
+    html += line(tv('Packaging materials','Vật liệu đóng gói (packaging)'), pack, {per: pack});
+    html += line(tv('= Total ShipMonk fulfillment cost','= Tổng chi phí fulfillment ShipMonk'), total, {bold:true, per: total});
+    if(missing) html += line(tv('ShipMonk orders without a cost estimate yet ($0 for now)','Đơn ShipMonk chưa có ước tính chi phí (tạm $0)'), missing.toLocaleString('en-US'));
     // charges ShipMonk states in another currency (Toronto warehouse bills in CAD): shown native, already converted above
     const foreign = {}; sel.forEach(r=>{ Object.entries(r.shipmonkReal.foreign||{}).forEach(([cur,v])=>{ foreign[cur] = (foreign[cur]||0) + (parseFloat(v)||0); }); });
     const fxRates = (shipmonkMeta && shipmonkMeta.meta && shipmonkMeta.meta.fx && shipmonkMeta.meta.fx.rates_to_usd) || {};
-    Object.entries(foreign).forEach(([cur,v])=>{ if(v) html += line('… trong đó phí ShipMonk ghi bằng '+cur+' (kho Toronto), đã quy đổi @ '+(fxRates[cur]!==undefined ? fxRates[cur] : '?')+' USD/'+cur, v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' '+cur); });
+    Object.entries(foreign).forEach(([cur,v])=>{ if(v) html += line(tv('… of which ShipMonk charges billed in ','… trong đó phí ShipMonk ghi bằng ')+cur+tv(' (Toronto warehouse), converted @ ',' (kho Toronto), đã quy đổi @ ')+(fxRates[cur]!==undefined ? fxRates[cur] : '?')+' USD/'+cur, v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' '+cur); });
     // ship-date view of the same range, for checking against ShipMonk's weekly invoices
     if(orderBasis && shipmonkMeta && shipmonkMeta.daily_shipped){
       const ds = shipmonkMeta.daily_shipped; let shipTotal = 0, shipOrders = 0;
       sel.forEach(r=>{ const b = ds[r.iso]; if(b){ shipTotal += parseFloat(b.total_cost)||0; shipOrders += Math.round(parseFloat(b.orders)||0); } });
-      html += line('Đối chiếu — cùng khoảng nhưng theo ngày ship ('+shipOrders.toLocaleString('en-US')+' đơn, khớp hoá đơn tuần ShipMonk)', shipTotal);
+      html += line(tv('Cross-check — same range but by ship date (','Đối chiếu — cùng khoảng nhưng theo ngày ship (')+shipOrders.toLocaleString('en-US')+tv(' orders, matches the weekly ShipMonk invoices)',' đơn, khớp hoá đơn tuần ShipMonk)'), shipTotal);
     }
     }
     // invoices overlapping the range: what ShipMonk actually billed on top of the per-order estimates
@@ -3353,39 +4017,44 @@
       const invNums = [...new Set(invSel.map(r=>r.shipmonkInv.invoice))];
       const invList = (shipmonkInvMeta.invoices||[]).filter(i=>invNums.includes(i.number));
       const per = n => fmtDateLong(new Date(n.slice(0,4), n.slice(5,7)-1, n.slice(8,10)));
-      html += `<tr><td class="name" colspan="3" style="font-weight:700;padding-top:14px;">Hoá đơn ShipMonk trong khoảng (${invSel.length}/${currentRows().length} ngày có hoá đơn)</td></tr>`;
-      invList.forEach(i=>{ html += line('Hoá đơn '+i.number+' · kỳ '+per(i.start)+' – '+per(i.end)+' · '+(i.orders_invoiced||0).toLocaleString('en-US')+' đơn', i.total); });
-      html += line('Cước + pick & pack theo hoá đơn (phần ngày trong khoảng)', I('shipping'));
-      html += line('Lưu kho (pallet & bin)', I('storage'));
-      html += line('Receiving hàng nhập', I('receiving'));
-      html += line('Xử lý hàng trả', I('returns'));
-      html += line('Mua bao bì riêng (custom packaging)', I('packaging_purchases'));
-      html += line('Phí khác (phí tối thiểu, phạt trễ, audit, phụ phí, chưa phân loại)', I('fees_other') + I('unallocated'));
-      html += line('Điều chỉnh cước & credit', I('adjustments') + I('credits'));
-      html += line('= Tổng theo hoá đơn (phần ngày trong khoảng)', I('total'), {bold:true});
+      html += `<tr><td class="name" colspan="3" style="font-weight:700;padding-top:14px;">${tv('ShipMonk invoices in the range','Hoá đơn ShipMonk trong khoảng')} (${invSel.length}/${currentRows().length} ${tv('days with an invoice','ngày có hoá đơn')})</td></tr>`;
+      invList.forEach(i=>{ html += line(tv('Invoice ','Hoá đơn ')+i.number+tv(' · period ',' · kỳ ')+per(i.start)+' – '+per(i.end)+' · '+(i.orders_invoiced||0).toLocaleString('en-US')+' '+tx('u.orders'), i.total); });
+      html += line(tv('Shipping + pick & pack per invoice (days within the range)','Cước + pick & pack theo hoá đơn (phần ngày trong khoảng)'), I('shipping'));
+      html += line(tv('Storage (pallet & bin)','Lưu kho (pallet & bin)'), I('storage'));
+      html += line(tv('Receiving of inbound goods','Receiving hàng nhập'), I('receiving'));
+      html += line(tv('Returns handling','Xử lý hàng trả'), I('returns'));
+      html += line(tv('Custom packaging purchases','Mua bao bì riêng (custom packaging)'), I('packaging_purchases'));
+      html += line(tv('Other fees (minimums, late penalties, audits, surcharges, unclassified)','Phí khác (phí tối thiểu, phạt trễ, audit, phụ phí, chưa phân loại)'), I('fees_other') + I('unallocated'));
+      html += line(tv('Shipping adjustments & credits','Điều chỉnh cước & credit'), I('adjustments') + I('credits'));
+      html += line(tv('= Total per invoices (days within the range)','= Tổng theo hoá đơn (phần ngày trong khoảng)'), I('total'), {bold:true});
       const cur = shipmonkInvMeta.meta && shipmonkInvMeta.meta.current_period;
-      if(cur && currentRows().some(r=>r.iso>=cur.start && r.iso<=cur.end)) html += line('Kỳ '+per(cur.start)+' – '+per(cur.end)+' ShipMonk chưa chốt hoá đơn → chỉ có ước tính theo đơn', '—');
+      if(cur && currentRows().some(r=>r.iso>=cur.start && r.iso<=cur.end)) html += line(tv('Period ','Kỳ ')+per(cur.start)+' – '+per(cur.end)+tv(' not yet invoiced by ShipMonk → per-order estimates only',' ShipMonk chưa chốt hoá đơn → chỉ có ước tính theo đơn'), '—');
     }
     html += '</tbody>';
     document.getElementById('shipmonkTable').innerHTML = html;
     // breakdown by store / order type / carrier
     const agg = key => { const o = {}; sel.forEach(r=>{ const b = r.shipmonkReal[key]||{}; Object.keys(b).forEach(k=>{ const t = o[k] = o[k] || {orders:0,total:0}; t.orders += b[k].orders||0; t.total += (b[k].total_cost!==undefined ? b[k].total_cost : b[k].shipping_cost)||0; }); }); return Object.entries(o).sort((a,b)=>b[1].total-a[1].total); };
-    const pills = (title, rows, fmt) => rows.length ? `<div style="font-size:12px;color:var(--ink-secondary);margin-top:6px;"><b>${title}:</b> ${rows.slice(0,6).map(([k,v])=>`${k==='unknown' ? 'chưa gán carrier' : k} ${money(v.total)} (${v.orders.toLocaleString('en-US')} đơn)`).join(' · ')}</div>` : '';
-    document.getElementById('shipmonkBreakdown').innerHTML = sel.length ? (pills('Theo store', agg('byStore')) + pills('Theo loại đơn', agg('byType')) + pills('Cước theo carrier', agg('byCarrier'))) : '';
+    const pills = (title, rows, fmt) => rows.length ? `<div style="font-size:12px;color:var(--ink-secondary);margin-top:6px;"><b>${title}:</b> ${rows.slice(0,6).map(([k,v])=>`${k==='unknown' ? tv('no carrier assigned','chưa gán carrier') : k} ${money(v.total)} (${v.orders.toLocaleString('en-US')} ${tx('u.orders')})`).join(' · ')}</div>` : '';
+    document.getElementById('shipmonkBreakdown').innerHTML = sel.length ? (pills(tv('By store','Theo store'), agg('byStore')) + pills(tv('By order type','Theo loại đơn'), agg('byType')) + pills(tv('Shipping by carrier','Cước theo carrier'), agg('byCarrier'))) : '';
     const note = document.querySelector('#shipmonkCard .note');
-    if(note && SHIPMONK_LIVE_DATA) note.textContent = 'Ước tính của ShipMonk cho từng đơn (cước carrier + pick & pack + vật liệu đóng gói) · ' + (orderBasis ? 'ghi theo ngày đặt hàng (giờ LA), gồm cả đơn chưa ship — cùng ngày với doanh thu' : 'ghi theo ngày ship, giờ LA') + (outside ? ` · ${outside} ngày trong khoảng ngoài cửa sổ đồng bộ` : '') + ' · ' + fmtAmazonAge(SHIPMONK_LIVE_DATA.generated_at);
+    if(note && SHIPMONK_LIVE_DATA) note.textContent = tv('ShipMonk\'s estimate for each order (carrier postage + pick & pack + packaging materials) · ','Ước tính của ShipMonk cho từng đơn (cước carrier + pick & pack + vật liệu đóng gói) · ') + (orderBasis ? tv('booked by order date (LA time), including orders not yet shipped — same day as the revenue','ghi theo ngày đặt hàng (giờ LA), gồm cả đơn chưa ship — cùng ngày với doanh thu') : tv('booked by ship date, LA time','ghi theo ngày ship, giờ LA')) + (outside ? tv(` · ${nDays(outside)} in the range ${outside===1?'is':'are'} outside the sync window`, ` · ${outside} ngày trong khoảng ngoài cửa sổ đồng bộ`) : '') + ' · ' + fmtAmazonAge(SHIPMONK_LIVE_DATA.generated_at);
     const cap = document.getElementById('shipmonkCaption');
     const csv = shipmonkMeta && shipmonkMeta.meta && shipmonkMeta.meta.orders_csv;
-    if(cap && csv && !cap.querySelector('a')){
-      const isDir = String(csv).endsWith('/');
-      const csvPath = String(csv).startsWith('data/') ? csv : 'data/' + String(csv).replace(/\/$/, '').split('/').pop() + (isDir ? '/' : '');   // the sync commits it next to shipmonk.json
-      const href = 'https://github.com/taitran-star/ctu-fin-sync-8x2k/' + (isDir ? 'tree' : 'blob') + '/main/' + csvPath.replace(/\/$/, '');
-      const label = isDir ? csvPath.replace(/\/$/, '').split('/').pop() + '/ (một file CSV mỗi tháng)' : csvPath.split('/').pop();
-      cap.insertAdjacentHTML('beforeend', ' Chi tiết <b>từng đơn</b> (số đơn Shopify / Amazon, ngày đặt, ngày ship, cước, pick & pack, packaging): <a href="'+href+'" target="_blank" rel="noopener">'+label+'</a> — cập nhật cùng lúc với số trên.');
-    }
-    if(cap && shipmonkInvMatched && !cap.dataset.inv){
-      cap.dataset.inv = '1';
-      cap.innerHTML = cap.innerHTML.replace('<b>Chưa gồm</b> phí lưu kho, receiving, xử lý hàng trả và các khoản chỉ có trên hoá đơn — sẽ thêm khi có file hoá đơn.', '<b>Hoá đơn ShipMonk</b> (Billing → Invoices, 2 kỳ/tháng) được đọc thêm vào: lưu kho, receiving, hàng trả, bao bì mua qua ShipMonk, phí khác, điều chỉnh/credit — chia đều theo ngày trong kỳ hoá đơn; cước + pick & pack trên hoá đơn chỉ dùng để đối chiếu và bù chênh lệch với ước tính theo đơn.');
+    // V10: the caption is rebuilt whole in the active language (same text as the static HTML + the per-order CSV link + the invoice sentence once invoices are in)
+    if(cap){
+      let link = '';
+      if(csv){
+        const isDir = String(csv).endsWith('/');
+        const csvPath = String(csv).startsWith('data/') ? csv : 'data/' + String(csv).replace(/\/$/, '').split('/').pop() + (isDir ? '/' : '');   // the sync commits it next to shipmonk.json
+        const href = 'https://github.com/taitran-star/ctu-fin-sync-8x2k/' + (isDir ? 'tree' : 'blob') + '/main/' + csvPath.replace(/\/$/, '');
+        const label = isDir ? csvPath.replace(/\/$/, '').split('/').pop() + tv('/ (one CSV file per month)','/ (một file CSV mỗi tháng)') : csvPath.split('/').pop();
+        link = tv(' Details <b>per order</b> (Shopify / Amazon order number, order date, ship date, postage, pick & pack, packaging): ',' Chi tiết <b>từng đơn</b> (số đơn Shopify / Amazon, ngày đặt, ngày ship, cước, pick & pack, packaging): ')+'<a href="'+href+'" target="_blank" rel="noopener">'+label+'</a>'+tv(' — updated together with the figures above.',' — cập nhật cùng lúc với số trên.');
+      }
+      cap.innerHTML = tv('Figures from the ShipMonk API (<code>order_costs</code>: estimated shipping / pick &amp; pack / packaging) for every order ShipMonk receives — Shopify and Amazon FBM stores alike. Orders not yet shipped use ShipMonk\'s estimate and are refreshed every 30 minutes once shipped. ShipMonk\'s weekly invoices may differ slightly (postage adjustments, surcharges). ','Số lấy từ ShipMonk API (<code>order_costs</code>: estimated shipping / pick &amp; pack / packaging) cho mọi đơn ShipMonk nhận — store Shopify lẫn Amazon FBM. Đơn chưa ship dùng ước tính của ShipMonk và được cập nhật lại mỗi 30 phút khi ship. Hoá đơn tuần của ShipMonk có thể lệch nhỏ (điều chỉnh cước, surcharge). ')
+        + (shipmonkInvMatched
+          ? tv('<b>ShipMonk invoices</b> (Billing → Invoices, 2 periods/month) are read in on top: storage, receiving, returns, packaging bought through ShipMonk, other fees, adjustments/credits — spread evenly over the days of the invoice period; postage + pick & pack on the invoice are only used to cross-check and true up the per-order estimate.','<b>Hoá đơn ShipMonk</b> (Billing → Invoices, 2 kỳ/tháng) được đọc thêm vào: lưu kho, receiving, hàng trả, bao bì mua qua ShipMonk, phí khác, điều chỉnh/credit — chia đều theo ngày trong kỳ hoá đơn; cước + pick & pack trên hoá đơn chỉ dùng để đối chiếu và bù chênh lệch với ước tính theo đơn.')
+          : tv('<b>Not included:</b> storage, receiving, returns handling and the items that only appear on invoices — added once the invoice file is in.','<b>Chưa gồm</b> phí lưu kho, receiving, xử lý hàng trả và các khoản chỉ có trên hoá đơn — sẽ thêm khi có file hoá đơn.'))
+        + link;
     }
   }
 
@@ -3405,25 +4074,25 @@
     // sync v1.5+ (schema 2) reproduces Shopify's returns / refunded ship & tax exactly; older data only approximates
     const exact = !!(shopifyMeta && shopifyMeta.meta && (shopifyMeta.meta.schema||1) >= 2);
     const line = (label, v, opts) => `<tr><td class="name" ${opts&&opts.bold?'style="font-weight:700;"':''}>${label}</td><td class="num" ${opts&&opts.bold?'style="font-weight:700;color:var(--ink-primary);"':''}>${typeof v==='number' ? money(v) : v}</td></tr>`;
-    let html = `<thead><tr><th>Chỉ số (tên như trong Shopify Analytics)</th><th style="text-align:right">${sel.length===1 ? fmtDateLong(sel[0].date) : sel.length+' ngày'}</th></tr></thead><tbody>`;
-    html += line('Orders — số đơn (mỗi đơn đếm 1 lần, đã loại đơn test và đơn huỷ chưa thu tiền)', orders.toLocaleString('en-US'));
-    html += line('Gross sales — giá niêm yết × số lượng, trước giảm giá', gross);
-    html += line('− Discounts — mã giảm giá + khuyến mãi tự động', -disc);
+    let html = `<thead><tr><th>${tv('Metric (named as in Shopify Analytics)','Chỉ số (tên như trong Shopify Analytics)')}</th><th style="text-align:right">${sel.length===1 ? fmtDateLong(sel[0].date) : sel.length+' '+tx('u.days')}</th></tr></thead><tbody>`;
+    html += line(tv('Orders — order count (each order once, test orders and unpaid cancellations excluded)','Orders — số đơn (mỗi đơn đếm 1 lần, đã loại đơn test và đơn huỷ chưa thu tiền)'), orders.toLocaleString('en-US'));
+    html += line(tv('Gross sales — list price × quantity, before discounts','Gross sales — giá niêm yết × số lượng, trước giảm giá'), gross);
+    html += line(tv('− Discounts — discount codes + automatic promotions','− Discounts — mã giảm giá + khuyến mãi tự động'), -disc);
     html += line(exact
-      ? '− Returns — hàng trả + tiền hoàn thêm (refund discrepancy), trước thuế, theo ngày Shopify xử lý hoàn'
-      : '− Returns — giá trị hàng trả (theo ngày hoàn tiền; sync cũ, chưa gồm tiền hoàn thêm)', -ret);
-    html += line('= Net sales (= "Doanh thu thuần" phần Shopify trên dashboard)', net, {bold:true});
-    html += line('+ Shipping charges — phí ship khách trả' + (refShip ? ` (đã trừ ${money(refShip)} ship hoàn lại)` : ''), ship);
-    html += line('+ Taxes — thuế thu hộ' + (refTax ? ` (đã trừ ${money(refTax)} thuế hoàn lại)` : ''), tax);
+      ? tv('− Returns — returned goods + extra refunds (refund discrepancy), before tax, on the day Shopify processed the refund','− Returns — hàng trả + tiền hoàn thêm (refund discrepancy), trước thuế, theo ngày Shopify xử lý hoàn')
+      : tv('− Returns — value of returned goods (by refund date; old sync, extra refunds not included)','− Returns — giá trị hàng trả (theo ngày hoàn tiền; sync cũ, chưa gồm tiền hoàn thêm)'), -ret);
+    html += line(tv('= Net sales (= the Shopify part of "Net revenue" on the dashboard)','= Net sales (= "Doanh thu thuần" phần Shopify trên dashboard)'), net, {bold:true});
+    html += line(tv('+ Shipping charges — shipping paid by customers','+ Shipping charges — phí ship khách trả') + (refShip ? tv(` (net of ${money(refShip)} shipping refunded)`, ` (đã trừ ${money(refShip)} ship hoàn lại)`) : ''), ship);
+    html += line(tv('+ Taxes — tax collected','+ Taxes — thuế thu hộ') + (refTax ? tv(` (net of ${money(refTax)} tax refunded)`, ` (đã trừ ${money(refTax)} thuế hoàn lại)`) : ''), tax);
     html += line(exact
-      ? '= Total sales — đúng công thức Shopify: net sales + shipping charges + taxes (duties / additional fees = 0)'
-      : '≈ Total sales — Shopify Analytics còn trừ thêm phần ship/thuế hoàn lại cho khách (sync cũ)', total, {bold:true});
+      ? tv('= Total sales — Shopify\'s exact formula: net sales + shipping charges + taxes (duties / additional fees = 0)','= Total sales — đúng công thức Shopify: net sales + shipping charges + taxes (duties / additional fees = 0)')
+      : tv('≈ Total sales — Shopify Analytics also subtracts shipping/tax refunded to customers (old sync)','≈ Total sales — Shopify Analytics còn trừ thêm phần ship/thuế hoàn lại cho khách (sync cũ)'), total, {bold:true});
     html += '</tbody>';
     document.getElementById('shopifyReconTable').innerHTML = html;
     const note = document.querySelector('#shopifyReconCard .note');
     const vis = shopifyMeta && shopifyMeta.meta && shopifyMeta.meta.orders_visibility;
-    const visNote = vis && vis!=='all' ? ' · '+bicon('warn','bi-inline')+'app chưa có quyền read_all_orders: hoàn tiền trên đơn cũ hơn 60 ngày không nhìn thấy, Returns sẽ thấp hơn Shopify' : '';
-    if(note) note.textContent = 'Cùng định nghĩa với báo cáo "Sales over time" của Shopify · ngày theo giờ cửa hàng (LA)' + (missing ? ` · ${missing} ngày trong khoảng chưa có dữ liệu đồng bộ` : '') + visNote + ' · ' + fmtAmazonAge(SHOPIFY_LIVE_DATA.generated_at);
+    const visNote = vis && vis!=='all' ? ' · '+bicon('warn','bi-inline')+tv('the app lacks the read_all_orders scope: refunds on orders older than 60 days are invisible, Returns will be lower than Shopify','app chưa có quyền read_all_orders: hoàn tiền trên đơn cũ hơn 60 ngày không nhìn thấy, Returns sẽ thấp hơn Shopify') : '';
+    if(note) note.textContent = tv('Same definitions as Shopify\'s "Sales over time" report · days in store time (LA)','Cùng định nghĩa với báo cáo "Sales over time" của Shopify · ngày theo giờ cửa hàng (LA)') + (missing ? tv(` · ${nDays(missing)} in the range ${missing===1?'has':'have'} no synced data yet`, ` · ${missing} ngày trong khoảng chưa có dữ liệu đồng bộ`) : '') + visNote + ' · ' + fmtAmazonAge(SHOPIFY_LIVE_DATA.generated_at);
   }
 
   function renderSnowball(){
@@ -3435,29 +4104,29 @@
     const programs = sb.programs || {};
     const affiliates = sb.affiliates || {};
     const warnings = (shopifyMeta.meta && Array.isArray(shopifyMeta.meta.warnings)) ? shopifyMeta.meta.warnings : [];
-    const baseLabel = {subtotal:'giá trị hàng sau giảm giá (chưa ship/thuế)', subtotal_shipping:'giá trị hàng + ship', subtotal_tax:'giá trị hàng + thuế', total:'tổng đơn (gồm ship + thuế — đúng cài đặt Revenue Calculation của Snowball)'}[sb.commission_base] || sb.commission_base;
+    const baseLabel = {subtotal:tv('item value after discounts (excl. shipping/tax)','giá trị hàng sau giảm giá (chưa ship/thuế)'), subtotal_shipping:tv('item value + shipping','giá trị hàng + ship'), subtotal_tax:tv('item value + tax','giá trị hàng + thuế'), total:tv('order total (incl. shipping + tax — per Snowball\'s Revenue Calculation setting)','tổng đơn (gồm ship + thuế — đúng cài đặt Revenue Calculation của Snowball)')}[sb.commission_base] || sb.commission_base;
     let html = '<div style="display:flex;flex-direction:column;gap:10px;font-size:12.5px;color:var(--ink-secondary);">';
-    html += `<div><span class="tag live"><span class="d"></span>Live</span> Cửa sổ ${shopifyMeta.window ? shopifyMeta.window.start+' → '+shopifyMeta.window.end : shopifyMeta.window_days+' ngày'}: <b>${(wt.orders||0).toLocaleString('en-US')} đơn referral</b>, doanh thu quy về ${money(wt.revenue||0)}, hoa hồng <b>${money(wt.commission_net||0)}</b> (đã trừ ${money(wt.reversals||0)} hoàn tiền). Cơ sở tính: ${baseLabel}.</div>`;
+    html += `<div><span class="tag live"><span class="d"></span>Live</span> ${tv('Window','Cửa sổ')} ${shopifyMeta.window ? shopifyMeta.window.start+' → '+shopifyMeta.window.end : shopifyMeta.window_days+' '+tx('u.days')}: <b>${(wt.orders||0).toLocaleString('en-US')} ${tv('referral orders','đơn referral')}</b>, ${tv('attributed revenue','doanh thu quy về')} ${money(wt.revenue||0)}, ${tv('commission','hoa hồng')} <b>${money(wt.commission_net||0)}</b> (${tv('net of','đã trừ')} ${money(wt.reversals||0)} ${tv('refunds','hoàn tiền')}). ${tv('Basis','Cơ sở tính')}: ${baseLabel}.</div>`;
     const progKeys = Object.keys(programs).sort((x,y)=>(programs[y].commission_net||0)-(programs[x].commission_net||0));
     if(progKeys.length){
-      html += `<div class="caption" style="padding-left:0;margin:4px 0 0;">Theo chương trình (tag Shopify "Referral - SS - …") · % lấy từ ${'cấu hình workflow / tên program'}:</div>
+      html += `<div class="caption" style="padding-left:0;margin:4px 0 0;">${tv('By program (Shopify tag "Referral - SS - …") · % from ','Theo chương trình (tag Shopify "Referral - SS - …") · % lấy từ ')}${tv('the workflow config / program name','cấu hình workflow / tên program')}:</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;">${progKeys.map(k=>{
           const p = programs[k]; const src = (sb.rate_sources||{})[k];
           const cls = src==='default' ? 'warn' : 'ok';
-          return `<span class="pill ${cls}" style="font-weight:500;">${k}: ${(p.rate*100).toFixed(p.rate*100%1?1:0)}% · ${p.orders} đơn · ${money(p.commission_net||0)}${src==='inferred_from_name'?' · % đoán từ tên':''}${src==='default'?' · CHƯA CÓ %':''}</span>`;
+          return `<span class="pill ${cls}" style="font-weight:500;">${k}: ${(p.rate*100).toFixed(p.rate*100%1?1:0)}% · ${p.orders} ${tx('u.orders')} · ${money(p.commission_net||0)}${src==='inferred_from_name'?tv(' · % inferred from the name',' · % đoán từ tên'):''}${src==='default'?tv(' · NO % SET',' · CHƯA CÓ %'):''}</span>`;
         }).join('')}</div>`;
     }
     const affKeys = Object.keys(affiliates).slice(0, 12);
     if(affKeys.length){
-      html += `<div class="caption" style="padding-left:0;margin:4px 0 0;">Top influencer/affiliate theo hoa hồng (mã trong thuộc tính đơn __snowball):</div>
-        <div style="overflow-x:auto;"><table class="simple" style="min-width:420px;"><thead><tr><th>Affiliate</th><th>Program</th><th style="text-align:right">Đơn</th><th style="text-align:right">Doanh thu</th><th style="text-align:right">Hoa hồng</th></tr></thead><tbody>${affKeys.map(k=>{
+      html += `<div class="caption" style="padding-left:0;margin:4px 0 0;">${tv('Top influencers/affiliates by commission (code in the __snowball order attribute):','Top influencer/affiliate theo hoa hồng (mã trong thuộc tính đơn __snowball):')}</div>
+        <div style="overflow-x:auto;"><table class="simple" style="min-width:420px;"><thead><tr><th>Affiliate</th><th>Program</th><th style="text-align:right">${tv('Orders','Đơn')}</th><th style="text-align:right">${tv('Revenue','Doanh thu')}</th><th style="text-align:right">${tv('Commission','Hoa hồng')}</th></tr></thead><tbody>${affKeys.map(k=>{
           const a = affiliates[k];
           return `<tr><td>${k}</td><td>${a.program||''}</td><td style="text-align:right">${a.orders}</td><td style="text-align:right">${money(a.revenue||0)}</td><td style="text-align:right">${money(a.commission_net||0)}</td></tr>`;
         }).join('')}</tbody></table></div>`;
     }
-    html += `<div><span class="tag info"><span class="d"></span>Lưu ý</span> Đây là hoa hồng <i>phát sinh</i> theo đơn (accrual). Khoản trả thật (payout) qua Tremendous/PayPal có thể lệch thời điểm và không gồm quà tặng sản phẩm hay flat fee thoả thuận riêng ngoài Snowball. Đối soát theo tháng với Payouts → Export trong Snowball.</div>`;
+    html += `<div><span class="tag info"><span class="d"></span>${tv('Note','Lưu ý')}</span> ${tv('This is commission <i>accrued</i> per order. Actual payouts via Tremendous/PayPal may differ in timing and exclude product gifts or flat fees agreed outside Snowball. Reconcile monthly with Payouts → Export in Snowball.','Đây là hoa hồng <i>phát sinh</i> theo đơn (accrual). Khoản trả thật (payout) qua Tremendous/PayPal có thể lệch thời điểm và không gồm quà tặng sản phẩm hay flat fee thoả thuận riêng ngoài Snowball. Đối soát theo tháng với Payouts → Export trong Snowball.')}</div>`;
     if(warnings.length){
-      html += `<div class="caption" style="padding-left:0;margin:6px 0 4px;">Cảnh báo từ lần đồng bộ gần nhất:</div>
+      html += `<div class="caption" style="padding-left:0;margin:6px 0 4px;">${tv('Warnings from the latest sync:','Cảnh báo từ lần đồng bộ gần nhất:')}</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;">${warnings.map(w=>`<span class="pill warn">${w}</span>`).join('')}</div>`;
     }
     html += '</div>';
@@ -3555,6 +4224,7 @@
       // sync v2.8+: order funnel counters (All Orders report status) + per-SKU units / item-price sales / refund units
       if(r.orders_placed !== undefined) (days[idx].funnel = days[idx].funnel||{}).amazon = {placed: Math.round(+r.orders_placed||0), paid: r.orders_paid===undefined ? null : Math.round(+r.orders_paid||0), fulfilled: Math.round(+r.orders_fulfilled||0), partial: Math.round(+r.orders_partially_fulfilled||0), cancelled: Math.round(+r.orders_cancelled||0), refunded: r.orders_refunded===undefined ? null : Math.round(+r.orders_refunded||0)};
       if(r.sku_units && typeof r.sku_units==='object') (days[idx].sku = days[idx].sku||{}).amazon = {units: r.sku_units, sales: r.sku_sales||{}, refunds: r.sku_refund_units||{}};
+      if(r.markets && typeof r.markets==='object') (days[idx].markets = days[idx].markets||{}).amazon = r.markets;   // sync v2.9+: per-marketplace split
       matched++;
     });
     estimateUnpostedAmazonFees(data);
@@ -3713,7 +4383,7 @@
       const c = camps[id]; const agg = zero(); let n = 0;
       Object.keys(c.daily||{}).forEach(iso=>{ if(!isoSet.has(iso)) return; const d=c.daily[iso]; F.forEach(f=>agg[f]+= (parseFloat(d[f])||0)); n++; });
       if(n===0 || agg.spend<=0) return;
-      rows.push({id, name:c.name, product:c.product||'Khác', channel:c.channel||'', market:c.market||'', stage:c.stage||'', status:c.status||'', ...derive(agg)});
+      rows.push({id, name:c.name, product:c.product||tx('u.other'), channel:c.channel||'', market:c.market||'', stage:c.stage||'', status:c.status||'', ...derive(agg)});
     });
     if(!rows.length){ card.style.display='none'; return; }
     const products = {};
@@ -3725,7 +4395,7 @@
     const chanPill = ch => ch ? `<span class="pill" style="background:var(--surface-card-3);color:var(--ink-secondary);font-weight:500;margin-left:4px;">${ch}</span>` : '';
     const stagePill = s => s && s!=='Other' ? `<span class="pill ${s==='Scaling'?'ok':'warn'}" style="font-weight:500;margin-left:4px;">${s}</span>` : '';
     const statusDot = st => `<span class="dot ${st==='ENABLED'?'g':'w'}" style="display:inline-block;margin-right:6px;vertical-align:middle;" title="${st}"></span>`;
-    let html = `<thead><tr><th>Sản phẩm / campaign</th><th style="text-align:right">Chi</th><th style="text-align:right">% chi</th><th style="text-align:right">Conv. quy về</th><th style="text-align:right">CPA</th><th style="text-align:right">DT quy về</th><th style="text-align:right">ROAS</th><th style="text-align:right">Clicks</th><th style="text-align:right">CPC</th><th style="text-align:right">CTR</th></tr></thead><tbody>`;
+    let html = `<thead><tr><th>${tx('u.product2')}</th><th style="text-align:right">${tx('u.spend')}</th><th style="text-align:right">${tx('u.spendPct')}</th><th style="text-align:right">${tv('Attributed conv.','Conv. quy về')}</th><th style="text-align:right">CPA</th><th style="text-align:right">${tx('u.attrRev')}</th><th style="text-align:right">ROAS</th><th style="text-align:right">Clicks</th><th style="text-align:right">CPC</th><th style="text-align:right">CTR</th></tr></thead><tbody>`;
     const cell = (r, bold) => `<td class="num" ${bold?'style="font-weight:700;color:var(--ink-primary);"':''}>${money(r.spend)}</td><td class="num">${totalSpend? (r.spend/totalSpend*100).toFixed(0):0}%</td><td class="num">${fmtN(r.conversions)}</td><td class="num" ${warnCls(r)}>${r.cpa?money(r.cpa):'—'}</td><td class="num">${money(r.conversion_value)}</td><td class="num" ${warnCls(r)}>${r.roas.toFixed(2)}x</td><td class="num">${fmtN(r.clicks)}</td><td class="num">${r.cpc?money(r.cpc):'—'}</td><td class="num">${r.ctr.toFixed(2)}%</td>`;
     Object.keys(products).sort((a,b)=>products[b].spend-products[a].spend).forEach(p=>{
       const pr = products[p];
@@ -3735,16 +4405,16 @@
       });
     });
     const all = zero(); rows.forEach(r=>F.forEach(f=>all[f]+=r[f])); derive(all);
-    html += `<tr style="border-top:1.5px solid var(--baseline);"><td class="name" style="font-weight:700;">Tổng Google (${rows.length} campaign có chi)</td>${cell(all,true)}</tr></tbody>`;
+    html += `<tr style="border-top:1.5px solid var(--baseline);"><td class="name" style="font-weight:700;">${tv(`Total Google (${rows.length} campaigns with spend)`, `Tổng Google (${rows.length} campaign có chi)`)}</td>${cell(all,true)}</tr></tbody>`;
     document.getElementById('googleCampaignTable').innerHTML = html;
-    document.getElementById('googleCampaignNote').textContent = 'Google Ads API · conversions theo cài đặt tài khoản (có thể gồm cả conversion không phải mua hàng) · '+fmtAmazonAge(GOOGLE_ADS_LIVE_DATA.generated_at)+' · chấm xanh = đang chạy, vàng = tạm dừng';
+    document.getElementById('googleCampaignNote').textContent = tv('Google Ads API · conversions per the account settings (may include non-purchase conversions) · ','Google Ads API · conversions theo cài đặt tài khoản (có thể gồm cả conversion không phải mua hàng) · ')+fmtAmazonAge(GOOGLE_ADS_LIVE_DATA.generated_at)+tv(' · green dot = running, amber = paused',' · chấm xanh = đang chạy, vàng = tạm dừng');
   }
   // "từ 2025-01-01" / "thiếu N ngày" from meta.history (sync scripts that keep history)
   function fmtCoverage(data){
     const h = data && data.meta && data.meta.history;
     if(!h || !h.first_day) return '';
     const from = h.first_day.slice(8,10)+'/'+h.first_day.slice(5,7)+'/'+h.first_day.slice(0,4);
-    return ' · từ '+from + (h.missing_count ? ' (thiếu '+h.missing_count.toLocaleString('en-US')+' ngày)' : '');
+    return tx('age.from', {d: from}) + (h.missing_count ? tx('age.missing', {n: h.missing_count.toLocaleString('en-US')}) : '');
   }
   // Dot colour = real age of the embedded snapshot: green < 4h (the GitHub jobs refresh every 30 min, the page
   // is republished by the sync task), amber up to 48h, red beyond (sync stalled - check the scheduled task).
@@ -3754,19 +4424,19 @@
     return h < 4 ? 'g' : h < 48 ? 'w' : 'c';
   }
   function fmtAmazonAge(iso){
-    if(!iso) return 'Live · vừa cập nhật';
+    if(!iso) return tx('age.just');
     const mins = Math.round((Date.now()-new Date(iso).getTime())/60000);
-    if(mins<1) return 'Live · vừa cập nhật';
-    if(mins<60) return 'Live · '+mins+' phút trước';
-    return 'Live · '+Math.round(mins/60)+' giờ trước';
+    if(mins<1) return tx('age.just');
+    if(mins<60) return tx('age.min', {n: mins});
+    return tx('age.hour', {n: Math.round(mins/60)});
   }
 
   function fmtAgeFromCache(cache){
-    if(!cache || !cache.storedAt) return 'Live · vừa cập nhật';
+    if(!cache || !cache.storedAt) return tx('age.just');
     const mins = Math.round((Date.now()-cache.storedAt)/60000);
-    if(mins<1) return 'Live · vừa cập nhật';
-    if(mins<60) return 'Live · '+mins+' phút trước';
-    return 'Live · '+Math.round(mins/60)+' giờ trước';
+    if(mins<1) return tx('age.just');
+    if(mins<60) return tx('age.min', {n: mins});
+    return tx('age.hour', {n: Math.round(mins/60)});
   }
 
   // Sources with no live feed yet - they show $0 on the page (never a sample figure).
@@ -3778,19 +4448,20 @@
     if(!metaMatched) m.push('Meta Ads');
     if(!googleMatched) m.push('Google Ads');
     if(!shipmonkMatched) m.push('ShipMonk');
-    if(!shipmonkInvMatched) m.push('hoá đơn ShipMonk (lưu kho, receiving, hàng trả)');
-    if(!amazonAdsMatched) m.push('Amazon Ads (chờ duyệt)');
-    if(!tiktokAdsMatched) m.push('TikTok Ads'); if(!applovinMatched) m.push('AppLovin'); m.push('giá vốn theo SKU');
-    if(!(shopifyMeta && shopifyMeta.meta && shopifyMeta.meta.payment_fees_basis)) m.push('phí cổng thanh toán'); else if(!paypalMatched) m.push('phí PayPal (Shopify Payments đã có)');
+    if(!shipmonkInvMatched) m.push(tv('ShipMonk invoices (storage, receiving, returns)','hoá đơn ShipMonk (lưu kho, receiving, hàng trả)'));
+    if(!amazonAdsMatched) m.push(tv('Amazon Ads (pending approval)','Amazon Ads (chờ duyệt)'));
+    if(!tiktokAdsMatched) m.push('TikTok Ads'); if(!applovinMatched) m.push('AppLovin'); m.push(tv('product cost per SKU','giá vốn theo SKU'));
+    if(!(shopifyMeta && shopifyMeta.meta && shopifyMeta.meta.payment_fees_basis)) m.push(tv('payment processing fees','phí cổng thanh toán')); else if(!paypalMatched) m.push(tv('PayPal fees (Shopify Payments done)','phí PayPal (Shopify Payments đã có)'));
     if(!klaviyoMatched) m.push('Klaviyo');
-    m.push('G&A (trừ Snowball, Klaviyo)');
+    m.push(tv('G&A (except Snowball, Klaviyo)','G&A (trừ Snowball, Klaviyo)'));
     return m;
   }
   (async function connectLiveData(){
     // Shopify baked in by the hourly sync = the source of truth; don't also pull the
     // connector's ShopifyQL numbers on top (slightly different definitions would flicker).
     if(shopifyMatched){
-      setLiveBanner(bicon('check')+'<span><b>'+bakedLiveNames().join(' + ')+' đang LIVE</b>, nguồn tự cập nhật mỗi 30 phút — bấm ↻ để tải số mới. <b>Chưa kết nối = $0</b> (kh&ocirc;ng d&ugrave;ng số mẫu): '+stillMockNames().join(', ')+'.</span>', 'good');
+      _bannerPaint = ()=> setLiveBanner(bicon('check')+'<span><b>'+bakedLiveNames().join(' + ')+tv(' are LIVE',' đang LIVE')+'</b>'+tv(', sources refresh every 30 minutes — press ↻ to load new figures. <b>Not connected = $0</b> (no sample figures): ',', nguồn tự cập nhật mỗi 30 phút — bấm ↻ để tải số mới. <b>Chưa kết nối = $0</b> (kh&ocirc;ng d&ugrave;ng số mẫu): ')+stillMockNames().join(', ')+'.</span>', 'good');
+      _bannerPaint();
       return;
     }
     let mcp;
@@ -3798,10 +4469,11 @@
     if(!mcp){
       const live = bakedLiveNames();
       if(live.length){
-        setLiveBanner(bicon('check')+'<span><b>'+live.join(' + ')+' đang LIVE</b>, nguồn tự cập nhật mỗi 30 phút — bấm ↻ để tải số mới. <b>Chưa kết nối = $0</b> (kh&ocirc;ng d&ugrave;ng số mẫu): '+stillMockNames().join(', ')+'. Doanh thu Shopify chưa c&oacute; trong bản n&agrave;y — chờ lần sync kế tiếp.</span>', 'warn');
+        _bannerPaint = ()=> setLiveBanner(bicon('check')+'<span><b>'+bakedLiveNames().join(' + ')+tv(' are LIVE',' đang LIVE')+'</b>'+tv(', sources refresh every 30 minutes — press ↻ to load new figures. <b>Not connected = $0</b> (no sample figures): ',', nguồn tự cập nhật mỗi 30 phút — bấm ↻ để tải số mới. <b>Chưa kết nối = $0</b> (kh&ocirc;ng d&ugrave;ng số mẫu): ')+stillMockNames().join(', ')+tv('. Shopify revenue is not in this build yet — wait for the next sync.</span>','. Doanh thu Shopify chưa c&oacute; trong bản n&agrave;y — chờ lần sync kế tiếp.</span>'), 'warn');
       } else {
-        setLiveBanner(bicon('info')+'<span>Chưa c&oacute; nguồn n&agrave;o được đồng bộ v&agrave;o bản n&agrave;y — mọi số đang l&agrave; $0 (kh&ocirc;ng d&ugrave;ng số mẫu). Chờ lần sync kế tiếp.</span>', 'warn');
+        _bannerPaint = ()=> setLiveBanner(bicon('info')+'<span>'+tv('No source has been synced into this build yet — every figure is $0 (no sample figures). Wait for the next sync.','Chưa c&oacute; nguồn n&agrave;o được đồng bộ v&agrave;o bản n&agrave;y — mọi số đang l&agrave; $0 (kh&ocirc;ng d&ugrave;ng số mẫu). Chờ lần sync kế tiếp.')+'</span>', 'warn');
       }
+      _bannerPaint();
       return;
     }
     mcp.watchTool('Shopify', 'run-analytics-query',
@@ -3813,24 +4485,26 @@
           if(rows && applyShopifyRows(rows)){
             const domain = payload.shopDomain || 'Shopify';
             setSource('shopify','g', fmtAgeFromCache(ev.result.cache));
-            const liveNames = bakedLiveNames();
-            const amazonNote = liveNames.length
-              ? liveNames.join(' + ')+' cũng đang LIVE.'
-              : 'C&aacute;c nguồn kh&aacute;c chưa kết nối hiển thị $0.';
-            setLiveBanner(bicon('check')+'<span><b>Doanh thu Shopify đang LIVE</b> (' + domain + ') — ' + amazonNote + ' Kết nối th&ecirc;m nguồn ở tab "Hướng dẫn kết nối dữ liệu".</span>', 'good');
+            _bannerPaint = ()=>{
+              const liveNames = bakedLiveNames();
+              const amazonNote = liveNames.length
+                ? liveNames.join(' + ')+tv(' are LIVE too.',' cũng đang LIVE.')
+                : tv('Other sources not connected show $0.','C&aacute;c nguồn kh&aacute;c chưa kết nối hiển thị $0.');
+              setLiveBanner(bicon('check')+'<span><b>'+tv('Shopify revenue is LIVE','Doanh thu Shopify đang LIVE')+'</b> (' + domain + ') — ' + amazonNote + tv(' Connect more sources in the "Data connection guide" tab.</span>',' Kết nối th&ecirc;m nguồn ở tab "Hướng dẫn kết nối dữ liệu".</span>'), 'good');
+            };
             renderAll();
           }
         } else {
           const err = ev.error || {};
-          setSource('shopify','c','Lỗi kết nối');
+          setSource('shopify','c',tv('Connection error','Lỗi kết nối'));
           if(err.code==='needs_reauth' || err.code==='server_not_connected'){
-            setLiveBanner(bicon('warn')+'<span>Shopify chưa kết nối hoặc phi&ecirc;n đăng nhập đ&atilde; hết hạn — v&agrave;o claude.ai Settings &gt; Connectors để kết nối/đăng nhập lại Shopify.</span>', 'bad');
+            setLiveBanner(bicon('warn')+'<span>'+tv('Shopify is not connected or the sign-in has expired — go to claude.ai Settings &gt; Connectors to connect / sign in to Shopify again.','Shopify chưa kết nối hoặc phi&ecirc;n đăng nhập đ&atilde; hết hạn — v&agrave;o claude.ai Settings &gt; Connectors để kết nối/đăng nhập lại Shopify.')+'</span>', 'bad');
           } else if(err.code==='server_unavailable' || err.retryable){
-            setLiveBanner(bicon('clock')+'<span>Kh&ocirc;ng lấy được dữ liệu Shopify l&uacute;c n&agrave;y (tạm thời) — Shopify đang hiển thị $0, thử lại sau.</span>', 'warn');
+            setLiveBanner(bicon('clock')+'<span>'+tv('Could not fetch Shopify data right now (temporary) — Shopify shows $0, try again later.','Kh&ocirc;ng lấy được dữ liệu Shopify l&uacute;c n&agrave;y (tạm thời) — Shopify đang hiển thị $0, thử lại sau.')+'</span>', 'warn');
           } else if(err.code==='not_in_manifest' || err.code==='consent_required'){
-            setLiveBanner(bicon('warn')+'<span>Bạn chưa cho ph&eacute;p trang n&agrave;y d&ugrave;ng kết nối Shopify của bạn. H&atilde;y đồng &yacute; khi được hỏi, hoặc bật lại trong c&agrave;i đặt của trang.</span>', 'bad');
+            setLiveBanner(bicon('warn')+'<span>'+tv('You have not allowed this page to use your Shopify connection. Accept when asked, or re-enable it in the page settings.','Bạn chưa cho ph&eacute;p trang n&agrave;y d&ugrave;ng kết nối Shopify của bạn. H&atilde;y đồng &yacute; khi được hỏi, hoặc bật lại trong c&agrave;i đặt của trang.')+'</span>', 'bad');
           } else {
-            setLiveBanner(bicon('warn')+'<span>Chưa lấy được dữ liệu Shopify thật (' + (err.code||'lỗi') + ') — Shopify đang hiển thị $0.</span>', 'warn');
+            setLiveBanner(bicon('warn')+'<span>'+tv('Could not fetch real Shopify data (','Chưa lấy được dữ liệu Shopify thật (') + (err.code||tv('error','lỗi')) + tv(') — Shopify shows $0.',') — Shopify đang hiển thị $0.')+'</span>', 'warn');
           }
           renderSources();
         }
