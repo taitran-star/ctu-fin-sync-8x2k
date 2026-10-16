@@ -1,0 +1,160 @@
+{
+ "updated_at": "2026-10-16",
+ "note": "Product lines for the Product filter. A SKU belongs to the FIRST line that matches: exact entry in `skus`, else a regex in `match` (tested against the SKU, case-insensitive), else a substring in `names` against the Amazon listing title. Amazon virtual bundles (amzn.gr.<SKU>-...) follow their parent SKU. Unmatched SKUs show as 'Other'. Review: the ids sslb / clmdnt need real names; G0-XFD9-2HZE and Z9-1GVT-BATX have no listing title - move them if they belong elsewhere.",
+ "lines": [
+  {
+   "id": "cave",
+   "name": {
+    "en": "Peekaboo Cat Cave",
+    "vi": "Hang mèo Peekaboo"
+   },
+   "match": [
+    "^PKCTCV"
+   ],
+   "names": [
+    "Peekaboo Cat Cave"
+   ],
+   "skus": [
+    "0S-IQO6-IK83",
+    "1X-2PUV-K2KS",
+    "50-8ROV-RORE",
+    "7V-V368-66DX",
+    "B2-LLPU-44PW",
+    "B8-4TJB-QMVG",
+    "BS-JYOW-7BE3",
+    "BU-0BV2-LF0Y",
+    "CP-A8FX-4LR5",
+    "G9-Z1VY-6342",
+    "H2-ZNNP-B1OA",
+    "IC-QNJ4-XN1O",
+    "IS-LH8O-QIOH",
+    "JY-XI7Z-ZLWC",
+    "KH-Z7GA-9HM3",
+    "L7-9KT1-WRCT",
+    "P1-J7MW-4YSA",
+    "PKCTCV-L-BLCK",
+    "PKCTCV-L-RNG",
+    "PKCTCV-L-SG",
+    "UJ-BF1W-A3WA",
+    "V2-OVFX-6KWD",
+    "V3-493Q-SN07",
+    "V3-YEBW-3SMV",
+    "V9-XUV1-I830"
+   ]
+  },
+  {
+   "id": "fountain",
+   "name": {
+    "en": "Water Fountain",
+    "vi": "Máy uống nước"
+   },
+   "match": [
+    "^SSWF(?!FTR)"
+   ],
+   "names": [
+    "Water Fountain"
+   ],
+   "skus": [
+    "24-OEYE-RXV4",
+    "42-86F6-WL9I",
+    "97-0EXG-TLJY",
+    "E9-5PHP-1Z4R",
+    "GX-JMC2-1DQY",
+    "IS-5H4Z-M0HP",
+    "PW-XTQW-SHLI",
+    "SL-HXSA-WW6Y",
+    "T2-1TE2-IMZ3",
+    "VU-U9DU-W262",
+    "VY-8D4I-M63D",
+    "YY-9WR7-4WPC"
+   ]
+  },
+  {
+   "id": "filters",
+   "name": {
+    "en": "Filter Refills",
+    "vi": "Lõi lọc thay thế"
+   },
+   "match": [
+    "^SSWFFTR"
+   ],
+   "names": [
+    "Filter Refill"
+   ],
+   "skus": [
+    "JE-GGV4-3IJB",
+    "ZT-KQGA-P2QW"
+   ]
+  },
+  {
+   "id": "bed",
+   "name": {
+    "en": "Cat Bed",
+    "vi": "Đệm mèo"
+   },
+   "match": [
+    "^PKBKBD"
+   ],
+   "names": [],
+   "skus": []
+  },
+  {
+   "id": "playbox",
+   "name": {
+    "en": "Play Box",
+    "vi": "Hộp chơi"
+   },
+   "match": [
+    "^NOF"
+   ],
+   "names": [],
+   "skus": []
+  },
+  {
+   "id": "sslb",
+   "name": {
+    "en": "SSLB (review name)",
+    "vi": "SSLB (cần đặt tên)"
+   },
+   "match": [
+    "^SSLB"
+   ],
+   "names": [],
+   "skus": []
+  },
+  {
+   "id": "clmdnt",
+   "name": {
+    "en": "CLMDNT (review name)",
+    "vi": "CLMDNT (cần đặt tên)"
+   },
+   "match": [
+    "^CLMDNT"
+   ],
+   "names": [],
+   "skus": []
+  },
+  {
+   "id": "accessories",
+   "name": {
+    "en": "Accessories",
+    "vi": "Phụ kiện"
+   },
+   "match": [
+    "^AP03",
+    "^AP14",
+    "^AP15",
+    "^PT07C",
+    "^FCNT01",
+    "^SLFRLL",
+    "^EMRCRD",
+    "^Coffin$"
+   ],
+   "names": [],
+   "skus": [
+    "G0-XFD9-2HZE",
+    "Z9-1GVT-BATX"
+   ]
+  }
+ ]
+}
