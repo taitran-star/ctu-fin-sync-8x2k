@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 3c70985cc3).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 9bf490efad).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -126,7 +126,7 @@
   // ---------- V10 dictionary, part A: static text of pnl.html (data-i18n="h.*"); VI values = the original innerHTML byte for byte ----------
   Object.assign(L.en, {
     'h.matrixTitle':'Sales channels',
-    'h.matrixNote':'Net revenue by order date · vs the same days of the previous period &amp; last year · plan = each channel\'s plan on its own basis (Shopify net sales, Amazon gross/ordered sales)',
+    'h.matrixNote':'Net revenue by order date · vs the same days of the previous period &amp; last year · plan = each group\'s plan on its own basis (Shopify + TikTok vs the Shopify net-sales plan, Amazon + Walmart vs the Amazon gross-sales plan)',
     'h.bridgeTitle':'Profit bridge — what moved CM3',
     'h.alertTitle':'Alerts',
     'h.alertNote':'Computed from the selected period · threshold shown next to each line',
@@ -202,7 +202,7 @@
   });
   Object.assign(L.vi, {
     'h.matrixTitle':'Kênh bán',
-    'h.matrixNote':'Doanh thu thuần theo ngày đặt · so cùng số ngày kỳ trước &amp; năm trước · kế hoạch = theo cơ sở của từng kênh (Shopify doanh thu thuần, Amazon doanh thu gộp)',
+    'h.matrixNote':'Doanh thu thuần theo ngày đặt · so cùng số ngày kỳ trước &amp; năm trước · kế hoạch = theo nhóm kênh (Shopify + TikTok so kế hoạch Shopify thuần; Amazon + Walmart so kế hoạch Amazon gộp)',
     'h.bridgeTitle':'Cầu lợi nhuận — CM3 đổi vì đâu',
     'h.alertTitle':'Cảnh báo',
     'h.alertNote':'Tự tính từ kỳ đang xem · ngưỡng ghi cạnh mỗi dòng',
@@ -320,6 +320,11 @@
   const CH_KEYS = ['shopify','amazon','walmart','tiktok'];
   const CH_LABEL = {shopify:'Shopify', amazon:'Amazon', walmart:'Walmart', tiktok:'TikTok Shop'};
   const CH_COLOR = {shopify:'var(--series-1)', amazon:'var(--series-2)', walmart:'var(--series-3)', tiktok:'var(--series-4)'};
+  // V10.3: reporting groups — Walmart rolls into Amazon, TikTok Shop into Shopify (plans, matrix, channel card, pacing, filter).
+  // The group's plan is the plan of its first member (Amazon plan = gross, Shopify plan = net); the P&L page still shows the 4 channels.
+  const CH_GROUPS = [{id:'shopify', members:['shopify','tiktok']}, {id:'amazon', members:['amazon','walmart']}];
+  const GROUP_OF = {}; CH_GROUPS.forEach(g=>g.members.forEach(k=>{ GROUP_OF[k] = g.id; }));
+  const groupLabel = (g, full) => { const grp = CH_GROUPS.find(x=>x.id===g); let live = grp.members.filter(k=> !_chAvail || _chAvail.includes(k)); if(!full){ const on = live.filter(k=>CH_MASK[k]); if(on.length) live = on; } return live.map(k=>CH_LABEL[k]).join(' + '); };
 
   // Amazon SP-API Finances data, injected here at publish time by the automated sync
   // (GitHub Actions fetches from Amazon -> Claude scheduled task republishes this artifact
@@ -736,7 +741,8 @@
     return m;
   }
   // human label of the active selection (channel · market · product)
-  const maskLabel = () => { const p = []; if(chPartial()) p.push(CH_KEYS.filter(k=>CH_MASK[k]).map(k=>CH_LABEL[k]).join(' + ')); if(FILTER.market!=='all') p.push(marketLabel(FILTER.market)); if(FILTER.product!=='all') p.push(productLineName(FILTER.product)); return p.join(' · '); };
+  const chMaskLabel = () => { const parts = []; const done = {}; CH_KEYS.filter(k=>CH_MASK[k]).forEach(k=>{ const g = GROUP_OF[k], grp = CH_GROUPS.find(x=>x.id===g); const whole = grp.members.every(m=> CH_MASK[m] || (_chAvail && !_chAvail.includes(m))); if(whole){ if(!done[g]){ done[g] = true; parts.push(groupLabel(g)); } } else parts.push(CH_LABEL[k]); }); return parts.join(' + '); };
+  const maskLabel = (o) => { const p = []; if(chPartial()) p.push(chMaskLabel()); if(o && o.chOnly) return p.join(''); if(FILTER.market!=='all') p.push(marketLabel(FILTER.market)); if(FILTER.product!=='all') p.push(productLineName(FILTER.product)); return p.join(' · '); };
 
   // ---------- aggregate ----------
   function aggregate(rowsIn){
@@ -1112,12 +1118,12 @@
   function renderFilterBar(){
     const el = document.getElementById('filterBar'); if(!el) return;
     if(!_chAvail) _chAvail = CH_KEYS.filter(k=> days.some(r=> r.channels[k]>0));
-    const chSel = CH_KEYS.filter(k=>CH_MASK[k]);
-    const chTxt = chPartial() ? (chSel.length===1 ? CH_LABEL[chSel[0]] : chSel.length+' '+tx('f.channelsN')) : tx('f.allChannels');
+    const chTxt = chPartial() ? maskLabel({chOnly:true}) : tx('f.allChannels');
     const dd = (id, label, value, items, extra) => `<div class="dd fdd" id="${id}"><button class="ddbtn" type="button"><span class="k">${label}</span><span class="v">${value}</span><span class="caret">▾</span></button><div class="ddpanel"><div class="ddlist one">${items}</div>${extra||''}</div></div>`;
     const mkItems = ['all'].concat(marketsAvailable()).map(cc=>`<div class="dditem ${FILTER.market===cc?'active':''}" data-market="${cc}">${marketLabel(cc)}${cc!=='all' && cc!=='US' ? '' : ''}</div>`).join('');
     const plItems = ['all'].concat(productLinesAvailable()).map(id=>`<div class="dditem ${FILTER.product===id?'active':''}" data-product="${id}">${productLineName(id)}</div>`).join('');
-    const chItems = `<div class="dditem ${chPartial()?'':'active'}" data-ch="all">${tx('f.allChannels')}</div>` + _chAvail.map(k=>`<div class="dditem chk ${CH_MASK[k]?'on':''}" data-ch="${k}"><span class="box">${CH_MASK[k]?'✓':''}</span>${CH_LABEL[k]}</div>`).join('');
+    const grpOn = g => CH_GROUPS.find(x=>x.id===g).members.some(k=> _chAvail.includes(k) && CH_MASK[k]);
+    const chItems = `<div class="dditem ${chPartial()?'':'active'}" data-ch="all">${tx('f.allChannels')}</div>` + CH_GROUPS.filter(g=>g.members.some(k=>_chAvail.includes(k))).map(g=>`<div class="dditem chk ${grpOn(g.id)?'on':''}" data-ch="${g.id}"><span class="box">${grpOn(g.id)?'✓':''}</span>${groupLabel(g.id, true)}</div>`).join('');
     el.innerHTML = dd('ddMarket', tx('f.market'), marketLabel(FILTER.market), mkItems) + dd('ddProduct', tx('f.product'), productLineName(FILTER.product), plItems) + dd('ddChannel', tx('f.channel'), chTxt, chItems);
     const closeAll = () => document.querySelectorAll('.dd.open').forEach(d=>d.classList.remove('open'));
     el.querySelectorAll('.dd > .ddbtn').forEach(b=>b.addEventListener('click', (e)=>{ e.stopPropagation(); const d = b.parentElement, open = d.classList.contains('open'); closeAll(); if(!open) d.classList.add('open'); }));
@@ -1127,7 +1133,7 @@
     el.querySelectorAll('[data-ch]').forEach(i=>i.addEventListener('click', ()=>{
       const k = i.dataset.ch, next = {...CH_MASK};
       if(k==='all') CH_KEYS.forEach(x=>next[x]=true);
-      else { next[k] = !next[k]; if(!CH_KEYS.some(x=>next[x])) CH_KEYS.forEach(x=>next[x]=true); }
+      else { const grp = CH_GROUPS.find(x=>x.id===k); const on = !grp.members.some(x=>next[x]); grp.members.forEach(x=>{ next[x] = on; }); if(!CH_KEYS.some(x=>next[x])) CH_KEYS.forEach(x=>next[x]=true); }
       setChannelMask(next); renderAll();
     }));
     renderFilterBanner();
@@ -1137,7 +1143,7 @@
     const partial = maskPartial(); bn.hidden = !partial; if(!partial || !tx_) return;
     const a = aggregate(currentRows());
     const parts = [];
-    if(chPartial()) parts.push(tx('f.bn.channel', {ch: CH_KEYS.filter(k=>CH_MASK[k]).map(k=>CH_LABEL[k]).join(' + ')}));
+    if(chPartial()) parts.push(tx('f.bn.channel', {ch: chMaskLabel()}));
     if(FILTER.market!=='all') parts.push(tx('f.bn.market', {m: marketLabel(FILTER.market)}));
     if(FILTER.product!=='all') parts.push(tx('f.bn.product', {p: productLineName(FILTER.product)}));
     let note = tx('f.bn.alloc', {pct: (a.allocShare*100).toFixed(0)});
@@ -2541,8 +2547,8 @@
   // ---- sales channels: donut + list (CH_COLOR defined with the other channel constants) ----
   function renderChannels(){
     const el = document.getElementById('chanList'); if(!el) return;
-    const rows = currentRows(), a = aggregate(rows), ce = channelEcon(a);
-    const keys = CH_KEYS.filter(k=> ce[k].net>0.005).sort((x,y)=>ce[y].net-ce[x].net);
+    const rows = currentRows(), a = aggregate(rows), ce0 = channelEcon(a), ce = groupEcon(ce0);
+    const keys = CH_GROUPS.map(g=>g.id).filter(k=> ce[k].net>0.005).sort((x,y)=>ce[y].net-ce[x].net);
     const tot = sum(keys.map(k=>ce[k].net));
     const svg = document.getElementById('chanDonut');
     if(svg){
@@ -2551,7 +2557,8 @@
       out += `<text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="17" font-weight="600" fill="${resolveVar('var(--ink-primary)')}" font-family="var(--font-display)">${money(tot,{compact:true})}</text><text x="${cx}" y="${cy+14}" text-anchor="middle" font-size="10" fill="${resolveVar('var(--ink-muted)')}">${tx('m.netRevenue')}</text>`;
       svg.innerHTML = out;
     }
-    el.innerHTML = keys.map(k=>`<div class="r"><span class="sw" style="background:${CH_COLOR[k]}"></span><span><div style="font-weight:600;">${CH_LABEL[k]}</div><div class="bar"><i style="width:${tot>0?(ce[k].net/tot*100).toFixed(1):0}%;background:${CH_COLOR[k]}"></i></div></span><span class="v">${money(ce[k].net,{compact:true})}</span><span class="p">${tot>0?Math.round(ce[k].net/tot*100):0}%</span></div>`).join('') || `<div class="r"><span>${tx('u.noData')}</span></div>`;
+    const sub = k => { const m = CH_GROUPS.find(g=>g.id===k).members.filter(x=>ce0[x].net>0.005); return m.length>1 ? `<small style="display:block;color:var(--ink-muted);font-weight:400;">${m.map(x=>CH_LABEL[x]+' '+money(ce0[x].net,{compact:true})).join(' · ')}</small>` : ''; };
+    el.innerHTML = keys.map(k=>`<div class="r"><span class="sw" style="background:${CH_COLOR[k]}"></span><span><div style="font-weight:600;">${groupLabel(k)}${sub(k)}</div><div class="bar"><i style="width:${tot>0?(ce[k].net/tot*100).toFixed(1):0}%;background:${CH_COLOR[k]}"></i></div></span><span class="v">${money(ce[k].net,{compact:true})}</span><span class="p">${tot>0?Math.round(ce[k].net/tot*100):0}%</span></div>`).join('') || `<div class="r"><span>${tx('u.noData')}</span></div>`;
     setNote('chanNote', tx('chan.note', {total: money(tot,{compact:true}), n: keys.length}));
     const st = document.getElementById('chanStats'); if(st) st.innerHTML = `<div class="ms"><div class="l">${tx('chan.avgDay')}</div><div class="v">${money(rows.length ? tot/rows.length : 0,{compact:true})}</div></div><div class="ms"><div class="l">${tx('chan.perOrder')}</div><div class="v">${money(a.blendedAOV)}</div></div>`;
   }
@@ -2720,18 +2727,20 @@
     let series = 'net', planTotal = plan ? plan.net_revenue : null, label = tv('Company net revenue','Doanh thu thuần toàn công ty');
     if(maskPartial()){ planTotal = null; label = tv('Net revenue — ','Doanh thu thuần — ')+maskLabel()+tv(' (company plan not compared while filtering)',' (kế hoạch tổng không so khi đang lọc)'); }
     // V10.2: no company plan -> pace the channels that have a plan, each on its own basis (Shopify plan = net sales, Amazon plan = gross/ordered sales)
-    const basisOf = k => plan && plan.channels[k] ? (plan.channels[k].net!==null ? 'net' : (plan.channels[k].gross!==null ? 'gross' : null)) : null;
-    const planned = CH_KEYS.filter(k=>basisOf(k));
-    const active = CH_KEYS.filter(k=>CH_MASK[k]);
+    // V10.3: the plan of a group = the plan of its first member (Shopify net covers Shopify + TikTok Shop; Amazon gross covers Amazon + Walmart)
+    const basisOf = g => { const k = CH_GROUPS.find(x=>x.id===g).members[0]; return plan && plan.channels[k] ? (plan.channels[k].net!==null ? 'net' : (plan.channels[k].gross!==null ? 'gross' : null)) : null; };
+    const planned = CH_GROUPS.map(g=>g.id).filter(g=>basisOf(g));
+    const activeG = CH_GROUPS.filter(g=>g.members.some(k=>CH_MASK[k])).map(g=>g.id);
+    const wholeGroups = CH_GROUPS.every(g=> g.members.every(k=>CH_MASK[k]) || g.members.every(k=>!CH_MASK[k]));
     let paceCh = null;
-    if(planTotal===null && planned.length && (!maskPartial() || (FILTER.market==='all' && FILTER.product==='all' && active.every(k=>planned.includes(k))))){
-      paceCh = maskPartial() ? active : planned; series = 'channels';
-      planTotal = sum(paceCh.map(k=> basisOf(k)==='net' ? plan.channels[k].net : plan.channels[k].gross));
-      const parts = paceCh.map(k=> CH_LABEL[k]+' ('+(basisOf(k)==='net' ? tv('net','thuần') : tv('gross','gộp'))+')').join(' + ');
+    if(planTotal===null && planned.length && (!maskPartial() || (FILTER.market==='all' && FILTER.product==='all' && wholeGroups && activeG.every(g=>planned.includes(g))))){
+      paceCh = maskPartial() ? activeG : planned; series = 'channels';
+      planTotal = sum(paceCh.map(g=>{ const k = CH_GROUPS.find(x=>x.id===g).members[0]; return basisOf(g)==='net' ? plan.channels[k].net : plan.channels[k].gross; }));
+      const parts = paceCh.map(g=> groupLabel(g)+' ('+(basisOf(g)==='net' ? tv('net','thuần') : tv('gross','gộp'))+')').join(' + ');
       label = parts + (paceCh.length>1 ? tv(' — sum of the channel plans',' — tổng kế hoạch các kênh') : tv(' — by order date',' — theo ngày đặt')) + tv(' (company plan not entered)',' (kế hoạch tổng chưa nhập)');
     }
-    const chVal = (r,k) => basisOf(k)==='net' ? r.channels[k]-r.discounts[k]-r.refunds[k] : r.channels[k];
-    const valOf = r => series==='channels' ? sum(paceCh.map(k=>chVal(r,k))) : (r.channels.shopify+r.channels.amazon+r.channels.walmart+r.channels.tiktok) - sum(CH_KEYS.map(k=>r.discounts[k])) - sum(CH_KEYS.map(k=>r.refunds[k]));
+    const chVal = (r,g) => sum(CH_GROUPS.find(x=>x.id===g).members.map(k=> basisOf(g)==='net' ? r.channels[k]-r.discounts[k]-r.refunds[k] : r.channels[k]));
+    const valOf = r => series==='channels' ? sum(paceCh.map(g=>chVal(r,g))) : (r.channels.shopify+r.channels.amazon+r.channels.walmart+r.channels.tiktok) - sum(CH_KEYS.map(k=>r.discounts[k])) - sum(CH_KEYS.map(k=>r.refunds[k]));
     const closed = mrows.filter(r=>!r._syncing);
     const actualByDom = new Array(dim+1).fill(null); let cum = 0;
     closed.forEach(r=>{ cum += valOf(r); actualByDom[r.date.getDate()] = cum; });
@@ -2773,6 +2782,12 @@
   }
 
   // ---------- channel matrix ----------
+  // V10.3: the same figures summed per reporting group (Shopify + TikTok Shop, Amazon + Walmart)
+  function groupEcon(ce){
+    const out = {};
+    CH_GROUPS.forEach(g=>{ const o = {net:0, orders:0, fees:0, fulfil:0, ads:0, aff:0, cogs:0, cm:0, adsAll:0}; g.members.forEach(k=>{ const c = ce[k]; if(!c) return; Object.keys(o).forEach(f=>{ o[f] += c[f]||0; }); }); out[g.id] = o; });
+    return out;
+  }
   function channelEcon(a){
     const smCh = {...a.shipmonkByChannel};
     const smAll = a.postage + a.shipmonkPickPack + a.packaging;
@@ -2790,30 +2805,33 @@
   }
   function renderMatrix(rows, a, prevRows, lyRows){
     const t = document.getElementById('matrixTable'); if(!t) return;
-    const cur = channelEcon(a), p = aggOrNull(prevRows), ly = aggOrNull(lyRows);
-    const pe = p ? channelEcon(p) : null, le = ly ? channelEcon(ly) : null;
+    const cur0 = channelEcon(a), p = aggOrNull(prevRows), ly = aggOrNull(lyRows);
+    const cur = groupEcon(cur0), pe = p ? groupEcon(channelEcon(p)) : null, le = ly ? groupEcon(channelEcon(ly)) : null;
+    const gsum = (g, f) => sum(CH_GROUPS.find(x=>x.id===g).members.map(k=>f(k)));
     const totalNet = a.netRevenue;
     const planGross = k => planForRows(rows, x=> x.channels[k] ? x.channels[k].gross : null, true);
     const planNet = k => planForRows(rows, x=> x.channels[k] ? x.channels[k].net : null, true);   // V10.2: Shopify plan is on net sales
     const dcell = d => d===null ? '<td class="num d-flat">—</td>' : `<td class="num ${Math.abs(d)<0.05?'d-flat':(d>=0?'d-up':'d-down')}">${d>=0?'+':''}${d.toFixed(1)}%</td>`;
-    const keys = CH_KEYS.filter(k=> cur[k].net>0.005 || a.gross[k]>0.005 || (pe && pe[k].net>0.005)).sort((x,y)=>cur[y].net-cur[x].net);
+    const keys = CH_GROUPS.map(g=>g.id).filter(k=> cur[k].net>0.005 || gsum(k, x=>a.gross[x])>0.005 || (pe && pe[k].net>0.005)).sort((x,y)=>cur[y].net-cur[x].net);
     const head = `<thead><tr><th>${tx('f.channel')}</th><th class="num">${tx('u.netRev')}</th><th class="num">Mix</th><th class="num">${likeLabel()}</th><th class="num">${tv('Last year','Năm trước')}</th><th class="num">${tv('Plan','Kế hoạch')}</th><th class="num">${tv('Refunds','Hoàn tiền')}</th><th class="num">Ads + affiliate</th><th class="num">${tv('Ads/revenue','Ads/DT')}</th><th class="num">CM3${a.productCostEst?'*':''}</th><th class="num">CM3 %</th></tr></thead>`;
     const body = keys.map(k=>{
       const c = cur[k];
-      const pn = planNet(k), pg = pn===null ? planGross(k) : null, pv = pn!==null ? pn : pg, pact = pn!==null ? c.net : a.gross[k];
+      const pn = planNet(k), pg = pn===null ? planGross(k) : null, pv = pn!==null ? pn : pg, pact = pn!==null ? c.net : gsum(k, x=>a.gross[x]);
+      const members = CH_GROUPS.find(g=>g.id===k).members.filter(x=> cur0[x].net>0.005 || a.gross[x]>0.005);
+      const split = members.length>1 ? members.map(x=>CH_LABEL[x]+' '+money(cur0[x].net,{compact:true})).join(' · ')+' · ' : '';
       const planTxt = pv!==null ? `${money(pv,{compact:true})} <small style="color:var(--ink-muted)">${pn!==null ? tv('net','thuần') : tv('gross','gộp')}</small> · ${pact>0 ? '<span class="'+(pact>=pv?'d-up':'d-down')+'">'+(pact/pv*100).toFixed(0)+'%</span>' : '—'}` : '<span class="d-flat">'+tx('u.none')+'</span>';
-      return `<tr><td class="name">${CH_LABEL[k]}<small style="display:block;font-weight:400;color:var(--ink-muted);">${intFmt(c.orders)} ${tx('u.orders')} · AOV ${c.orders>0 ? money(c.net/c.orders) : '—'}</small></td>
+      return `<tr><td class="name">${groupLabel(k)}<small style="display:block;font-weight:400;color:var(--ink-muted);">${split}${intFmt(c.orders)} ${tx('u.orders')} · AOV ${c.orders>0 ? money(c.net/c.orders) : '—'}</small></td>
         <td class="num">${money(c.net,{compact:true})}</td><td class="num">${totalNet>0 ? (c.net/totalNet*100).toFixed(0)+'%' : '—'}</td>
         ${dcell(pe ? dAbs(c.net, pe[k].net) : null)}${dcell(le ? dAbs(c.net, le[k].net) : null)}
         <td class="num">${planTxt}</td>
-        <td class="num">${a.gross[k]>0 ? (a.refund[k]/a.gross[k]*100).toFixed(1)+'%' : '—'}</td>
+        <td class="num">${gsum(k, x=>a.gross[x])>0 ? (gsum(k, x=>a.refund[x])/gsum(k, x=>a.gross[x])*100).toFixed(1)+'%' : '—'}</td>
         <td class="num">${money(c.adsAll,{compact:true})}</td><td class="num">${c.net>0 ? (c.adsAll/c.net*100).toFixed(0)+'%' : '—'}</td>
         <td class="num ${c.cm>=0?'':'d-down'}">${money(c.cm,{compact:true})}</td><td class="num">${c.net>0 ? (c.cm/c.net*100).toFixed(0)+'%' : '—'}</td></tr>`;
     }).join('');
     const tot = keys.reduce((s,k)=>({net:s.net+cur[k].net, ads:s.ads+cur[k].adsAll, cm:s.cm+cur[k].cm}), {net:0, ads:0, cm:0});
     const foot = `<tr style="font-weight:700;"><td class="name">${tx('u.total')}</td><td class="num">${money(tot.net,{compact:true})}</td><td class="num">100%</td>${dcell(p ? dAbs(a.netRevenue, p.netRevenue) : null)}${dcell(ly ? dAbs(a.netRevenue, ly.netRevenue) : null)}<td class="num"></td><td class="num">${a.grossSales>0 ? (sum(CH_KEYS.map(k=>a.refund[k]))/a.grossSales*100).toFixed(1)+'%' : '—'}</td><td class="num">${money(tot.ads,{compact:true})}</td><td class="num">${tot.net>0 ? (tot.ads/tot.net*100).toFixed(0)+'%' : '—'}</td><td class="num">${money(tot.cm,{compact:true})}</td><td class="num">${tot.net>0 ? (tot.cm/tot.net*100).toFixed(0)+'%' : '—'}</td></tr>`;
     t.innerHTML = head + '<tbody>' + body + foot + '</tbody>';
-    document.getElementById('matrixCaption').innerHTML = tv('Ads by channel: Meta + Google + AppLovin → Shopify; Amazon Ads → Amazon; GMV Max → TikTok Shop; Walmart Connect → Walmart. CM3 = net revenue − product cost','Ads gắn kênh: Meta + Google + AppLovin → Shopify; Amazon Ads → Amazon; GMV Max → TikTok Shop; Walmart Connect → Walmart. CM3 = doanh thu thuần − giá vốn') + (a.productCostEst ? tv(' (*estimated at ',' (*ước ')+(a.cogsEstRate*100).toFixed(0)+'%'+(a.productCostHasActual?tv(', partly from the accounting inventory ledger',', một phần theo sổ kho kế toán'):'')+')' : (a.productCostHasActual ? tv(' (from the accounting inventory ledger)',' (theo sổ kho kế toán)') : tv(' ($0, not available)',' ($0, chưa có)'))) + tv(' − per-order fulfillment (FBA, ShipMonk) − marketplace/payment fees − ads − affiliate; storage and G&amp;A not deducted (column total = the CM3 tile). Plan: % = this period\'s actual (net for Shopify, gross for Amazon) ÷ plan spread evenly by day.',' − fulfillment theo đơn (FBA, ShipMonk) − phí sàn/cổng − ads − affiliate; chưa trừ lưu kho và G&amp;A (tổng cột = CM3 trên ô chỉ số). Kế hoạch: % = số thực kỳ này (Shopify thuần, Amazon gộp) ÷ kế hoạch rải đều theo ngày.');
+    document.getElementById('matrixCaption').innerHTML = tv('Walmart is reported inside Amazon and TikTok Shop inside Shopify (the P&L page keeps the four channels apart). Ads by channel: Meta + Google + AppLovin → Shopify; Amazon Ads → Amazon; GMV Max → TikTok Shop; Walmart Connect → Walmart. CM3 = net revenue − product cost','Walmart gộp vào Amazon, TikTok Shop gộp vào Shopify (trang P&L vẫn tách 4 kênh). Ads gắn kênh: Meta + Google + AppLovin → Shopify; Amazon Ads → Amazon; GMV Max → TikTok Shop; Walmart Connect → Walmart. CM3 = doanh thu thuần − giá vốn') + (a.productCostEst ? tv(' (*estimated at ',' (*ước ')+(a.cogsEstRate*100).toFixed(0)+'%'+(a.productCostHasActual?tv(', partly from the accounting inventory ledger',', một phần theo sổ kho kế toán'):'')+')' : (a.productCostHasActual ? tv(' (from the accounting inventory ledger)',' (theo sổ kho kế toán)') : tv(' ($0, not available)',' ($0, chưa có)'))) + tv(' − per-order fulfillment (FBA, ShipMonk) − marketplace/payment fees − ads − affiliate; storage and G&amp;A not deducted (column total = the CM3 tile). Plan: % = this period\'s actual (net for Shopify, gross for Amazon) ÷ plan spread evenly by day.',' − fulfillment theo đơn (FBA, ShipMonk) − phí sàn/cổng − ads − affiliate; chưa trừ lưu kho và G&amp;A (tổng cột = CM3 trên ô chỉ số). Kế hoạch: % = số thực kỳ này (Shopify thuần, Amazon gộp) ÷ kế hoạch rải đều theo ngày.');
   }
 
   // ---------- alerts ----------
@@ -2830,7 +2848,7 @@
       const closed = (monthMap[m]||[]).filter(r=>!r._syncing), lastDom = closed.length ? closed[closed.length-1].date.getDate() : 0, dim = daysInMonth(m);
       const check = (label, actual, planV) => { if(planV===null || !lastDom) return; const exp = planV*lastDom/dim; const d = (actual/exp-1)*100; if(d < -10) items.push({lvl: d<-25?'crit':'warn', name: label+tv(' through day ',' đến ngày ')+lastDom+tv(' is below plan by ',' thấp hơn kế hoạch ')+Math.abs(d).toFixed(0)+'%', note: money(actual,{compact:true})+tv(' vs ',' so với ')+money(exp,{compact:true})+tv(' plan spread evenly',' kế hoạch rải đều'), stake: exp-actual, action:tv('Short ','Thiếu ')+money(exp-actual,{compact:true})+tv(' vs the evenly spread plan — decide to push or lower the plan',' so kế hoạch rải đều — quyết thúc đẩy hay hạ kế hoạch')}); };
       check(tv('Net revenue','Doanh thu thuần'), sum(closed.map(r=> sum(CH_KEYS.map(k=>r.channels[k]-r.discounts[k]-r.refunds[k])))), plan.net_revenue);
-      CH_KEYS.forEach(k=>{ const cp = plan.channels[k]; if(!cp) return; if(cp.net!==null) check(CH_LABEL[k]+tv(' (net revenue)',' (doanh thu thuần)'), sum(closed.map(r=>r.channels[k]-r.discounts[k]-r.refunds[k])), cp.net); else if(cp.gross!==null) check(CH_LABEL[k]+tv(' (gross sales)',' (doanh thu gộp)'), sum(closed.map(r=>r.channels[k])), cp.gross); });
+      CH_GROUPS.forEach(g=>{ const cp = plan.channels[g.members[0]]; if(!cp) return; const mem = g.members; if(cp.net!==null) check(groupLabel(g.id)+tv(' (net revenue)',' (doanh thu thuần)'), sum(closed.map(r=>sum(mem.map(k=>r.channels[k]-r.discounts[k]-r.refunds[k])))), cp.net); else if(cp.gross!==null) check(groupLabel(g.id)+tv(' (gross sales)',' (doanh thu gộp)'), sum(closed.map(r=>sum(mem.map(k=>r.channels[k])))), cp.gross); });
     } else items.push({lvl:'warn', name:tv('No plan for ','Chưa có kế hoạch tháng ')+(LANG==='vi' ? parseInt(m.slice(5,7),10)+'/'+m.slice(0,4) : MONTHS_EN[parseInt(m.slice(5,7),10)-1]+' '+m.slice(0,4)), note:tv('Fill in data/targets_monthly.json to get the "vs plan" column and pacing alerts','Điền data/targets_monthly.json để có cột "so kế hoạch" và cảnh báo nhịp độ'), stake:null});
     const refundPct = a.grossSales>0 ? sum(CH_KEYS.map(k=>a.refund[k]))/a.grossSales*100 : 0;
     if(refundPct>8) items.push({lvl: refundPct>12?'crit':'warn', name:tv('Refunds ','Hoàn tiền ')+refundPct.toFixed(1)+tv('% of gross sales','% doanh thu gộp'), note:tv('Alert threshold 8% · ','Ngưỡng cảnh báo 8% · ')+CH_KEYS.filter(k=>a.gross[k]>0).map(k=>CH_LABEL[k]+' '+(a.refund[k]/a.gross[k]*100).toFixed(1)+'%').join(', '), stake:(refundPct-8)/100*a.grossSales, action:tv('Excess over the 8% threshold = ','Phần vượt ngưỡng 8% = ')+money((refundPct-8)/100*a.grossSales,{compact:true})+tv(' — review return reasons by channel/product',' — xem lý do trả theo kênh/sản phẩm')});
@@ -2977,7 +2995,7 @@
     rows.forEach(r=>{ if(!r.sku) return; FUNNEL_CH.forEach(k=>{ if(!CH_MASK[k]) return; const d = r.sku[k]; if(!d) return; const o = out[k]; o.days++; addTo(o,'units',d.units); addTo(o,'sales',d.sales); addTo(o,'refunds',d.refunds); }); });
     return out;
   }
-  function skuName(sku){ const snap = AMAZON_STORAGE_LIVE_DATA && AMAZON_STORAGE_LIVE_DATA.inventory && AMAZON_STORAGE_LIVE_DATA.inventory.snapshot; const c = COGS_SKUS[sku]; return (c && c.name) || (snap && snap[sku] && snap[sku].name) || ''; }
+  function skuName(sku){ const snap = AMAZON_STORAGE_LIVE_DATA && AMAZON_STORAGE_LIVE_DATA.inventory && AMAZON_STORAGE_LIVE_DATA.inventory.snapshot; const c = COGS_SKUS[sku]; const sm = SHIPMONK_INVENTORY && SHIPMONK_INVENTORY.skus && SHIPMONK_INVENTORY.skus[sku]; return (c && c.name) || (snap && snap[sku] && snap[sku].name) || (sm && sm.name) || ''; }   // V10.3: ShipMonk names cover the Shopify SKUs
   function sinceText(kind){
     const f = kind==='sku' ? 'sku_units_since' : 'statuses_since';
     const si = d => (d && d.meta && d.meta.schema_info && d.meta.schema_info[f]) || null;
