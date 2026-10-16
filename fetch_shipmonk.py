@@ -64,6 +64,25 @@ Output (per day, shop-calendar days, positive numbers = cost):
                  by_store{name:{orders,units,shipping_cost,packaging_cost,pick_pack_cost,total_cost}},
                  by_type{order_type:{...}}, by_carrier{carrier:{orders,shipping_cost}}
   daily_shipped  same fields keyed by SHIP date, shipped orders only (invoice reconciliation)
+
+Inventory snapshot (v1.4, additive - runs AFTER the order sync, never fails the run):
+  Stock per SKU per ShipMonk warehouse, so the dashboard can show ShipMonk stock next to
+  Amazon FBA stock. Read through the "Products for Inventory Sync" endpoints
+  (POST /v1/integrations/products/search -> cursor, GET /v1/integrations/products/search/paginate)
+  with GET /v1/products as a fallback; open receivings (GET /v1/integrations/receivings-list)
+  give the inbound ("incoming") units. Written as top-level "inventory" (see SCHEMA.md) plus
+  meta.inventory {fetched, skus, pages, error}. Any failure (HTTP 403, unexpected shape...)
+  only logs a warning, sets meta.inventory.error and keeps the previous file's inventory
+  block, so the dashboard always has the last good snapshot. The daily cost data is not
+  touched by this step.
+  SHIPMONK_INVENTORY          1 (default) / 0 to skip the snapshot (previous block is kept)
+  INVENTORY_PAGE_SIZE         products per page, default 100 (API max 500)
+  INVENTORY_PRODUCT_TYPES     ShipMonk product types to include, default "pick_and_pack,unknown"
+                              (inserts and packaging material are not sellable stock)
+  INVENTORY_STATUS            "" (default: every product) | active | disabled | blacklisted
+  SHIPMONK_INVENTORY_INCOMING 1 (default) / 0 to skip the receivings pass (incoming = null)
+  INVENTORY_INCOMING_DAYS     only receivings created in the last N days are scanned, default 365
+  INVENTORY_MAX_PAGES         runaway guard for the product listing, default 200 (= 20,000 SKUs)
 """
 import email.utils
 import json
@@ -80,7 +99,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "1.3.2"
+SCRIPT_VERSION = "1.4.0"
 SCHEMA = 1
 
 API_KEY = os.environ.get("SHIPMONK_API_KEY", "").strip()
@@ -101,6 +120,24 @@ except (ValueError, TypeError, AttributeError):
     FX_TO_USD = {"CAD": 0.73}
 STOP_AFTER_OLD_PAGES = 3   # unfiltered listing is newest-first; stop after this many whole pages older than the window
 MAX_PAGES = max(100, int(os.environ.get("MAX_PAGES", "20000")))   # runaway guard only: 20,000 pages = 2M orders (a 2025-> backfill needs ~1,500-3,000)
+
+# inventory snapshot (optional, non-fatal; see fetch_inventory)
+INVENTORY_ENABLED = os.environ.get("SHIPMONK_INVENTORY", "1").strip().lower() not in ("0", "false", "no", "off")
+INVENTORY_PAGE_SIZE = max(1, min(500, int(os.environ.get("INVENTORY_PAGE_SIZE", "100") or "100")))
+INVENTORY_PRODUCT_TYPES = {s.strip() for s in os.environ.get("INVENTORY_PRODUCT_TYPES", "pick_and_pack,unknown").split(",") if s.strip()}
+INVENTORY_STATUS = os.environ.get("INVENTORY_STATUS", "").strip().lower()   # "" = all statuses
+INVENTORY_INCOMING = os.environ.get("SHIPMONK_INVENTORY_INCOMING", "1").strip().lower() not in ("0", "false", "no", "off")
+INVENTORY_INCOMING_DAYS = max(1, int(os.environ.get("INVENTORY_INCOMING_DAYS", "365") or "365"))
+INVENTORY_MAX_PAGES = max(1, int(os.environ.get("INVENTORY_MAX_PAGES", "200") or "200"))
+INVENTORY_INCOMING_MAX_PAGES = 100   # 100 receivings per page -> 10,000 receivings in the scanned window
+# warehouse identifier -> ISO 3166-1 alpha-2 country, from the "Warehouses" table on
+# https://apidocs.shipmonk.com/docs (the products API only returns id/name/identifier)
+WAREHOUSE_COUNTRY = {
+    "CZ1": "CZ", "KY1": "US", "KY8": "US", "KY2": "US", "MX1": "MX", "NV1": "US", "NV3": "US",
+    "PA1": "US", "PA2": "US", "PA8": "US", "TX1": "US", "TX8": "US", "TO1": "CA", "UK1": "GB",
+    # deprecated identifiers kept for historical data
+    "NY7": "US", "CA7": "US", "KY7": "US", "NV2": "US", "NV7": "US", "NJ1": "US", "NJ7": "US", "TO7": "CA", "CA1": "US", "FL1": "US",
+}
 
 DAILY_FIELDS = ["orders", "orders_shipped", "orders_unshipped", "orders_onhold", "units", "packages", "shipping_cost", "packaging_cost", "pick_pack_cost", "total_cost", "cost_missing_orders"]
 MONEY_FIELDS = ["shipping_cost", "packaging_cost", "pick_pack_cost", "total_cost"]
@@ -278,6 +315,65 @@ class Client:
                 log(f"Network error ({e.reason}) - retry {attempt}/{max_retries} in {backoff}s")
                 time.sleep(backoff)
         raise RuntimeError("Exceeded retries calling ShipMonk")
+
+    # -- optional steps (inventory): same retry policy, but NEVER exits the process ------------
+    extra_requests = 0
+    extra_retries = 0
+
+    def call(self, path, params=None, body=None, max_retries=4):
+        """GET (or POST when body is given) that raises ApiError on any 4xx instead of
+        SystemExit, so an optional step can fail softly while the cost data is still written.
+        429/5xx/network errors are retried like get(); calls are counted in extra_requests so
+        meta.api_requests keeps meaning 'order sync calls'."""
+        url = f"{BASE_URL}{path}" + (f"?{urllib.parse.urlencode(params, doseq=True)}" if params else "")
+        headers = {"Api-Key": self.api_key, "Accept": "application/json", "User-Agent": "cattasaurus-shipmonk-sync/" + SCRIPT_VERSION}
+        data = None
+        if body is not None:
+            data = json.dumps(body).encode()
+            headers["Content-Type"] = "application/json"
+        for attempt in range(1, max_retries + 1):
+            req = urllib.request.Request(url, data=data, headers=headers, method="POST" if data is not None else "GET")
+            try:
+                with urllib.request.urlopen(req, timeout=90) as resp:
+                    self.extra_requests += 1
+                    raw = resp.read().decode()
+                    return json.loads(raw) if raw.strip() else {}
+            except urllib.error.HTTPError as e:
+                self.extra_requests += 1
+                text = e.read().decode(errors="replace")
+                if e.code == 429 or e.code >= 500:
+                    backoff = min(180, 10 * (2 ** (attempt - 1)))
+                    ra = e.headers.get("Retry-After")
+                    if ra:
+                        try:
+                            backoff = max(backoff, float(ra))
+                        except ValueError:
+                            try:
+                                until = email.utils.parsedate_to_datetime(ra)
+                                backoff = max(backoff, (until - datetime.now(timezone.utc)).total_seconds() + 1)
+                            except (TypeError, ValueError):
+                                pass
+                    backoff = max(1.0, min(backoff, 900))
+                    self.extra_retries += 1
+                    log(f"HTTP {e.code} on {path} - retry {attempt}/{max_retries} in {backoff:.0f}s: {text[:160]}")
+                    time.sleep(backoff)
+                    continue
+                raise ApiError(e.code, path, text[:300])
+            except urllib.error.URLError as e:
+                self.extra_retries += 1
+                backoff = min(60, 5 * attempt)
+                log(f"Network error ({e.reason}) on {path} - retry {attempt}/{max_retries} in {backoff}s")
+                time.sleep(backoff)
+        raise RuntimeError(f"Exceeded retries calling ShipMonk {path}")
+
+
+class ApiError(Exception):
+    """A 4xx from an optional endpoint (401/403 = key not allowed to read it, 404/405 = endpoint missing)."""
+    def __init__(self, code, path, text):
+        super().__init__(f"HTTP {code} on {path}: {text}")
+        self.code = code
+        self.path = path
+        self.text = text
 
 
 # ---------------------------------------------------------------- aggregation
@@ -632,6 +728,352 @@ def write_order_csvs(rows, fetched_start, fetched_end):
     return written
 
 
+# ---------------------------------------------------------------- inventory snapshot (optional, non-fatal)
+# ShipMonk "Products for Inventory Sync" (https://apidocs.shipmonk.com/docs/sync-shipmonk-inventory-levels):
+#   POST /v1/integrations/products/search  {filters, sort}      -> {total, cursor}   (cursor valid 1 h)
+#   GET  /v1/integrations/products/search/paginate?cursor&pageSize -> {data: [product], total, next_cursor}
+# Each product carries inventory{quantity_total_final/available/on_hand/quarantined/unavailable,
+# locations[{quantity_final/available/on_hand, quarantined_quantity, quantity_unavailable,
+# warehouse{id,name,identifier}}]}. The API has no allocated/incoming/backordered fields:
+#   allocated   = on_hand - available - quarantined - unavailable   (derived, floored at 0)
+#   backordered = -final when final < 0 (ShipMonk: "a negative Final value means that many
+#                 additional units are needed to fulfill all orders"), else 0
+#   incoming    = expected_quantity - received_quantity summed over OPEN receivings
+#                 (GET /v1/integrations/receivings-list, status awaiting/arrived/in_progress)
+# Legacy GET /v1/products?page&pageSize returns the same product shape and is used when the
+# search endpoints answer 404/405. Every field is optional on read - a missing one becomes null.
+INVENTORY_QTY_FIELDS = ["available", "on_hand", "allocated", "incoming", "backordered", "final", "quarantined", "unavailable"]
+
+
+def _qty(v):
+    """integer quantity or None (never raises)."""
+    if v is None or isinstance(v, bool):
+        return None
+    try:
+        return int(round(float(v)))
+    except (TypeError, ValueError):
+        return None
+
+
+def _add(a, b):
+    """None-aware sum: None + None = None, None + 3 = 3."""
+    if a is None:
+        return b
+    if b is None:
+        return a
+    return a + b
+
+
+def _unwrap_list(resp, key="data"):
+    """(items, envelope). Tolerates [...], {data:[...]}, {status, data:[...]} and
+    {status, data:{data:[...], next_cursor}}; items is None when no list is found (unexpected shape)."""
+    if isinstance(resp, list):
+        return resp, {}
+    if not isinstance(resp, dict):
+        return None, {}
+    inner = resp.get(key)
+    if isinstance(inner, list):
+        return inner, resp
+    if isinstance(inner, dict):
+        for k in (key, "products", "items", "receivings"):
+            if isinstance(inner.get(k), list):
+                return inner[k], inner
+        return None, inner
+    for k in ("products", "items", "receivings"):
+        if isinstance(resp.get(k), list):
+            return resp[k], resp
+    return None, resp
+
+
+def _warehouse_key(wh):
+    """Stable key for by_warehouse: identifier (NV3, PA2, TO1) > name > id."""
+    if isinstance(wh, str):
+        return wh.strip() or "unknown", {}
+    if not isinstance(wh, dict):
+        return "unknown", {}
+    key = (wh.get("identifier") or wh.get("name") or (str(wh.get("id")) if wh.get("id") is not None else "")).strip()
+    return key or "unknown", wh
+
+
+def _stock_row(available, on_hand, quarantined, unavailable, final):
+    allocated = None
+    if on_hand is not None and available is not None:
+        allocated = max(0, on_hand - available - (quarantined or 0) - (unavailable or 0))
+    backordered = None if final is None else max(0, -final)
+    return {"available": available, "on_hand": on_hand, "allocated": allocated, "incoming": None, "backordered": backordered,
+            "final": final, "quarantined": quarantined, "unavailable": unavailable}
+
+
+class InventoryBuilder:
+    def __init__(self):
+        self.skus = {}
+        self.warehouses = {}   # key -> {id, identifier, name, country}
+        self.counts = {"products_seen": 0, "skus": 0, "no_sku": 0, "duplicates": 0, "no_inventory_block": 0,
+                       "incoming_receivings_open": 0, "incoming_unknown_sku": 0}
+        self.skipped_types = {}
+
+    def register_warehouse(self, key, wh):
+        w = self.warehouses.setdefault(key, {"id": None, "identifier": None, "name": None, "country": None})
+        if isinstance(wh, dict):
+            if wh.get("id") is not None and w["id"] is None:
+                w["id"] = wh.get("id")
+            w["identifier"] = w["identifier"] or wh.get("identifier")
+            w["name"] = w["name"] or wh.get("name")
+        w["identifier"] = w["identifier"] or key
+        w["country"] = w["country"] or WAREHOUSE_COUNTRY.get(str(w["identifier"]).upper())
+        return w
+
+    def add_product(self, p):
+        if not isinstance(p, dict):
+            return
+        self.counts["products_seen"] += 1
+        sku = str(p.get("sku") or "").strip()
+        if not sku:
+            self.counts["no_sku"] += 1
+            return
+        ptype = p.get("type") or p.get("product_type") or "unknown"
+        if ptype == "unit":   # deprecated product_type always says "unit"
+            ptype = "unknown"
+        if INVENTORY_PRODUCT_TYPES and ptype not in INVENTORY_PRODUCT_TYPES:
+            self.skipped_types[ptype] = self.skipped_types.get(ptype, 0) + 1
+            return
+        if sku in self.skus:
+            self.counts["duplicates"] += 1
+            return
+        inv = p.get("inventory")
+        if not isinstance(inv, dict):
+            inv = {}
+            self.counts["no_inventory_block"] += 1
+        by_wh = {}
+        for loc in (inv.get("locations") or []):
+            if not isinstance(loc, dict):
+                continue
+            key, wh = _warehouse_key(loc.get("warehouse"))
+            self.register_warehouse(key, wh)
+            row = _stock_row(_qty(loc.get("quantity_available")), _qty(loc.get("quantity_on_hand")),
+                             _qty(loc.get("quarantined_quantity", loc.get("quantity_quarantined"))),
+                             _qty(loc.get("quantity_unavailable")), _qty(loc.get("quantity_final")))
+            if key in by_wh:   # same warehouse listed twice (lots): add up
+                for f in INVENTORY_QTY_FIELDS:
+                    by_wh[key][f] = _add(by_wh[key][f], row[f])
+            else:
+                by_wh[key] = row
+        total = _stock_row(_qty(inv.get("quantity_total_available")), _qty(inv.get("quantity_total_on_hand")),
+                           _qty(inv.get("quantity_total_quarantined")), _qty(inv.get("quantity_total_unavailable")),
+                           _qty(inv.get("quantity_total_final")))
+        for f in ("available", "on_hand", "quarantined", "unavailable", "final", "allocated", "backordered"):
+            if total[f] is None and by_wh:   # totals missing: sum the locations
+                s = None
+                for row in by_wh.values():
+                    s = _add(s, row[f])
+                total[f] = s
+        entry = dict(total)
+        entry["name"] = p.get("name")
+        entry["type"] = ptype
+        entry["active"] = p.get("is_active")
+        entry["stock_out_days"] = _qty(p.get("stock_out_days"))
+        entry["on_hand_updated_at"] = p.get("inventory_on_hand_last_updated_at") or p.get("inventory_on_hand_updated_at")
+        comps = {}
+        for b in (p.get("product_bundles") or []):
+            for c in ((b or {}).get("products") or []):
+                if isinstance(c, dict) and c.get("sku"):
+                    comps[str(c["sku"])] = _add(comps.get(str(c["sku"])), _qty(c.get("quantity")))
+        if comps:
+            entry["bundle_components"] = comps
+        entry["by_warehouse"] = dict(sorted(by_wh.items()))
+        self.skus[sku] = entry
+        self.counts["skus"] += 1
+
+    def add_receiving(self, r):
+        """Open receivings -> incoming per SKU and per warehouse (expected - received, floored at 0)."""
+        if not isinstance(r, dict):
+            return
+        status = str(r.get("status") or "").lower()
+        if status in ("received", "completed", "complete", "cancelled", "canceled", "closed"):
+            return
+        self.counts["incoming_receivings_open"] += 1
+        key, wh = _warehouse_key(r.get("warehouse"))
+        for it in (r.get("items") or r.get("receiving_items") or []):
+            if not isinstance(it, dict):
+                continue
+            prod = it.get("product") if isinstance(it.get("product"), dict) else {}
+            sku = str(prod.get("sku") or it.get("sku") or "").strip()
+            exp = _qty(it.get("expected_quantity"))
+            rec = _qty(it.get("received_quantity")) or 0
+            if not sku or exp is None:
+                continue
+            remaining = max(0, exp - rec)
+            entry = self.skus.get(sku)
+            if entry is None:
+                self.counts["incoming_unknown_sku"] += 1
+                continue
+            entry["incoming"] = _add(entry["incoming"], remaining)
+            if key != "unknown":
+                self.register_warehouse(key, wh)
+                row = entry["by_warehouse"].setdefault(key, _stock_row(0, 0, 0, 0, 0))
+                row["incoming"] = _add(row["incoming"], remaining)
+
+    def build(self, as_of, source_endpoint):
+        totals = {f: None for f in INVENTORY_QTY_FIELDS}
+        totals_wh = {}
+        for e in self.skus.values():
+            for f in INVENTORY_QTY_FIELDS:
+                totals[f] = _add(totals[f], e[f])
+            for key, row in e["by_warehouse"].items():
+                t = totals_wh.setdefault(key, {f: None for f in INVENTORY_QTY_FIELDS})
+                for f in INVENTORY_QTY_FIELDS:
+                    t[f] = _add(t[f], row[f])
+        for key in self.warehouses:
+            totals_wh.setdefault(key, {f: None for f in INVENTORY_QTY_FIELDS})
+        totals["skus"] = len(self.skus)
+        totals["skus_in_stock"] = sum(1 for e in self.skus.values() if (e["available"] or 0) > 0)
+        totals["skus_out_of_stock"] = sum(1 for e in self.skus.values() if (e["available"] or 0) <= 0)
+        totals["by_warehouse"] = dict(sorted(totals_wh.items()))
+        return {
+            "as_of": as_of,
+            "source_endpoint": source_endpoint,
+            "unit": "units",
+            "warehouses": [dict(w) for _, w in sorted(self.warehouses.items())],
+            "skus": dict(sorted(self.skus.items())),
+            "totals": totals,
+            "fields": {
+                "available": "quantity_total_available - units ShipMonk can allocate to new orders (use as 'available to sell')",
+                "on_hand": "quantity_total_on_hand - units physically in the warehouse incl. allocated/quarantined/unavailable",
+                "allocated": "derived: on_hand - available - quarantined - unavailable (reserved for open orders)",
+                "incoming": "open receivings: expected_quantity - received_quantity (null when the receivings pass was skipped/failed)",
+                "backordered": "derived: -quantity_total_final when negative (units short to fulfil all orders)",
+                "final": "quantity_total_final - available minus units requiring action and backorders (can be negative)",
+            },
+        }
+
+
+def fetch_inventory(client, previous, now_utc):
+    """Returns (inventory_block_or_None, meta_inventory). Never raises: on any problem the previous
+    file's block is returned with meta_inventory.error set, so the dashboard keeps the last snapshot."""
+    prev_block = (previous or {}).get("inventory") if isinstance(previous, dict) else None
+    if not isinstance(prev_block, dict):
+        prev_block = None
+    meta = {"fetched": False, "skus": (len(prev_block.get("skus") or {}) if prev_block else 0), "pages": 0, "error": None,
+            "as_of": (prev_block or {}).get("as_of"), "carried_over": prev_block is not None,
+            "page_size": INVENTORY_PAGE_SIZE, "product_types": sorted(INVENTORY_PRODUCT_TYPES), "api_requests": 0, "api_retries": 0}
+    if not INVENTORY_ENABLED:
+        meta["error"] = "skipped: SHIPMONK_INVENTORY=0"
+        log("inventory: skipped (SHIPMONK_INVENTORY=0)" + (" - previous snapshot kept" if prev_block else ""))
+        return prev_block, meta
+    t0 = time.time()
+    as_of = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+    b = InventoryBuilder()
+    source = None
+    pages = 0
+    req0, ret0 = client.extra_requests, client.extra_retries
+    try:
+        try:
+            # 1) snapshot cursor over every product (filters null = all statuses; ids ascending)
+            filters = {"status": INVENTORY_STATUS} if INVENTORY_STATUS else None
+            head = client.call("/v1/integrations/products/search", body={"filters": filters, "sort": {"sort_by": "id", "sort_order": "ASC"}})
+            if isinstance(head, dict) and isinstance(head.get("data"), dict):   # tolerate a {status, data:{...}} envelope
+                head = head["data"]
+            if not isinstance(head, dict) or ("cursor" not in head and "total" not in head):
+                raise ValueError(f"unexpected products/search response: {str(head)[:200]}")
+            cursor = head.get("cursor")
+            total = _qty(head.get("total"))
+            source = "POST /v1/integrations/products/search + GET /v1/integrations/products/search/paginate"
+            seen_cursors = set()
+            while cursor:
+                if cursor in seen_cursors or pages >= INVENTORY_MAX_PAGES:
+                    log(f"inventory: stopped paging after {pages} page(s) (cursor repeated or INVENTORY_MAX_PAGES)")
+                    break
+                seen_cursors.add(cursor)
+                resp = client.call("/v1/integrations/products/search/paginate", {"cursor": cursor, "pageSize": INVENTORY_PAGE_SIZE})
+                products, env = _unwrap_list(resp)
+                if products is None:
+                    raise ValueError(f"unexpected products/search/paginate response: {str(resp)[:200]}")
+                pages += 1
+                meta["pages"] = pages
+                for p in products:
+                    b.add_product(p)
+                cursor = env.get("next_cursor") or env.get("nextCursor") or env.get("cursor_next")
+                if not products:
+                    break
+            if total is not None and b.counts["products_seen"] < total and pages < INVENTORY_MAX_PAGES:
+                log(f"inventory: WARNING search reported {total} products but {b.counts['products_seen']} were paged")
+        except ApiError as e:
+            if e.code not in (404, 405):
+                raise
+            # 2) search endpoints not available for this account/key: legacy paged listing
+            log(f"inventory: search endpoint unavailable (HTTP {e.code}) - falling back to GET /v1/products")
+            source = "GET /v1/products (legacy, paged)"
+            page = 1
+            while True:
+                params = {"page": page, "pageSize": INVENTORY_PAGE_SIZE, "sortBy": "id", "sortOrder": "ASC"}
+                if INVENTORY_STATUS:
+                    params["status"] = INVENTORY_STATUS
+                resp = client.call("/v1/products", params)
+                products, env = _unwrap_list(resp)
+                if products is None:
+                    raise ValueError(f"unexpected /v1/products response: {str(resp)[:200]}")
+                pages += 1
+                meta["pages"] = pages
+                for p in products:
+                    b.add_product(p)
+                last = _qty(env.get("pages"))
+                if not products or len(products) < INVENTORY_PAGE_SIZE or (last is not None and page >= last) or page >= INVENTORY_MAX_PAGES:
+                    break
+                page += 1
+        # 3) inbound units from open receivings (optional pass; its own failure only nulls 'incoming')
+        inc = {"fetched": False, "pages": 0, "error": None, "receivings_open": 0}
+        if INVENTORY_INCOMING:
+            try:
+                since = (now_utc - timedelta(days=INVENTORY_INCOMING_DAYS)).strftime("%Y-%m-%dT%H:%M:%SZ")
+                page = 1
+                while True:
+                    resp = client.call("/v1/integrations/receivings-list", {"page": page, "pageSize": 100, "createdAt": since})
+                    recs, env = _unwrap_list(resp)
+                    if recs is None:
+                        raise ValueError(f"unexpected receivings-list response: {str(resp)[:200]}")
+                    inc["pages"] += 1
+                    for r in recs:
+                        b.add_receiving(r)
+                    pg = env.get("paginator") if isinstance(env.get("paginator"), dict) else env
+                    last = _qty(pg.get("pages"))
+                    if not recs or len(recs) < 100 or (last is not None and page >= last) or page >= INVENTORY_INCOMING_MAX_PAGES:
+                        break
+                    page += 1
+                inc["fetched"] = True
+                inc["receivings_open"] = b.counts["incoming_receivings_open"]
+                for e in b.skus.values():   # receivings read fine: SKUs with no open receiving have 0 inbound
+                    if e["incoming"] is None:
+                        e["incoming"] = 0
+                    for row in e["by_warehouse"].values():
+                        if row["incoming"] is None:
+                            row["incoming"] = 0
+            except Exception as e:  # noqa: BLE001
+                inc["error"] = str(e)[:300]
+                log(f"inventory: WARNING receivings pass failed, incoming left null: {inc['error']}")
+        else:
+            inc["error"] = "skipped: SHIPMONK_INVENTORY_INCOMING=0"
+        block = b.build(as_of, source)
+        meta.update({"fetched": True, "skus": len(b.skus), "error": None, "as_of": as_of, "carried_over": False,
+                     "source_endpoint": source, "counts": b.counts, "skipped_types": b.skipped_types, "incoming": inc,
+                     "warehouses": [w.get("identifier") for w in block["warehouses"]]})
+        log(f"inventory: {len(b.skus)} SKUs in {len(block['warehouses'])} warehouse(s), {pages} page(s); "
+            f"available {block['totals']['available']}, on hand {block['totals']['on_hand']}, incoming {block['totals']['incoming']}; "
+            f"{b.counts['products_seen']} products seen, skipped types {b.skipped_types or '{}'}")
+        return block, meta
+    except Exception as e:  # noqa: BLE001 - the snapshot is optional; the cost data must still be written
+        meta["error"] = (f"{type(e).__name__}: {e}")[:500]
+        meta["source_endpoint"] = source
+        hint = ""
+        if isinstance(e, ApiError) and e.code in (401, 403):
+            hint = " - the API key cannot read products/inventory (ShipMonk: Account Settings > Stores > <store> > Integration API Keys; ask ShipMonk support to enable product/inventory access for it)"
+        log(f"inventory: WARNING snapshot failed, {'previous snapshot kept' if prev_block else 'no previous snapshot'}: {meta['error']}{hint}")
+        return prev_block, meta
+    finally:
+        meta["api_requests"] = client.extra_requests - req0
+        meta["api_retries"] = client.extra_retries - ret0
+        meta["elapsed_s"] = round(time.time() - t0, 1)
+
+
 def main():
     if not API_KEY:
         log("SHIPMONK_API_KEY is not set")
@@ -716,6 +1158,8 @@ def main():
             "not_in_api": ["storage fees", "receiving fees", "returns processing", "special projects", "account minimums - only on ShipMonk invoices"],
         },
     }
+    # inventory snapshot: additive and non-fatal - everything above is written unchanged whatever happens here
+    out["inventory"], out["meta"]["inventory"] = fetch_inventory(client, previous, datetime.now(timezone.utc))
     os.makedirs(os.path.dirname(OUTPUT_PATH) or ".", exist_ok=True)
     with open(OUTPUT_PATH, "w") as f:
         json.dump(out, f, indent=2, sort_keys=True)
@@ -723,6 +1167,9 @@ def main():
     log(f"Wrote {OUTPUT_PATH}: {agg.counts['orders_counted']} orders ({agg.counts['orders_unshipped_counted']} not shipped yet) over {len(agg.daily)} fetched days, {len(daily)} days in file; "
         f"last 30d cost {t['total_cost']:.2f} (postage {t['shipping_cost']:.2f}, pick/pack {t['pick_pack_cost']:.2f}, packaging {t['packaging_cost']:.2f}); "
         f"{client.requests} API calls, {len(agg.warnings)} warning types.")
+    mi = out["meta"]["inventory"]
+    log(f"Inventory: {'fetched' if mi.get('fetched') else 'NOT fetched'} - {mi.get('skus', 0)} SKUs, as of {mi.get('as_of')}, "
+        f"{mi.get('api_requests', 0)} API calls" + (f", error: {mi['error']}" if mi.get("error") else ""))
 
 
 if __name__ == "__main__":

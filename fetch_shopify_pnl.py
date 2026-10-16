@@ -156,6 +156,22 @@ row inside the fetched window also carries
   older history days simply lack them (the dashboard must treat a missing key as "no data yet").
   LINE_ITEMS_FIRST          line items per order in the orders query, default 50 (auto-halves on cost
                             errors); orders with more get their remaining pages in a small extra pass
+
+Per-market split (v2.1, additive - every v2.0 field keeps its exact value): each daily row inside the
+fetched window also carries
+  markets {CC: {orders, gross_sales, discounts, returns, refunded_total, sku_units {sku: units},
+            sku_sales {sku: amount}, sku_refund_units {sku: units}}} - the row's own figures split by the
+            ISO-3166 alpha-2 country of the order: Order.shippingAddress.countryCodeV2, else
+            billingAddress.countryCodeV2, else "XX" (unknown). The split always adds up to the row, day by
+            day: sum of markets.orders == orders, gross_sales / discounts / returns / refunded_total likewise
+            (to the cent), and the per-SKU dicts summed over the markets == sku_units / sku_sales /
+            sku_refund_units. Sales sit on the ORDER day, refunds on the REFUND day under the refunded
+            order's country, order-edit additions on the EDIT day (moved out of the order day's market
+            exactly like the row's gross_sales / discounts are), so the dashboard can filter by country.
+  meta.schema_info.markets_since = first day in the file that carries the key (older history days lack it);
+  meta.markets = {basis, orders_by_source {shipping, billing, none}, window_totals {CC: {...}}}.
+  Protected customer data: a Dev Dashboard app needs "Protected customer data access" (address level)
+  or Shopify returns null addresses and every order lands in "XX" - the script warns when that happens.
 """
 import json
 import os
@@ -172,9 +188,10 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "2.0"   # 2.0 = order funnel counters + per-SKU units / sales / refund units per day (additive)
+SCRIPT_VERSION = "2.1"   # 2.0 = order funnel counters + per-SKU units / sales / refund units per day (additive)
+                         # 2.1 = per-market (country) split of every daily row (additive)
 SCHEMA = 3   # 3 = daily "attribution" block (customer-journey last-touch channels). Kept at 3 on purpose: the
-             # dashboard compares it numerically; the v2.0 keys are announced by meta.schema_info instead.
+             # dashboard compares it numerically; the v2.0 / v2.1 keys are announced by meta.schema_info instead.
 
 SHOP = os.environ.get("SHOPIFY_SHOP", "").strip().lower().replace("https://", "").rstrip("/")
 API_VERSION = os.environ.get("SHOPIFY_API_VERSION", "2026-07").strip()
@@ -240,13 +257,78 @@ def add_funnel_fields(d):
 
 
 def schema_info(daily):
-    """meta.schema_info: the first day in the (merged) file that carries the v2.0 keys, so the
+    """meta.schema_info: the first day in the (merged) file that carries the v2.0 / v2.1 keys, so the
     dashboard can show "no data yet" before it. Days between that date and today can still lack
     the keys (a backfill chunk run with an older script), so a missing key always means "unknown"."""
     sku_days = [day for day, row in daily.items() if isinstance(row, dict) and "sku_units" in row]
     status_days = [day for day, row in daily.items() if isinstance(row, dict) and "orders_placed" in row]
+    market_days = [day for day, row in daily.items() if isinstance(row, dict) and MARKET_KEY in row]
     return {"sku_units_since": min(sku_days) if sku_days else None,
-            "statuses_since": min(status_days) if status_days else None}
+            "statuses_since": min(status_days) if status_days else None,
+            "markets_since": min(market_days) if market_days else None}   # v2.1
+
+
+# ---------------------------------------------------------------- v2.1: per-market (country) split
+# Every daily row of the fetched window also carries  markets {CC: {...}}  - the row's own sales / returns /
+# per-SKU figures split by the ISO-3166 alpha-2 country of the order. Like the v2.0 keys these live inside
+# the daily rows but are kept out of DAILY_FIELDS / MONEY_FIELDS, so sum_range() (the totals block) and
+# every v1.9 / v2.0 value stay byte-for-byte what they were; the split always adds up to the row (see
+# Aggregator.add_order / apply_edit_agreements - every write to a row field that has a market twin is
+# mirrored into the order's market bucket on the SAME day). Older history days lack the key.
+MARKET_KEY = "markets"
+MARKET_COUNT_FIELDS = ["orders"]
+MARKET_MONEY_FIELDS = ["gross_sales", "discounts", "returns", "refunded_total"]
+MARKET_SKU_FIELDS = ["sku_units", "sku_sales", "sku_refund_units"]
+UNKNOWN_MARKET = "XX"   # no shipping and no billing country on the order (or the app may not read addresses)
+
+
+def new_market_bucket():
+    m = {f: 0 for f in MARKET_COUNT_FIELDS + MARKET_MONEY_FIELDS}
+    for f in MARKET_SKU_FIELDS:
+        m[f] = {}
+    return m
+
+
+def add_market_fields(d):
+    """Add the v2.1 key (empty market map) to a daily row; existing keys untouched."""
+    d.setdefault(MARKET_KEY, {})
+    return d
+
+
+def market_bucket(d, cc):
+    """The per-market dict of a daily row, created on first use - a market key only appears on days where
+    that market actually had an order, a refund or an edit addition."""
+    markets = d.setdefault(MARKET_KEY, {})
+    m = markets.get(cc)
+    if m is None:
+        m = markets[cc] = new_market_bucket()
+    return m
+
+
+def order_market(o):
+    """(country code, source) of an order: shippingAddress.countryCodeV2 ("shipping"), else
+    billingAddress.countryCodeV2 ("billing"), else ("XX", "none"). Missing / null / non-string -> missing."""
+    for key, src in (("shippingAddress", "shipping"), ("billingAddress", "billing")):
+        addr = o.get(key)
+        cc = addr.get("countryCodeV2") if isinstance(addr, dict) else None
+        if isinstance(cc, str) and cc.strip():
+            return cc.strip().upper(), src
+    return UNKNOWN_MARKET, "none"
+
+
+def market_totals_of(daily, start_key, end_key):
+    """meta.markets.window_totals: orders / money per market over the fetched range, biggest first."""
+    totals = {}
+    for day, row in daily.items():
+        if start_key <= day <= end_key:
+            for cc, m in ((row.get(MARKET_KEY) if isinstance(row, dict) else None) or {}).items():
+                t = totals.setdefault(cc, {f: 0 for f in MARKET_COUNT_FIELDS + MARKET_MONEY_FIELDS})
+                for f in MARKET_COUNT_FIELDS + MARKET_MONEY_FIELDS:
+                    t[f] += m.get(f, 0)
+    for t in totals.values():
+        for f in MARKET_MONEY_FIELDS:
+            t[f] = round(t[f], 2)
+    return dict(sorted(totals.items(), key=lambda kv: (-kv[1]["gross_sales"], kv[0])))
 
 # ---------------------------------------------------------------- marketing attribution settings
 ATTRIBUTION = os.environ.get("ATTRIBUTION", "on").strip().lower() not in ("off", "0", "false", "no")
@@ -290,6 +372,9 @@ JOURNEY_SUMMARY_FIELDS = """
 # sku / quantity / original unit price (the only new connection - the one real cost increase;
 # fetch_orders halves PAGE_SIZE and then LINE_ITEMS_FIRST when Shopify says the query is too
 # costly), refundLineItems.quantity and lineItem.sku (scalars on objects already requested).
+# v2.1 addition: shippingAddress / billingAddress with only countryCodeV2 (an enum scalar) - two plain
+# object fields on the order node (1 cost point each, no connection), handled by the same CostTooHigh
+# fallbacks (PAGE_SIZE, then LINE_ITEMS_FIRST) as before.
 ORDERS_QUERY = """
 query Orders($first: Int!, $after: String, $q: String, $refundsFirst: Int!, $lineItemsFirst: Int!) {
   orders(first: $first, after: $after, query: $q, sortKey: CREATED_AT) {
@@ -297,6 +382,8 @@ query Orders($first: Int!, $after: String, $q: String, $refundsFirst: Int!, $lin
     nodes {
       id name createdAt cancelledAt test displayFinancialStatus displayFulfillmentStatus tags edited
       customAttributes { key value }%JOURNEY%
+      shippingAddress { countryCodeV2 }
+      billingAddress { countryCodeV2 }
       subtotalPriceSet { shopMoney { amount } }
       totalDiscountsSet { shopMoney { amount } }
       totalShippingPriceSet { shopMoney { amount } }
@@ -1285,8 +1372,11 @@ class Aggregator:
         self.gateways = {}
         self.journeys = {}    # numeric order id -> raw journey record (see journey_month_path)
         self.deferred = {}    # order gid -> numeric id of orders whose last session is direct (moments pass)
-        self.line_items_pending = {}   # order gid -> {"day", "after"}: booked orders with more than LINE_ITEMS_FIRST line items
+        self.line_items_pending = {}   # order gid -> {"day", "after", "market"}: booked orders with more than LINE_ITEMS_FIRST line items
         self.line_items_first = LINE_ITEMS_FIRST   # smallest value the orders query actually ran with
+        # v2.1: order gid -> where its country came from ("shipping" | "billing" | "none"), for every order
+        # that wrote into a market bucket (booked sale, refund inside the window, edit addition inside it)
+        self.market_orders = {}
 
     def in_window(self, day):
         return day is not None and self.window_start <= day <= self.window_end
@@ -1294,7 +1384,7 @@ class Aggregator:
     def bucket(self, day):
         d = self.daily.get(day)
         if d is None:
-            d = self.daily[day] = add_funnel_fields(new_daily_bucket())
+            d = self.daily[day] = add_market_fields(add_funnel_fields(new_daily_bucket()))
         return d
 
     def add_order(self, o, late_refunds_only=False):
@@ -1322,6 +1412,9 @@ class Aggregator:
         shipping = money(o.get("totalShippingPriceSet"))
         tax = money(o.get("totalTaxSet"))
         total = money(o.get("totalPriceSet"))
+        # v2.1: the order's market (shipping country, else billing country, else "XX") - used for the
+        # sale on the order day, for every refund of this order on its refund day and for edit additions
+        market, market_src = order_market(o)
         # A shipping discount (free-shipping code, 100%-off replacement order) sits inside
         # totalDiscountsSet and totalShippingPriceSet is the price BEFORE it. Shopify Analytics
         # keeps shipping discounts out of gross sales / discounts and reports "Shipping charges"
@@ -1357,7 +1450,7 @@ class Aggregator:
         if o.get("edited"):
             # items added by an order edit are inside these order-level totals; they are moved
             # to the edit date once the ledger is fetched (see apply_edit_agreements)
-            self.edited[oid] = {"order_day": day if booked else None}
+            self.edited[oid] = {"order_day": day if booked else None, "market": market, "market_src": market_src}
             self.counts["orders_edited"] += 1
         if booked:
             d = self.bucket(day)
@@ -1369,7 +1462,13 @@ class Aggregator:
             d["tax"] += tax
             self.counts["orders_counted"] += 1
             self.add_payment_fees(o, d)
-            self.add_line_items(o, d, day)   # v2.0: sku_units / sku_sales of the same orders that make up `orders`
+            # v2.1: the same sale inside the order's market bucket of the same day (so the split adds up)
+            md = market_bucket(d, market)
+            md["orders"] += 1
+            md["gross_sales"] += subtotal + discounts
+            md["discounts"] += discounts
+            self.market_orders[oid] = market_src
+            self.add_line_items(o, d, day, md)   # v2.0: sku_units / sku_sales of the same orders that make up `orders` (v2.1: and of the market)
             if ATTRIBUTION:
                 self.add_attribution(o, day, subtotal)
             if program:
@@ -1442,6 +1541,11 @@ class Aggregator:
             d["refunded_tax"] += refunded_tax
             d["refunded_total"] += refunded_total
             self.counts["refunds_counted"] += 1
+            # v2.1: the refund-day figures under the refunded ORDER's market, on the same refund day
+            md = market_bucket(d, market)
+            md["returns"] += returned_value
+            md["refunded_total"] += refunded_total
+            self.market_orders.setdefault(oid, market_src)
             # v2.0: units refunded / removed per SKU on the refund day (tip lines already excluded).
             # $0 refunds of an order edit count too, exactly like their value counts in `returns`.
             for li in li_nodes:
@@ -1449,6 +1553,7 @@ class Aggregator:
                 if q > 0:
                     key = sku_key(((li.get("lineItem") or {}).get("sku")))
                     d["sku_refund_units"][key] = d["sku_refund_units"].get(key, 0) + q
+                    md["sku_refund_units"][key] = md["sku_refund_units"].get(key, 0) + q   # v2.1
                     self.counts["refund_line_units"] += q
             if adj_nodes:
                 self.counts["refunds_with_adjustments"] += 1
@@ -1496,17 +1601,19 @@ class Aggregator:
         if any(money(r.get("totalRefundedSet")) > 0 for r in (o.get("refunds") or []) if r):
             d["orders_refunded"] += 1
 
-    def add_line_items(self, o, d, day):
+    def add_line_items(self, o, d, day, md=None):
         """sku_units / sku_sales of a booked order on its order day; orders with more line items than
-        the query asked for are remembered for fetch_line_item_pages (nothing is dropped silently)."""
+        the query asked for are remembered for fetch_line_item_pages (nothing is dropped silently).
+        md (v2.1) = the order's market bucket of the same day, which receives the same units / sales."""
         conn = o.get("lineItems") or {}
-        self.add_line_item_nodes(conn.get("nodes") or [], d)
+        self.add_line_item_nodes(conn.get("nodes") or [], d, md)
         info = conn.get("pageInfo") or {}
         if info.get("hasNextPage"):
             self.counts["line_items_truncated"] += 1
-            self.line_items_pending[o.get("id")] = {"day": day, "after": info.get("endCursor")}
+            self.line_items_pending[o.get("id")] = {"day": day, "after": info.get("endCursor"),
+                                                    "market": order_market(o)[0]}
 
-    def add_line_item_nodes(self, nodes, d):
+    def add_line_item_nodes(self, nodes, d, md=None):
         for li in nodes:
             if not li:
                 continue
@@ -1523,6 +1630,9 @@ class Aggregator:
             d["sku_units"][key] = d["sku_units"].get(key, 0) + qty
             # pre-discount, like gross_sales (= subtotal + discounts = sum of original line prices)
             d["sku_sales"][key] = d["sku_sales"].get(key, 0.0) + money(li.get("originalUnitPriceSet")) * qty
+            if md is not None:   # v2.1: same units / sales inside the order's market bucket
+                md["sku_units"][key] = md["sku_units"].get(key, 0) + qty
+                md["sku_sales"][key] = md["sku_sales"].get(key, 0.0) + money(li.get("originalUnitPriceSet")) * qty
             self.counts["line_items_counted"] += 1
 
     # ------------------------------------------------------------ marketing attribution
@@ -1635,14 +1745,28 @@ class Aggregator:
             edit_day = local_day(ag.get("happenedAt"), self.tz)
             moves = (("gross_sales", gross_add), ("discounts", disc_add), ("net_sales", gross_add - disc_add),
                      ("tax", tax_add), ("shipping", ship_add))
+            # v2.1: the market twins of the moved fields follow the same move (out of the order day's
+            # market, into the edit day's market of the SAME order), so the split keeps adding up day by
+            # day. A shipping-only / tax-only edit touches no market field (nothing to move there).
+            market_moves = tuple((f, v) for f, v in moves if f in MARKET_MONEY_FIELDS)
+            move_market = any(abs(v) > 0.004 for _, v in market_moves)
             if info["order_day"] is not None:
                 src = self.bucket(info["order_day"])
                 for f, v in moves:
                     src[f] -= v
+                if move_market:
+                    sm = market_bucket(src, info["market"])
+                    for f, v in market_moves:
+                        sm[f] -= v
             if self.in_window(edit_day):
                 dst = self.bucket(edit_day)
                 for f, v in moves:
                     dst[f] += v
+                if move_market:
+                    dm = market_bucket(dst, info["market"])
+                    for f, v in market_moves:
+                        dm[f] += v
+                    self.market_orders.setdefault(oid, info["market_src"])
             self.counts["edit_additions_moved"] += 1
         return complete
 
@@ -1700,6 +1824,11 @@ class Aggregator:
                 d["payment_fee_types"][k] = round(d["payment_fee_types"][k], 2)
             for k in list(d.get("sku_sales") or {}):
                 d["sku_sales"][k] = round(d["sku_sales"][k], 2)
+            for m in (d.get(MARKET_KEY) or {}).values():   # v2.1: same rounding as the row's own fields
+                for f in MARKET_MONEY_FIELDS:
+                    m[f] = round(m[f], 2)
+                for k in list(m.get("sku_sales") or {}):
+                    m["sku_sales"][k] = round(m["sku_sales"][k], 2)
         for g in self.gateways.values():
             for f in ("amount", "fees"):
                 g[f] = round(g[f], 2)
@@ -1829,7 +1958,8 @@ def fetch_line_item_pages(client, agg):
             requests += 1
             pages += 1
             conn = ((data.get("node") or {}).get("lineItems") or {})
-            agg.add_line_item_nodes(conn.get("nodes") or [], agg.bucket(info["day"]))
+            day_row = agg.bucket(info["day"])
+            agg.add_line_item_nodes(conn.get("nodes") or [], day_row, market_bucket(day_row, info["market"]))   # v2.1: market too
             pinfo = conn.get("pageInfo") or {}
             after = pinfo.get("endCursor") if pinfo.get("hasNextPage") else None
         if after:
@@ -2057,6 +2187,12 @@ def main():
         agg.warnings.add(f"{agg.counts['snowball_attr_without_tag']} orders carry the {ATTR_KEY} attribute but no '{TAG_PREFIX}*' tag (Snowball rejected/untracked them) - not counted as referrals")
     if not agg.programs:
         agg.warnings.add(f"no orders tagged '{TAG_PREFIX}*' in the window - check that 'Tag referral orders in Shopify' is ON for every Snowball program")
+    # v2.1: per-market split - where the orders' countries came from, and the window totals per market
+    market_sources = {src: sum(1 for s in agg.market_orders.values() if s == src) for src in ("shipping", "billing", "none")}
+    market_totals = market_totals_of(agg.daily, window_start, window_end)
+    if agg.market_orders and market_sources["none"] == len(agg.market_orders):
+        agg.warnings.add(f"no order carries a shipping or billing country - every market is '{UNKNOWN_MARKET}'. Shopify returns null addresses "
+                         "when the app lacks Protected customer data access (Dev Dashboard > API access > address fields)")
 
     mtd_start = now_local.strftime("%Y-%m-01")
     last30_start = (now_local - timedelta(days=30)).strftime("%Y-%m-%d")
@@ -2120,6 +2256,16 @@ def main():
             "line_items_first": agg.line_items_first,
             "funnel_basis": "orders_* = orders created that day (test orders skipped), status as of this run; "
                             "sku_units / sku_sales = Order.lineItems on the order day; sku_refund_units = refundLineItems on the refund day",
+            # v2.1 (additive): the per-market split of the daily rows
+            "markets": {
+                "basis": "daily markets{CC} = the row's orders / gross_sales / discounts / returns / refunded_total / sku_units / "
+                         "sku_sales / sku_refund_units split by Order.shippingAddress.countryCodeV2, else billingAddress.countryCodeV2, "
+                         f"else '{UNKNOWN_MARKET}'; sales on the order day, refunds on the refund day under the refunded order's country, "
+                         "edit additions on the edit day; the split adds up to the row on every day",
+                "unknown_market": UNKNOWN_MARKET,
+                "orders_by_source": market_sources,   # orders that wrote a market bucket, by where their country came from
+                "window_totals": market_totals,       # per market over the fetched range (orders, gross_sales, discounts, returns, refunded_total)
+            },
         },
     }
 
@@ -2134,6 +2280,11 @@ def main():
         tot_sales = sum(t["sales"] for t in channel_totals.values()) or 1.0
         log("Last-touch channels in the fetched range: " + ", ".join(
             f"{ch} {t['orders']} orders {t['sales']:,.0f} ({100 * t['sales'] / tot_sales:.0f}%)" for ch, t in channel_totals.items()))
+    if market_totals:
+        tot_gross = sum(t["gross_sales"] for t in market_totals.values()) or 1.0
+        log("Markets in the fetched range: " + ", ".join(
+            f"{cc} {t['orders']} orders {t['gross_sales']:,.0f} ({100 * t['gross_sales'] / tot_gross:.0f}%)" for cc, t in market_totals.items())
+            + f"; country from shipping {market_sources['shipping']}, billing {market_sources['billing']}, none {market_sources['none']}")
 
 
 if __name__ == "__main__":

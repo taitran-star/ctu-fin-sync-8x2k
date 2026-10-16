@@ -42,6 +42,24 @@ row inside the published range also carries
             ordered_orders unless an order has every line item-cancelled without being cancelled.
   SKU = raw seller SKU, trimmed; empty -> "(no sku)". meta.schema_info {sku_units_since,
   statuses_since} = first day in the file that carries these keys; older history days lack them.
+
+Per-MARKET split (v2.9, additive - every earlier field, total and meta value keeps its exact value):
+each daily row inside the published range also carries
+  markets {"<CC>": {...}}  - the same-named daily fields of ONE marketplace each, keyed by the country
+            of the marketplace: All Orders report rows by their `sales-channel` (Amazon.com -> US,
+            Amazon.ca -> CA, Amazon.com.mx -> MX, Amazon.com.br -> BR ...), Finances events by their
+            `MarketplaceName` (same names). A row / event without a marketplace name, and the
+            "Non-Amazon" (Multi-Channel Fulfillment) report rows, go to the DEFAULT market = the
+            country of the first MARKETPLACE_IDS entry (US today). Same day rules, signs and basis as
+            the row's field of the same name, so per day: sum over markets of each field == the row's
+            field (integers exactly, money to the cent, per-SKU dicts key by key). Fields a market
+            cannot be told for (service / storage / adjustment events carry no marketplace, pending
+            fees are priced with account-level rates, net_sales is derived) are left out of the
+            bucket - see meta.markets.not_split. Every published day carries a bucket for every
+            configured marketplace (zeros when nothing happened) plus any other market seen in the
+            data. meta.schema_info.markets_since = first day in the file that carries the key.
+            No new API call: the report is requested for all MARKETPLACE_IDS, and the NA Finances
+            endpoint already returns every NA marketplace's events (one unified account).
 """
 import base64
 import csv
@@ -242,8 +260,177 @@ def schema_info(daily):
     backfill chunk run with an older script), so a missing key always means "unknown"."""
     sku_days = [day for day, row in daily.items() if isinstance(row, dict) and "sku_units" in row]
     status_days = [day for day, row in daily.items() if isinstance(row, dict) and "orders_placed" in row]
+    market_days = [day for day, row in daily.items() if isinstance(row, dict) and MARKETS_KEY in row]   # v2.9
     return {"sku_units_since": min(sku_days) if sku_days else None,
-            "statuses_since": min(status_days) if status_days else None}
+            "statuses_since": min(status_days) if status_days else None,
+            "markets_since": min(market_days) if market_days else None}
+
+
+# ---------------------------------------------------------------- v2.9: per-MARKET split of the daily row
+# daily[day]["markets"][<CC>] = the same-named fields of ONE marketplace. Kept out of DAILY_FIELDS like the
+# v2.8 keys, so sum_range() / compute_net_sales() and every earlier value stay byte-for-byte the same.
+MARKETS_KEY = "markets"
+# SP-API marketplace id -> country (NA + EU). The report is requested with MARKETPLACE_IDS; the data itself
+# names the marketplace by domain, which MARKETPLACE_DOMAIN_COUNTRY maps to the same codes.
+MARKETPLACE_COUNTRY = {
+    "ATVPDKIKX0DER": "US", "A2EUQ1WTGCTBG2": "CA", "A1AM78C64UM0Y8": "MX", "A2Q3Y263D00KWC": "BR",
+    "A1F83G8C2ARO7P": "UK", "A1PA6795UKMFR9": "DE", "A13V1IB3VIYZZH": "FR", "APJ6JRA9NG5V4": "IT", "A1RKKUPIHCS9HS": "ES",
+}
+# report `sales-channel` / Finances `MarketplaceName` (lower-cased, "www." stripped) -> country
+MARKETPLACE_DOMAIN_COUNTRY = {
+    "amazon.com": "US", "amazon.ca": "CA", "amazon.com.mx": "MX", "amazon.com.br": "BR",
+    "amazon.co.uk": "UK", "amazon.de": "DE", "amazon.fr": "FR", "amazon.it": "IT", "amazon.es": "ES",
+}
+# Country of the first configured marketplace: where rows/events without a marketplace name and the
+# "Non-Amazon" (MCF) report rows are booked. An id not in MARKETPLACE_COUNTRY is used verbatim as the key.
+DEFAULT_MARKET = (MARKETPLACE_COUNTRY.get(MARKETPLACE_IDS[0], MARKETPLACE_IDS[0]) if MARKETPLACE_IDS else "US")
+CONFIGURED_MARKETS = []       # every published day carries a bucket for each of these (zeros when idle)
+for _mid in MARKETPLACE_IDS:
+    _cc = MARKETPLACE_COUNTRY.get(_mid, _mid)
+    if _cc not in CONFIGURED_MARKETS:
+        CONFIGURED_MARKETS.append(_cc)
+# Row fields that split EXACTLY by market (the source row / event names its marketplace):
+#  - every order-date field of the All Orders report (sales-channel column), MCF rows -> DEFAULT_MARKET;
+#  - the ShipmentEvent / RefundEvent (chargeback, A-to-z) parts of the Finances fields (MarketplaceName),
+#    including the order-day copies of the shipment fees and the refund fee adjustments.
+# Row fields NOT in the bucket (MARKET_NOT_SPLIT) are those whose source carries no marketplace or whose
+# value is modelled, so a split would be a guess: they are left out rather than approximated.
+MARKET_FIELDS = list(ORDERED_FIELDS) + [
+    "gross_sales", "refunds", "referral_fees", "fba_fulfillment_fees", "promotions", "shipping_credits",
+    "giftwrap_credits", "orders", "units",
+    "ordered_referral_fees", "ordered_fba_fulfillment_fees", "ordered_other_fees", "refund_fee_adjustments",
+]
+MARKET_SPLIT = set(MARKET_FIELDS)
+MARKET_NOT_SPLIT = {
+    "net_sales": "derived - per market it is gross_sales + refunds + promotions + shipping_credits + giftwrap_credits of the bucket",
+    "service_fees": "ServiceFeeEvent / RemovalShipmentEvent carry no MarketplaceName",
+    "inbound_freight": "ServiceFeeEvent carries no MarketplaceName",
+    "fba_storage_posted": "ServiceFeeEvent carries no MarketplaceName",
+    "adjustments": "AdjustmentEvent / SAFE-T / removal revenue carry no MarketplaceName",
+    "other_fees": "also receives postage AdjustmentEvents without MarketplaceName (the ShipmentEvent part is split as ordered_other_fees)",
+    "ad_spend": "ProductAdsPaymentEvent carries no MarketplaceName",
+    "unclassified_other": "mixed sources, some without MarketplaceName",
+    "ordered_referral_fees_pending": "expected fees priced with account-level SKU rates, not per market",
+    "ordered_fba_fulfillment_fees_pending": "expected fees priced with account-level SKU rates, not per market",
+    "ordered_units_pending_fees": "belongs to the pending-fee model",
+    "ordered_lines_pending_fees": "belongs to the pending-fee model",
+}
+MARKET_COUNTS = {"report_names": {}, "finances_names": {}, "unmapped_names": {}, "currencies": {}}
+
+
+def _bump(table, key):
+    table[key] = table.get(key, 0) + 1
+
+
+def market_of(name, source=None):
+    """Country code of a marketplace name: "Amazon.com" -> US, "Amazon.ca" -> CA, a marketplace id ->
+    MARKETPLACE_COUNTRY, "www.amazon.co.uk" -> UK, an unlisted amazon.<tld> -> <TLD> upper-cased
+    (amazon.nl -> NL). Empty / missing / non-string -> DEFAULT_MARKET; any other string -> DEFAULT_MARKET
+    and counted in meta.markets.unmapped_names (never silently dropped, never a guessed key).
+    `source` ("report" / "finances") records the raw names seen in meta.markets."""
+    s = name.strip() if isinstance(name, str) else ""
+    if source:
+        _bump(MARKET_COUNTS[source + "_names"], s or "(missing)")
+    if not s:
+        return DEFAULT_MARKET
+    if s in MARKETPLACE_COUNTRY:
+        return MARKETPLACE_COUNTRY[s]
+    host = s.lower()
+    for prefix in ("https://", "http://"):
+        if host.startswith(prefix):
+            host = host[len(prefix):]
+    host = host.split("/")[0].strip()
+    if host.startswith("www."):
+        host = host[4:]
+    cc = MARKETPLACE_DOMAIN_COUNTRY.get(host)
+    if cc:
+        return cc
+    labels = host.split(".")
+    if len(labels) >= 2 and labels[0] == "amazon" and labels[-1].isalpha() and 2 <= len(labels[-1]) <= 3:
+        return "US" if labels[-1] == "com" else labels[-1].upper()
+    _bump(MARKET_COUNTS["unmapped_names"], s)
+    return DEFAULT_MARKET
+
+
+def event_market(ev):
+    """Market of a Finances event (ShipmentEvent / RefundEvent / chargeback / A-to-z carry MarketplaceName)."""
+    return market_of(ev.get("MarketplaceName") or ev.get("marketplaceName"), "finances")
+
+
+def note_currency(market, code):
+    """meta.markets.currencies[<CC>][<code>] += 1 - the report `currency` column / a Money's CurrencyCode,
+    so a market whose amounts are not USD (Amazon.ca pays in CAD) is visible to the dashboard."""
+    if isinstance(code, dict):
+        code = code.get("CurrencyCode")
+    code = code.strip() if isinstance(code, str) else ""
+    if code:
+        _bump(MARKET_COUNTS["currencies"].setdefault(market, {}), code)
+
+
+def new_market_bucket():
+    """Zero bucket with every split field; the report-derived per-SKU / funnel keys mirror add_sku_fields()."""
+    b = {f: 0 for f in MARKET_FIELDS}
+    b[SKU_REFUND_FIELD] = {}
+    if ORDERS_REPORT:
+        for f in SKU_FIELDS:
+            b[f] = {}
+        for f in STATUS_FIELDS:
+            b[f] = 0
+    return b
+
+
+def market_bucket(d, market):
+    """The per-market sub-row of a daily row (created zeroed on first use)."""
+    mk = d.setdefault(MARKETS_KEY, {})
+    b = mk.get(market)
+    if b is None:
+        b = mk[market] = new_market_bucket()
+    return b
+
+
+def madd(d, market, field, value):
+    """add() mirrored into the market bucket - only for fields that split exactly (MARKET_SPLIT); every
+    other field is ignored here so the bucket never carries an approximation."""
+    if field in MARKET_SPLIT:
+        add(market_bucket(d, market), field, value)
+
+
+def finalise_markets(daily):
+    """Every published day carries `markets` with a bucket per configured marketplace (plus any other market
+    seen); money rounded like the row's fields (compute_net_sales / finalise_sku_fields)."""
+    for d in daily.values():
+        mk = d.setdefault(MARKETS_KEY, {})
+        for cc in CONFIGURED_MARKETS:
+            if cc not in mk:
+                mk[cc] = new_market_bucket()
+        for b in mk.values():
+            for f, v in list(b.items()):
+                if isinstance(v, float):
+                    b[f] = round(v, 2)
+            for k in list(b.get("sku_sales") or {}):
+                b["sku_sales"][k] = round(b["sku_sales"][k], 2)
+        d[MARKETS_KEY] = {cc: mk[cc] for cc in sorted(mk)}
+
+
+def market_meta():
+    """meta.markets: configuration, which fields the bucket carries, the raw marketplace names seen this run
+    (the moment Amazon.ca appears it shows here), the names that fell back to the default, currencies."""
+    def sorted_dict(t):
+        return {k: t[k] for k in sorted(t)}
+    fields = list(MARKET_FIELDS) + [SKU_REFUND_FIELD] + ((SKU_FIELDS + STATUS_FIELDS) if ORDERS_REPORT else [])
+    return {
+        "configured": {mid: MARKETPLACE_COUNTRY.get(mid, mid) for mid in MARKETPLACE_IDS},
+        "default": DEFAULT_MARKET,
+        "split_fields": sorted(fields),
+        "not_split": MARKET_NOT_SPLIT,
+        "report_names": sorted_dict(MARKET_COUNTS["report_names"]),
+        "finances_names": sorted_dict(MARKET_COUNTS["finances_names"]),
+        "unmapped_names": sorted_dict(MARKET_COUNTS["unmapped_names"]),
+        "currencies": {m: sorted_dict(MARKET_COUNTS["currencies"][m]) for m in sorted(MARKET_COUNTS["currencies"])},
+        "basis": "daily[day].markets[CC] = the same-named fields of that marketplace only: All Orders report rows by sales-channel "
+                 "(Non-Amazon / MCF rows and rows without one -> default), Finances events by MarketplaceName (missing -> default); "
+                 "same day rules and signs as the row, so per day the sum over markets of each split field equals the row's field",
+    }
 
 
 # ---------------------------------------------------------------- history (shared block)
@@ -483,12 +670,14 @@ def process_shipment_event(ev, daily, warnings):
     if not dk:
         return
     d = daily.setdefault(dk, new_daily_bucket())
+    mkt = event_market(ev)   # v2.9: the event's marketplace (missing -> DEFAULT_MARKET)
     order_ids = set()
     order_id = ev.get("AmazonOrderId")
     if order_id:
         order_ids.add(order_id)
     for item in ev.get("ShipmentItemList", []) or []:
         d["units"] += item.get("QuantityShipped", 0) or 0
+        madd(d, mkt, "units", item.get("QuantityShipped", 0) or 0)
         sku = (item.get("SellerSKU") or "").strip()
         st = SKU_STATS.setdefault(sku, {"units": 0, "fba": 0.0, "commission": 0.0, "principal": 0.0})
         st["units"] += item.get("QuantityShipped", 0) or 0
@@ -499,10 +688,12 @@ def process_shipment_event(ev, daily, warnings):
                 st["principal"] += amt(charge.get("ChargeAmount"))
             ctype = charge.get("ChargeType")
             v = amt(charge.get("ChargeAmount"))
+            note_currency(mkt, charge.get("ChargeAmount"))
             diag.bump(diag.charge_types, f"ItemChargeList:{ctype}", v)
             bucket = CHARGE_BUCKET_MAP.get(ctype)
             if bucket:
                 add(d, bucket, v)
+                madd(d, mkt, bucket, v)
             elif ctype in TAX_CHARGE_TYPES:
                 pass  # tax pass-through, not part of merchant P&L revenue/cost
             else:
@@ -510,6 +701,7 @@ def process_shipment_event(ev, daily, warnings):
                 warnings.add(f"unclassified ItemChargeList type: {ctype}")
         for promo in item.get("PromotionList", []) or []:
             add(d, "promotions", amt(promo.get("PromotionAmount")))
+            madd(d, mkt, "promotions", amt(promo.get("PromotionAmount")))
         for fee in item.get("ItemFeeList", []) or []:
             ftype = fee.get("FeeType")
             v = amt(fee.get("FeeAmount"))
@@ -521,6 +713,7 @@ def process_shipment_event(ev, daily, warnings):
                 st["commission"] += v
             if bucket:
                 add(d, bucket, v)
+                madd(d, mkt, bucket, v)   # referral / FBA split; other_fees is not (postage adjustments share it)
                 # order-date copy of the same fee (falls back to the posted day when the order
                 # id is not in the report map, so no dollar is dropped)
                 od = ORDER_DAYS.get(order_id) if order_id else None
@@ -533,17 +726,20 @@ def process_shipment_event(ev, daily, warnings):
                     FEE_MAP["unmapped_amount"] += v
                     target = d
                 add(target, "ordered_" + bucket, v)
+                madd(target, mkt, "ordered_" + bucket, v)
             else:
                 add(d, "unclassified_other", v)
                 warnings.add(f"unclassified ItemFeeList type: {ftype}")
     if order_ids:
         d["orders"] += len(order_ids)
+        madd(d, mkt, "orders", len(order_ids))
     return order_ids
 
 
-def _add_refund_units(d, item):
+def _add_refund_units(d, item, market=None):
     """v2.8: units refunded per SKU on the refund's posted day (ShipmentItem.QuantityShipped is the
-    refunded quantity in refund events; an item without it is counted in meta.sku_counts, not guessed)."""
+    refunded quantity in refund events; an item without it is counted in meta.sku_counts, not guessed).
+    v2.9: the same units into markets[market].sku_refund_units."""
     SKU_COUNTS["refund_items"] += 1
     try:
         qty = int(item.get("QuantityShipped") or 0)
@@ -557,6 +753,9 @@ def _add_refund_units(d, item):
         SKU_COUNTS["refund_items_without_sku"] += 1
     units = add_sku_fields(d)[SKU_REFUND_FIELD]
     units[key] = units.get(key, 0) + qty
+    if market is not None:
+        munits = market_bucket(d, market)[SKU_REFUND_FIELD]
+        munits[key] = munits.get(key, 0) + qty
 
 
 def process_refund_event(ev, daily, warnings):
@@ -564,15 +763,18 @@ def process_refund_event(ev, daily, warnings):
     if not dk:
         return
     d = daily.setdefault(dk, new_daily_bucket())
+    mkt = event_market(ev)   # v2.9
     for item in ev.get("ShipmentItemAdjustmentList", []) or []:
-        _add_refund_units(d, item)
+        _add_refund_units(d, item, mkt)
         for charge in item.get("ItemChargeAdjustmentList", []) or []:
             ctype = charge.get("ChargeType")
             v = amt(charge.get("ChargeAmount"))
+            note_currency(mkt, charge.get("ChargeAmount"))
             diag.bump(diag.charge_types, f"RefundChargeList:{ctype}", v)
             bucket = REFUND_CHARGE_BUCKET_MAP.get(ctype)
             if bucket:
                 add(d, bucket, v)
+                madd(d, mkt, bucket, v)
             elif ctype in TAX_CHARGE_TYPES:
                 pass
             else:
@@ -585,7 +787,9 @@ def process_refund_event(ev, daily, warnings):
             bucket = FEE_BUCKET_MAP.get(ftype)
             if bucket:
                 add(d, bucket, v)   # signed: a refunded fee comes back positive and reduces the bucket
+                madd(d, mkt, bucket, v)
                 add(d, "refund_fee_adjustments", v)   # order-date view: shown with the refund, on the refund day
+                madd(d, mkt, "refund_fee_adjustments", v)
             else:
                 add(d, "unclassified_other", v)
                 warnings.add(f"unclassified refund fee type: {ftype}")
@@ -878,22 +1082,28 @@ def _num(v):
         return 0.0
 
 
-def _count_order_status(daily, stats, order_id, day, status):
+def _count_order_status(daily, stats, order_id, day, status, market=None):
     """v2.8 order funnel: each Amazon.com order id once, on its purchase day, by the report's
-    order-status (Shipped / PartiallyShipped / Cancelled / Pending / Unshipped / Shipping)."""
+    order-status (Shipped / PartiallyShipped / Cancelled / Pending / Unshipped / Shipping).
+    v2.9: the same counters in markets[market] (an order has one sales-channel, so one market)."""
     seen = stats.setdefault("_status_seen", {})
     if seen.get(order_id) == day:
         return
     seen[order_id] = day
     d = add_sku_fields(daily.setdefault(day, new_daily_bucket()))
-    d["orders_placed"] += 1
+    targets = [d, market_bucket(d, market if market is not None else DEFAULT_MARKET)]
+    for t in targets:
+        t["orders_placed"] += 1
     s = status.lower().replace(" ", "")
     if s == "shipped":
-        d["orders_fulfilled"] += 1
+        for t in targets:
+            t["orders_fulfilled"] += 1
     elif s == "partiallyshipped":
-        d["orders_partially_fulfilled"] += 1
+        for t in targets:
+            t["orders_partially_fulfilled"] += 1
     elif s in ("cancelled", "canceled"):
-        d["orders_cancelled"] += 1
+        for t in targets:
+            t["orders_cancelled"] += 1
 
 
 def ingest_orders_report(tsv_text, daily, warnings, stats):
@@ -922,11 +1132,16 @@ def ingest_orders_report(tsv_text, daily, warnings, stats):
         order_id = (row.get("amazon-order-id") or "").strip()
         if order_id:
             ORDER_DAYS[order_id] = day        # fees of this order (whenever it ships) are booked on this day
+        channel = (row.get("sales-channel") or "").strip()   # column guarded: missing -> "" (-> default market, not MCF)
+        mcf = channel.lower() == "non-amazon"
+        # v2.9: the row's market - Amazon.com -> US, Amazon.ca -> CA ...; MCF rows and rows without a
+        # sales-channel -> DEFAULT_MARKET (country of MARKETPLACE_IDS[0])
+        mkt = DEFAULT_MARKET if mcf else market_of(channel, "report")
         # v2.8 funnel: counted BEFORE the cancelled skip (a cancelled order is placed + cancelled),
         # Amazon.com channel only, inside the published range (same scope as ordered_orders)
-        if order_id and (row.get("sales-channel") or "").strip().lower() != "non-amazon" \
+        if order_id and not mcf \
                 and not (KEEP_RANGE[0] and (day < KEEP_RANGE[0] or day > KEEP_RANGE[1])):
-            _count_order_status(daily, stats, order_id, day, status)
+            _count_order_status(daily, stats, order_id, day, status, mkt)
         if cancelled:
             stats["cancelled_lines"] = stats.get("cancelled_lines", 0) + 1
             continue
@@ -934,22 +1149,27 @@ def ingest_orders_report(tsv_text, daily, warnings, stats):
             continue                          # look-back / look-ahead rows: only needed for the order map
         d = daily.setdefault(day, new_daily_bucket())
         qty = int(_num(row.get("quantity")))
-        channel = (row.get("sales-channel") or "").strip()
-        mcf = channel.lower() == "non-amazon"
         if mcf:
             add(d, "mcf_units", qty)
+            madd(d, mkt, "mcf_units", qty)
             if order_id and seen_orders.get(order_id) != (day, "mcf"):
                 seen_orders[order_id] = (day, "mcf")
                 add(d, "mcf_orders", 1)
+                madd(d, mkt, "mcf_orders", 1)
             continue
         price_raw = (row.get("item-price") or "").strip()
         if status.lower() == "pending" and price_raw == "":
             add(d, "ordered_pending_units", qty)   # price not released by Amazon yet - counted as units only
+            madd(d, mkt, "ordered_pending_units", qty)
             stats["pending_no_price_lines"] = stats.get("pending_no_price_lines", 0) + 1
         add(d, "ordered_sales", _num(price_raw))
+        madd(d, mkt, "ordered_sales", _num(price_raw))
         add(d, "ordered_shipping", _num(row.get("shipping-price")) + _num(row.get("gift-wrap-price")))
+        madd(d, mkt, "ordered_shipping", _num(row.get("shipping-price")) + _num(row.get("gift-wrap-price")))
         add(d, "ordered_promotions", _num(row.get("item-promotion-discount")) + _num(row.get("ship-promotion-discount")))
+        madd(d, mkt, "ordered_promotions", _num(row.get("item-promotion-discount")) + _num(row.get("ship-promotion-discount")))
         add(d, "ordered_units", qty)
+        madd(d, mkt, "ordered_units", qty)
         # v2.8: the same line, per SKU (item-price is the LINE total, so sku_sales sums it as-is;
         # per day: sum(sku_units) == ordered_units and sum(sku_sales) == ordered_sales)
         skey = sku_key(row.get("sku"))
@@ -957,11 +1177,14 @@ def ingest_orders_report(tsv_text, daily, warnings, stats):
         if skey == NO_SKU:
             SKU_COUNTS["report_lines_without_sku"] += 1
         add_sku_fields(d)
+        mb = market_bucket(d, mkt)   # v2.9: the same per-SKU line inside the market bucket
         if qty > 0:
             d["sku_units"][skey] = d["sku_units"].get(skey, 0) + qty
+            mb["sku_units"][skey] = mb["sku_units"].get(skey, 0) + qty
         else:
             SKU_COUNTS["report_lines_zero_qty"] += 1
         d["sku_sales"][skey] = d["sku_sales"].get(skey, 0.0) + _num(price_raw)
+        mb["sku_sales"][skey] = mb["sku_sales"].get(skey, 0.0) + _num(price_raw)
         if order_id:
             ORDER_LINES.setdefault(order_id, []).append({
                 "day": day, "sku": (row.get("sku") or "").strip(), "qty": qty, "price": _num(price_raw),
@@ -970,6 +1193,8 @@ def ingest_orders_report(tsv_text, daily, warnings, stats):
         if order_id and seen_orders.get(order_id) != (day, "amz"):
             seen_orders[order_id] = (day, "amz")
             add(d, "ordered_orders", 1)
+            madd(d, mkt, "ordered_orders", 1)
+        note_currency(mkt, row.get("currency"))
         if (row.get("currency") or "").strip() not in ("", "USD"):
             warnings.add(f"orders report currency {row.get('currency')}")
     return rows
@@ -1192,6 +1417,7 @@ def main():
             daily.setdefault(k, new_daily_bucket())
     compute_net_sales(daily)
     finalise_sku_fields(daily)   # v2.8: every published day carries the per-SKU / funnel keys (empty when nothing happened)
+    finalise_markets(daily)      # v2.9: every published day carries `markets` (a zero bucket per configured marketplace when idle)
     pending_stats, sku_rates = book_pending_fees(daily, today_key)
     log(f"Pending fees (orders since {pending_stats['since']} not yet posted by Amazon): {pending_stats['orders']} orders / "
         f"{pending_stats['units']} units -> FBA {pending_stats['fba']:.2f} + referral {pending_stats['referral']:.2f} expected, "
@@ -1233,10 +1459,11 @@ def main():
             "events_processed": total_events,
             "warnings": sorted(warnings),
             "schema": 5,   # 2 = other_fees + giftwrap_credits + diagnostics; 3 = ordered_* fields by order date; 4 = ordered_* fees + monthly storage; 5 = *_pending expected fees per SKU
-                           # (kept at 5 in v2.8: the dashboard compares it numerically; the per-SKU / funnel keys are announced by schema_info)
-            "script_version": "2.8",   # 2.4 = All Orders report; 2.5 = history + backfill; 2.6 = fees by order date, FBA storage by month stored; 2.7 = pending fees priced per SKU; 2.8 = sku_units / sku_sales / sku_refund_units + order status counters per day
-            "schema_info": schema_info(daily),   # v2.8 (additive): first day carrying the per-SKU / funnel keys
+                           # (kept at 5 in v2.8 / v2.9: the dashboard compares it numerically; the per-SKU / funnel / market keys are announced by schema_info)
+            "script_version": "2.9",   # 2.4 = All Orders report; 2.5 = history + backfill; 2.6 = fees by order date, FBA storage by month stored; 2.7 = pending fees priced per SKU; 2.8 = sku_units / sku_sales / sku_refund_units + order status counters per day; 2.9 = per-market split (daily[].markets)
+            "schema_info": schema_info(daily),   # v2.8 (additive): first day carrying the per-SKU / funnel keys; v2.9: + markets_since
             "sku_counts": dict(SKU_COUNTS),      # v2.8: report lines / refund items read for them, and the ones without SKU or quantity
+            "markets": market_meta(),            # v2.9: configured marketplaces, split / not-split fields, marketplace names + currencies seen
             "history": hist,
             "orders_report": orders_stats,
             "sales_basis": {
