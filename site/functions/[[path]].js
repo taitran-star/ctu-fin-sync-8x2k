@@ -27,6 +27,7 @@ const REPO_FILES = new Set([
   'cogs_monthly.json',      // giá vốn sản phẩm THẬT theo tháng/kênh (sổ kho kế toán) — ưu tiên hơn ước tính
   'purchase_orders.json',   // hàng đang đặt (PO) nhập tay — tính vào ngày hết hàng (trang Sản phẩm & tồn kho)
   'cogs_skus.json',         // giá vốn landed theo SKU nhập tay — vốn tồn kho, lãi theo sản phẩm
+  'products.json',          // dòng sản phẩm (SKU -> line) cho bộ lọc Sản phẩm
   'amazon_sns.json',   // bảng /sns (Subscribe & Save) — đừng bỏ dòng này khi sửa danh sách
 ]);
 const STATIC_FILES = new Set(['shipmonk_invoices.json', 'shipmonk_storage_daily.json', 'klaviyo_invoices.json']);   // in public/ (read by Claude's browser); amazon_ads.json now comes from the repo (sellerboard_ads.yml)
