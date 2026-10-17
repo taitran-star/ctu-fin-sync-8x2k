@@ -1,5 +1,5 @@
 {
- "updated_at": "2026-10-16",
+ "updated_at": "2026-10-17",
  "currency": "USD",
  "note": "Giá vốn landed (EXW + thuế nhập + cước về kho, KHÔNG gồm phí FBA/ShipMonk) theo SKU, dựng 16/10/2026 từ BAO CAO TON KHO 08.2026 - ADD NHAP T9 (sheet Danh muc = ánh xạ SKU→mã nội bộ; sheet 08.2026 = tồn cuối theo lô → đơn giá bình quân; sheet nhapT9 = lô FBA tháng 9; khối GIÁ VỐN BỔ SUNG 31/8–6/9 = giá xuất kho kế toán). Khoá = SKU đúng như trên Amazon/Shopify; code = mã nội bộ; landed_cost = USD/unit; bundle để landed_cost null và khai components. basis = căn cứ từng dòng (dashboard bỏ qua). Lô FBA (Amazon) đắt hơn vì cước giao vào FBA ($4–6/unit); dashboard KHÔNG expense cước FBA inbound nữa (chỉ ghi memo) nên không tính 2 lần. Chưa có giá: Coffin, EMRCRD-*, CLMDNT-V1-4L-LGR. Tỷ lệ kiểm chứng 45 ngày (01/09–15/10): xem claude/cogs-opex-data-review.md.",
  "skus": {
@@ -1169,6 +1169,12 @@
    "code": "",
    "landed_cost": null,
    "basis": "CHƯA CÓ GIÁ VỐN trong sổ kho — kế toán bổ sung"
+  },
+  "CNS": {
+   "code": "CNS",
+   "name": "Climate Neutral Shipping (add-on, not a product)",
+   "landed_cost": 0,
+   "basis": "phí ship xanh $3,99 khách mua kèm — không phải hàng, giá vốn 0 (cần gán SKU CNS trên Shopify)"
   }
  }
 }
