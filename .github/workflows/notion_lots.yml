@@ -1,0 +1,92 @@
+name: Cattasaurus Notion inbound lots sync
+
+on:
+  schedule:
+    # Once a day at 03:17 UTC - the Reorder Tracker changes a few times a week (new PO lines,
+    # receipts), and the minute is offset from every other workflow so no two push at once.
+    - cron: "17 3 * * *"
+  workflow_dispatch:   # "Run workflow" by hand after a lot was received / a cost was corrected in Notion
+
+permissions:
+  contents: write
+
+concurrency:
+  group: notion-lots
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30   # ~3,200 rows = ~32 requests at 3 req/s; a minute, plus retries
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Sync to the latest main
+        # A run queued behind another workflow's push is checked out at the commit it was QUEUED
+        # on, so its copy of data/*.json can be older than main. Fast-forward first so a failed
+        # fetch carries over the newest file, not a stale one.
+        run: |
+          git fetch --depth=1 origin main
+          git reset --hard origin/main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch inbound lots (landed cost per unit) from the Notion Reorder Tracker
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          # Optional overrides:
+          # NOTION_VERSION: "2022-06-28"
+          # NOTION_REORDER_DB_ID: 292356e6-b6b5-4e5e-8338-8aa43b6e3098
+          # NOTION_PAGE_SIZE: 100
+          # OUTPUT_PATH: data/cogs_lots.json
+        run: |
+          if [ -z "$NOTION_TOKEN" ]; then
+            echo "::notice::NOTION_TOKEN secret not set yet - create a Notion internal integration (read-only: Read content only), share the Reorder Tracker, Shipments and Restock Items databases with it (page menu > Connections), and store the token as the NOTION_TOKEN repository secret. Skipping."
+            exit 0
+          fi
+          python fetch_notion_lots.py
+
+      - name: Keep a copy of the fetched data as a run artifact (safety net if the push below fails)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: notion-lots-data-run-${{ github.run_number }}
+          path: data/cogs_lots.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Commit updated data file if changed
+        run: |
+          git config user.name "cattasaurus-notion-bot"
+          git config user.email "actions@users.noreply.github.com"
+          [ -f data/cogs_lots.json ] && git add data/cogs_lots.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Update Notion inbound lots data ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          # Other workflows commit to the same repo; rebase-then-push with a few retries
+          # so a concurrent push from them never fails this job.
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            if git status --porcelain | grep -q '^UU\|^AA\|^DU\|^UD'; then
+              # Same-file conflict: another run pushed this source's data while we ran (should not
+              # happen - runs of one source are serialized and we synced before fetching). Keep
+              # what is already on main; this run's fetch is simply redone next cycle.
+              echo "::warning::data conflict with a newer commit on main - keeping main's version, this run's fetch will be redone next cycle"
+              git diff --name-only --diff-filter=U | while read -r f; do
+                if git checkout --ours -- "$f" 2>/dev/null; then git add -- "$f"; else git rm -q --cached -- "$f"; fi
+              done
+              GIT_EDITOR=true git rebase --continue || git rebase --skip || git rebase --abort
+              git push && exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "Push attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "Could not push after 5 attempts." && exit 1
