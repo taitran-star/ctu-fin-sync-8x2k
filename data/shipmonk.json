@@ -44728,8 +44728,8 @@
           "shipping_cost": 51.32
         },
         "ShipMonk": {
-          "orders": 171,
-          "shipping_cost": 2944.5
+          "orders": 173,
+          "shipping_cost": 2985.66
         },
         "UPS": {
           "orders": 1,
@@ -44758,36 +44758,36 @@
           "units": 5
         },
         "Cattasaurus - shoproxstore - Shopify": {
-          "orders": 182,
+          "orders": 184,
           "packaging_cost": 0.0,
-          "pick_pack_cost": 546.78,
-          "shipping_cost": 2855.25,
-          "total_cost": 3402.03,
-          "units": 371
+          "pick_pack_cost": 551.84,
+          "shipping_cost": 2896.41,
+          "total_cost": 3448.25,
+          "units": 374
         }
       },
       "by_type": {
         "direct_to_consumer": {
-          "orders": 191,
+          "orders": 193,
           "packaging_cost": 0.0,
-          "pick_pack_cost": 566.7,
-          "shipping_cost": 3005.93,
-          "total_cost": 3572.63,
-          "units": 381
+          "pick_pack_cost": 571.76,
+          "shipping_cost": 3047.09,
+          "total_cost": 3618.85,
+          "units": 384
         }
       },
       "cost_missing_orders": 12,
       "foreign_cost": {},
-      "orders": 191,
-      "orders_onhold": 41,
+      "orders": 193,
+      "orders_onhold": 40,
       "orders_shipped": 5,
-      "orders_unshipped": 186,
+      "orders_unshipped": 188,
       "packages": 5,
       "packaging_cost": 0.0,
-      "pick_pack_cost": 566.7,
-      "shipping_cost": 3005.93,
-      "total_cost": 3572.63,
-      "units": 381
+      "pick_pack_cost": 571.76,
+      "shipping_cost": 3047.09,
+      "total_cost": 3618.85,
+      "units": 384
     }
   },
   "daily_shipped": {
@@ -87102,9 +87102,9 @@
       "units": 306
     }
   },
-  "generated_at": "2026-10-17T05:00:18Z",
+  "generated_at": "2026-10-17T05:29:29Z",
   "inventory": {
-    "as_of": "2026-10-17T05:02:44Z",
+    "as_of": "2026-10-17T05:31:39Z",
     "fields": {
       "allocated": "derived: on_hand - available - quarantined - unavailable (reserved for open orders)",
       "available": "quantity_total_available - units ShipMonk can allocate to new orders (use as 'available to sell')",
@@ -91426,7 +91426,7 @@
         "active": true,
         "allocated": 0,
         "available": 0,
-        "backordered": 0,
+        "backordered": 1,
         "bundle_components": {
           "PKCTCV-JMB-BLCK": 1
         },
@@ -91454,8 +91454,8 @@
           "NV3": {
             "allocated": 0,
             "available": 0,
-            "backordered": 0,
-            "final": 0,
+            "backordered": 1,
+            "final": -1,
             "incoming": 330,
             "on_hand": 0,
             "quarantined": 0,
@@ -91502,7 +91502,7 @@
             "unavailable": 0
           }
         },
-        "final": 0,
+        "final": -1,
         "incoming": 960,
         "name": "Peekaboo, Jumbo, Black",
         "on_hand": 0,
@@ -92013,7 +92013,7 @@
             "allocated": 13,
             "available": 296,
             "backordered": 0,
-            "final": 289,
+            "final": 288,
             "incoming": 2840,
             "on_hand": 309,
             "quarantined": 0,
@@ -92060,7 +92060,7 @@
             "unavailable": 0
           }
         },
-        "final": 270,
+        "final": 269,
         "incoming": 8360,
         "name": "Peekaboo Cat Cave - Jumbo - Light Grey",
         "on_hand": 310,
@@ -93381,8 +93381,8 @@
       },
       "PKCTCV-L-LGR": {
         "active": true,
-        "allocated": 106,
-        "available": 2299,
+        "allocated": 107,
+        "available": 2298,
         "backordered": 0,
         "bundle_components": {
           "AP03": 3,
@@ -93449,10 +93449,10 @@
             "unavailable": 0
           },
           "PA2": {
-            "allocated": 76,
-            "available": 1360,
+            "allocated": 77,
+            "available": 1359,
             "backordered": 0,
-            "final": 1360,
+            "final": 1359,
             "incoming": 11430,
             "on_hand": 1436,
             "quarantined": 0,
@@ -93479,7 +93479,7 @@
             "unavailable": 0
           }
         },
-        "final": 2299,
+        "final": 2298,
         "incoming": 18432,
         "name": "Peekaboo Cat Cave - Large - Light Grey",
         "on_hand": 2405,
@@ -93881,8 +93881,8 @@
       },
       "PKCTCV-L-SG": {
         "active": true,
-        "allocated": 6,
-        "available": 330,
+        "allocated": 7,
+        "available": 329,
         "backordered": 0,
         "bundle_components": {
           "PKCTCV-L-BL": 1,
@@ -93940,10 +93940,10 @@
             "unavailable": 0
           },
           "PA2": {
-            "allocated": 6,
-            "available": 330,
+            "allocated": 7,
+            "available": 329,
             "backordered": 0,
-            "final": 329,
+            "final": 328,
             "incoming": 1500,
             "on_hand": 336,
             "quarantined": 0,
@@ -93970,7 +93970,7 @@
             "unavailable": 0
           }
         },
-        "final": 329,
+        "final": 328,
         "incoming": 2488,
         "name": "Peekaboo, Large, Sage Mist",
         "on_hand": 336,
@@ -97465,9 +97465,9 @@
     },
     "source_endpoint": "POST /v1/integrations/products/search + GET /v1/integrations/products/search/paginate",
     "totals": {
-      "allocated": 350,
-      "available": 22757,
-      "backordered": 652,
+      "allocated": 352,
+      "available": 22755,
+      "backordered": 653,
       "by_warehouse": {
         "CA1": {
           "allocated": 0,
@@ -97492,8 +97492,8 @@
         "NV3": {
           "allocated": 70,
           "available": 6177,
-          "backordered": 9,
-          "final": 6160,
+          "backordered": 10,
+          "final": 6158,
           "incoming": 42159,
           "on_hand": 6247,
           "quarantined": 0,
@@ -97510,10 +97510,10 @@
           "unavailable": 0
         },
         "PA2": {
-          "allocated": 280,
-          "available": 14540,
+          "allocated": 282,
+          "available": 14538,
           "backordered": 683,
-          "final": 13819,
+          "final": 13817,
           "incoming": 74385,
           "on_hand": 14820,
           "quarantined": 25,
@@ -97540,7 +97540,7 @@
           "unavailable": 0
         }
       },
-      "final": 22019,
+      "final": 22015,
       "incoming": 116544,
       "on_hand": 23107,
       "quarantined": 25,
@@ -97610,23 +97610,23 @@
       "cost_missing_orders": 18,
       "fx_converted_charges": 400,
       "fx_unknown_currency_charges": 0,
-      "orders_counted": 6938,
-      "orders_duplicate": 1,
+      "orders_counted": 6940,
+      "orders_duplicate": 0,
       "orders_fulfilled_outside": 42,
-      "orders_onhold_counted": 1318,
-      "orders_outside_window": 71,
+      "orders_onhold_counted": 1317,
+      "orders_outside_window": 70,
       "orders_seen": 8300,
       "orders_shipped_series_only": 303,
       "orders_skipped_cancelled": 940,
       "orders_skipped_store": 0,
       "orders_skipped_type": 5,
       "orders_skipped_unshipped": 0,
-      "orders_unshipped_counted": 1566,
+      "orders_unshipped_counted": 1568,
       "shipping_from_shipment_estimate": 0
     },
     "currencies_seen": {
       "CAD": 400,
-      "USD": 19703
+      "USD": 19707
     },
     "fx": {
       "native_converted_this_run": {
@@ -97660,7 +97660,7 @@
     "inventory": {
       "api_requests": 4,
       "api_retries": 0,
-      "as_of": "2026-10-17T05:02:44Z",
+      "as_of": "2026-10-17T05:31:39Z",
       "carried_over": false,
       "counts": {
         "duplicates": 2,
@@ -97671,7 +97671,7 @@
         "products_seen": 137,
         "skus": 112
       },
-      "elapsed_s": 1.9,
+      "elapsed_s": 1.6,
       "error": null,
       "fetched": true,
       "incoming": {
@@ -97711,10 +97711,10 @@
     ],
     "oldest_order_day_seen": "2026-08-17",
     "order_currencies_seen": {
-      "USD": 7241
+      "USD": 7243
     },
     "order_types_seen": {
-      "direct_to_consumer": 8272,
+      "direct_to_consumer": 8273,
       "unknown": 22,
       "work_order": 5
     },
@@ -97749,42 +97749,42 @@
   "totals": {
     "last_30d": {
       "cost_missing_orders": 18,
-      "orders": 4401,
-      "orders_onhold": 988,
+      "orders": 4403,
+      "orders_onhold": 987,
       "orders_shipped": 3165,
-      "orders_unshipped": 1236,
+      "orders_unshipped": 1238,
       "packages": 3226,
       "packaging_cost": 84.8,
-      "pick_pack_cost": 11533.89,
-      "shipping_cost": 87269.33,
-      "total_cost": 98888.02,
-      "units": 8362
+      "pick_pack_cost": 11538.95,
+      "shipping_cost": 87310.49,
+      "total_cost": 98934.24,
+      "units": 8365
     },
     "mtd": {
       "cost_missing_orders": 17,
-      "orders": 2185,
-      "orders_onhold": 534,
+      "orders": 2187,
+      "orders_onhold": 533,
       "orders_shipped": 1404,
-      "orders_unshipped": 781,
+      "orders_unshipped": 783,
       "packages": 1423,
       "packaging_cost": 64.8,
-      "pick_pack_cost": 5777.64,
-      "shipping_cost": 44386.52,
-      "total_cost": 50228.96,
-      "units": 4086
+      "pick_pack_cost": 5782.7,
+      "shipping_cost": 44427.68,
+      "total_cost": 50275.18,
+      "units": 4089
     },
     "today": {
       "cost_missing_orders": 12,
-      "orders": 191,
-      "orders_onhold": 41,
+      "orders": 193,
+      "orders_onhold": 40,
       "orders_shipped": 5,
-      "orders_unshipped": 186,
+      "orders_unshipped": 188,
       "packages": 5,
       "packaging_cost": 0.0,
-      "pick_pack_cost": 566.7,
-      "shipping_cost": 3005.93,
-      "total_cost": 3572.63,
-      "units": 381
+      "pick_pack_cost": 571.76,
+      "shipping_cost": 3047.09,
+      "total_cost": 3618.85,
+      "units": 384
     }
   },
   "window": {
