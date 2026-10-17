@@ -974,6 +974,12 @@
     <div style="overflow-x:auto;"><table class="simple" id="prodTable" style="min-width:1100px;"></table></div>
     <div class="caption" id="prodCaption" style="padding-left:2px;margin-top:8px;"></div>
   </div>
+  <div class="card" id="lotsCard">
+    <div class="card-head"><h2 data-i18n="lots.title">Receipt lots — FIFO landed cost</h2><div class="note" id="lotsNote"></div><button class="btn mini" type="button" data-export="lotsTable" data-name="receipt-lots">CSV</button></div>
+    <div class="be-grid" id="lotsKpis"></div>
+    <div style="overflow-x:auto;"><table class="simple" id="lotsTable" style="min-width:1000px;"></table></div>
+    <div class="caption" id="lotsCaption" style="padding-left:2px;margin-top:8px;"></div>
+  </div>
   <div class="card" id="poCard">
     <div class="card-head"><h2 data-i18n="h.poTitle">Hàng đang đặt (PO) — nhập tay</h2><div class="note" id="poNote"></div></div>
     <div style="overflow-x:auto;"><table class="simple" id="poTable" style="min-width:520px;"></table></div>
@@ -1037,7 +1043,7 @@
   var VI = false; try{ VI = localStorage.getItem('ctu_lang') === 'vi'; }catch(e){}
   function T(en, vi){ return VI ? vi : en; }
   if(VI){ var fun = document.querySelector('#siteLoad .fun'); if(fun) fun.textContent = 'meow… đang đếm tiền'; var m0 = document.getElementById('siteLoadMsg'); if(m0) m0.textContent = 'Đang tải số liệu…'; }
-  var SOURCES = {"amazon": "amazon_pnl.json", "meta": "meta_ads.json", "shopify": "shopify_pnl.json", "google": "google_ads.json", "shipmonk": "shipmonk.json", "shipmonk_invoices": "shipmonk_invoices.json", "shipmonk_storage": "shipmonk_storage_daily.json", "paypal": "paypal.json", "klaviyo": "klaviyo.json", "klaviyo_invoices": "klaviyo_invoices.json", "amazon_ads": "amazon_ads.json", "opex": "opex_monthly.json", "amazon_storage": "amazon_storage.json", "loop_subscriptions": "loop_subscriptions.json", "tiktok_shop": "tiktok_shop.json", "walmart": "walmart.json", "applovin": "applovin.json", "tiktok_ads": "tiktok_ads.json", "targets": "targets_monthly.json", "cogs": "cogs_monthly.json", "purchase_orders": "purchase_orders.json", "cogs_skus": "cogs_skus.json", "products": "products.json"};
+  var SOURCES = {"amazon": "amazon_pnl.json", "meta": "meta_ads.json", "shopify": "shopify_pnl.json", "google": "google_ads.json", "shipmonk": "shipmonk.json", "shipmonk_invoices": "shipmonk_invoices.json", "shipmonk_storage": "shipmonk_storage_daily.json", "paypal": "paypal.json", "klaviyo": "klaviyo.json", "klaviyo_invoices": "klaviyo_invoices.json", "amazon_ads": "amazon_ads.json", "opex": "opex_monthly.json", "amazon_storage": "amazon_storage.json", "loop_subscriptions": "loop_subscriptions.json", "tiktok_shop": "tiktok_shop.json", "walmart": "walmart.json", "applovin": "applovin.json", "tiktok_ads": "tiktok_ads.json", "targets": "targets_monthly.json", "cogs": "cogs_monthly.json", "purchase_orders": "purchase_orders.json", "cogs_skus": "cogs_skus.json", "cogs_lots": "cogs_lots.json", "products": "products.json"};
   var keys = Object.keys(SOURCES), done = 0;
   window.__LIVE = {}; window.__LIVE_ERR = {}; window.__LOADED_AT = 0; window.__SAVED_AT = 0;
   try{ localStorage.setItem('ctu_last_dash', '/pnl'); }catch(e){}
@@ -1071,7 +1077,7 @@
     return load(k, 1).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=9bf490efad';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=b9a92c8830';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');

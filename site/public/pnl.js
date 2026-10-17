@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 9bf490efad).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build b9a92c8830).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -45,11 +45,12 @@
     'chan.title':'Sales channels', 'chan.note':'{total} across {n} channels', 'chan.avgDay':'Average day', 'chan.perOrder':'Revenue per order',
     'pl.title':'Product lines', 'pl.line':'Product line', 'pl.share':'Share', 'pl.vsPrior':'vs prior', 'pl.cover':'Days of cover', 'pl.dollar':'Where each $100 of net revenue goes',
     'pl.note':'{n} lines on {ch}{cov}', 'pl.caption':'Revenue, fees and ads are allocated to a line by its share of gross sales in each channel; fulfillment by units. Days of cover = FBA fulfillable + ShipMonk available ÷ units sold per day (last 30 days). Lines come from data/products.json.',
-    'pl.realCost':'Landed cost from data/cogs_skus.json for {n}/{of} SKUs; the rest is estimated.', 'pl.estCost':'Product cost is the estimate until data/cogs_skus.json is filled in.',
+    'pl.realCost':'Product cost from FIFO receipt lots (data/cogs_lots.json) or data/cogs_skus.json for {n}/{of} SKUs; the rest is estimated.', 'pl.estCost':'Product cost is the estimate until data/cogs_skus.json is filled in.',
     'd.productCost':'Product cost', 'd.fulfillment':'Fulfillment', 'd.fees':'Marketplace & payment fees', 'd.marketing':'Marketing', 'd.opex':'Operating costs', 'd.keep':'EBITDA kept',
     'm.netRevenue':'Net revenue', 'm.orders':'Orders', 'm.adSpend':'Ad spend', 'm.units':'Units',
     'u.days':'days', 'u.d':'d', 'u.noData':'No data', 'u.waiting':'Waiting for data', 'u.total':'Total', 'u.daysWithSku':'days with SKU data',
     'risk.stockout':'{n} SKUs run out within 30 days', 'risk.stockoutNote':'{list} — revenue at risk over the next 30 days', 'risk.stockoutAction':'Place or expedite POs for: {list}',
+    'lots.title':'Receipt lots — FIFO landed cost',
     'page.exec':'Overview', 'page.sales':'Sales & customers', 'page.marketing':'Marketing', 'page.pnl':'Profit & loss', 'page.inventory':'Products & inventory', 'page.opex':'Fixed costs & cash', 'page.data':'Data sources',
     'ctx.vs':'vs {cmp}', 'ctx.today':'includes today (not final)',
   });
@@ -62,11 +63,12 @@
     'chan.title':'Kênh bán', 'chan.note':'{total} trên {n} kênh', 'chan.avgDay':'Trung bình mỗi ngày', 'chan.perOrder':'Doanh thu mỗi đơn',
     'pl.title':'Dòng sản phẩm', 'pl.line':'Dòng sản phẩm', 'pl.share':'Tỷ trọng', 'pl.vsPrior':'so kỳ trước', 'pl.cover':'Ngày còn hàng', 'pl.dollar':'Mỗi $100 doanh thu thuần đi đâu',
     'pl.note':'{n} dòng trên {ch}{cov}', 'pl.caption':'Doanh thu, phí và quảng cáo phân bổ cho dòng theo tỷ trọng doanh thu gộp của từng kênh; fulfillment theo units. Ngày còn hàng = FBA bán được + ShipMonk sẵn bán ÷ units bán mỗi ngày (30 ngày gần nhất). Dòng sản phẩm lấy từ data/products.json.',
-    'pl.realCost':'Giá vốn landed từ data/cogs_skus.json cho {n}/{of} SKU; còn lại ước tính.', 'pl.estCost':'Giá vốn đang ước tính cho đến khi điền data/cogs_skus.json.',
+    'pl.realCost':'Giá vốn theo lô nhập FIFO (data/cogs_lots.json) hoặc data/cogs_skus.json cho {n}/{of} SKU; còn lại ước tính.', 'pl.estCost':'Giá vốn đang ước tính cho đến khi điền data/cogs_skus.json.',
     'd.productCost':'Giá vốn sản phẩm', 'd.fulfillment':'Fulfillment', 'd.fees':'Phí sàn & thanh toán', 'd.marketing':'Marketing', 'd.opex':'Chi phí hoạt động', 'd.keep':'EBITDA giữ lại',
     'm.netRevenue':'Doanh thu thuần', 'm.orders':'Đơn hàng', 'm.adSpend':'Chi quảng cáo', 'm.units':'Units',
     'u.days':'ngày', 'u.d':'ng', 'u.noData':'Chưa có dữ liệu', 'u.waiting':'Chờ dữ liệu', 'u.total':'Tổng', 'u.daysWithSku':'ngày có dữ liệu SKU',
     'risk.stockout':'{n} SKU hết hàng trong 30 ngày', 'risk.stockoutNote':'{list} — doanh thu có nguy cơ mất trong 30 ngày tới', 'risk.stockoutAction':'Đặt hoặc đẩy nhanh PO cho: {list}',
+    'lots.title':'Lô nhập — giá vốn FIFO',
     'page.exec':'Điều hành', 'page.sales':'Bán hàng & khách', 'page.marketing':'Marketing', 'page.pnl':'Lãi lỗ', 'page.inventory':'Sản phẩm & tồn kho', 'page.opex':'Chi phí cố định & tiền', 'page.data':'Nguồn dữ liệu',
     'ctx.vs':'so {cmp}', 'ctx.today':'gồm hôm nay (chưa chốt)',
   });
@@ -132,7 +134,7 @@
     'h.alertNote':'Computed from the selected period · threshold shown next to each line',
     'h.defsSummary':'Definitions used on this page',
     'h.def1':'<b>Net revenue</b> = gross sales − discounts − refunds, excluding tax. By order date, Los Angeles time.',
-    'h.def2':'<b>Product cost</b> = the actual monthly figure per channel in <code>data/cogs_monthly.json</code> (from the accountant\'s inventory report) where filled in; any month/channel not filled in = net revenue × the estimate rate in <code>data/targets_monthly.json</code>. Currently: <span id="defCogs"></span>.',
+    'h.def2':'<b>Product cost</b> = the accountant\'s monthly figure per channel in <code>data/cogs_monthly.json</code> where filled in; otherwise FIFO by receipt lot: every unit sold (units per SKU per day) takes the landed cost (EXW + freight/unit + duties/unit) of the oldest lot still on hand in its stock pool (Amazon = FBA/AWD, Shopify / TikTok / Walmart = ShipMonk + SAT), lots from <code>data/cogs_lots.json</code> (Notion Reorder Tracker); sales without units per SKU = net revenue × the estimate rate in <code>data/targets_monthly.json</code>. Currently: <span id="defCogs"></span>.',
     'h.def3':'<b>Gross profit</b> = net revenue − product cost − fulfillment (FBA, ShipMonk, postage, packaging).',
     'h.def4':'<b>CM2</b> = gross profit − marketplace fees − payment processing fees. <b>CM3 (contribution margin)</b> = CM2 − all marketing (ads, affiliates, creators).',
     'h.def5':'<b>EBITDA</b> = CM3 − operating costs (warehousing, manually entered G&amp;A, Klaviyo, Snowball).',
@@ -208,7 +210,7 @@
     'h.alertNote':'Tự tính từ kỳ đang xem · ngưỡng ghi cạnh mỗi dòng',
     'h.defsSummary':'Định nghĩa dùng trên trang này',
     'h.def1':'<b>Doanh thu thuần</b> = doanh thu gộp − giảm giá − hoàn tiền, không gồm thuế. Theo ngày đặt hàng, giờ Los Angeles.',
-    'h.def2':'<b>Giá vốn sản phẩm</b> = số thật theo tháng/kênh trong <code>data/cogs_monthly.json</code> (từ báo cáo tồn kho kế toán) nếu đã điền; tháng/kênh nào chưa điền thì = doanh thu thuần × tỷ lệ ước tính trong <code>data/targets_monthly.json</code>. Hiện: <span id="defCogs"></span>.',
+    'h.def2':'<b>Giá vốn sản phẩm</b> = số kế toán theo tháng/kênh trong <code>data/cogs_monthly.json</code> nếu đã điền; nếu không thì FIFO theo lô nhập: mỗi unit bán ra (units theo SKU mỗi ngày) lấy giá landed (EXW + cước/unit + thuế/unit) của lô cũ nhất còn trong kho của nó (Amazon = FBA/AWD, Shopify / TikTok / Walmart = ShipMonk + SAT), lô lấy từ <code>data/cogs_lots.json</code> (Notion Reorder Tracker); doanh số không có units theo SKU = doanh thu thuần × tỷ lệ ước tính trong <code>data/targets_monthly.json</code>. Hiện: <span id="defCogs"></span>.',
     'h.def3':'<b>Lợi nhuận gộp</b> = doanh thu thuần − giá vốn sản phẩm − fulfillment (FBA, ShipMonk, cước, bao bì).',
     'h.def4':'<b>CM2</b> = lợi nhuận gộp − hoa hồng sàn − phí cổng thanh toán. <b>CM3 (LN đóng góp)</b> = CM2 − toàn bộ marketing (quảng cáo, affiliate, creator).',
     'h.def5':'<b>EBITDA</b> = CM3 − chi phí hoạt động (kho bãi, G&amp;A nhập tay, Klaviyo, Snowball).',
@@ -409,6 +411,9 @@
   // proportion to that channel's net revenue, so day / week / custom ranges stay meaningful.
   const COGS_LIVE_DATA = (window.__LIVE && window.__LIVE["cogs"]) || null;
   let COGS_ACTUAL = {months:{}, updated_at:null};
+  // V11: receipt lots (data/cogs_lots.json <- Notion Reorder Tracker) for FIFO product cost; parsed lazily after boot
+  const COGS_LOTS_LIVE_DATA = (window.__LIVE && window.__LIVE["cogs_lots"]) || null;
+  let LOTS = null, _fifo = null;
   function applyCogsActual(data){
     if(!data || typeof data!=='object') return false;
     const num = v => (v===null || v===undefined || v==='') ? null : (isFinite(parseFloat(v)) ? parseFloat(v) : null);
@@ -435,27 +440,39 @@
   // product cost for a set of day rows, per channel: real where the month+channel is filled in, else the estimate
   function productCostFor(rows, estRate){
     const by = {}; CH_KEYS.forEach(k=>by[k]=0);
-    let actual = 0, estimated = 0, anyEst = false, anyActual = false;
+    let actual = 0, estimated = 0, anyEst = false, anyActual = false, lots = 0, fallback = 0, lotUnits = 0, fbUnits = 0, estUnits = 0, units = 0;
+    const F = fifoState();   // V11: FIFO by receipt lot for days + channels that carry units per SKU
     const byMonth = {};
     rows.forEach(r=>{ const m = r.iso.slice(0,7); (byMonth[m] = byMonth[m] || []).push(r); });
     Object.keys(byMonth).forEach(m=>{
       const rs = byMonth[m], am = COGS_ACTUAL.months[m];
       CH_KEYS.forEach(k=>{
-        const net = rs.reduce((t,r)=> t + (r.channels[k]||0) - (r.discounts[k]||0) - (r.refunds[k]||0), 0);
         const real = am && am.channels[k]!==undefined ? am.channels[k] : null;
-        let v;
         if(real!==null){
+          const net = rs.reduce((t,r)=> t + (r.channels[k]||0) - (r.discounts[k]||0) - (r.refunds[k]||0), 0);
           const whole = monthChannelNet(m, k);
-          v = whole>0.005 ? real * (net/whole) : real * (rs.length/daysInMonth(m));
-          actual += v; anyActual = true;
-        } else {
-          v = estRate>0 ? Math.max(0, net)*estRate : 0;
-          estimated += v; if(estRate>0) anyEst = true;
+          const v = whole>0.005 ? real * (net/whole) : real * (rs.length/daysInMonth(m));
+          actual += v; anyActual = true; by[k] += v;
+          return;
         }
-        by[k] += v;
+        rs.forEach(r=>{
+          const net = (r.channels[k]||0) - (r.discounts[k]||0) - (r.refunds[k]||0);
+          const fd = F && F.ok && F.day[r.iso] && F.day[r.iso][k], sk = r.sku && r.sku[k];
+          let v;
+          if(fd && sk){
+            const x = fifoCostOfSku(fd, sk);
+            const e = estRate>0 ? Math.max(0, net)*estRate*x.estShare : 0;
+            v = x.lot + x.fb + e; lots += x.lot; fallback += x.fb; estimated += e; if(e>0.005) anyEst = true;
+            lotUnits += x.lotUnits; fbUnits += x.fbUnits; estUnits += x.estUnits; units += x.units;
+          } else {
+            v = estRate>0 ? Math.max(0, net)*estRate : 0;
+            estimated += v; if(estRate>0) anyEst = true;
+          }
+          by[k] += v;
+        });
       });
     });
-    return {by, total: actual+estimated, actual, estimated, anyEst, anyActual};
+    return {by, total: actual+estimated+lots+fallback, actual, estimated, anyEst, anyActual, lots, fallback, lotUnits, fbUnits, estUnits, units};
   }
   // plan prorated over a set of day rows: null when any month touched has no number for that field
   function planForRows(rows, getter, perChannel){
@@ -812,6 +829,9 @@
     const productCostActual = pc.actual;           // the part that comes from the accountant's book
     const productCostEstAmount = pc.estimated;
     const productCostHasActual = pc.anyActual;
+    // V11: FIFO by receipt lot (Notion) + nearest-lot / per-SKU fallback; units split for the labels
+    const productCostLots = pc.lots, productCostFallback = pc.fallback, productCostHasLots = (pc.lots + pc.fallback) > 0.005;
+    const productCostLotUnits = pc.lotUnits, productCostFbUnits = pc.fbUnits, productCostEstUnits = pc.estUnits, productCostUnits = pc.units;
     const shipmonkRealDays = rows.filter(r=>r.shipmonkReal).length;
     const shipmonkOrders = sum(rows.map(r=> r.shipmonkReal ? r.shipmonkReal.orders : 0));
     const shipmonkUnshipped = sum(rows.map(r=> r.shipmonkReal ? r.shipmonkReal.unshipped : 0));
@@ -1020,7 +1040,7 @@
     const amazonRealDays = rows.filter(r=>r.amazonReal).length;
 
     return {n, gross, refund, discountBy, orders, ads, adsAttr, grossSales, discount, refundsTotal, netRevenue, totalOrders, allocShare, maskPartial: partial, unknownDays,
-      productCost, productCostEst, cogsEstRate, productCostBy, productCostActual, productCostEstAmount, productCostHasActual, packaging, fulfillment, postage, cogs, grossProfit, nonAmazonOrders, shopifyTax, shopifyRealDays, amazonRealDays,
+      productCost, productCostEst, cogsEstRate, productCostBy, productCostActual, productCostEstAmount, productCostHasActual, productCostLots, productCostFallback, productCostHasLots, productCostLotUnits, productCostFbUnits, productCostEstUnits, productCostUnits, packaging, fulfillment, postage, cogs, grossProfit, nonAmazonOrders, shopifyTax, shopifyRealDays, amazonRealDays,
       shipmonkRealDays, shipmonkOrders, shipmonkUnshipped, shipmonkUnits, shipmonkPickPack, shipmonkByStore, shipmonkByChannel,
       smInvDays, smInv, smInvOther, smInvAdjCredits, smStorageOpen, smStorageOpenDays, smStorageCarryDays, smStorageReportDays, smInvShipCmp, smApiShipCmp, smCmpDays, smCmpMissingDays, smTrueUp, shipmonkInvoiceExtras, shipmonkLogistics, amazonLogistics, logisticsTotal, feesTotal, marketingTotal, cmBeforeMarketing,
       paymentFees, afterpayFees, afterpayAmount, afterpayOrders, paymentFeeDays, paymentFeeOrders, feesMissingOrders, gatewayMix, feeTypeMix, paypalDays, paypalFees, paypalPayments, paypalPaymentsCount, paypalCompare, paymentFeesAll, marketplaceFees, adSpend, otherVarTotal, contributionProfit,
@@ -1284,7 +1304,15 @@
     });
 
     rows.push(stSection(tv('Cost of goods sold — COGS (product cost + fulfillment)', 'Giá vốn hàng bán — COGS (giá vốn sản phẩm + fulfillment)'),'cogs'));
-    if(a.productCostHasActual && !a.productCostEst){
+    if(a.productCostHasLots){
+      // V11: FIFO by receipt lot — the label spells out the mix (lots / nearest-lot or per-SKU cost / accounting book / estimate)
+      const U = a.productCostLotUnits + a.productCostFbUnits + a.productCostEstUnits, pu = x => U>0 ? Math.round(x/U*100)+'%' : '—';
+      const parts = [tv('FIFO by receipt lot (Notion) ','FIFO theo lô nhập (Notion) ')+money(a.productCostLots,{compact:true})+' · '+pu(a.productCostLotUnits)+tv(' of units',' units')];
+      if(a.productCostFallback>0.5) parts.push(money(a.productCostFallback,{compact:true})+tv(' nearest-lot / per-SKU cost (',' giá lô gần nhất / giá theo SKU (')+pu(a.productCostFbUnits)+')');
+      if(a.productCostActual>0.5) parts.push(money(a.productCostActual,{compact:true})+tv(' per the accountant\'s book',' theo sổ kế toán'));
+      if(a.productCostEstAmount>0.5) parts.push(money(a.productCostEstAmount,{compact:true})+tv(' ESTIMATED at ',' ƯỚC TÍNH ')+(a.cogsEstRate*100).toFixed(0)+tv('% (no units per SKU: Walmart, TikTok Shop, items without SKU, days before the SKU data)','% (không có units theo SKU: Walmart, TikTok Shop, hàng không SKU, ngày trước khi có dữ liệu SKU)'));
+      rows.push({...stLine(tv('Product cost — ', 'Giá vốn sản phẩm — ')+parts.join(' + '), -a.productCost, nr, 'var', 'cogs'), neg:true, est: a.productCostEstAmount>0.5, estTitle: (COGS_EST&&COGS_EST.basis)||'', hget: x=>-x.productCost});
+    } else if(a.productCostHasActual && !a.productCostEst){
       rows.push({...stLine(tv('Product cost — per the accountant\'s inventory book (data/cogs_monthly.json), spread by each day\'s net revenue', 'Giá vốn sản phẩm — theo sổ kho kế toán (data/cogs_monthly.json), rải theo doanh thu thuần từng ngày'), -a.productCost, nr, 'var', 'cogs'), neg:true, hget: x=>-x.productCost});
     } else if(a.productCostHasActual && a.productCostEst){
       rows.push({...stLine(tv('Product cost — ', 'Giá vốn sản phẩm — ')+money(a.productCostActual,{compact:true})+tv(' per the accountant\'s inventory book + ', ' theo sổ kho kế toán + ')+money(a.productCostEstAmount,{compact:true})+tv(' ESTIMATED at ', ' ƯỚC TÍNH ')+(a.cogsEstRate*100).toFixed(0)+tv('% (channel/month without a figure in data/cogs_monthly.json)', '% (kênh/tháng chưa có số trong data/cogs_monthly.json)'), -a.productCost, nr, 'var', 'cogs'), neg:true, est:true, estTitle: (COGS_EST&&COGS_EST.basis)||'', hget: x=>-x.productCost});
@@ -2573,17 +2601,18 @@
       const rk = rows.filter(r=> r.sku && r.sku[k]);
       const ak = aggregate(rk), ck = channelEcon(ak)[k]; chCm += ck.cm;
       const skus = [...new Set(Object.keys(o.units).concat(Object.keys(o.sales)))];
+      const fc = fifoSkuCosts(rows, k);   // V11: FIFO cost per SKU over the same (masked) days
       const G = sum(skus.map(x=>o.sales[x]||0)), U = sum(skus.map(x=>o.units[x]||0));
       const rw = {}; let RW = 0; skus.forEach(x=>{ const u = o.units[x]||0, g = o.sales[x]||0; rw[x] = u>0 ? (o.refunds[x]||0)*(g/u) : 0; RW += rw[x]; });
       skus.forEach(x=>{
         const g = G>0 ? (o.sales[x]||0)/G : 0, us = U>0 ? (o.units[x]||0)/U : 0, rs = RW>0 ? rw[x]/RW : g;
         const units = o.units[x]||0, cost = skuCost(x);
         const gross = ak.gross[k]*g, disc = ak.discountBy[k]*g, ref = ak.refund[k]*rs, net = gross - disc - ref;
-        const cogs = cost!==null ? units*cost : ck.cogs*g;
+        const sc = skuCogsOf(fc, x, units, net, ck, g), cogs = sc.cogs;
         const fulfil = ck.fulfil*us, fees = ck.fees*g, ads = ck.adsAll*g;
         const it = items[x] = items[x] || {sku:x, line: productLineOf(x), ch:{}, units:0, refunds:0, gross:0, disc:0, ref:0, net:0, cogs:0, cogsReal:0, fulfil:0, fees:0, ads:0, cm:0};
-        it.ch[k] = true; it.units += units; it.refunds += o.refunds[x]||0; it.gross += gross; it.disc += disc; it.ref += ref; it.net += net; it.cogs += cogs; if(cost!==null) it.cogsReal += cogs; it.fulfil += fulfil; it.fees += fees; it.ads += ads; it.cm += net - cogs - fulfil - fees - ads;
-        allSkus++; if(cost!==null) realCost++;
+        it.ch[k] = true; it.units += units; it.refunds += o.refunds[x]||0; it.gross += gross; it.disc += disc; it.ref += ref; it.net += net; it.cogs += cogs; it.cogsReal += sc.real; it.fulfil += fulfil; it.fees += fees; it.ads += ads; it.cm += net - cogs - fulfil - fees - ads;
+        allSkus++; if(sc.real>0) realCost++;
       });
     });
     return {items, keys, chCm, covMin: keys.length ? covMin : 0, realCost, allSkus, n: rows.length};
@@ -2685,10 +2714,10 @@
         foot: (planNet===null ? tv('Company plan: not entered','Kế hoạch tổng: chưa nhập') : tv('Plan for this period ','Kế hoạch kỳ này ')+money(planNet,{compact:true})) + (refundPct(a)!==null ? tv(' · refunds ',' · hoàn tiền ')+refundPct(a).toFixed(1)+tv('% of gross sales','% doanh thu gộp') : ''), alert: refundPct(a)!==null && refundPct(a)>8},
       {label:tv('CM3 — contribution margin','CM3 — LN đóng góp'), value: money(a.contributionProfit, {compact:true}), title: money(a.contributionProfit),
         deltas: dl(deltaLine(lk, p && dAbs(a.contributionProfit, p.contributionProfit)), deltaLine(tx('u.lastYear'), ly && dAbs(a.contributionProfit, ly.contributionProfit)), deltaLine(tx('u.plan'), planCm3!==null ? dAbs(a.contributionProfit, planCm3) : null)),
-        foot: (a.netRevenue>0 ? (a.contributionProfit/a.netRevenue*100).toFixed(1)+tv('% of net revenue','% doanh thu thuần') : '') + (a.productCostHasActual ? (a.productCostEst ? tv(' · product cost mostly from the ledger',' · giá vốn phần lớn theo sổ kho') : tv(' · product cost from the ledger',' · giá vốn theo sổ kho')) : (a.productCostEst ? tv(' · product cost estimated at ',' · giá vốn ước ')+(a.cogsEstRate*100).toFixed(0)+'%' : tv(' · product cost not deducted',' · chưa trừ giá vốn')))},
+        foot: (a.netRevenue>0 ? (a.contributionProfit/a.netRevenue*100).toFixed(1)+tv('% of net revenue','% doanh thu thuần') : '') + (a.productCostHasLots ? tv(' · product cost FIFO by receipt lot',' · giá vốn FIFO theo lô nhập')+(a.productCostEstAmount>0.5 ? tv(' + estimate',' + ước tính') : '') : a.productCostHasActual ? (a.productCostEst ? tv(' · product cost mostly from the ledger',' · giá vốn phần lớn theo sổ kho') : tv(' · product cost from the ledger',' · giá vốn theo sổ kho')) : (a.productCostEst ? tv(' · product cost estimated at ',' · giá vốn ước ')+(a.cogsEstRate*100).toFixed(0)+'%' : tv(' · product cost not deducted',' · chưa trừ giá vốn')))},
       {label:'EBITDA', value: money(a.netProfit, {compact:true}), title: money(a.netProfit),
         deltas: dl(deltaLine(lk, p && dAbs(a.netProfit, p.netProfit)), deltaLine(tx('u.lastYear'), ly && dAbs(a.netProfit, ly.netProfit)), deltaLine(tx('u.margin'), a.netRevenue>0 && p && p.netRevenue>0 ? (a.netProfit/a.netRevenue - p.netProfit/p.netRevenue)*100 : null, {pts:true})),
-        foot: (a.netRevenue>0 ? tv('Margin ','Biên ')+(a.netProfit/a.netRevenue*100).toFixed(1)+'%' : '') + (a.opexDays>0 ? tv(' · G&A entered manually',' · G&A nhập tay') : tv(' · no G&A yet',' · chưa có G&A')) + ((a.productCostEst||a.productCostHasActual) ? '' : tv(' · product cost not deducted',' · chưa trừ giá vốn'))},
+        foot: (a.netRevenue>0 ? tv('Margin ','Biên ')+(a.netProfit/a.netRevenue*100).toFixed(1)+'%' : '') + (a.opexDays>0 ? tv(' · G&A entered manually',' · G&A nhập tay') : tv(' · no G&A yet',' · chưa có G&A')) + ((a.productCostEst||a.productCostHasActual||a.productCostHasLots) ? '' : tv(' · product cost not deducted',' · chưa trừ giá vốn'))},
       {label:'MER', value: merNow.value!==null ? merNow.value.toFixed(2)+'x' : '—',
         deltas: dl(deltaLine(lk, (merPrev && merPrev.value!==null && merNow.value!==null) ? dAbs(merNow.value, merPrev.value) : null), deltaLine(tx('u.lastYear'), (merLy && merLy.value!==null && merNow.value!==null) ? dAbs(merNow.value, merLy.value) : null), (()=>{ const be = breakEvenMer(a); return be ? `<div class="delta ${merNow.value!==null && merNow.value>=be ? 'up':'down'}"><span class="k">${tx('u.breakEven')}:</span> ${be.toFixed(2)}x</div>` : deltaLine(tx('u.breakEven'), null); })()),
         foot: merNow.days<merNow.of ? tv('Based on ','Tính trên ')+merNow.days+'/'+merNow.of+tv(' days with complete data (Amazon Ads arrives after ~18:00 VN)',' ngày đủ số (Amazon Ads về sau ~18h VN)') : tv('Every ad source reported','Đủ số mọi nguồn quảng cáo'), alert: merNow.value!==null && breakEvenMer(a) && merNow.value<breakEvenMer(a)},
@@ -2706,7 +2735,8 @@
     const daily = rows.length>=3 ? dailyAgg(rows) : null;
     const sparks = daily ? [daily.map(x=>x.netRevenue), daily.map(x=>x.contributionProfit), daily.map(x=>x.netProfit), daily.map(x=> x.merSpend>0 ? x.merValue : null), daily.map(x=>x.marketingTotal), daily.map(x=>x.totalOrders)] : null;
     el.innerHTML = tiles.map((t,i)=>`<div class="kpi${t.alert?' alert':''}"><div class="kh"><span class="label">${t.label}</span>${pillOf(pd[i], lower[i])}</div><div class="value" title="${t.title||''}">${t.value}</div><div class="deltas">${t.deltas.slice(1).join('')}</div>${t.foot ? `<div class="foot">${t.foot}</div>` : ''}${sparks ? sparkSvg(sparks[i], {free: i===3}) : ''}</div>`).join('');
-    const defCogs = document.getElementById('defCogs'); if(defCogs) defCogs.textContent = (Object.keys(COGS_ACTUAL.months).length ? tv('actuals from the accounting inventory ledger for ','số thật từ sổ kho kế toán cho ')+Object.keys(COGS_ACTUAL.months).sort().join(', ')+tv('; the remaining months ','; các tháng còn lại ') : '') + (COGS_EST ? tv('estimated at ','ước ')+(COGS_EST.rate*100).toFixed(0)+'% — '+COGS_EST.basis : tv('not enabled — product cost $0','chưa bật — giá vốn $0'));
+    const _F = fifoState();
+    const defCogs = document.getElementById('defCogs'); if(defCogs) defCogs.textContent = (_F && _F.ok ? tv('FIFO by receipt lot from ','FIFO theo lô nhập từ ')+_F.meta.lots+tv(' Notion lots (',' lô Notion (')+_F.meta.skus+tv(' SKUs) on every day with units per SKU since ',' SKU) cho mọi ngày có units theo SKU từ ')+_F.first+'; ' : '') + (Object.keys(COGS_ACTUAL.months).length ? tv('actuals from the accounting inventory ledger for ','số thật từ sổ kho kế toán cho ')+Object.keys(COGS_ACTUAL.months).sort().join(', ')+tv('; the remaining months ','; các tháng còn lại ') : '') + (COGS_EST ? tv('estimated at ','ước ')+(COGS_EST.rate*100).toFixed(0)+'% — '+COGS_EST.basis : tv('not enabled — product cost $0','chưa bật — giá vốn $0'));
     renderPace(rows, a);
     renderMatrix(rows, a, prevRows, lyRows);
     const alertItems = renderAlerts(rows, a, merNow);
@@ -2856,7 +2886,12 @@
     if(discPct>40) items.push({lvl:'warn', name:tv('Shopify discounts ','Giảm giá Shopify ')+discPct.toFixed(0)+tv('% of Shopify gross sales','% doanh thu gộp Shopify'), note:tv('Threshold 40% · discount codes, automatic promotions, B1G2F — see the P&L page','Ngưỡng 40% · mã giảm giá, KM tự động, B1G2F — xem trang Lãi lỗ'), stake:(discPct-40)/100*a.gross.shopify, action:tv('Excess over the 40% threshold = ','Phần vượt ngưỡng 40% = ')+money((discPct-40)/100*a.gross.shopify,{compact:true})+tv(' — review discount codes and B1G2F',' — rà mã giảm giá và B1G2F')});
     if(a.amazonAdsProvisionalDays>0 || merNow.days<merNow.of) items.push({lvl:'warn', name:tv('Amazon Ads has no data for the last ','Amazon Ads chưa có số cho ')+(merNow.of-merNow.days)+tv((merNow.of-merNow.days)===1 ? ' day of the period' : ' days of the period',' ngày cuối kỳ'), note:tv('Sellerboard exports once a day (~18:00 VN) — MER and marketing spend for this period will rise when it lands','Sellerboard xuất 1 lần/ngày (~18h giờ VN) — MER và chi marketing kỳ này sẽ tăng khi số về'), stake:null, action: a.amazonAdsProvisionalAmt>0 ? tv('Provisionally counting ','Đang tạm tính ')+money(a.amazonAdsProvisionalAmt,{compact:true})+tv(' of cost',' chi phí') : tv('Wait for the data, then recheck MER','Chờ số về rồi xem lại MER')});
     SOURCES.filter(s0=> s0.level==='w' || s0.level==='c').forEach(s0=>{ if(s0.level==='c' && !HEALTH_FLAG[s0.key]) return; items.push({lvl: s0.level==='c'?'crit':'warn', name:tx('u.source')+' '+s0.name, note: s0.age, stake:null, action:tx('u.seeData')}); });
-    if(!a.productCostEst && !a.productCostHasActual) items.push({lvl:'warn', name:tv('Product cost not deducted','Chưa trừ giá vốn sản phẩm'), note:tv('CM3 and EBITDA are overstated — fill in data/cogs_monthly.json (accounting figures) or enable cogs_estimate in data/targets_monthly.json','CM3 và EBITDA đang cao hơn thực tế — điền data/cogs_monthly.json (số kế toán) hoặc bật cogs_estimate trong data/targets_monthly.json'), stake:null});
+    if(a.productCostHasLots){
+      const U = a.productCostLotUnits + a.productCostFbUnits + a.productCostEstUnits, estPct = a.productCost>0 ? a.productCostEstAmount/a.productCost*100 : 0;
+      if(estPct>10) items.push({lvl:'warn', name:tv('Product cost: ','Giá vốn: ')+estPct.toFixed(0)+tv('% still estimated','% còn ước tính'), note:money(a.productCostLots+a.productCostFallback,{compact:true})+tv(' FIFO by receipt lot, ',' FIFO theo lô nhập, ')+money(a.productCostEstAmount,{compact:true})+tv(' estimated at ',' ước ')+(a.cogsEstRate*100).toFixed(0)+tv('% for sales without units per SKU (Walmart, TikTok Shop, items without SKU, days before the SKU data)','% cho doanh số không có units theo SKU (Walmart, TikTok Shop, hàng không SKU, ngày trước khi có dữ liệu SKU)'), stake:null, action:tv('Run the SKU backfill (Shopify / Amazon sync, from 2025-01-01)','Chạy backfill SKU (sync Shopify / Amazon, từ 01/01/2025)')});
+      else items.push({lvl:'ok', name:tv('Product cost: FIFO by receipt lot','Giá vốn: FIFO theo lô nhập'), note:(U>0 ? (a.productCostLotUnits/U*100).toFixed(0)+tv('% of units from Notion receipt lots',' % units theo lô nhập Notion') : '')+(a.productCostFbUnits>0 ? tv(' · ',' · ')+(a.productCostFbUnits/U*100).toFixed(0)+tv('% nearest-lot / per-SKU cost','% giá lô gần nhất / theo SKU') : ''), stake:null});
+    }
+    else if(!a.productCostEst && !a.productCostHasActual) items.push({lvl:'warn', name:tv('Product cost not deducted','Chưa trừ giá vốn sản phẩm'), note:tv('CM3 and EBITDA are overstated — fill in data/cogs_monthly.json (accounting figures) or enable cogs_estimate in data/targets_monthly.json','CM3 và EBITDA đang cao hơn thực tế — điền data/cogs_monthly.json (số kế toán) hoặc bật cogs_estimate trong data/targets_monthly.json'), stake:null});
     else if(a.productCostEst && a.productCostHasActual) items.push({lvl:'ok', name:tv('Product cost: partly still estimated','Giá vốn: một phần còn ước tính'), note:money(a.productCostActual,{compact:true})+tv(' from the accounting inventory ledger, ',' theo sổ kho kế toán, ')+money(a.productCostEstAmount,{compact:true})+tv(' still estimated at ',' còn ước ')+(a.cogsEstRate*100).toFixed(0)+tv('% — fill in the remaining channels/months in data/cogs_monthly.json','% — điền nốt các kênh/tháng còn trống trong data/cogs_monthly.json'), stake:null});
     else if(a.productCostEst) items.push({lvl:'warn', name:tv('Product cost is still an estimate of ','Giá vốn còn là ước tính ')+(a.cogsEstRate*100).toFixed(0)+'%', note:tv('No accounting figures for this period — CM3, EBITDA and channel margins are approximations (','Chưa có số kế toán kỳ này — CM3, EBITDA và biên theo kênh chỉ là xấp xỉ (')+money(a.productCostEstAmount,{compact:true})+tv(' estimated). Fill in data/cogs_monthly.json once the inventory report is available.',' đang ước). Điền data/cogs_monthly.json khi có báo cáo tồn kho.'), stake:null, action:tv('Send CAU_HOI_GUI_KE_TOAN.txt to the accountant','Gửi CAU_HOI_GUI_KE_TOAN.txt cho kế toán')});
     try{ const sr = stockRisk(); if(sr.count>0){ const list = sr.top.map(r=>r.sku).join(', '); items.push({lvl: sr.atRisk>5000 ? 'crit' : 'warn', name: tx('risk.stockout', {n: sr.count}), note: tx('risk.stockoutNote', {list}), stake: sr.atRisk, action: tx('risk.stockoutAction', {list})}); } }catch(e){}
@@ -2893,6 +2928,220 @@
   }
   const COGS_SKUS = parseCogsSkus(COGS_SKUS_LIVE_DATA);
   // landed cost of one platform SKU: its own number, else the sum of its components (bundles / multipacks)
+  // ---------- V11: FIFO landed cost from receipt lots (data/cogs_lots.json <- Notion Reorder Tracker) ----------
+  // One lot = one SKU line of one inbound container with its landed cost per unit (EXW + freight/unit + duties/unit, Notion's
+  // own formulas, rebuilt and checked 32/32 against the accountant's export). Units sold per SKU per day consume lots
+  // first-in-first-out per stock pool: Amazon sells from FBA/AWD, Shopify / TikTok Shop / Walmart from ShipMonk + SAT; a SKU
+  // stocked in one pool only is shared by every channel. Opening stock on the first day with units per SKU = units on hand
+  // today + units sold since - units received since, kept from the NEWEST earlier lots (FIFO leaves the newest on the shelf).
+  // Returns are not put back (the accountant's rule on returned stock is still open). A unit no lot can cover takes, in order:
+  // the next lot's cost, the last lot's cost, the other pool's lot cost, data/cogs_skus.json, else the % estimate.
+  // P&L precedence: accounting figure for the month+channel (data/cogs_monthly.json) > FIFO lots > % estimate.
+  const FIFO_CH_POOL = {amazon:'fba', shopify:'d2c', walmart:'d2c', tiktok:'d2c'};
+  const fifoPoolOf = dest => { const x = String(dest||'').toLowerCase(); if(!x) return null; if(/\bfba\b|\bawd\b|amazon/.test(x)) return 'fba'; if(/shipmonk|\bsat\b|bsf|walmart|uline/.test(x)) return 'd2c'; return null; };
+  const fifoBaseSku = x => /^amzn\.gr\./i.test(x) ? x.slice(8, 20) : x;
+  const fifoSkip = x => x==='(no sku)' || x==='RETURN-OFFSET';
+  function parseLots(data){
+    const out = {lots:[], meta:{loaded:0, priced:0, unpriced:0, incoming:0, incomingUnits:0, offsite:0, skus:0, generated_at: (data && data.generated_at)||null}};
+    if(!data || !Array.isArray(data.lots)) return out;
+    const skus = new Set();
+    data.lots.forEach(l=>{
+      if(!l || !l.sku) return;
+      const sku = String(l.sku).trim(); if(!sku) return;
+      const rq = parseFloat(l.received_qty)||0, q = parseFloat(l.qty)||0, qty = rq>0 ? rq : q;
+      if(!(qty>0)) return;
+      const lv = parseFloat(l.landed), landed = (l.landed===null || l.landed===undefined || l.landed==='' || !isFinite(lv)) ? null : lv;
+      const day = String(l.ata || l.eta || '').slice(0,10) || null;
+      const done = rq>0 || /^(received|receiving|archived)$/i.test(String(l.status||''));
+      const pool = fifoPoolOf(l.dest);
+      const lot = {inbound: String(l.inbound||''), sku, pool, dest: String(l.dest||''), status: String(l.status||''), qty, day: done ? (day||'2000-01-01') : day, received: done && (!day || day<=TODAY_ISO), landed, eta: String(l.eta||'').slice(0,10)||null};
+      out.meta.loaded++; skus.add(sku); if(landed!==null) out.meta.priced++; else out.meta.unpriced++;
+      if(!pool) out.meta.offsite++; else if(!lot.received){ out.meta.incoming++; out.meta.incomingUnits += qty; }
+      out.lots.push(lot);
+    });
+    out.meta.skus = skus.size;
+    return out;
+  }
+  // components a sold SKU consumes: Amazon virtual bundle -> its parent; bundles / multipacks from data/cogs_skus.json
+  function fifoParts(sku, depth){
+    const b = fifoBaseSku(sku), c = COGS_SKUS[b];
+    if(c && c.components && (depth||0)<3){
+      const out = [];
+      Object.keys(c.components).forEach(x=>{ const q = parseFloat(c.components[x])||0; if(q>0) fifoParts(x, (depth||0)+1).forEach(([y,qq])=>out.push([y, q*qq])); });
+      if(out.length) return out;
+    }
+    return [[b, 1]];
+  }
+  function fifoState(){
+    let ready = false; try{ ready = booted; }catch(e){ ready = false; }   // booted is declared further down (TDZ before boot)
+    if(!ready) return null;
+    const sig = days.length+'|'+days.filter(r=>r.sku).length;
+    if(_fifo && _fifo.sig===sig) return _fifo;
+    try{ _fifo = buildFifo(); }catch(e){ _fifo = {ok:false, error: String(e && e.message || e), day:{}, Q:{}, meta:{}}; }
+    _fifo.sig = sig;
+    return _fifo;
+  }
+  function buildFifo(){
+    if(!LOTS) LOTS = parseLots(COGS_LOTS_LIVE_DATA);
+    const st = {ok:false, day:{}, Q:{}, first:null, meta: Object.assign({lots: LOTS.meta.loaded, skus: LOTS.meta.skus}, LOTS.meta)};
+    if(!LOTS.lots.length) return st;
+    const sales = days.filter(r=> r.sku && Object.keys(r.sku).some(k=>FIFO_CH_POOL[k]));
+    if(!sales.length) return st;
+    st.first = sales[0].iso;
+    // queues per SKU per pool (one shared queue when the SKU is stocked in one pool only)
+    const pools = {};
+    LOTS.lots.forEach(l=>{ if(l.pool) (pools[l.sku] = pools[l.sku] || new Set()).add(l.pool); });
+    const Q = st.Q;
+    LOTS.lots.forEach(l=>{
+      if(!l.pool) return;
+      const shared = pools[l.sku].size<2, key = l.sku+'|'+(shared ? '*' : l.pool);
+      const q = Q[key] = Q[key] || {key, sku: l.sku, pool: shared ? '*' : l.pool, home: l.pool, layers:[], last:null, sold:0, rec:0, open:0, onHand:null};
+      q.layers.push({inbound: l.inbound, day: l.day, avail: l.received, cost: l.landed, qty: l.qty, left: l.qty, status: l.status, dest: l.dest, eta: l.eta});
+    });
+    Object.values(Q).forEach(q=>{
+      q.layers.sort((a,b)=> String(a.day||'9999').localeCompare(String(b.day||'9999')) || a.inbound.localeCompare(b.inbound));
+      // a lot without a landed cost yet (freight not booked) borrows the nearest priced lot of the same queue
+      q.layers.forEach((y,i)=>{ if(y.cost!==null) return; let c = null; for(let j=i-1; j>=0 && c===null; j--) c = q.layers[j].cost; for(let j=i+1; j<q.layers.length && c===null; j++) c = q.layers[j].cost; y.cost = c; y.borrowed = c!==null; });
+    });
+    const keyOf = (sku, ch) => { const ps = pools[sku]; if(!ps) return null; if(ps.size<2) return sku+'|*'; const p = FIFO_CH_POOL[ch]; return ps.has(p) ? sku+'|'+p : null; };
+    // pass 1: units each queue sells over the replay
+    sales.forEach(r=> Object.keys(r.sku).forEach(k=>{ if(!FIFO_CH_POOL[k]) return; const u = r.sku[k].units||{}; Object.keys(u).forEach(x=>{ const n = parseFloat(u[x])||0; if(n<=0 || fifoSkip(x)) return; fifoParts(x).forEach(([c,qq])=>{ const key = keyOf(c, k); if(key && Q[key]) Q[key].sold += n*qq; }); }); }));
+    // pass 2: opening stock = on hand today + sold since the first day - received since, kept from the newest earlier lots
+    const snap = (AMAZON_STORAGE_LIVE_DATA && AMAZON_STORAGE_LIVE_DATA.inventory && AMAZON_STORAGE_LIVE_DATA.inventory.snapshot) || {};
+    const smk = (SHIPMONK_INVENTORY && SHIPMONK_INVENTORY.skus) || {};
+    const onFba = x => { const v = snap[x]; return v ? Math.max(0, (v.total||0) - (v.inbound_working||0) - (v.inbound_shipped||0)) : null; };
+    const onSmk = x => { const v = smk[x]; return v ? Math.max(0, parseFloat(v.on_hand)||0) : null; };
+    Object.values(Q).forEach(q=>{
+      const a = q.pool==='d2c' ? null : onFba(q.sku), b = q.pool==='fba' ? null : onSmk(q.sku);
+      const known = a!==null || b!==null;
+      q.onHand = known ? (a||0) + (b||0) : null;
+      q.rec = q.layers.filter(y=> y.avail && y.day>=st.first).reduce((t,y)=>t+y.qty, 0);
+      q.open = Math.max(0, (known ? q.onHand : 0) + q.sold - q.rec);
+      let keep = q.open;
+      for(let i=q.layers.length-1; i>=0; i--){ const y = q.layers[i]; if(!y.avail || y.day>=st.first) continue; const t = Math.min(y.qty, keep); y.left = t; keep -= t; }
+      if(keep>0.5){ const c0 = (q.layers.find(y=>y.cost!==null)||{}).cost; q.layers.unshift({inbound: 'opening', day: '0000-00-00', avail: true, cost: c0===undefined ? null : c0, qty: keep, left: keep, status: '', dest: '', eta: null, synthetic: true}); }
+      q.openShort = Math.max(0, keep);
+    });
+    // pass 3: replay the sales day by day
+    const take = (q, d, need) => {
+      let cost = 0, priced = 0, taken = 0;
+      for(const y of q.layers){
+        if(need<=1e-9) break;
+        if(y.day>d) break;
+        if(!y.avail || y.left<=1e-9) continue;
+        const t = Math.min(y.left, need); y.left -= t; need -= t; taken += t;
+        if(y.cost!==null){ cost += t*y.cost; priced += t; q.last = y.cost; }
+      }
+      return {cost, priced, taken};
+    };
+    const fallbackCost = (c, k, q, d) => {
+      if(q){
+        const nx = q.layers.find(y=> y.cost!==null && (y.day>d || !y.avail) && y.left>0); if(nx) return nx.cost;
+        if(q.last!==null) return q.last;
+      }
+      const ps = pools[c];
+      if(ps && ps.size>1){ const other = Q[c+'|'+(FIFO_CH_POOL[k]==='fba' ? 'd2c' : 'fba')]; if(other){ const y = other.layers.find(z=> z.cost!==null && z.left>0); if(y) return y.cost; if(other.last!==null) return other.last; } }
+      const sc = skuCost(c); return sc!==null ? sc : null;
+    };
+    const tot = {lot:0, fb:0, units:0, lotUnits:0, fbUnits:0, estUnits:0};
+    sales.forEach(r=>{
+      const d = r.iso, rec = st.day[d] = {};
+      Object.keys(r.sku).forEach(k=>{
+        if(!FIFO_CH_POOL[k]) return;
+        const u = r.sku[k].units||{}, o = rec[k] = {c:{}, lot:0, fb:0, units:0, lotUnits:0, fbUnits:0, estUnits:0};
+        Object.keys(u).forEach(x=>{
+          const n = parseFloat(u[x])||0; if(n<=0 || fifoSkip(x)) return;
+          let lot = 0, fb = 0, need = 0, lotU = 0, fbU = 0;
+          fifoParts(x).forEach(([c,qq])=>{
+            const want = n*qq; need += want;
+            const key = keyOf(c, k), q = key ? Q[key] : null;
+            let rest = want;
+            if(q){ const t = take(q, d, rest); lot += t.cost; lotU += t.priced; rest -= t.priced; }
+            if(rest>1e-9){ const uc = fallbackCost(c, k, q, d); if(uc!==null){ fb += rest*uc; fbU += rest; rest = 0; } }
+          });
+          const cl = need>0 ? lotU/need : 0, cf = need>0 ? fbU/need : 0, ce = Math.max(0, 1 - cl - cf);
+          o.c[x] = {n, lot, fb, lotU: n*cl, fbU: n*cf, est: n*ce};
+          o.lot += lot; o.fb += fb; o.units += n; o.lotUnits += n*cl; o.fbUnits += n*cf; o.estUnits += n*ce;
+        });
+        ['lot','fb','units','lotUnits','fbUnits','estUnits'].forEach(f=>{ tot[f] += o[f]; });
+      });
+    });
+    st.meta.replay = tot; st.meta.salesDays = sales.length;
+    st.ok = true;
+    return st;
+  }
+  // cost of one day+channel's units per SKU (the row may be masked to a market / product line)
+  function fifoCostOfSku(fd, sk){
+    const u = sk.units||{}, sales = sk.sales||{};
+    let lot = 0, fb = 0, units = 0, lotU = 0, fbU = 0, estU = 0, S = 0, SE = 0;
+    Object.keys(u).forEach(x=>{
+      const n = parseFloat(u[x])||0, g = Math.max(0, parseFloat(sales[x])||0); S += g;
+      if(x==='RETURN-OFFSET' || n<=0) return;
+      const c = fd.c[x];
+      if(!c || !(c.n>0)){ units += n; estU += n; SE += g; return; }
+      const f = n/c.n; lot += c.lot*f; fb += c.fb*f; units += n; lotU += c.lotU*f; fbU += c.fbU*f; estU += c.est*f; SE += g*(c.est/c.n);
+    });
+    return {lot, fb, units, lotUnits: lotU, fbUnits: fbU, estUnits: estU, estShare: S>0 ? SE/S : (units>0 ? estU/units : 1)};
+  }
+  // FIFO cost per SKU over a set of day rows for one channel (masked like skuAggregate)
+  function fifoSkuCosts(rowsIn, k){
+    const F = fifoState(); if(!F || !F.ok) return null;
+    const rows = maskPartial() ? rowsIn.map(maskRow) : rowsIn;
+    const out = {};
+    rows.forEach(r=>{
+      const sk = r.sku && r.sku[k], fd = F.day[r.iso] && F.day[r.iso][k]; if(!sk || !fd) return;
+      Object.keys(sk.units||{}).forEach(x=>{ const n = parseFloat(sk.units[x])||0, c = fd.c[x]; const o = out[x] = out[x] || {cost:0, units:0, costed:0}; o.units += n; if(c && c.n>0){ const f = n/c.n; o.cost += (c.lot+c.fb)*f; o.costed += (c.lotU+c.fbU)*f; } });
+    });
+    return out;
+  }
+  // product cost of one SKU in the SKU / product-line tables: FIFO where the replay costed it, else data/cogs_skus.json, else the channel's share
+  function skuCogsOf(fc, x, units, net, ck, g){
+    const f = fc && fc[x];
+    if(f && f.costed>0){
+      const rest = Math.max(0, units - f.costed), c1 = skuCost(x);
+      const extra = rest>1e-9 ? (c1!==null ? rest*c1 : (COGS_EST ? COGS_EST.rate : 0)*Math.max(0, net)*(units>0 ? rest/units : 1)) : 0;
+      return {cogs: f.cost + extra, real: f.cost + (c1!==null && rest>1e-9 ? rest*c1 : 0)};
+    }
+    const c = skuCost(x); if(c!==null) return {cogs: units*c, real: units*c};
+    return {cogs: ck.cogs*g, real: 0};
+  }
+  // unit cost of the stock still on hand (FIFO layers left), for inventory capital
+  function fifoUnitCostNow(sku, pool){
+    const F = fifoState(); if(!F || !F.ok) return null;
+    const q = F.Q[sku+'|'+pool] || F.Q[sku+'|*']; if(!q) return null;
+    let u = 0, v = 0; q.layers.forEach(y=>{ if(y.avail && y.left>0 && y.cost!==null){ u += y.left; v += y.left*y.cost; } });
+    if(u>0) return v/u;
+    const nx = q.layers.find(y=> y.cost!==null && !y.avail); return nx ? nx.cost : (q.last!==null ? q.last : null);
+  }
+  // ---- Products & inventory: receipt lots card ----
+  function renderLots(){
+    const card = document.getElementById('lotsCard'), t = document.getElementById('lotsTable'); if(!card || !t) return;
+    const F = fifoState(), L = LOTS || parseLots(COGS_LOTS_LIVE_DATA);
+    const k = document.getElementById('lotsKpis');
+    if(!L.lots.length){ k.innerHTML = ''; t.innerHTML = ''; setNote('lotsNote', tv('Waiting for data/cogs_lots.json (Notion receipt lots)','Chờ data/cogs_lots.json (lô nhập từ Notion)')); setNote('lotsCaption', ''); return; }
+    const poolName = p => p==='fba' ? 'FBA / AWD' : p==='d2c' ? tv('ShipMonk + SAT','ShipMonk + SAT') : tv('shared','dùng chung');
+    const rows = F && F.ok ? Object.values(F.Q).map(q=>{
+      let left = 0, val = 0; q.layers.forEach(y=>{ if(y.avail && y.left>0){ left += y.left; if(y.cost!==null) val += y.left*y.cost; } });
+      const cur = q.layers.find(y=> y.avail && y.left>0) || null;
+      const next = q.layers.find(y=> !y.avail) || null;
+      const recv = q.layers.filter(y=> y.avail && !y.synthetic); const last = recv.length ? recv[recv.length-1] : null;
+      return {q, left, val, cur, next, last};
+    }).filter(r=> r.left>0.5 || r.next) : [];
+    rows.sort((x,y)=> y.val - x.val);
+    const totLeft = sum(rows.map(r=>r.left)), totVal = sum(rows.map(r=>r.val));
+    const R = F && F.ok ? F.meta.replay : null, U = R ? R.lotUnits + R.fbUnits + R.estUnits : 0;
+    k.innerHTML = `
+      <div class="kpi"><div class="label">${tv('Receipt lots','Lô nhập')}</div><div class="value">${intFmt(L.meta.loaded)}</div><div class="foot">${intFmt(L.meta.skus)} SKU · ${intFmt(L.meta.unpriced)} ${tv('without landed cost yet','chưa có giá landed')}</div></div>
+      <div class="kpi"><div class="label">${tv('On hand by lot (FIFO)','Tồn theo lô (FIFO)')}</div><div class="value">${money(totVal,{compact:true})}</div><div class="foot">${intFmt(totLeft)} ${tv('units across','units ·')} ${intFmt(rows.filter(r=>r.left>0.5).length)} ${tv('SKU × pool','SKU × kho')}</div></div>
+      <div class="kpi"><div class="label">${tv('Incoming lots','Lô đang về')}</div><div class="value">${intFmt(L.meta.incoming)}</div><div class="foot">${intFmt(L.meta.incomingUnits)} ${tv('units not received yet','units chưa nhận')}</div></div>
+      <div class="kpi"><div class="label">${tv('Units costed from lots','Units tính theo lô')}</div><div class="value">${U>0 ? (R.lotUnits/U*100).toFixed(1)+'%' : '—'}</div><div class="foot">${U>0 ? tv('since ','từ ')+F.first+' · '+(R.fbUnits/U*100).toFixed(1)+tv('% nearest-lot / per-SKU · ','% giá lô gần nhất / theo SKU · ')+(R.estUnits/U*100).toFixed(1)+tv('% estimated','% ước tính') : '—'}</div></div>`;
+    setNote('lotsNote', F && F.ok ? tv('FIFO since ','FIFO từ ')+F.first+' · '+intFmt(F.meta.salesDays)+tv(' days with units per SKU',' ngày có units theo SKU') : tv('No units per SKU yet','Chưa có units theo SKU'));
+    const fd = d => d ? d.slice(8,10)+'/'+d.slice(5,7)+'/'+d.slice(2,4) : '—';
+    const lotTxt = y => y ? `${y.inbound} · ${fd(y.day||y.eta)} · ${intFmt(y.qty)} @ ${y.cost!==null ? money(y.cost) : '—'}` : '—';
+    t.innerHTML = `<thead><tr><th>SKU</th><th>${tx('u.product')}</th><th>${tv('Stock pool','Kho')}</th><th class="num">${tv('On hand (FIFO)','Tồn (FIFO)')}</th><th class="num">${tv('Value','Giá trị')}</th><th class="num">${tv('Current lot cost','Giá lô đang xuất')}</th><th>${tv('Next lot','Lô kế tiếp')}</th><th>${tv('Last received','Nhận gần nhất')}</th></tr></thead><tbody>` +
+      rows.slice(0,40).map(r=>`<tr><td style="font-family:var(--font-mono);font-size:11.5px;">${r.q.sku}</td><td>${(skuName(r.q.sku)||'').slice(0,34)}</td><td>${poolName(r.q.pool==='*' ? r.q.home : r.q.pool)}${r.q.pool==='*' ? ' <small style="color:var(--ink-muted)">'+tv('all channels','mọi kênh')+'</small>' : ''}</td><td class="num" title="${tv('Opening stock ','Tồn đầu ')+intFmt(r.q.open)+tv(' · sold ',' · đã bán ')+intFmt(r.q.sold)+tv(' · received ',' · đã nhận ')+intFmt(r.q.rec)+(r.q.onHand!==null ? tv(' · on hand today ',' · tồn hôm nay ')+intFmt(r.q.onHand) : '')}">${intFmt(r.left)}</td><td class="num">${money(r.val,{compact:true})}</td><td class="num">${r.cur && r.cur.cost!==null ? money(r.cur.cost) : '—'}${r.cur && r.cur.synthetic ? ' <small style="color:var(--ink-muted)">'+tv('opening','tồn đầu')+'</small>' : ''}</td><td style="font-size:11.5px;white-space:nowrap;">${lotTxt(r.next)}</td><td style="font-size:11.5px;white-space:nowrap;">${lotTxt(r.last)}</td></tr>`).join('') + '</tbody>';
+    setNote('lotsCaption', (rows.length>40 ? tv('Showing the 40 largest of ','Hiện 40/')+rows.length+tv(' SKU × pool by value. ',' SKU × kho lớn nhất theo giá trị. ') : '') + tv('data/cogs_lots.json from the Notion Reorder Tracker (landed = EXW + freight/unit + duties/unit). FIFO per stock pool (FBA / AWD for Amazon; ShipMonk + SAT for Shopify, TikTok Shop, Walmart); opening stock = on hand today + sold since − received since, from the newest earlier lots; returns are not put back.','data/cogs_lots.json từ Notion Reorder Tracker (landed = EXW + cước/unit + thuế/unit). FIFO theo kho (FBA / AWD cho Amazon; ShipMonk + SAT cho Shopify, TikTok Shop, Walmart); tồn đầu = tồn hôm nay + đã bán − đã nhận từ ngày đầu, lấy từ các lô mới nhất trước đó; hàng trả chưa nhập lại.'));
+  }
   function skuCost(sku, depth){
     const v = COGS_SKUS[sku]; if(!v) return null;
     if(v.cost!==null) return v.cost;
@@ -2905,7 +3154,7 @@
   function renderInventory(){
     const t = document.getElementById('invTable'); if(!t) return;
     const inv = AMAZON_STORAGE_LIVE_DATA && AMAZON_STORAGE_LIVE_DATA.inventory;
-    const costKnown = Object.keys(COGS_SKUS).length>0;
+    const costKnown = Object.keys(COGS_SKUS).length>0 || !!(fifoState() && fifoState().ok);
     const azSince = skuUnitsSince(AMAZON_LIVE_DATA), shSince = skuUnitsSince(SHOPIFY_LIVE_DATA);
     const gaps = document.getElementById('invGaps');
     gaps.innerHTML = [
@@ -2957,7 +3206,7 @@
       const fee = stBySku[sku] ? stBySku[sku].fee : 0;
       const lt = ltKey && ltMonths[ltKey].by_sku && ltMonths[ltKey].by_sku[sku] ? ltMonths[ltKey].by_sku[sku].fee : 0;
       const virtual = /^amzn\.gr\./i.test(sku);   // Amazon virtual bundle: sells from its components' stock, has no stock of its own
-      const cost = skuCost(sku), onHand = s.total||0, capital = cost!==null ? cost*onHand : null;   // Amazon's total already includes inbound + reserved
+      const fcNow = fifoUnitCostNow(sku, 'fba'), cost = fcNow!==null ? fcNow : skuCost(sku), onHand = s.total||0, capital = cost!==null ? cost*onHand : null;   // Amazon's total already includes inbound + reserved; V11: cost = FIFO lots still on hand
       if(capital!==null){ capitalTotal += capital; capitalSkus++; }
       return {sku, name: s.name||'', fulfillable: s.fulfillable||0, reserved: s.reserved||0, inbound, total: s.total||0, units, perDay, cover, coverIn, outD, outAllD, pos, poQty, fee, lt, unf: s.unfulfillable||0, cost, capital, virtual};
     }).filter(r=> r.total>0 || r.units>0 || r.poQty>0);
@@ -3061,19 +3310,20 @@
       const rk = rows.filter(r=> r.sku && r.sku[k]);
       const ak = aggregate(rk), ck = channelEcon(ak)[k]; chCm += ck.cm;
       const skus = [...new Set(Object.keys(o.units).concat(Object.keys(o.sales)))];
+      const fc = fifoSkuCosts(rows, k);   // V11: FIFO cost per SKU over the same (masked) days
       const G = sum(skus.map(x=>o.sales[x]||0)), U = sum(skus.map(x=>o.units[x]||0));
       const rw = {}; let RW = 0; skus.forEach(x=>{ const u = o.units[x]||0, g = o.sales[x]||0; rw[x] = u>0 ? (o.refunds[x]||0)*(g/u) : 0; RW += rw[x]; });
       skus.forEach(x=>{
         const g = G>0 ? (o.sales[x]||0)/G : 0, us = U>0 ? (o.units[x]||0)/U : 0, rs = RW>0 ? rw[x]/RW : g;
         const units = o.units[x]||0, cost = skuCost(x);
         const gross = ak.gross[k]*g, disc = ak.discountBy[k]*g, ref = ak.refund[k]*rs, net = gross - disc - ref;
-        const cogs = cost!==null ? units*cost : ck.cogs*g;
+        const sc = skuCogsOf(fc, x, units, net, ck, g), cogs = sc.cogs;
         const fulfil = ck.fulfil*us, fees = ck.fees*g, ads = ck.adsAll*g;
         const key = PROD_STATE.group==='code' ? ((COGS_SKUS[x] && COGS_SKUS[x].code) || x) : x;
         const it = items[key] = items[key] || {key, skus:[], ch:{}, units:0, refunds:0, gross:0, disc:0, ref:0, net:0, cogs:0, cogsReal:0, fulfil:0, fees:0, ads:0, cm:0};
         if(!it.skus.includes(x)) it.skus.push(x); it.ch[k] = true;
-        it.units += units; it.refunds += o.refunds[x]||0; it.gross += gross; it.disc += disc; it.ref += ref; it.net += net; it.cogs += cogs; if(cost!==null) it.cogsReal += cogs; it.fulfil += fulfil; it.fees += fees; it.ads += ads; it.cm += net - cogs - fulfil - fees - ads;
-        allSkus++; if(cost!==null) realCost++;
+        it.units += units; it.refunds += o.refunds[x]||0; it.gross += gross; it.disc += disc; it.ref += ref; it.net += net; it.cogs += cogs; it.cogsReal += sc.real; it.fulfil += fulfil; it.fees += fees; it.ads += ads; it.cm += net - cogs - fulfil - fees - ads;
+        allSkus++; if(sc.real>0) realCost++;
       });
     });
     const q = PROD_STATE.q.trim().toLowerCase();
@@ -3088,11 +3338,11 @@
     const tot = list.reduce((s,it)=>{ ['units','refunds','gross','net','cogs','fulfil','fees','ads','cm'].forEach(f=>{ s[f] += it[f]; }); return s; }, {units:0, refunds:0, gross:0, net:0, cogs:0, fulfil:0, fees:0, ads:0, cm:0});
     const nameOf = it => PROD_STATE.group==='code' ? (it.skus.map(skuName).find(Boolean)||'') : skuName(it.key);
     t.innerHTML = '<thead><tr><th>'+(PROD_STATE.group==='code' ? tv('Internal code','Mã nội bộ') : 'SKU')+'</th><th>'+tx('u.product')+'</th><th>'+tx('f.channel')+'</th><th class="num">Units</th><th class="num">'+tv('Returned','Trả')+'</th><th class="num">'+tx('u.grossRev')+' (pb)</th><th class="num">'+tx('u.netRev')+' (pb)</th><th class="num">'+tv('Product cost','Giá vốn')+'</th><th class="num">Fulfillment (pb)</th><th class="num">'+tv('Fees','Phí')+' (pb)</th><th class="num">Ads + aff (pb)</th><th class="num">CM3</th><th class="num">CM3 / unit</th><th class="num">'+tv('% of net revenue','% DT thuần')+'</th></tr></thead><tbody>' +
-      show.map(it=>`<tr><td style="font-family:var(--font-mono);font-size:11.5px;" title="${it.skus.join(', ')}">${it.key}${PROD_STATE.group==='code' && it.skus.length>1 ? ' <small style="color:var(--ink-muted)">'+it.skus.length+' SKU</small>' : ''}</td><td title="${nameOf(it).replace(/"/g,'&quot;')}">${nameOf(it).slice(0,36)}</td><td>${Object.keys(it.ch).map(k=>CH_LABEL[k]).join(', ')}</td><td class="num">${intFmt(it.units)}</td><td class="num">${intFmt(it.refunds)}</td><td class="num">${money(it.gross,{compact:true})}</td><td class="num">${money(it.net,{compact:true})}</td><td class="num" title="${it.cogsReal>0 ? (Math.abs(it.cogsReal-it.cogs)<0.5 ? tv('actual cost (cogs_skus.json)','giá vốn thật (cogs_skus.json)') : tv('partly actual cost','một phần giá vốn thật')) : tv('allocated from the channel\'s estimated product cost','phân bổ từ giá vốn ước tính của kênh')}">${money(it.cogs,{compact:true})}${it.cogsReal>0 ? '' : ' <small style="color:var(--ink-muted)">'+tv('est.','ước')+'</small>'}</td><td class="num">${money(it.fulfil,{compact:true})}</td><td class="num">${money(it.fees,{compact:true})}</td><td class="num">${money(it.ads,{compact:true})}</td><td class="num ${it.cm<0?'d-down':''}">${money(it.cm,{compact:true})}</td><td class="num ${it.cm<0?'d-down':''}">${it.units>0 ? money(it.cm/it.units) : '—'}</td><td class="num">${it.net>0 ? (it.cm/it.net*100).toFixed(0)+'%' : '—'}</td></tr>`).join('') +
+      show.map(it=>`<tr><td style="font-family:var(--font-mono);font-size:11.5px;" title="${it.skus.join(', ')}">${it.key}${PROD_STATE.group==='code' && it.skus.length>1 ? ' <small style="color:var(--ink-muted)">'+it.skus.length+' SKU</small>' : ''}</td><td title="${nameOf(it).replace(/"/g,'&quot;')}">${nameOf(it).slice(0,36)}</td><td>${Object.keys(it.ch).map(k=>CH_LABEL[k]).join(', ')}</td><td class="num">${intFmt(it.units)}</td><td class="num">${intFmt(it.refunds)}</td><td class="num">${money(it.gross,{compact:true})}</td><td class="num">${money(it.net,{compact:true})}</td><td class="num" title="${it.cogsReal>0 ? (Math.abs(it.cogsReal-it.cogs)<0.5 ? tv('actual cost (FIFO lots / cogs_skus.json)','giá vốn thật (lô FIFO / cogs_skus.json)') : tv('partly actual cost','một phần giá vốn thật')) : tv('allocated from the channel\'s estimated product cost','phân bổ từ giá vốn ước tính của kênh')}">${money(it.cogs,{compact:true})}${it.cogsReal>0 ? '' : ' <small style="color:var(--ink-muted)">'+tv('est.','ước')+'</small>'}</td><td class="num">${money(it.fulfil,{compact:true})}</td><td class="num">${money(it.fees,{compact:true})}</td><td class="num">${money(it.ads,{compact:true})}</td><td class="num ${it.cm<0?'d-down':''}">${money(it.cm,{compact:true})}</td><td class="num ${it.cm<0?'d-down':''}">${it.units>0 ? money(it.cm/it.units) : '—'}</td><td class="num">${it.net>0 ? (it.cm/it.net*100).toFixed(0)+'%' : '—'}</td></tr>`).join('') +
       `<tr style="font-weight:700;"><td class="name" colspan="3">${tx('u.total')} ${list.length} ${tv('rows','dòng')}${list.length>40 ? tv(' (showing 40)',' (hiện 40)') : ''}</td><td class="num">${intFmt(tot.units)}</td><td class="num">${intFmt(tot.refunds)}</td><td class="num">${money(tot.gross,{compact:true})}</td><td class="num">${money(tot.net,{compact:true})}</td><td class="num">${money(tot.cogs,{compact:true})}</td><td class="num">${money(tot.fulfil,{compact:true})}</td><td class="num">${money(tot.fees,{compact:true})}</td><td class="num">${money(tot.ads,{compact:true})}</td><td class="num ${tot.cm<0?'d-down':''}">${money(tot.cm,{compact:true})}</td><td class="num">${tot.units>0 ? money(tot.cm/tot.units) : '—'}</td><td class="num">${tot.net>0 ? (tot.cm/tot.net*100).toFixed(0)+'%' : '—'}</td></tr></tbody>`;
     const best = list[0], worst = list.length>1 ? list[list.length-1] : null;
     setNote('prodNote', allSkus+tv(' SKUs on ',' SKU trên ')+keys.map(k=>CH_LABEL[k]).join(' + ')+tv(' · actual cost for ',' · giá vốn thật cho ')+realCost+'/'+allSkus+(covMin<n ? ' · '+covMin+'/'+n+' '+tx('u.daysWithSku') : '')+(best ? tv(' · best ',' · tốt nhất ')+best.key+' '+money(best.cm,{compact:true}) : '')+(worst && worst.cm<0 ? tv(' · worst ',' · kém nhất ')+worst.key+' '+money(worst.cm,{compact:true}) : ''));
-    setNote('prodCaption', tv('(pb) = allocated from the channel total over the days with SKU data: gross sales, discounts, fees and ads by the SKU\'s share of gross sales; refunds by units returned × average price; fulfillment by units. Product cost = units × landed cost in data/cogs_skus.json when available, otherwise allocated from the channel\'s ','(pb) = phân bổ từ tổng của kênh trong những ngày có dữ liệu SKU: doanh thu gộp, giảm giá, phí và ads theo tỷ trọng doanh thu gộp của SKU; hoàn tiền theo units trả × giá bình quân; fulfillment theo units. Giá vốn = units × giá landed trong data/cogs_skus.json khi có, nếu không phân bổ từ giá vốn ')+(COGS_EST ? tv('estimated cost of ','ước ')+(COGS_EST.rate*100).toFixed(0)+'%' : tv('product cost','của kênh'))+tv(' ("est."). Total CM3 of the SKUs',' ("ước"). Tổng CM3 các SKU')+(Math.abs(tot.cm - chCm) > Math.max(50, Math.abs(chCm)*0.01) && !q ? tv(' differs by ',' lệch ')+money(tot.cm - chCm,{compact:true})+tv(' from the channel CM3 because actual costs replace the estimate',' so CM3 kênh vì giá vốn thật thay cho ước tính') : tv(' = the channel CM3 over the same days',' = CM3 của kênh trên cùng số ngày'))+'.');
+    setNote('prodCaption', tv('(pb) = allocated from the channel total over the days with SKU data: gross sales, discounts, fees and ads by the SKU\'s share of gross sales; refunds by units returned × average price; fulfillment by units. Product cost = FIFO by receipt lot (data/cogs_lots.json) for each day\'s units, else units × landed cost in data/cogs_skus.json, otherwise allocated from the channel\'s ','(pb) = phân bổ từ tổng của kênh trong những ngày có dữ liệu SKU: doanh thu gộp, giảm giá, phí và ads theo tỷ trọng doanh thu gộp của SKU; hoàn tiền theo units trả × giá bình quân; fulfillment theo units. Giá vốn = FIFO theo lô nhập (data/cogs_lots.json) cho units từng ngày, không có thì units × giá landed trong data/cogs_skus.json, nếu không phân bổ từ giá vốn ')+(COGS_EST ? tv('estimated cost of ','ước ')+(COGS_EST.rate*100).toFixed(0)+'%' : tv('product cost','của kênh'))+tv(' ("est."). Total CM3 of the SKUs',' ("ước"). Tổng CM3 các SKU')+(Math.abs(tot.cm - chCm) > Math.max(50, Math.abs(chCm)*0.01) && !q ? tv(' differs by ',' lệch ')+money(tot.cm - chCm,{compact:true})+tv(' from the channel CM3 because actual costs replace the estimate',' so CM3 kênh vì giá vốn thật thay cho ước tính') : tv(' = the channel CM3 over the same days',' = CM3 của kênh trên cùng số ngày'))+'.');
   }
   // ---------- V10: ShipMonk warehouse stock (sync v1.4+ `inventory` block) ----------
   function runOutDays(stock0, perDay, arrivals){
@@ -3188,7 +3438,7 @@
   function renderAll(){
     applySourceAges();   // V10: source "age" lines in the active language
     renderSubCtl(); renderKpis(); renderTrend(); renderStatement(); renderChannelCosts(); renderBreakeven(); renderRoas(); renderAttribution(); renderKlaviyo(); renderLoopSubscriptions(); renderTax(); renderSources(); renderOpexTable(); renderGaps(); renderAmazonGaps(); renderShipmonk(); renderShopifyRecon(); renderSnowball(); renderMetaCampaigns(); renderGoogleCampaigns();
-    renderExec(); renderRev(); renderChannels(); renderProductLines(); renderInventory(); renderShipmonkInventory(); renderOpexPage(); renderUnitEconomics(); renderSensitivity(); renderFunnel(); renderReturnsBySku(); renderProductPnl(); renderFindings(); renderPageHead();
+    renderExec(); renderRev(); renderChannels(); renderProductLines(); renderInventory(); renderShipmonkInventory(); renderOpexPage(); renderUnitEconomics(); renderSensitivity(); renderFunnel(); renderReturnsBySku(); renderProductPnl(); renderLots(); renderFindings(); renderPageHead();
     if(_bannerPaint) _bannerPaint();
   }
   function renderPageHead(){
