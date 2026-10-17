@@ -1,4 +1,4 @@
-/* collect_shipmonk_billing.js  (toolkit v1.0, 2026-10-16)
+/* collect_shipmonk_billing.js  (toolkit v1.0.1, 2026-10-17)
  *
  * Run INSIDE a logged-in app.shipmonk.com tab (Claude built-in browser -> javascript_tool).
  * Collects everything the dashboard builder needs, in one shot:
@@ -39,7 +39,7 @@
 await (async () => {
   // ------------------------------------------------------------------ settings (edit these two lines)
   const SINCE = '2026-09-01';          // include invoices whose billing period END >= SINCE (ISO date)
-  const STORAGE_SINCE = '2026-09-01';  // storage_day lower bound for the Metabase pull (ISO date)
+  const STORAGE_SINCE = '2026-09-14';  // storage_day lower bound for the Metabase pull (ISO date)
   // ------------------------------------------------------------------ constants
   const PAGE_SIZE = 100;               // doc: ...?filter=%5B%5D&search=&page=1&pageSize=100
   const MAX_PAGES = 50;                // safety stop for pagination
@@ -54,7 +54,7 @@ await (async () => {
   const DETAIL_DELAY_MS = 150;         // be polite to the app API
 
   const out = {
-    toolkit: 'collect_shipmonk_billing.js v1.0',
+    toolkit: 'collect_shipmonk_billing.js v1.0.1',
     collected_at: new Date().toISOString(),
     since: SINCE,
     storage_since: STORAGE_SINCE,
@@ -70,7 +70,8 @@ await (async () => {
   const status = (s) => { window.__smBillStatus = s; };
 
   // ------------------------------------------------------------------ helpers
-  const num = (x) => { const n = Number(x); return Number.isFinite(n) ? n : 0; };
+  // money fields may come as {amount, currency} (seen 17/10/2026: list total, paid) -> take .amount
+  const num = (x) => { if (x && typeof x === 'object' && !Array.isArray(x) && ('amount' in x || 'value' in x)) x = x.amount ?? x.value; const n = Number(x); return Number.isFinite(n) ? n : 0; };
   const r2 = (x) => Math.round((num(x) + Number.EPSILON) * 100) / 100;
   const int = (x) => Math.trunc(num(x));
   const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
