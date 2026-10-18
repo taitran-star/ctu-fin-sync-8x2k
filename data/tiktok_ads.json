@@ -2,7 +2,7 @@
  "source": "tiktok_marketing_api",
  "schema": 1,
  "script_version": "tiktok-ads-1.0",
- "generated_at": "2026-10-18T06:04:01Z",
+ "generated_at": "2026-10-18T11:23:25Z",
  "timezone": "America/Los_Angeles",
  "currency": "USD",
  "accounts": [
@@ -5913,19 +5913,28 @@
    "src": "api"
   },
   "2026-10-17": {
-   "spend": 63.59,
-   "gmv_max_spend": 63.59,
+   "spend": 65.84,
+   "gmv_max_spend": 65.84,
    "other_spend": 0.0,
-   "net_cost": 47.46,
+   "net_cost": 62.84,
    "orders": 3,
    "gross_revenue": 139.97,
+   "src": "api"
+  },
+  "2026-10-18": {
+   "spend": 2.15,
+   "gmv_max_spend": 2.15,
+   "other_spend": 0.0,
+   "net_cost": 0.0,
+   "orders": 0,
+   "gross_revenue": 0.0,
    "src": "api"
   }
  },
  "coverage": {
   "first_day": "2025-01-01",
-  "last_day": "2026-10-17",
-  "days": 655
+  "last_day": "2026-10-18",
+  "days": 656
  },
  "meta": {
   "note": "Chi phí TikTok Ads theo ngày. spend = cost của GMV Max (gmv_max/report, chiến dịch quảng cáo TikTok Shop) + quảng cáo thường (report/integrated BASIC, other_spend). gross_revenue / orders = doanh thu & đơn TikTok Shop mà GMV Max tự nhận (không cộng vào doanh thu P&L). net_cost = cost sau khi trừ credit/coupon quảng cáo. Ngày theo múi giờ tài khoản quảng cáo (Etc/GMT+8 = UTC-8 cố định) - lệch 1 giờ so với giờ LA khi LA đang giờ mùa hè. Trước 16/09/2026 = $0 đã kiểm tra (2 tài khoản: BASIC lifetime không có dữ liệu, GMV Max 12 tháng chỉ có chi từ 16/09/2026).",
@@ -5934,8 +5943,8 @@
   "gmv_max_store_id": "7494553429084309328",
   "api_errors": [],
   "last_window": [
-   "2026-09-18",
-   "2026-10-17"
+   "2026-09-19",
+   "2026-10-18"
   ]
  }
 }
