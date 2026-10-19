@@ -1,6 +1,6 @@
 {
- "updated_at": "2026-10-16",
- "note": "Product lines for the Product filter. A SKU belongs to the FIRST line that matches: exact entry in `skus`, else a regex in `match` (tested against the SKU, case-insensitive), else a substring in `names` against the Amazon listing title. Amazon virtual bundles (amzn.gr.<SKU>-...) follow their parent SKU. Unmatched SKUs show as 'Other'. Names checked against the Shopify catalog 16/10/2026: SSLB = Oversized 304 Stainless Steel Litter Box, CLMDNT = Calming Donut (the Shopify SKUs PKCTCV2Z-* are the Calming Donut listings, so they are excluded from the cave line), Coffin = The Gothic Coffin (a cave), NOF = Nails on Felt scratchers + Play Box, PKBKBD = Peekaboo Bunk Bed. G0-XFD9-2HZE and Z9-1GVT-BATX have no listing title - move them if they belong elsewhere.",
+ "updated_at": "2026-10-19",
+ "note": "Product lines for the Product filter. A SKU belongs to the FIRST line that matches: exact entry in `skus`, else a regex in `match` (tested against the SKU, case-insensitive), else a substring in `names` against the Amazon listing title. Amazon virtual bundles (amzn.gr.<SKU>-...) follow their parent SKU. Unmatched SKUs show as 'Other'. Names checked against the Shopify catalog 16/10/2026: SSLB = Oversized 304 Stainless Steel Litter Box, CLMDNT = Calming Donut (the Shopify SKUs PKCTCV2Z-* are the Calming Donut listings, so they are excluded from the cave line), Coffin = The Gothic Coffin (a cave), NOF = Nails on Felt scratchers + Play Box, PKBKBD = Peekaboo Bunk Bed. G0-XFD9-2HZE and Z9-1GVT-BATX have no listing title - move them if they belong elsewhere. 19/10/2026: Walmart SKUs WM-LG-SINGLE-L / WM-DG-SINGLE-L (ShipMonk BOM = PKCTCV-L-LGR / PKCTCV-L-DGR) added to the cave line.",
  "lines": [
   {
    "id": "cave",
@@ -12,7 +12,8 @@
     "^PKCTCV(?!2Z)",
     "^PKTCV-",
     "^NEW-PKCTCV",
-    "^Coffin$"
+    "^Coffin$",
+    "^WM-(LG|DG)-SINGLE"
    ],
    "names": [
     "Peekaboo Cat Cave"
