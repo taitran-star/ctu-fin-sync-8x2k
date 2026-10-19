@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 658aa46130).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 50c2947f60).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -95,7 +95,7 @@
     'f.bn.channel':'Channel: {ch}', 'f.bn.market':'Market: {m}', 'f.bn.product':'Product: {p}',
     'f.bn.alloc':'Every page shows only this selection. Shared costs (G&A, ShipMonk warehousing, D&A / interest / tax) are allocated by net-revenue share — {pct}% in this period — and marked “allocated”; company plans are not compared while filtering.',
     'f.bn.unknown':'{n} of {of} days in this period have no market / product split yet (synced before the split existed) and are excluded.',
-    'f.bn.productNote':'Walmart and TikTok Shop carry no per-SKU data yet and are excluded from product filters; ads and fees are allocated to the product by its share of gross sales.',
+    'f.bn.productNote':'Walmart and TikTok Shop carry per-SKU data only from the day their syncs started recording it (October 2026); earlier days of those channels are excluded from product filters. Ads and fees are allocated to the product by its share of gross sales.',
     'f.bn.clear':'Clear filters',
   });
   Object.assign(L.vi, {
@@ -103,7 +103,7 @@
     'f.bn.channel':'Kênh: {ch}', 'f.bn.market':'Thị trường: {m}', 'f.bn.product':'Sản phẩm: {p}',
     'f.bn.alloc':'Mọi trang chỉ tính phần đang chọn. Chi phí chung (G&A, kho bãi ShipMonk, khấu hao / lãi vay / thuế) được phân bổ theo tỷ trọng doanh thu thuần — {pct}% trong kỳ này — và ghi “phân bổ”; kế hoạch tổng công ty không so sánh khi đang lọc.',
     'f.bn.unknown':'{n}/{of} ngày trong kỳ chưa có dữ liệu tách thị trường / sản phẩm (đồng bộ trước khi có) nên bị loại.',
-    'f.bn.productNote':'Walmart và TikTok Shop chưa có dữ liệu theo SKU nên bị loại khi lọc sản phẩm; quảng cáo và phí được phân bổ cho sản phẩm theo tỷ trọng doanh thu gộp.',
+    'f.bn.productNote':'Walmart và TikTok Shop chỉ có dữ liệu theo SKU từ khi sync bắt đầu ghi (10/2026); những ngày trước đó của hai kênh này bị loại khi lọc sản phẩm. Quảng cáo và phí được phân bổ cho sản phẩm theo tỷ trọng doanh thu gộp.',
     'f.bn.clear':'Bỏ lọc',
   });
   // ---------- V10 dictionary, part A: period picker, P&L statement tags and other strings reused across renderers ----------
@@ -2635,7 +2635,7 @@
   // ---- per-SKU economics (shared by the product P&L table and the product-lines card) ----
   function skuEconomics(rows){
     const sa = skuAggregate(rows);
-    const keys = FUNNEL_CH.filter(k=> CH_MASK[k] && sa[k].days>0);
+    const keys = SKU_CH.filter(k=> CH_MASK[k] && sa[k].days>0);
     const items = {}; let chCm = 0, covMin = 1e9, realCost = 0, allSkus = 0;
     keys.forEach(k=>{
       const o = sa[k]; covMin = Math.min(covMin, o.days);
@@ -2712,7 +2712,7 @@
     const coverOf = id => { const rs = stock.filter(s=>s.line===id && s.known); const pd = sum(rs.map(s=>s.perDay)), st = sum(rs.map(s=>s.stock)); return pd>0 ? st/pd : null; };
     const dcell = (cur, prev) => (prev===null || prev===undefined || !isFinite(prev) || prev<=0) ? '<td class="num d-flat">—</td>' : `<td class="num">${pillOf((cur/prev-1)*100)}</td>`;
     t.innerHTML = `<thead><tr><th>${tx('pl.line')}</th><th class="num">${tx('m.units')}</th><th class="num">${tx('m.netRevenue')}</th><th>${tx('pl.share')}</th><th class="num">${tx('pl.vsPrior')}</th><th class="num">CM3</th><th class="num">CM3 %</th><th class="num">${tx('pl.cover')}</th></tr></thead><tbody>` +
-      list.map(l=>{ const cv = coverOf(l.id); const pv = lp && lp.lines[l.id] ? lp.lines[l.id].net : null; return `<tr><td class="name">${productLineName(l.id)}<small style="display:block;font-weight:400;color:var(--ink-muted);">${l.skus} SKU${(() => { const ks = Object.keys(l.chNet||{}).filter(k=>l.chNet[k]>0.005).sort((x,y)=>l.chNet[y]-l.chNet[x]); return ks.length>1 && l.net>0 ? ' · ' + ks.map(k=>CH_LABEL[k]+' '+Math.round(l.chNet[k]/l.net*100)+'%').join(' · ') : (ks.length===1 ? ' · '+CH_LABEL[ks[0]] : ''); })()}</small></td><td class="num">${intFmt(l.units)}</td><td class="num">${money(l.net,{compact:true})}</td><td><div class="bar"><i style="width:${totNet>0?(l.net/totNet*100).toFixed(1):0}%"></i></div></td>${dcell(l.net, pv)}<td class="num ${l.cm<0?'d-down':''}">${money(l.cm,{compact:true})}</td><td class="num">${l.net>0 ? (l.cm/l.net*100).toFixed(0)+'%' : '—'}</td><td class="num ${cv!==null && cv<30 ? 'd-down' : ''}">${cv===null ? '—' : (cv>365 ? '>1y' : Math.round(cv)+' '+tx('u.d'))}</td></tr>`; }).join('') +
+      list.map(l=>{ const cv = coverOf(l.id); const pv = lp && lp.lines[l.id] ? lp.lines[l.id].net : null; return `<tr><td class="name">${productLineName(l.id)}<small style="display:block;font-weight:400;color:var(--ink-muted);">${l.skus} SKU${(() => { const ks = Object.keys(l.chNet||{}).filter(k=>l.chNet[k]>0.005).sort((x,y)=>l.chNet[y]-l.chNet[x]); return ks.length>1 && l.net>0 ? ' · ' + ks.map(k=>CH_LABEL[k]+' '+(l.chNet[k]/l.net*100<0.5 ? '<1' : Math.round(l.chNet[k]/l.net*100))+'%').join(' · ') : (ks.length===1 ? ' · '+CH_LABEL[ks[0]] : ''); })()}</small></td><td class="num">${intFmt(l.units)}</td><td class="num">${money(l.net,{compact:true})}</td><td><div class="bar"><i style="width:${totNet>0?(l.net/totNet*100).toFixed(1):0}%"></i></div></td>${dcell(l.net, pv)}<td class="num ${l.cm<0?'d-down':''}">${money(l.cm,{compact:true})}</td><td class="num">${l.net>0 ? (l.cm/l.net*100).toFixed(0)+'%' : '—'}</td><td class="num ${cv!==null && cv<30 ? 'd-down' : ''}">${cv===null ? '—' : (cv>365 ? '>1y' : Math.round(cv)+' '+tx('u.d'))}</td></tr>`; }).join('') +
       `<tr style="font-weight:700;"><td class="name">${tx('u.total')}</td><td class="num">${intFmt(totUnits)}</td><td class="num">${money(totNet,{compact:true})}</td><td></td><td class="num"></td><td class="num">${money(totCm,{compact:true})}</td><td class="num">${totNet>0 ? (totCm/totNet*100).toFixed(0)+'%' : '—'}</td><td class="num"></td></tr></tbody>`;
     setNote('plNote', tx('pl.note', {n: list.length, ch: le.keys.map(k=>CH_LABEL[k]).join(' + '), cov: le.covMin<le.n ? ' · '+le.covMin+'/'+le.n+' '+tx('u.daysWithSku') : ''}));
     if(caption) caption.textContent = tx('pl.caption') + (le.realCost>0 ? ' '+tx('pl.realCost', {n: le.realCost, of: le.allSkus}) : ' '+tx('pl.estCost'));
@@ -3339,6 +3339,7 @@
   }
   // ---------- V9: order funnel + returns by SKU + product P&L (sync Shopify 2.0 / Amazon 2.8 + data/cogs_skus.json) ----------
   const FUNNEL_CH = ['shopify','amazon'];
+  const SKU_CH = ['shopify','amazon','walmart','tiktok'];   // V11.3.1: channels whose syncs carry units per SKU (Walmart / TikTok Shop from 19/10/2026)
   function funnelAggregate(rowsIn){
     const rows = maskPartial() ? rowsIn.map(maskRow) : rowsIn;
     const out = {}; FUNNEL_CH.forEach(k=>{ out[k] = {days:0, placed:0, paid:0, paidKnown:false, fulfilled:0, partial:0, cancelled:0, refunded:0, refundedKnown:false}; });
@@ -3347,9 +3348,9 @@
   }
   function skuAggregate(rowsIn){
     const rows = maskPartial() ? rowsIn.map(maskRow) : rowsIn;
-    const out = {}; FUNNEL_CH.forEach(k=>{ out[k] = {days:0, units:{}, sales:{}, refunds:{}}; });
+    const out = {}; SKU_CH.forEach(k=>{ out[k] = {days:0, units:{}, sales:{}, refunds:{}}; });
     const addTo = (o, f, src) => Object.entries(src||{}).forEach(([sku,v])=>{ o[f][sku] = (o[f][sku]||0) + (parseFloat(v)||0); });
-    rows.forEach(r=>{ if(!r.sku) return; FUNNEL_CH.forEach(k=>{ if(!CH_MASK[k]) return; const d = r.sku[k]; if(!d) return; const o = out[k]; o.days++; addTo(o,'units',d.units); addTo(o,'sales',d.sales); addTo(o,'refunds',d.refunds); }); });
+    rows.forEach(r=>{ if(!r.sku) return; SKU_CH.forEach(k=>{ if(!CH_MASK[k]) return; const d = r.sku[k]; if(!d) return; const o = out[k]; o.days++; addTo(o,'units',d.units); addTo(o,'sales',d.sales); addTo(o,'refunds',d.refunds); }); });
     return out;
   }
   function skuName(sku){ const snap = AMAZON_STORAGE_LIVE_DATA && AMAZON_STORAGE_LIVE_DATA.inventory && AMAZON_STORAGE_LIVE_DATA.inventory.snapshot; const c = COGS_SKUS[sku]; const sm = SHIPMONK_INVENTORY && SHIPMONK_INVENTORY.skus && SHIPMONK_INVENTORY.skus[sku]; return (c && c.name) || (snap && snap[sku] && snap[sku].name) || (sm && sm.name) || ''; }   // V10.3: ShipMonk names cover the Shopify SKUs
@@ -3357,7 +3358,7 @@
     const f = kind==='sku' ? 'sku_units_since' : 'statuses_since';
     const si = d => (d && d.meta && d.meta.schema_info && d.meta.schema_info[f]) || null;
     const parts = [si(SHOPIFY_LIVE_DATA) ? tv('Shopify from ','Shopify từ ')+si(SHOPIFY_LIVE_DATA) : null, si(AMAZON_LIVE_DATA) ? tv('Amazon from ','Amazon từ ')+si(AMAZON_LIVE_DATA) : null].filter(Boolean);
-    const masked = FUNNEL_CH.filter(k=>CH_MASK[k]).length===0 ? tv(' (the selected channel has no such data — only Shopify and Amazon do)',' (đang lọc kênh không có dữ liệu này — chỉ Shopify và Amazon có)') : '';
+    const masked = SKU_CH.filter(k=>CH_MASK[k]).length===0 ? tv(' (the selected channel has no such data)',' (đang lọc kênh không có dữ liệu này)') : '';
     return parts.length ? tv('No day in the selected period carries this data yet (','Kỳ đang xem chưa có ngày nào mang dữ liệu này (')+parts.join(' · ')+tv(') — pick a later period.',') — chọn kỳ muộn hơn.')+masked : tv('Waiting for the first run of the Shopify 2.0 / Amazon 2.8 sync scripts (≤ 30 minutes after uploading the 2 .py files) — data covers the last 45 days, older needs a backfill.','Chờ script đồng bộ Shopify 2.0 / Amazon 2.8 chạy lần đầu (sau khi up 2 file .py, ≤ 30 phút) — dữ liệu có cho 45 ngày gần nhất, cũ hơn cần backfill.')+masked;
   }
   const pctOf = (x, y) => y>0 ? (x/y*100).toFixed(1)+'%' : '—';
@@ -3389,7 +3390,7 @@
   function renderReturnsBySku(){
     const t = document.getElementById('returnsTable'); if(!t) return;
     const rows = currentRows(), sa = skuAggregate(rows), pr = prevLikeRows(), sp = pr ? skuAggregate(pr) : null;
-    const keys = FUNNEL_CH.filter(k=> CH_MASK[k] && sa[k].days>0);
+    const keys = SKU_CH.filter(k=> CH_MASK[k] && sa[k].days>0);
     if(!keys.length){ t.innerHTML=''; setNote('returnsNote',tx('u.waiting')); setNote('returnsCaption', sinceText('sku')); return; }
     const m = {};
     keys.forEach(k=>{ const o = sa[k]; const add = (sku, fld, v)=>{ const x = m[sku] = m[sku]||{sku, units:0, refunds:0, sales:0, ch:{}}; x[fld] += v; x.ch[k] = true; }; Object.entries(o.units).forEach(([sku,v])=>add(sku,'units',v)); Object.entries(o.refunds).forEach(([sku,v])=>add(sku,'refunds',v)); Object.entries(o.sales).forEach(([sku,v])=>add(sku,'sales',v)); });
@@ -3408,7 +3409,7 @@
   function renderProductPnl(){
     const t = document.getElementById('prodTable'), ctl = document.getElementById('prodCtl'); if(!t || !ctl) return;
     const rows = currentRows(), sa = skuAggregate(rows);
-    const keys = FUNNEL_CH.filter(k=> CH_MASK[k] && sa[k].days>0);
+    const keys = SKU_CH.filter(k=> CH_MASK[k] && sa[k].days>0);
     if(!keys.length){ ctl.innerHTML=''; t.innerHTML=''; setNote('prodNote',tx('u.waiting')); setNote('prodCaption', sinceText('sku')); return; }
     const anyCode = Object.values(COGS_SKUS).some(v=>v.code);
     // allocation per channel over the days that carry SKU data for that channel (so partial coverage does not inflate costs)
@@ -3757,6 +3758,7 @@
       days[idx].channels.tiktok = num(r.gross_sales);
       days[idx].discounts.tiktok = num(r.seller_discount);
       days[idx].orders.tiktok = Math.round(num(r.orders_count));
+      if(r.sku_units && typeof r.sku_units==='object') (days[idx].sku = days[idx].sku||{}).tiktok = {units: r.sku_units, sales: r.sku_sales||{}, refunds: r.sku_refund_units||{}};   // V11.3.1 (tiktok_shop-2.3)
       days[idx].tiktokReal = {
         netSales: net, netSettled, netUnsettled: unNet,
         settledOrders: Math.round(num(r.settled_orders)), unsettledOrders: Math.round(num(r.unsettled_orders)),
@@ -3795,6 +3797,7 @@
       const r = data.orders_daily[iso] || {};
       days[idx].channels.walmart = num(r.gross_sales);
       days[idx].orders.walmart = Math.round(num(r.orders_count));
+      if(r.sku_units && typeof r.sku_units==='object') (days[idx].sku = days[idx].sku||{}).walmart = {units: r.sku_units, sales: r.sku_sales||{}, refunds: r.sku_refund_units||{}};   // V11.3.1 (walmart sku_schema 1)
       const x = wr(idx);
       x.netSales = num(r.net_sales); x.netSettled = num(r.net_sales_settled); x.netUnsettled = num(r.net_sales_unsettled);
       x.settledOrders = Math.round(num(r.settled_orders)); x.unsettledOrders = Math.round(num(r.unsettled_orders)); x.cancelled = Math.round(num(r.cancelled_orders));
