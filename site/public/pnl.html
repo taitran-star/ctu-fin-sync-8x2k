@@ -676,6 +676,7 @@
       <div id="siteRefresh" class="tb-sync" hidden><span class="tb-dot" aria-hidden="true"></span><span id="siteLoadedAt" data-i18n-title="tb.loadedAt" title="When the numbers were loaded (your clock)"></span><button type="button" id="siteReload" data-i18n-title="tb.reload" title="Reload the latest numbers">↻</button><a href="/?menu=1#app" id="siteInstall" data-i18n="tb.install" data-i18n-title="tb.installTitle" title="Install as an app" hidden>Install</a></div>
       <div class="tb-lang" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">EN</button><button type="button" data-lang="vi" aria-pressed="false">VI</button></div>
       <button type="button" class="tb-ico" id="themeBtn" data-i18n-title="tb.theme" title="Light / dark" aria-label="Theme"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 2v14a7 7 0 0 0 0-14z" fill="currentColor"/></svg></button>
+      <a class="tb-ico" href="/users" id="tbUsers" title="Quản lý user" aria-label="Users" hidden><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.5a5 5 0 0 1 6 5"/></svg></a>
       <a class="tb-ico" href="/logout" data-i18n-title="tb.signout" title="Sign out" aria-label="Sign out"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M21 3v18"/></svg></a>
     </div>
   </div>
@@ -1046,6 +1047,23 @@
   var SOURCES = {"amazon": "amazon_pnl.json", "meta": "meta_ads.json", "shopify": "shopify_pnl.json", "google": "google_ads.json", "shipmonk": "shipmonk.json", "shipmonk_invoices": "shipmonk_invoices.json", "shipmonk_storage": "shipmonk_storage_daily.json", "paypal": "paypal.json", "klaviyo": "klaviyo.json", "klaviyo_invoices": "klaviyo_invoices.json", "amazon_ads": "amazon_ads.json", "opex": "opex_monthly.json", "amazon_storage": "amazon_storage.json", "loop_subscriptions": "loop_subscriptions.json", "tiktok_shop": "tiktok_shop.json", "walmart": "walmart.json", "applovin": "applovin.json", "tiktok_ads": "tiktok_ads.json", "targets": "targets_monthly.json", "cogs": "cogs_monthly.json", "purchase_orders": "purchase_orders.json", "cogs_skus": "cogs_skus.json", "cogs_lots": "cogs_lots.json", "products": "products.json"};
   var keys = Object.keys(SOURCES), done = 0;
   window.__LIVE = {}; window.__LIVE_ERR = {}; window.__LOADED_AT = 0; window.__SAVED_AT = 0;
+  // V11.2.1 — who is signed in (/api/me): pages (tabs) and /data files this user may see. Owner or an old server = everything.
+  var ME = null; window.__ME = null;
+  function allowedFile(f){ return !ME || !ME.files || ME.files.indexOf(f) >= 0; }
+  function fetchMe(){
+    return fetch('/api/me', {credentials:'same-origin', cache:'no-store', headers:{'X-Requested-With':'ctu'}}).then(function(r){
+      if(r.status === 401){ location.replace('/login'); throw new Error('login'); }
+      return r.ok ? r.json() : null;
+    }).then(function(j){
+      ME = j && j.me ? j.me : null; window.__ME = ME;
+      if(!ME || !ME.views) return;
+      var allowed = [];
+      Array.prototype.forEach.call(document.querySelectorAll('#mainTabs button[data-view]'), function(b){ if(ME.views.indexOf(b.getAttribute('data-view')) < 0) b.parentNode.removeChild(b); else allowed.push(b.getAttribute('data-view')); });
+      try{ var cur = localStorage.getItem('ctu_view'); if(allowed.length && allowed.indexOf(cur) < 0) localStorage.setItem('ctu_view', allowed[0]); }catch(e){}
+      var ub = document.getElementById('tbUsers'); if(ub && ME.admin) ub.hidden = false;
+      var lo = document.querySelector('.tb-right a[href="/logout"]'); if(lo && ME.email){ lo.removeAttribute('data-i18n-title'); lo.title = T('Sign out ', 'Đăng xuất ') + ME.email; }
+    }).catch(function(e){ if(/login/.test(String(e && e.message))) throw e; });
+  }
   try{ localStorage.setItem('ctu_last_dash', '/pnl'); }catch(e){}
   if('serviceWorker' in navigator){ navigator.serviceWorker.register('/sw.js').catch(function(){}); }
   var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
@@ -1073,11 +1091,12 @@
       throw e;
     });
   }
-  Promise.all(keys.map(function(k){
+  fetchMe().then(function(){ return Promise.all(keys.map(function(k){
+    if(!allowedFile(SOURCES[k])){ window.__LIVE[k] = null; tick(); return Promise.resolve(); }   // not part of this user's pages: never requested
     return load(k, 1).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
-  })).then(function(){
+  })); }).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=83276b017e';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=1aeb89dc5b';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');

@@ -90,8 +90,8 @@
     <img class="mascot" src="/img/mascot-sidelook.png" alt="" aria-hidden="true" width="639" height="720">
   </div>
   <div class="grid">
-    <a class="card" href="/pnl"><h2>P&amp;L chuẩn D2C <span class="live">Live</span></h2><p>Báo cáo lãi lỗ theo ngày / tuần / tháng: Shopify, Amazon, Meta, Google, ShipMonk, PayPal, Klaviyo · điểm hoà vốn, ROAS &amp; MER, kênh bán theo điểm chạm cuối.</p></a>
-    <a class="card" href="/sns"><h2>Amazon Subscribe &amp; Save <span class="live">Live</span></h2><p>Đơn S&amp;S theo tuần: danh sách đơn, theo SKU, subscription đang chạy, giữ chân khách, dự báo 30/60/90 ngày · tải CSV.</p></a>
+    <a class="card" id="cardPnl" href="/pnl"><h2>P&amp;L chuẩn D2C <span class="live">Live</span></h2><p>Báo cáo lãi lỗ theo ngày / tuần / tháng: Shopify, Amazon, Meta, Google, ShipMonk, PayPal, Klaviyo · điểm hoà vốn, ROAS &amp; MER, kênh bán theo điểm chạm cuối.</p></a>
+    <a class="card" id="cardSns" href="/sns"><h2>Amazon Subscribe &amp; Save <span class="live">Live</span></h2><p>Đơn S&amp;S theo tuần: danh sách đơn, theo SKU, subscription đang chạy, giữ chân khách, dự báo 30/60/90 ngày · tải CSV.</p></a>
   </div>
   <div class="install" id="app" hidden>
     <img src="/icon-192.png" alt="" aria-hidden="true" width="192" height="192">
@@ -102,7 +102,7 @@
     </div>
   </div>
   <div class="note">Bảng mới sẽ được thêm vào trang này. Mở một bảng rồi thì lần sau vào thẳng bảng đó; bấm "bảng khác" ở góc dưới để quay lại đây.</div>
-  <div class="foot"><a href="/logout">Đăng xuất thiết bị này</a></div>
+  <div class="foot" id="footLinks"><a href="/logout">Đăng xuất thiết bị này</a></div>
 </div>
 <script>
 (function(){
@@ -120,8 +120,23 @@
     btn.addEventListener('click', function(){ if(!deferred) return; deferred.prompt(); deferred.userChoice.then(function(){ deferred = null; btn.hidden = true; }); });
     window.addEventListener('appinstalled', function(){ card.hidden = true; });
   }
-  if(/[?&]menu=1/.test(location.search)) return;
-  try{ var d = localStorage.getItem('ctu_last_dash'); if(d && /^\/[a-z0-9_-]+$/.test(d)) location.replace(d); }catch(e){}
+  // who is signed in: hide the boards this user may not open; admins get the user-management link
+  var menu = /[?&]menu=1/.test(location.search);
+  function go(){ if(menu) return; try{ var d = localStorage.getItem('ctu_last_dash'); if(d && /^\/[a-z0-9_-]+$/.test(d)){ var c = document.querySelector('.card[href="' + d + '"]'); if(!c || c.hidden) return; location.replace(d); } }catch(e){} }
+  fetch('/api/me', {credentials:'same-origin', cache:'no-store', headers:{'X-Requested-With':'ctu'}}).then(function(r){
+    if(r.status === 401){ location.replace('/login'); throw new Error('login'); }
+    return r.ok ? r.json() : null;
+  }).then(function(j){
+    var me = j && j.me;
+    if(me && me.views){
+      var pnl = document.getElementById('cardPnl'), sns = document.getElementById('cardSns');
+      if(pnl && !me.views.some(function(v){ return v !== 'sns'; })) pnl.hidden = true;
+      if(sns && me.views.indexOf('sns') < 0) sns.hidden = true;
+      var foot = document.getElementById('footLinks');
+      if(foot){ var who = document.createElement('span'); who.textContent = (me.name || me.email || '') + ' · '; foot.insertBefore(who, foot.firstChild); if(me.admin){ var a = document.createElement('a'); a.href = '/users'; a.textContent = 'Quản lý user'; foot.appendChild(document.createTextNode(' · ')); foot.appendChild(a); } }
+    }
+    go();
+  }).catch(function(e){ if(!/login/.test(String(e && e.message))) go(); });
 })();
 </script>
 </body>

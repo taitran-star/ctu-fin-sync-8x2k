@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 83276b017e).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 1aeb89dc5b).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -550,7 +550,7 @@
   // G&A: only confirmed monthly fees carry a number (real:true). Everything else is $0 until
   // the accounting source is connected - no seeded estimates anywhere on this page.
   const GA_ITEMS = [
-    {key:'salary', get label(){ return tv('Indirect salaries (operations, management)', 'Lương gián tiếp (vận hành, quản lý)'); }, monthly:0},
+    {key:'salary', get label(){ return tv('Salaries & staff — indirect (operations, management; contractors via Upwork)', 'Lương & nhân sự gián tiếp (vận hành, quản lý; nhân sự thuê ngoài Upwork)'); }, monthly:0},
     {key:'software', get label(){ return tv('Software & tools', 'Phần mềm & công cụ'); }, monthly:0},
     {key:'snowball_sub', get label(){ return tv('Social Snowball — affiliate software (Blizzard plan, no % of commissions)', 'Social Snowball — phần mềm affiliate (gói Blizzard, không thu % hoa hồng)'); }, monthly:350, real:true},
     {key:'office', get label(){ return tv('Office & operations', 'Văn phòng & vận hành'); }, monthly:0},
@@ -1829,6 +1829,7 @@
       {id:'fixc', name: tv('Operating costs (OpEx)', 'Chi phí hoạt động (OpEx)'), color: fixC, dash:'6,4'},
       {id:'profit', name: tv('Operating profit (EBITDA)', 'LN hoạt động (EBITDA)'), color: profC},
     ];
+    if(!canView('pnl') && !canView('exec')){ allSeries.splice(1); trendHidden.clear(); }   // no P&L page for this user: costs / profit lines are not drawn
     const series = allSeries.filter(sr=>!trendHidden.has(sr.id));
     const legend = document.getElementById('trendLegend');
     legend.innerHTML = allSeries.map(sr=>{
@@ -3546,14 +3547,20 @@
     const rows = currentRows(); if(rows.length && rows[rows.length-1]._syncing) parts.push(tx('ctx.today'));
     c.textContent = parts.join(' · ');
   }
-  const VIEWS = ['exec','sales','marketing','pnl','inventory','opex','data'];
+  // V11.2.1: per-user pages. The loader in pnl.html puts /api/me into window.__ME ({views, admin, email...}); the owner /
+  // an old server give null = every page. Tabs the user may not see were removed from #mainTabs by the loader; here the
+  // view list follows the same rule so a saved or typed view outside the list falls back to the first allowed page.
+  const ME = window.__ME || null;
+  const canView = v => !ME || !Array.isArray(ME.views) || ME.views.includes(v);
+  const ALL_VIEWS = ['exec','sales','marketing','pnl','inventory','opex','data'];
+  const VIEWS = ALL_VIEWS.filter(canView);
   let booted = false;
   function showView(view){
-    if(!VIEWS.includes(view)) view = 'exec';
+    if(!VIEWS.includes(view)) view = VIEWS[0] || 'exec';
     const wasPnl = currentView==='pnl'; currentView = view;
     if(view==='pnl') applyPnlState(); else { if(wasPnl) savePnlState(); applyExecState(); }
     [...document.querySelectorAll('#mainTabs button')].forEach(b=>{ const on = b.dataset.view===view; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
-    VIEWS.forEach(v=>{ const el = document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1)); if(el) el.hidden = (v!==view); });
+    ALL_VIEWS.forEach(v=>{ const el = document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1)); if(el) el.hidden = (v!==view); });
     try{ localStorage.setItem('ctu_view', view); }catch(e){}
     if(booted) renderAll();   // the period control and the row selection differ per page, so everything re-renders
   }
@@ -3561,7 +3568,7 @@
   (()=>{ const tb = document.getElementById('themeBtn'); if(!tb) return; const apply = v => { if(v) document.documentElement.setAttribute('data-theme', v); else document.documentElement.removeAttribute('data-theme'); }; try{ apply(localStorage.getItem('ctu_theme')||''); }catch(e){} tb.addEventListener('click', ()=>{ const cur = document.documentElement.getAttribute('data-theme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); const next = cur==='dark' ? 'light' : 'dark'; apply(next); try{ localStorage.setItem('ctu_theme', next); }catch(e){} renderAll(); }); })();
   renderStatic();
   document.getElementById('mainTabs').addEventListener('click', (e)=>{ const btn = e.target.closest('button'); if(!btn) return; if(btn.dataset.view!==currentView) showView(btn.dataset.view); });
-  (()=>{ let v0 = 'exec'; try{ const s1 = localStorage.getItem('ctu_view'); if(s1 && VIEWS.includes(s1)) v0 = s1; }catch(e){} showView(v0); })();
+  (()=>{ let v0 = VIEWS[0] || 'exec'; try{ const s1 = localStorage.getItem('ctu_view'); if(s1 && VIEWS.includes(s1)) v0 = s1; }catch(e){} showView(v0); })();
   [...document.querySelectorAll('#modeSeg button')].forEach(b=>b.classList.toggle('active', b.dataset.mode===mode));   // default / remembered period
   document.getElementById('modeSeg').addEventListener('click', (e)=>{
     const btn = e.target.closest('button'); if(!btn) return;
