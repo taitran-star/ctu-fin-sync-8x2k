@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 7d1cd90f29).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 83276b017e).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -881,12 +881,16 @@
     const FX = fifoState();
     let boxCost = 0, boxLots = 0, boxFb = 0, boxUnits = 0, boxLotUnits = 0, boxFbUnits = 0, boxEstUnits = 0, boxDays = 0, smPackagingMemo = 0;
     const boxBySku = {};
+    let boxEstDays = 0, boxEstBoxes = 0, boxEstCost = 0;   // V11.2: days where the boxes are an estimate (1 per package)
     rows.forEach(r=>{
-      const sr = r.shipmonkReal; if(!sr || !sr.packagingItems) return;
+      const sr = r.shipmonkReal; if(!sr) return;
+      const bd = FX && FX.ok && FX.day[r.iso] && FX.day[r.iso].box;
+      if(!sr.packagingItems && !(bd && bd.est)) return;
       boxDays++;
       if(r.shipmonkInv) smPackagingMemo += r.shipmonkInv.packaging_purchases||0;
-      const bd = FX && FX.ok && FX.day[r.iso] && FX.day[r.iso].box; if(!bd) return;
+      if(!bd) return;
       const f = (sr.boxShare===undefined || sr.boxShare===null) ? 1 : sr.boxShare;
+      if(bd.est){ boxEstDays++; boxEstBoxes += bd.units*f; boxEstCost += (bd.lot+bd.fb)*f; }
       boxCost += (bd.lot+bd.fb)*f; boxLots += bd.lot*f; boxFb += bd.fb*f; boxUnits += bd.units*f; boxLotUnits += bd.lotU*f; boxFbUnits += bd.fbU*f; boxEstUnits += bd.estU*f;
       Object.keys(bd.c).forEach(x=>{ const t = boxBySku[x] = boxBySku[x] || {n:0, cost:0, est:0}; t.n += bd.c[x].n*f; t.cost += (bd.c[x].lot+bd.c[x].fb)*f; t.est += bd.c[x].estU*f; });
     });
@@ -1062,7 +1066,7 @@
 
     return {n, gross, refund, discountBy, orders, ads, adsAttr, grossSales, discount, refundsTotal, netRevenue, totalOrders, allocShare, maskPartial: partial, unknownDays,
       productCost, productCostEst, cogsEstRate, productCostBy, productCostActual, productCostEstAmount, productCostHasActual, productCostLots, productCostFallback, productCostHasLots, productCostLotUnits, productCostFbUnits, productCostEstUnits, productCostUnits, packaging, fulfillment, postage, cogs, grossProfit, nonAmazonOrders, shopifyTax, shopifyRealDays, amazonRealDays,
-      boxCost, boxLots, boxFb, boxUnits, boxLotUnits, boxFbUnits, boxEstUnits, boxDays, boxMode, smPackagingMemo, boxBySku,
+      boxCost, boxLots, boxFb, boxUnits, boxLotUnits, boxFbUnits, boxEstUnits, boxDays, boxMode, smPackagingMemo, boxBySku, boxEstDays, boxEstBoxes, boxEstCost,
       shipmonkRealDays, shipmonkOrders, shipmonkUnshipped, shipmonkUnits, shipmonkPickPack, shipmonkByStore, shipmonkByChannel,
       smInvDays, smInv, smInvOther, smInvAdjCredits, smStorageOpen, smStorageOpenDays, smStorageCarryDays, smStorageReportDays, smInvShipCmp, smApiShipCmp, smCmpDays, smCmpMissingDays, smTrueUp, shipmonkInvoiceExtras, shipmonkLogistics, amazonLogistics, logisticsTotal, feesTotal, marketingTotal, cmBeforeMarketing,
       paymentFees, afterpayFees, afterpayAmount, afterpayOrders, paymentFeeDays, paymentFeeOrders, feesMissingOrders, gatewayMix, feeTypeMix, paypalDays, paypalFees, paypalPayments, paypalPaymentsCount, paypalCompare, paymentFeesAll, marketplaceFees, adSpend, otherVarTotal, contributionProfit,
@@ -1361,9 +1365,10 @@
       let bx = tv('Shipping boxes — one per package as ShipMonk picked it, FIFO over the Notion box lots (', 'Hộp đóng gói — theo kiện ShipMonk đã nhặt, FIFO theo lô hộp Notion (')+nb(a.boxUnits)+tv(' boxes', ' hộp');
       if(a.boxFbUnits>0.5) bx += ', '+nb(a.boxFbUnits)+tv(' at nearest-lot cost', ' theo giá lô gần nhất');
       if(a.boxEstUnits>0.5) bx += ', '+nb(a.boxEstUnits)+tv(' with no lot in Notion yet = $0', ' chưa có lô trong Notion = $0');
+      if(a.boxEstBoxes>0.5) bx += tv('; of which ', '; trong đó ')+nb(a.boxEstBoxes)+tv(' boxes ESTIMATED at one box per package for ', ' hộp ƯỚC TÍNH 1 hộp/kiện cho ')+a.boxEstDays+tv(' days before ShipMonk listed the box on the order (Large / Jumbo split by the caves sold that day, costed from the Notion box lots)', ' ngày trước khi ShipMonk ghi hộp lên đơn (chia Large / Jumbo theo cave bán trong ngày, giá theo lô hộp Notion)');
       if(a.boxDays<a.n) bx += '; '+(a.n-a.boxDays)+tv(' days without per-package box data', ' ngày chưa có dữ liệu hộp theo kiện')+(shipmonkBoxCoverage && shipmonkBoxCoverage.firstGood ? tv(' (ShipMonk lists the box on the order from ', ' (ShipMonk ghi hộp theo đơn từ ')+shipmonkBoxCoverage.firstGood+')' : '')+tv(' keep the purchase line', ' vẫn tính theo dòng mua');
       bx += ')';
-      rows.push({...stLine(bx, -a.boxCost, nr, 'var', 'cogs'), neg:true, live:true, est: a.boxEstUnits>0.5, estTitle: tv('Boxes with no receipt lot in Notion carry $0 until the lot is entered', 'Hộp chưa có lô nhập trong Notion tạm tính $0 tới khi nhập lô'), hget: x=>-x.boxCost});
+      rows.push({...stLine(bx, -a.boxCost, nr, 'var', 'cogs'), neg:true, live:true, est: a.boxEstUnits>0.5 || a.boxEstBoxes>0.5, estTitle: a.boxEstBoxes>0.5 ? tv('Before 10/2025 ShipMonk did not list the box on the order: one box per package shipped is assumed (user decision 19/10/2026), FIFO over the Notion box lots', 'Trước 10/2025 ShipMonk chưa ghi hộp lên đơn: giả định 1 hộp/kiện đã gửi (user chốt 19/10/2026), FIFO theo lô hộp Notion') : tv('Boxes with no receipt lot in Notion carry $0 until the lot is entered', 'Hộp chưa có lô nhập trong Notion tạm tính $0 tới khi nhập lô'), hget: x=>-x.boxCost});
       Object.entries(a.boxBySku||{}).sort((x,y)=>y[1].cost-x[1].cost).forEach(([sku,t])=>{
         rows.push({...stLine(sku+' — '+nb(t.n)+tv(' boxes', ' hộp')+(t.n>0 ? ' · '+money(t.cost/t.n)+tv('/box', '/hộp') : ''), -t.cost, nr, null, 'cogs'), detail:true, neg:true, live:true});
       });
@@ -3024,7 +3029,7 @@
   function fifoState(){
     let ready = false; try{ ready = booted; }catch(e){ ready = false; }   // booted is declared further down (TDZ before boot)
     if(!ready) return null;
-    const sig = days.length+'|'+days.filter(r=>r.sku).length+'|'+(SHIPMONK_BOM ? Object.keys(SHIPMONK_BOM.bundles).length : 0)+'|'+days.filter(r=>r.shipmonkReal && r.shipmonkReal.packagingItems).length;
+    const sig = days.length+'|'+days.filter(r=>r.sku).length+'|'+(SHIPMONK_BOM ? Object.keys(SHIPMONK_BOM.bundles).length : 0)+'|'+days.filter(r=>r.shipmonkReal && (r.shipmonkReal.packagingItems || r.shipmonkReal.boxDataWeak)).length;
     if(_fifo && _fifo.sig===sig) return _fifo;
     try{ _fifo = buildFifo(); }catch(e){ _fifo = {ok:false, error: String(e && e.message || e), day:{}, Q:{}, meta:{}}; }
     _fifo.sig = sig;
@@ -3056,8 +3061,26 @@
     // pass 1: units each queue sells over the replay
     sales.forEach(r=> Object.keys(r.sku).forEach(k=>{ if(!FIFO_CH_POOL[k]) return; const u = r.sku[k].units||{}; Object.keys(u).forEach(x=>{ const n = parseFloat(u[x])||0; if(n<=0 || fifoSkip(x)) return; fifoParts(x).forEach(([c,qq])=>{ const key = keyOf(c, k); if(key && Q[key]) Q[key].sold += n*qq; }); }); }));
     // V11.1: boxes ShipMonk picked per package (sync v1.5+ packaging_items) draw on the box lots in the D2C pool
-    const boxDays = days.filter(r=> r.shipmonkReal && r.shipmonkReal.packagingItems && r.iso>=st.first);
-    boxDays.forEach(r=>{ const pi = r.shipmonkReal.packagingItems; Object.keys(pi).forEach(x=>{ const n = parseFloat(pi[x])||0; if(n<=0) return; const key = keyOf(x, 'shopify'); if(key && Q[key]) Q[key].sold += n; }); });
+    // V11.2 (user OK 19/10/2026): months where ShipMonk did not yet list the box on the order (before 10/2025) are
+    // ESTIMATED as one box per package shipped, split Large / Jumbo by the caves sold that day (bundles expanded through
+    // the BOM), costed by FIFO over the same Notion box lots (Uline, PKGQ...) - the boxes the company bought and owns.
+    const boxItemsOf = r => {
+      const sr = r.shipmonkReal; if(!sr) return null;
+      if(sr.packagingItems) return {items: sr.packagingItems, est: false};
+      if(!sr.boxDataWeak || !(sr.packages>0)) return null;
+      if(sr.packagingItemsEst) return {items: sr.packagingItemsEst, est: true};
+      let L = 0, J = 0;
+      const u = r.sku && r.sku.shopify && r.sku.shopify.units;
+      if(u) Object.keys(u).forEach(x=>{ const n = parseFloat(u[x])||0; if(n<=0 || fifoSkip(x)) return; fifoParts(x).forEach(([c,qq])=>{ if(/^PKCTCV(2Z)?-L-/i.test(c)) L += n*qq; else if(/^PKCTCV-JMB-/i.test(c)) J += n*qq; }); });
+      const shareL = (L+J)>0 ? L/(L+J) : 0.73;   // 0.73 = Large share of the boxes ShipMonk recorded in 10-12/2025
+      const nL = Math.round(sr.packages*shareL), nJ = sr.packages - nL, items = {};
+      if(nL>0) items['PKCTCVBX-SNGL-L'] = nL;
+      if(nJ>0) items['PKCTCVBX-SNGL-J'] = nJ;
+      sr.packagingItemsEst = items;
+      return {items, est: true};
+    };
+    const boxDays = days.filter(r=> r.iso>=st.first && boxItemsOf(r));
+    boxDays.forEach(r=>{ const pi = boxItemsOf(r).items; Object.keys(pi).forEach(x=>{ const n = parseFloat(pi[x])||0; if(n<=0) return; const key = keyOf(x, 'shopify'); if(key && Q[key]) Q[key].sold += n; }); });
     // pass 2: opening stock = on hand today + sold since the first day - received since, kept from the newest earlier lots
     const snap = (AMAZON_STORAGE_LIVE_DATA && AMAZON_STORAGE_LIVE_DATA.inventory && AMAZON_STORAGE_LIVE_DATA.inventory.snapshot) || {};
     const smk = (SHIPMONK_INVENTORY && SHIPMONK_INVENTORY.skus) || {}, smkPack = (SHIPMONK_INVENTORY && SHIPMONK_INVENTORY.packaging) || {};   // packaging = box stock (sync v1.5+)
@@ -3120,9 +3143,9 @@
     });
     st.meta.replay = tot; st.meta.salesDays = sales.length;
     // V11.1: replay the boxes day by day (their queues are separate SKUs, so the order against the products does not matter)
-    const btot = {lot:0, fb:0, units:0, lotU:0, fbU:0, estU:0, days:0, skus:{}};
+    const btot = {lot:0, fb:0, units:0, lotU:0, fbU:0, estU:0, days:0, skus:{}, estDays:0, estBoxes:0, estCost:0};
     boxDays.forEach(r=>{
-      const d = r.iso, pi = r.shipmonkReal.packagingItems, o = {c:{}, lot:0, fb:0, units:0, lotU:0, fbU:0, estU:0};
+      const bi = boxItemsOf(r), d = r.iso, pi = bi.items, o = {c:{}, lot:0, fb:0, units:0, lotU:0, fbU:0, estU:0, est: bi.est};
       Object.keys(pi).forEach(x=>{
         const n = parseFloat(pi[x])||0; if(n<=0) return;
         const key = keyOf(x, 'shopify'), q = key ? Q[key] : null;
@@ -3135,6 +3158,7 @@
       });
       (st.day[d] = st.day[d] || {}).box = o;
       btot.lot += o.lot; btot.fb += o.fb; btot.units += o.units; btot.lotU += o.lotU; btot.fbU += o.fbU; btot.estU += o.estU; btot.days++;
+      if(o.est){ btot.estDays++; btot.estBoxes += o.units; btot.estCost += o.lot + o.fb; }
     });
     st.meta.boxes = btot;
     st.ok = true;
@@ -3206,7 +3230,7 @@
       <div class="kpi"><div class="label">${tv('Incoming lots','Lô đang về')}</div><div class="value">${intFmt(L.meta.incoming)}</div><div class="foot">${intFmt(L.meta.incomingUnits)} ${tv('units not received yet','units chưa nhận')}</div></div>
       <div class="kpi"><div class="label">${tv('Units costed from lots','Units tính theo lô')}</div><div class="value">${U>0 ? (R.lotUnits/U*100).toFixed(1)+'%' : '—'}</div><div class="foot">${U>0 ? tv('since ','từ ')+F.first+' · '+(R.fbUnits/U*100).toFixed(1)+tv('% nearest-lot / per-SKU · ','% giá lô gần nhất / theo SKU · ')+(R.estUnits/U*100).toFixed(1)+tv('% estimated','% ước tính') : '—'}</div></div>
       <div class="kpi"><div class="label">${tv('Bill of materials','Thành phần bộ bán (BOM)')}</div><div class="value">${SHIPMONK_BOM ? intFmt(Object.keys(SHIPMONK_BOM.bundles).length) : intFmt(Object.values(COGS_SKUS).filter(v=>v.components).length)}</div><div class="foot">${SHIPMONK_BOM ? tv('ShipMonk bundles · ','bundle ShipMonk · ')+String(SHIPMONK_BOM.as_of||'').slice(0,10)+(SHIPMONK_BOM.carried_over ? tv(' (carried over)',' (bản cũ)') : '')+' · '+intFmt(Object.values(COGS_SKUS).filter(v=>v.components).length)+tv(' in cogs_skus as fallback',' trong cogs_skus dự phòng') : tv('from data/cogs_skus.json — waiting for ShipMonk sync 1.5 (bundle table)','từ data/cogs_skus.json — chờ ShipMonk sync 1.5 (bảng bundle)')}</div></div>
-      <div class="kpi"><div class="label">${tv('Shipping boxes (FIFO)','Hộp đóng gói (FIFO)')}</div><div class="value">${F && F.ok && F.meta.boxes && F.meta.boxes.days ? money(F.meta.boxes.lot+F.meta.boxes.fb,{compact:true}) : '—'}</div><div class="foot">${F && F.ok && F.meta.boxes && F.meta.boxes.days ? intFmt(F.meta.boxes.units)+tv(' boxes over ',' hộp trong ')+intFmt(F.meta.boxes.days)+tv(' days · one per package as ShipMonk picked it',' ngày · 1 hộp/kiện theo ShipMonk')+(F.meta.boxes.estU>0.5 ? ' · '+intFmt(F.meta.boxes.estU)+tv(' with no lot = $0',' chưa có lô = $0') : '') : tv('waiting for ShipMonk sync 1.5 (packaging per order) + backfill','chờ ShipMonk sync 1.5 (hộp theo đơn) + backfill')}</div></div>`;
+      <div class="kpi"><div class="label">${tv('Shipping boxes (FIFO)','Hộp đóng gói (FIFO)')}</div><div class="value">${F && F.ok && F.meta.boxes && F.meta.boxes.days ? money(F.meta.boxes.lot+F.meta.boxes.fb,{compact:true}) : '—'}</div><div class="foot">${F && F.ok && F.meta.boxes && F.meta.boxes.days ? intFmt(F.meta.boxes.units)+tv(' boxes over ',' hộp trong ')+intFmt(F.meta.boxes.days)+tv(' days · one per package as ShipMonk picked it',' ngày · 1 hộp/kiện theo ShipMonk')+(F.meta.boxes.estBoxes>0.5 ? ' · '+intFmt(F.meta.boxes.estBoxes)+tv(' estimated (before 10/2025)',' ước tính (trước 10/2025)') : '')+(F.meta.boxes.estU>0.5 ? ' · '+intFmt(F.meta.boxes.estU)+tv(' with no lot = $0',' chưa có lô = $0') : '') : tv('waiting for ShipMonk sync 1.5 (packaging per order) + backfill','chờ ShipMonk sync 1.5 (hộp theo đơn) + backfill')}</div></div>`;
     setNote('lotsNote', F && F.ok ? tv('FIFO since ','FIFO từ ')+F.first+' · '+intFmt(F.meta.salesDays)+tv(' days with units per SKU',' ngày có units theo SKU') : tv('No units per SKU yet','Chưa có units theo SKU'));
     const fd = d => d ? d.slice(8,10)+'/'+d.slice(5,7)+'/'+d.slice(2,4) : '—';
     const lotTxt = y => y ? `${y.inbound} · ${fd(y.day||y.eta)} · ${intFmt(y.qty)} @ ${y.cost!==null ? money(y.cost) : '—'}` : '—';
