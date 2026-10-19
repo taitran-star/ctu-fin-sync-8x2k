@@ -2,156 +2,156 @@
   "schema": 1,
   "currency": "USD",
   "updated_at": "2026-10-19",
-  "note": "Chi phi nhap tay theo thang (USD/thang), bang P&L tu rai deu theo ngay trong thang. Muc G&A (tren EBITDA): salary = luong & nhan su gian tiep (van hanh, quan ly) = luong VN (CP VN - 2026.xlsx) + nhan su thue ngoai qua Upwork (CSKH, fulfillment/logistics, copywriter; ghi theo tuan hoa don Upwork, da gom phi Upwork + VAT, phi dang tin) - xem Upwork_theo_hop_dong_2025-2026.xlsx; software = phan mem & cong cu: Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI, tu sao ke the Mercury (2025-04/2026) + Slash (04/2026->) - xem Phan_mem_Mercury_Slash_2025-2026.xlsx (KHONG gom Snowball $350 va Klaviyo - da co san); office = van phong & van hanh; accounting = ke toan & phap ly; insurance = bao hiem; other = khac. Muc duoi EBITDA: depreciation = khau hao & phan bo (khuon, thiet bi, phan mem mua dut); interest = lai vay & chi phi tai chinh (am neu lai tien gui > lai vay); income_tax = thue TNDN theo thang (bo trong/null de bang uoc tinh theo tax_rate x loi nhuan truoc thue duong; 0 = khong co thue). Thang chua co dong rieng se lay theo thang gan nhat da nhap. Them thang moi = them mot dong \"YYYY-MM\": {...}.",
+  "note": "Chi phi nhap tay theo thang (USD/thang), bang P&L tu rai deu theo ngay trong thang. Muc G&A (tren EBITDA): salary = luong & nhan su gian tiep (van hanh, quan ly) = luong VN (CP VN - 2026.xlsx) + nhan su thue ngoai qua Upwork (CSKH, fulfillment/logistics, copywriter; ghi theo tuan hoa don Upwork, da gom phi Upwork + VAT, phi dang tin) - xem Upwork_theo_hop_dong_2025-2026.xlsx; software = phan mem & cong cu: Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI, tu sao ke the Mercury (2025-04/2026) + Slash (04/2026->) - xem Phan_mem_Mercury_Slash_2025-2026.xlsx (KHONG gom Snowball $350 va Klaviyo - da co san); office = van phong & van hanh; accounting = ke toan, thue & phap ly (GAAP: professional fees) = phi dich vu Numeral khai sales tax ($75/to khai + dang ky bang) ghi theo THANG LAM TO KHAI (phi tru cuoi thang / dau thang sau; lan tru bi tu choi khong tinh) - KHONG gom tien thue sales tax nop cho cac bang (thu ho, khong vao P&L); ke toan VN da nam trong chi phi VN; insurance = bao hiem; other = khac. Muc duoi EBITDA: depreciation = khau hao & phan bo (khuon, thiet bi, phan mem mua dut); interest = lai vay & chi phi tai chinh (am neu lai tien gui > lai vay); income_tax = thue TNDN theo thang (bo trong/null de bang uoc tinh theo tax_rate x loi nhuan truoc thue duong; 0 = khong co thue). Thang chua co dong rieng se lay theo thang gan nhat da nhap. Them thang moi = them mot dong \"YYYY-MM\": {...}.",
   "tax_rate": 0,
   "months": {
     "2025-01": {
       "salary": 1802,
       "software": 7193,
       "office": null,
-      "accounting": null,
+      "accounting": 2475,
       "insurance": null,
       "other": null,
       "depreciation": null,
       "interest": null,
       "income_tax": null,
-      "note": "salary = nhan su thue ngoai Upwork $1,802 (CSKH $1,061, van hanh/fulfillment $741; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap)."
+      "note": "salary = nhan su thue ngoai Upwork $1,802 (CSKH $1,061, van hanh/fulfillment $741; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $2,475 (the Mercury 28/01)."
     },
     "2025-02": {
       "salary": 1733,
       "software": 7013,
       "office": null,
-      "accounting": null,
+      "accounting": 4125,
       "insurance": null,
       "other": null,
       "depreciation": null,
       "interest": null,
       "income_tax": null,
-      "note": "salary = nhan su thue ngoai Upwork $1,733 (CSKH $883, van hanh/fulfillment $850; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap)."
+      "note": "salary = nhan su thue ngoai Upwork $1,733 (CSKH $883, van hanh/fulfillment $850; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $4,125 (the Mercury 27/02)."
     },
     "2025-03": {
       "salary": 2314,
       "software": 7302,
       "office": null,
-      "accounting": null,
+      "accounting": 2400,
       "insurance": null,
       "other": null,
       "depreciation": null,
       "interest": null,
       "income_tax": null,
-      "note": "salary = nhan su thue ngoai Upwork $2,314 (CSKH $1,188, van hanh/fulfillment $1,126; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap)."
+      "note": "salary = nhan su thue ngoai Upwork $2,314 (CSKH $1,188, van hanh/fulfillment $1,126; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $2,400 (the Mercury 27/03)."
     },
     "2025-04": {
       "salary": 1986,
       "software": 7028,
       "office": null,
-      "accounting": null,
+      "accounting": 2625,
       "insurance": null,
       "other": null,
       "depreciation": null,
       "interest": null,
       "income_tax": null,
-      "note": "salary = nhan su thue ngoai Upwork $1,986 (CSKH $900, van hanh/fulfillment $1,087; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap)."
+      "note": "salary = nhan su thue ngoai Upwork $1,986 (CSKH $900, van hanh/fulfillment $1,087; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $2,625 (the Mercury 29/04)."
     },
     "2025-05": {
       "salary": 1703,
       "software": 8488,
       "office": null,
-      "accounting": null,
+      "accounting": 2025,
       "insurance": null,
       "other": null,
       "depreciation": null,
       "interest": null,
       "income_tax": null,
-      "note": "salary = nhan su thue ngoai Upwork $1,703 (CSKH $891, van hanh/fulfillment $813; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap)."
+      "note": "salary = nhan su thue ngoai Upwork $1,703 (CSKH $891, van hanh/fulfillment $813; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $2,025 (the Mercury 28/05)."
     },
     "2025-06": {
       "salary": 2092,
       "software": 6073,
       "office": null,
-      "accounting": null,
+      "accounting": 1950,
       "insurance": null,
       "other": null,
       "depreciation": null,
       "interest": null,
       "income_tax": null,
-      "note": "salary = nhan su thue ngoai Upwork $2,092 (CSKH $1,198, van hanh/fulfillment $894; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap)."
+      "note": "salary = nhan su thue ngoai Upwork $2,092 (CSKH $1,198, van hanh/fulfillment $894; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $1,950 (the Mercury 01/07)."
     },
     "2025-07": {
       "salary": 1734,
       "software": 7950,
       "office": null,
-      "accounting": null,
+      "accounting": 2475,
       "insurance": null,
       "other": null,
       "depreciation": null,
       "interest": null,
       "income_tax": null,
-      "note": "salary = nhan su thue ngoai Upwork $1,734 (CSKH $1,057, van hanh/fulfillment $677; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap)."
+      "note": "salary = nhan su thue ngoai Upwork $1,734 (CSKH $1,057, van hanh/fulfillment $677; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $2,475 (the Mercury 31/07)."
     },
     "2025-08": {
       "salary": 2278,
       "software": 8276,
       "office": null,
-      "accounting": null,
+      "accounting": 1800,
       "insurance": null,
       "other": null,
       "depreciation": null,
       "interest": null,
       "income_tax": null,
-      "note": "salary = nhan su thue ngoai Upwork $2,278 (CSKH $1,440, van hanh/fulfillment $838; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap)."
+      "note": "salary = nhan su thue ngoai Upwork $2,278 (CSKH $1,440, van hanh/fulfillment $838; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $1,800 (the Mercury 30/08)."
     },
     "2025-09": {
       "salary": 1856,
       "software": 9442,
       "office": null,
-      "accounting": null,
+      "accounting": 2400,
       "insurance": null,
       "other": null,
       "depreciation": null,
       "interest": null,
       "income_tax": null,
-      "note": "salary = nhan su thue ngoai Upwork $1,856 (CSKH $1,164, van hanh/fulfillment $692; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap)."
+      "note": "salary = nhan su thue ngoai Upwork $1,856 (CSKH $1,164, van hanh/fulfillment $692; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $2,400 (the Mercury 30/09)."
     },
     "2025-10": {
       "salary": 1892,
       "software": 9439,
       "office": null,
-      "accounting": null,
+      "accounting": 2625,
       "insurance": null,
       "other": null,
       "depreciation": null,
       "interest": null,
       "income_tax": null,
-      "note": "salary = nhan su thue ngoai Upwork $1,892 (CSKH $1,181, van hanh/fulfillment $710; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap)."
+      "note": "salary = nhan su thue ngoai Upwork $1,892 (CSKH $1,181, van hanh/fulfillment $710; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $2,625 (the Mercury 05/11)."
     },
     "2025-11": {
       "salary": 1758,
       "software": 11459,
       "office": null,
-      "accounting": null,
+      "accounting": 2025,
       "insurance": null,
       "other": null,
       "depreciation": null,
       "interest": null,
       "income_tax": null,
-      "note": "salary = nhan su thue ngoai Upwork $1,758 (CSKH $1,579, van hanh/fulfillment $179; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap)."
+      "note": "salary = nhan su thue ngoai Upwork $1,758 (CSKH $1,579, van hanh/fulfillment $179; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $2,025 (the Mercury 04/12)."
     },
     "2025-12": {
       "salary": 1305,
       "software": 14140,
       "office": null,
-      "accounting": null,
+      "accounting": 2112,
       "insurance": null,
       "other": null,
       "depreciation": null,
       "interest": null,
       "income_tax": null,
-      "note": "salary = nhan su thue ngoai Upwork $1,305 (CSKH $1,305; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap)."
+      "note": "salary = nhan su thue ngoai Upwork $1,305 (CSKH $1,305; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $2,112 (the Mercury 02/02/2026 (3 lan tru thang 1 bi tu choi))."
     },
     "2026-01": {
       "software": 9363,
-      "accounting": 0,
+      "accounting": 3075,
       "insurance": 0,
       "depreciation": 0,
       "interest": 0,
@@ -159,11 +159,11 @@
       "salary": 37716,
       "office": 9724,
       "other": 2111,
-      "note": "salary = luong VN $36,573 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,143 (CSKH $1,110, phi dang tin $33; da gom phi Upwork+VAT) = $37,716. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue)."
+      "note": "salary = luong VN $36,573 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,143 (CSKH $1,110, phi dang tin $33; da gom phi Upwork+VAT) = $37,716. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). accounting = Numeral $3,075 (the Mercury 24/03 (3 lan tru thang 2 bi tu choi))."
     },
     "2026-02": {
       "software": 10723,
-      "accounting": 0,
+      "accounting": 2175,
       "insurance": 0,
       "depreciation": 0,
       "interest": 0,
@@ -171,11 +171,11 @@
       "salary": 27370,
       "office": 10298,
       "other": 1897,
-      "note": "salary = luong VN $25,621 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,749 (CSKH $1,067, copywriter/marketing $650, phi dang tin $33; da gom phi Upwork+VAT) = $27,370. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue)."
+      "note": "salary = luong VN $25,621 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,749 (CSKH $1,067, copywriter/marketing $650, phi dang tin $33; da gom phi Upwork+VAT) = $27,370. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). accounting = Numeral $2,175 (the Mercury 24/03)."
     },
     "2026-03": {
       "software": 10997,
-      "accounting": 0,
+      "accounting": 2250,
       "insurance": 0,
       "depreciation": 0,
       "interest": 0,
@@ -183,11 +183,11 @@
       "salary": 27732,
       "office": 8429,
       "other": 3787,
-      "note": "salary = luong VN $25,073 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $2,659 (CSKH $1,301, copywriter/marketing $1,358; da gom phi Upwork+VAT) = $27,732. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue)."
+      "note": "salary = luong VN $25,073 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $2,659 (CSKH $1,301, copywriter/marketing $1,358; da gom phi Upwork+VAT) = $27,732. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). accounting = Numeral $2,250 (the Mercury 05/04)."
     },
     "2026-04": {
       "software": 13130,
-      "accounting": 0,
+      "accounting": 2700,
       "insurance": 0,
       "depreciation": 0,
       "interest": 0,
@@ -195,79 +195,79 @@
       "salary": 27989,
       "office": 9132,
       "other": 2999,
-      "note": "salary = luong VN $26,740 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,249 (CSKH $1,104, copywriter/marketing $145; da gom phi Upwork+VAT) = $27,989. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue)."
+      "note": "salary = luong VN $26,740 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,249 (CSKH $1,104, copywriter/marketing $145; da gom phi Upwork+VAT) = $27,989. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). accounting = Numeral $2,700 (the Slash T5)."
     },
     "2026-05": {
       "salary": 28649,
       "software": 19503,
       "office": 9737,
-      "accounting": 0,
+      "accounting": 2250,
       "insurance": 0,
       "other": 2216,
       "depreciation": 0,
       "interest": 0,
       "income_tax": null,
-      "note": "salary = luong VN $26,989 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,660 (CSKH $1,660; da gom phi Upwork+VAT) = $28,649. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue)."
+      "note": "salary = luong VN $26,989 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,660 (CSKH $1,660; da gom phi Upwork+VAT) = $28,649. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). accounting = Numeral $2,250 (the Slash T6)."
     },
     "2026-06": {
       "salary": 31268,
       "software": 16504,
       "office": 9344,
-      "accounting": 0,
+      "accounting": 4275,
       "insurance": 0,
       "other": 4052,
       "depreciation": 0,
       "interest": 0,
       "income_tax": null,
-      "note": "salary = luong VN $30,058 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,210 (CSKH $1,210; da gom phi Upwork+VAT) = $31,268. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue)."
+      "note": "salary = luong VN $30,058 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,210 (CSKH $1,210; da gom phi Upwork+VAT) = $31,268. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). accounting = Numeral $4,275 (the Slash T7)."
     },
     "2026-07": {
       "salary": 35354,
       "software": 18407,
       "office": 9807,
-      "accounting": 0,
+      "accounting": 1650,
       "insurance": 0,
       "other": 2268,
       "depreciation": 0,
       "interest": 0,
       "income_tax": null,
-      "note": "salary = luong VN $33,906 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,448 (CSKH $1,448; da gom phi Upwork+VAT) = $35,354. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue)."
+      "note": "salary = luong VN $33,906 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,448 (CSKH $1,448; da gom phi Upwork+VAT) = $35,354. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). accounting = Numeral $1,650 (the Slash T8)."
     },
     "2026-08": {
       "salary": 40556,
       "software": 18557,
       "office": 8356,
-      "accounting": 0,
+      "accounting": 2100,
       "insurance": 0,
       "other": 3175,
       "depreciation": 0,
       "interest": 0,
       "income_tax": null,
-      "note": "salary = luong VN $38,741 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,815 (CSKH $1,815; da gom phi Upwork+VAT) = $40,556. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue)."
+      "note": "salary = luong VN $38,741 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,815 (CSKH $1,815; da gom phi Upwork+VAT) = $40,556. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). accounting = Numeral $2,100 (the Slash T9)."
     },
     "2026-09": {
       "salary": 33283,
       "software": 18220,
       "office": 7903,
-      "accounting": 0,
+      "accounting": 2400,
       "insurance": 0,
       "other": 1392,
       "depreciation": 0,
       "interest": 0,
       "income_tax": null,
-      "note": "salary = luong VN $31,729 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,554 (CSKH $1,554; da gom phi Upwork+VAT) = $33,283. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue)."
+      "note": "salary = luong VN $31,729 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,554 (CSKH $1,554; da gom phi Upwork+VAT) = $33,283. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). accounting = Numeral $2,400 (the Slash T10 (08/10))."
     },
     "2026-10": {
       "salary": 33283,
       "software": 18220,
       "office": 7903,
-      "accounting": 0,
+      "accounting": 2050,
       "insurance": 0,
       "other": 1392,
       "depreciation": 0,
       "interest": 0,
       "income_tax": null,
-      "note": "T10/2026 tam lay theo T9 (luong/van phong VN chua co so thang 10; software = run-rate T9, the Slash moi toi 17/10; Upwork = run-rate T9 $1,554 vi T10 moi co 2 tuan hoa don). salary = luong VN T9 $31,729 + nhan su thue ngoai Upwork $1,554 (CSKH; da gom phi Upwork+VAT). Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): salary=luong+BHXH+cong doan+phuc loi; office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue)."
+      "note": "T10/2026 tam lay theo T9 (luong/van phong VN chua co so thang 10; software = run-rate T9, the Slash moi toi 17/10; Upwork = run-rate T9 $1,554 vi T10 moi co 2 tuan hoa don). salary = luong VN T9 $31,729 + nhan su thue ngoai Upwork $1,554 (CSKH; da gom phi Upwork+VAT). Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): salary=luong+BHXH+cong doan+phuc loi; office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). accounting = Numeral $2,050 (uoc = trung binh 3 thang gan nhat (chua bi tru, Numeral tru dau thang sau))."
     }
   }
 }
