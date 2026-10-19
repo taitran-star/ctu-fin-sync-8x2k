@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 617fc60d55).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 7d1cd90f29).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -357,6 +357,7 @@
   // ShipMonk (3PL) per-order fulfillment charges - data/shipmonk.json from the ShipMonk sync.
   let SHIPMONK_INVENTORY = null;   // sync v1.4+: {as_of, warehouses[], skus{}, totals{}} (set by applyShipmonkRows)
   let SHIPMONK_BOM = null;         // V11.1 / sync v1.5+: {as_of, bundles{bundle_sku:{component_sku: qty}}} = ShipMonk's own bundle table (what the warehouse picks per SKU sold)
+  let shipmonkBoxCoverage = null;  // V11.1.1: per month {boxes, packages} from the sync's packaging_items; months under 50% coverage keep the purchase line
   const SHIPMONK_LIVE_DATA = (window.__LIVE && window.__LIVE["shipmonk"]) || null; /*SHIPMONK_DATA_INJECT*/
   let shipmonkMeta = null;
   // ShipMonk INVOICES (storage, receiving, returns, packaging purchases, credits...) - read from the
@@ -1360,7 +1361,7 @@
       let bx = tv('Shipping boxes — one per package as ShipMonk picked it, FIFO over the Notion box lots (', 'Hộp đóng gói — theo kiện ShipMonk đã nhặt, FIFO theo lô hộp Notion (')+nb(a.boxUnits)+tv(' boxes', ' hộp');
       if(a.boxFbUnits>0.5) bx += ', '+nb(a.boxFbUnits)+tv(' at nearest-lot cost', ' theo giá lô gần nhất');
       if(a.boxEstUnits>0.5) bx += ', '+nb(a.boxEstUnits)+tv(' with no lot in Notion yet = $0', ' chưa có lô trong Notion = $0');
-      if(a.boxDays<a.n) bx += tv('; ', '; ')+(a.n-a.boxDays)+tv(' days before the per-package data keep the purchase line', ' ngày trước khi có dữ liệu theo kiện vẫn tính theo dòng mua');
+      if(a.boxDays<a.n) bx += '; '+(a.n-a.boxDays)+tv(' days without per-package box data', ' ngày chưa có dữ liệu hộp theo kiện')+(shipmonkBoxCoverage && shipmonkBoxCoverage.firstGood ? tv(' (ShipMonk lists the box on the order from ', ' (ShipMonk ghi hộp theo đơn từ ')+shipmonkBoxCoverage.firstGood+')' : '')+tv(' keep the purchase line', ' vẫn tính theo dòng mua');
       bx += ')';
       rows.push({...stLine(bx, -a.boxCost, nr, 'var', 'cogs'), neg:true, live:true, est: a.boxEstUnits>0.5, estTitle: tv('Boxes with no receipt lot in Notion carry $0 until the lot is entered', 'Hộp chưa có lô nhập trong Notion tạm tính $0 tới khi nhập lô'), hget: x=>-x.boxCost});
       Object.entries(a.boxBySku||{}).sort((x,y)=>y[1].cost-x[1].cost).forEach(([sku,t])=>{
@@ -3866,6 +3867,14 @@
     if(data.window && data.window.start && data.window.end){
       days.forEach(d=>{ if(!d.shipmonkReal && d.iso>=data.window.start && d.iso<=data.window.end) d.shipmonkReal = {orders:0,units:0,packages:0,shipping:0,packaging:0,pickPack:0,total:0,missing:0,shipped:0,unshipped:0,onhold:0,byStore:{},byType:{},byCarrier:{}}; });
     }
+    // V11.1.1: ShipMonk only lists the box on the order from about 10/2025 (before that the packaging line is missing on
+    // nearly every order), so a month whose boxes cover less than half of its packages has no usable per-package data:
+    // those days keep the invoice's purchase line instead of a near-zero box cost. Coverage per month is kept for the labels.
+    const cov = {};
+    days.forEach(d=>{ const sr = d.shipmonkReal; if(!sr || !sr.packagingItems) return; const m = d.iso.slice(0,7); const c = cov[m] = cov[m] || {boxes:0, packages:0}; c.boxes += sr.packagingUnits||0; c.packages += sr.packages||0; });
+    const weak = {}; Object.keys(cov).forEach(m=>{ const c = cov[m]; if(c.packages>0 && c.boxes < 0.5*c.packages) weak[m] = c; });
+    days.forEach(d=>{ const sr = d.shipmonkReal; if(!sr || !sr.packagingItems) return; if(weak[d.iso.slice(0,7)]){ sr.packagingItems = null; sr.packagingUnits = 0; sr.boxDataWeak = true; } });
+    shipmonkBoxCoverage = {months: cov, weak, firstGood: Object.keys(cov).filter(m=>!weak[m]).sort()[0] || null};
     return matched>0;
   }
   // Amazon storage per day: Finances posting (FBAStorageFee, month stored) stays the truth; months Amazon has not
