@@ -83,6 +83,22 @@ Inventory snapshot (v1.4, additive - runs AFTER the order sync, never fails the 
   SHIPMONK_INVENTORY_INCOMING 1 (default) / 0 to skip the receivings pass (incoming = null)
   INVENTORY_INCOMING_DAYS     only receivings created in the last N days are scanned, default 365
   INVENTORY_MAX_PAGES         runaway guard for the product listing, default 200 (= 20,000 SKUs)
+
+v1.5 (2026-10-19) - exact product cost per order (dashboard V11.1), two additions:
+  daily[d].packaging_items   {box_sku: units} - the packaging material ShipMonk picked for the day's
+                             orders (order items with source = "packaging": one box per package,
+                             e.g. NEW-PKCTCVBX-SNGL-L); daily[d].packaging_units = their sum. The
+                             dashboard expenses the boxes through FIFO over the Notion box lots
+                             (GAAP: packaging supplies are inventory until used) instead of the
+                             invoice's "custom packaging" purchases. Needs a history backfill once.
+  bom                        top-level block {as_of, bundles{bundle_sku: {component_sku: qty}}}
+                             read from every product's product_bundles (the ShipMonk bundle table:
+                             what the warehouse really picks for each sold SKU - freebies, random
+                             colour, covers, 2-packs). Carried over from the previous file when the
+                             products call fails. inventory.packaging{sku:{on_hand,available,name}}
+                             = stock of the packaging-type products (box opening stock for FIFO).
+                             (The old per-product "bundle_components" field was dropped: it summed
+                             the components of every bundle the product belonged to.)
 """
 import email.utils
 import json
@@ -99,7 +115,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "1.4.0"
+SCRIPT_VERSION = "1.5.0"
 SCHEMA = 1
 
 API_KEY = os.environ.get("SHIPMONK_API_KEY", "").strip()
@@ -139,7 +155,7 @@ WAREHOUSE_COUNTRY = {
     "NY7": "US", "CA7": "US", "KY7": "US", "NV2": "US", "NV7": "US", "NJ1": "US", "NJ7": "US", "TO7": "CA", "CA1": "US", "FL1": "US",
 }
 
-DAILY_FIELDS = ["orders", "orders_shipped", "orders_unshipped", "orders_onhold", "units", "packages", "shipping_cost", "packaging_cost", "pick_pack_cost", "total_cost", "cost_missing_orders"]
+DAILY_FIELDS = ["orders", "orders_shipped", "orders_unshipped", "orders_onhold", "units", "packages", "packaging_units", "shipping_cost", "packaging_cost", "pick_pack_cost", "total_cost", "cost_missing_orders"]
 MONEY_FIELDS = ["shipping_cost", "packaging_cost", "pick_pack_cost", "total_cost"]
 GROUP_FIELDS = ["orders", "units", "shipping_cost", "packaging_cost", "pick_pack_cost", "total_cost"]
 
@@ -154,6 +170,7 @@ def new_bucket():
     d["by_type"] = {}
     d["by_carrier"] = {}
     d["foreign_cost"] = {}   # native amounts of charges stated in another currency, before FX
+    d["packaging_items"] = {}   # v1.5: {box_sku: units} picked for the day's orders (one box per package)
     return d
 
 
@@ -506,13 +523,20 @@ class Aggregator:
         pack = pack or 0.0
         pick = pick or 0.0
         units = 0
+        packaging_items = {}   # v1.5: the box(es) ShipMonk picked for this order, by packaging SKU
         for it in (o.get("items") or []):
-            if (it.get("source") or "") == "packaging":
-                continue   # packaging material lines are not product units
             q = it.get("fulfilled_quantity") if shipped_day is not None else None   # unshipped: nothing fulfilled yet
             if q is None:
                 q = it.get("quantity") or 0
+            if (it.get("source") or "") == "packaging":
+                # packaging material lines are not product units; kept apart so the dashboard can
+                # expense the boxes by FIFO over the box lots (one line per box SKU, qty = boxes used)
+                psku = str(it.get("sku") or "").strip()
+                if psku and int(q or 0) > 0:
+                    packaging_items[psku] = packaging_items.get(psku, 0) + int(q or 0)
+                continue
             units += int(q or 0)
+        packaging_units = sum(packaging_items.values())
         packages = len(o.get("packages") or [])
         sd = o.get("shipment_data") or {}
         carrier = sd.get("carrier")
@@ -535,6 +559,9 @@ class Aggregator:
                 d["orders_onhold"] += 1
             d["units"] += units
             d["packages"] += packages
+            d["packaging_units"] += packaging_units
+            for psku, pq in packaging_items.items():
+                d["packaging_items"][psku] = d["packaging_items"].get(psku, 0) + pq
             d["shipping_cost"] += ship
             d["packaging_cost"] += pack
             d["pick_pack_cost"] += pick
@@ -570,7 +597,8 @@ class Aggregator:
             "ordered_day": ordered_day or "", "shipped_day": shipped_day or "",
             "pnl_day": day if in_pnl else "",
             "warehouse": (wh.get("identifier") or wh.get("name") or ""), "carrier": carrier,
-            "units": units, "packages": packages,
+            "units": units, "packages": packages, "packaging_units": packaging_units,
+            "packaging_skus": ";".join(f"{k}x{v}" for k, v in sorted(packaging_items.items())),
             "shipping_cost": round(ship, 2), "pick_pack_cost": round(pick, 2), "packaging_cost": round(pack, 2),
             "total_cost": round(ship + pick + pack, 2), "cost_status": "missing" if missing else "shipmonk_estimate",
             "cost_currency": cost_currency,
@@ -684,7 +712,7 @@ def fetch_shipped_orders(client, agg, start_utc, end_utc):
 
 
 CSV_COLS = ["order_number", "order_key", "store", "order_type", "status", "ordered_day", "shipped_day", "pnl_day", "warehouse",
-            "carrier", "units", "packages", "shipping_cost", "pick_pack_cost", "packaging_cost", "total_cost", "cost_status", "cost_currency"]
+            "carrier", "units", "packages", "packaging_units", "packaging_skus", "shipping_cost", "pick_pack_cost", "packaging_cost", "total_cost", "cost_status", "cost_currency"]
 
 
 def write_order_csvs(rows, fetched_start, fetched_end):
@@ -809,8 +837,10 @@ class InventoryBuilder:
         self.skus = {}
         self.warehouses = {}   # key -> {id, identifier, name, country}
         self.counts = {"products_seen": 0, "skus": 0, "no_sku": 0, "duplicates": 0, "no_inventory_block": 0,
-                       "incoming_receivings_open": 0, "incoming_unknown_sku": 0}
+                       "incoming_receivings_open": 0, "incoming_unknown_sku": 0, "bundles": 0, "packaging_skus": 0}
         self.skipped_types = {}
+        self.bundles = {}     # v1.5: bundle_sku -> {component_sku: qty} (ShipMonk bundle table, every product type)
+        self.packaging = {}   # v1.5: packaging-type products (boxes) -> stock, for the box FIFO opening stock
 
     def register_warehouse(self, key, wh):
         w = self.warehouses.setdefault(key, {"id": None, "identifier": None, "name": None, "country": None})
@@ -834,6 +864,29 @@ class InventoryBuilder:
         ptype = p.get("type") or p.get("product_type") or "unknown"
         if ptype == "unit":   # deprecated product_type always says "unit"
             ptype = "unknown"
+        # v1.5: product_bundles on a product = every ShipMonk bundle the product is part of, each with
+        # its bundle_sku and the FULL component list -> the bundle table (same bundle seen from each
+        # of its components; identical, so the first copy wins). Read before the type filter so a
+        # bundle made of inserts only is kept too.
+        for b in (p.get("product_bundles") or []):
+            if not isinstance(b, dict):
+                continue
+            bsku = str(b.get("bundle_sku") or b.get("sku") or "").strip()
+            if not bsku or bsku in self.bundles:
+                continue
+            comps = {}
+            for c in (b.get("products") or []):
+                if isinstance(c, dict) and c.get("sku"):
+                    q = _qty(c.get("quantity"))
+                    comps[str(c["sku"]).strip()] = _add(comps.get(str(c["sku"]).strip()), q if q is not None else 1)
+            if comps:
+                self.bundles[bsku] = comps
+                self.counts["bundles"] += 1
+        if ptype == "packaging" and sku not in self.packaging:
+            inv0 = p.get("inventory") if isinstance(p.get("inventory"), dict) else {}
+            self.packaging[sku] = {"name": p.get("name"), "active": p.get("is_active"),
+                                   "on_hand": _qty(inv0.get("quantity_total_on_hand")), "available": _qty(inv0.get("quantity_total_available"))}
+            self.counts["packaging_skus"] += 1
         if INVENTORY_PRODUCT_TYPES and ptype not in INVENTORY_PRODUCT_TYPES:
             self.skipped_types[ptype] = self.skipped_types.get(ptype, 0) + 1
             return
@@ -873,13 +926,6 @@ class InventoryBuilder:
         entry["active"] = p.get("is_active")
         entry["stock_out_days"] = _qty(p.get("stock_out_days"))
         entry["on_hand_updated_at"] = p.get("inventory_on_hand_last_updated_at") or p.get("inventory_on_hand_updated_at")
-        comps = {}
-        for b in (p.get("product_bundles") or []):
-            for c in ((b or {}).get("products") or []):
-                if isinstance(c, dict) and c.get("sku"):
-                    comps[str(c["sku"])] = _add(comps.get(str(c["sku"])), _qty(c.get("quantity")))
-        if comps:
-            entry["bundle_components"] = comps
         entry["by_warehouse"] = dict(sorted(by_wh.items()))
         self.skus[sku] = entry
         self.counts["skus"] += 1
@@ -935,6 +981,7 @@ class InventoryBuilder:
             "unit": "units",
             "warehouses": [dict(w) for _, w in sorted(self.warehouses.items())],
             "skus": dict(sorted(self.skus.items())),
+            "packaging": dict(sorted(self.packaging.items())),   # v1.5: packaging-type products (boxes) stock
             "totals": totals,
             "fields": {
                 "available": "quantity_total_available - units ShipMonk can allocate to new orders (use as 'available to sell')",
@@ -948,18 +995,22 @@ class InventoryBuilder:
 
 
 def fetch_inventory(client, previous, now_utc):
-    """Returns (inventory_block_or_None, meta_inventory). Never raises: on any problem the previous
-    file's block is returned with meta_inventory.error set, so the dashboard keeps the last snapshot."""
+    """Returns (inventory_block_or_None, meta_inventory, bom_block_or_None). Never raises: on any problem the
+    previous file's blocks are returned with meta_inventory.error set, so the dashboard keeps the last snapshot.
+    v1.5: the third value is the ShipMonk bundle table {as_of, source, bundles{bundle_sku: {component_sku: qty}}}."""
     prev_block = (previous or {}).get("inventory") if isinstance(previous, dict) else None
     if not isinstance(prev_block, dict):
         prev_block = None
+    prev_bom = (previous or {}).get("bom") if isinstance(previous, dict) else None
+    if not isinstance(prev_bom, dict) or not isinstance(prev_bom.get("bundles"), dict):
+        prev_bom = None
     meta = {"fetched": False, "skus": (len(prev_block.get("skus") or {}) if prev_block else 0), "pages": 0, "error": None,
             "as_of": (prev_block or {}).get("as_of"), "carried_over": prev_block is not None,
             "page_size": INVENTORY_PAGE_SIZE, "product_types": sorted(INVENTORY_PRODUCT_TYPES), "api_requests": 0, "api_retries": 0}
     if not INVENTORY_ENABLED:
         meta["error"] = "skipped: SHIPMONK_INVENTORY=0"
         log("inventory: skipped (SHIPMONK_INVENTORY=0)" + (" - previous snapshot kept" if prev_block else ""))
-        return prev_block, meta
+        return prev_block, meta, prev_bom
     t0 = time.time()
     as_of = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
     b = InventoryBuilder()
@@ -1055,11 +1106,24 @@ def fetch_inventory(client, previous, now_utc):
         block = b.build(as_of, source)
         meta.update({"fetched": True, "skus": len(b.skus), "error": None, "as_of": as_of, "carried_over": False,
                      "source_endpoint": source, "counts": b.counts, "skipped_types": b.skipped_types, "incoming": inc,
-                     "warehouses": [w.get("identifier") for w in block["warehouses"]]})
+                     "warehouses": [w.get("identifier") for w in block["warehouses"]], "bundles": len(b.bundles), "packaging_skus": len(b.packaging)})
+        # v1.5: the bundle table. An empty table from a successful products call is suspicious (the account has
+        # hundreds of bundles) -> keep the previous one and say so, never overwrite good data with nothing.
+        if b.bundles:
+            bom = {"as_of": as_of, "source": "product_bundles on " + str(source), "bundles": dict(sorted(b.bundles.items())),
+                   "count": len(b.bundles), "carried_over": False,
+                   "note": "bundle_sku (the SKU sold on Shopify/Walmart/FBM) -> component SKU -> units the warehouse picks per bundle sold"}
+        else:
+            bom = prev_bom
+            if bom is not None:
+                bom = dict(bom); bom["carried_over"] = True
+            meta["bom_error"] = "products call returned no product_bundles - previous bundle table kept" if prev_bom else "products call returned no product_bundles"
+            log("inventory: WARNING no product_bundles in the products listing" + (" - previous bundle table kept" if prev_bom else ""))
         log(f"inventory: {len(b.skus)} SKUs in {len(block['warehouses'])} warehouse(s), {pages} page(s); "
             f"available {block['totals']['available']}, on hand {block['totals']['on_hand']}, incoming {block['totals']['incoming']}; "
-            f"{b.counts['products_seen']} products seen, skipped types {b.skipped_types or '{}'}")
-        return block, meta
+            f"{b.counts['products_seen']} products seen, skipped types {b.skipped_types or '{}'}; "
+            f"{len(b.bundles)} bundles, {len(b.packaging)} packaging SKUs")
+        return block, meta, bom
     except Exception as e:  # noqa: BLE001 - the snapshot is optional; the cost data must still be written
         meta["error"] = (f"{type(e).__name__}: {e}")[:500]
         meta["source_endpoint"] = source
@@ -1067,7 +1131,9 @@ def fetch_inventory(client, previous, now_utc):
         if isinstance(e, ApiError) and e.code in (401, 403):
             hint = " - the API key cannot read products/inventory (ShipMonk: Account Settings > Stores > <store> > Integration API Keys; ask ShipMonk support to enable product/inventory access for it)"
         log(f"inventory: WARNING snapshot failed, {'previous snapshot kept' if prev_block else 'no previous snapshot'}: {meta['error']}{hint}")
-        return prev_block, meta
+        if prev_bom is not None:
+            prev_bom = dict(prev_bom); prev_bom["carried_over"] = True
+        return prev_block, meta, prev_bom
     finally:
         meta["api_requests"] = client.extra_requests - req0
         meta["api_retries"] = client.extra_retries - ret0
@@ -1159,7 +1225,7 @@ def main():
         },
     }
     # inventory snapshot: additive and non-fatal - everything above is written unchanged whatever happens here
-    out["inventory"], out["meta"]["inventory"] = fetch_inventory(client, previous, datetime.now(timezone.utc))
+    out["inventory"], out["meta"]["inventory"], out["bom"] = fetch_inventory(client, previous, datetime.now(timezone.utc))
     os.makedirs(os.path.dirname(OUTPUT_PATH) or ".", exist_ok=True)
     with open(OUTPUT_PATH, "w") as f:
         json.dump(out, f, indent=2, sort_keys=True)
