@@ -22,6 +22,7 @@ from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 SCRIPT_VERSION = "walmart-1.2"
+SKU_SCHEMA = 1   # 19/10/2026: orders[].sk {sku: [units, product amount]} -> orders_daily[].sku_units / sku_sales (SCRIPT_VERSION kept: no state wipe; run with BACKFILL_START to refill the API window)
 SCHEMA = 1
 BASE = "https://marketplace.walmartapis.com"
 CID = os.environ.get("WALMART_CLIENT_ID", "").strip()
@@ -142,6 +143,7 @@ def order_row(o):
     gross = ship = tax = 0.0
     units = lines = cancelled_lines = refund_lines = 0
     statuses = collections.Counter()
+    sk = {}   # sku -> [units, PRODUCT charge amount] of the sold lines (SKU_SCHEMA 1)
     for l in ((o.get("orderLines") or {}).get("orderLine")) or []:
         sts = ((l.get("orderLineStatuses") or {}).get("orderLineStatus")) or []
         st = (sts[-1].get("status") if sts else None) or ""
@@ -152,15 +154,20 @@ def order_row(o):
             cancelled_lines += 1; continue
         if l.get("refund"): refund_lines += 1
         units += qty
+        line_prod = 0.0
         for c in ((l.get("charges") or {}).get("charge")) or []:
             t, a = c.get("chargeType"), num((c.get("chargeAmount") or {}).get("amount"))
             tx = num(((c.get("tax") or {}).get("taxAmount") or {}).get("amount")) if isinstance((c.get("tax") or {}).get("taxAmount"), dict) else 0.0
-            if t == "PRODUCT": gross += a; tax += tx
+            if t == "PRODUCT": gross += a; tax += tx; line_prod += a
             elif t == "SHIPPING": ship += a  # other charge types: ignored, counted in meta.charge_types
+        sku = str(((l.get("item") or {}).get("sku")) or "").strip() or "(no sku)"
+        e = sk.setdefault(sku, [0, 0.0]); e[0] += qty; e[1] = r2(e[1] + line_prod)
     sold = lines - cancelled_lines
-    return {"d": la_date(o["orderDate"]), "ms": int(o["orderDate"]), "g": r2(gross), "sh": r2(ship), "tx": r2(tax), "u": units,
-            "ln": lines, "cx": cancelled_lines, "rf": refund_lines, "st": statuses.most_common(1)[0][0] if statuses else "",
-            "sold": sold > 0}
+    row = {"d": la_date(o["orderDate"]), "ms": int(o["orderDate"]), "g": r2(gross), "sh": r2(ship), "tx": r2(tax), "u": units,
+           "ln": lines, "cx": cancelled_lines, "rf": refund_lines, "st": statuses.most_common(1)[0][0] if statuses else "",
+           "sold": sold > 0}
+    if sk: row["sk"] = sk
+    return row
 
 
 # ---------------------------------------------------------------- reconciliation
@@ -355,12 +362,17 @@ def build_output(state, status, recon_info, charge_types, calib, now):
         rate = (s_fee / s_net) if s_net > 0 else 0.0
 
     od = collections.defaultdict(lambda: collections.defaultdict(float))
+    sku_units = collections.defaultdict(lambda: collections.defaultdict(int))     # day -> sku -> units (SKU_SCHEMA 1)
+    sku_sales = collections.defaultdict(lambda: collections.defaultdict(float))   # day -> sku -> product amount (same basis as gross_sales)
     for po, o in orders.items():
         d = od[o["d"]]
         if not o["sold"]:
             d["cancelled_orders"] += 1; continue
         g = o["g"] * (o["u"] if per_unit and o["u"] > 1 else 1)
         d["orders_count"] += 1; d["units"] += o["u"]; d["gross_sales"] += g; d["net_sales"] += g
+        for sku, (su, sa) in (o.get("sk") or {}).items():
+            sku_units[o["d"]][sku] += int(su)
+            sku_sales[o["d"]][sku] += sa * (su if per_unit and su > 1 else 1)
         d["shipping_charged"] += o["sh"]; d["tax_collected"] += o["tx"]
         f = fees.get(po)
         if f is not None:
@@ -375,6 +387,9 @@ def build_output(state, status, recon_info, charge_types, calib, now):
                    "net_sales_settled", "net_sales_unsettled", "shipping_charged", "tax_collected"):
             row.setdefault(kk, 0)
         row["fees_total"] = row["fees_commission"]
+        if k in sku_units:
+            row["sku_units"] = dict(sorted(sku_units[k].items()))
+            row["sku_sales"] = {sku: r2(v) for sku, v in sorted(sku_sales[k].items())}
         orders_daily[k] = row
     refunds_daily = collections.defaultdict(lambda: {"refund_gross": 0.0, "refund_orders": 0})
     for po, ts, a in state.get("refund_events", []):
@@ -393,6 +408,7 @@ def build_output(state, status, recon_info, charge_types, calib, now):
             "orders_settled": sum(1 for po, o in orders.items() if o["sold"] and po in fees),
             "fee_rates_settled": {"commission": round(rate, 5), "net_sales_basis": r2(s_net)},
             "charge_types": dict(charge_types), "product_charge_is_per_unit": per_unit, "calib": state.get("calib", {}),
+            "sku_schema": SKU_SCHEMA, "orders_with_sku": sum(1 for o in orders.values() if o.get("sold") and o.get("sk")),
             "recon_types": {k: [v[0], r2(v[1])] for k, v in sorted(state.get("recon_types", {}).items())},
             "recon_files_ingested": len(state.get("recon_done", {})),
             "orders_from_api": sum(1 for o in api_orders.values() if o["sold"]), "orders_from_recon": n_recon, "recon_orders_basis": dict(basis),

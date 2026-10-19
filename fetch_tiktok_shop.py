@@ -61,7 +61,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "tiktok_shop-2.2"
+SCRIPT_VERSION = "tiktok_shop-2.3"   # 2.3 (19/10/2026): orders_daily[].sku_units / sku_sales per seller SKU (product x channel on the dashboard)
 SCHEMA = 2
 
 AUTH_HOST = "https://auth.tiktok-shops.com"
@@ -499,6 +499,14 @@ def order_row(o):
     return row
 
 
+def row_lines_live(row):
+    """Line items that count as sold for the order (same rule as order_sales): every line of a paid-then-cancelled
+    order, otherwise the lines that were not cancelled."""
+    st = row.get("status")
+    lines = row.get("lines") or []
+    return lines if st == "CANCELLED" else [l for l in lines if str(l.get("status") or "").upper() != "CANCELLED"]
+
+
 def order_sales(row):
     """(counts_as_sale, units, gross, seller_discount, platform_discount) for one order row.
     Same convention as TikTok's own Shop Analytics and Seller Center Finance: an order that was PAID counts
@@ -709,6 +717,16 @@ def bucket_orders(orders, statement_days):
         row["seller_discount"] += sd
         row["platform_discount"] += pd_
         row["net_sales"] += gross - sd
+        # v2.3: units / pre-discount sales per seller SKU (same convention as the Shopify and Amazon syncs:
+        # sku_units = units sold, sku_sales = original price before discounts). Lines without a seller SKU use sku_id.
+        lines_ = row_lines_live(r)
+        if lines_:
+            su = row.setdefault("sku_units", {})
+            ss = row.setdefault("sku_sales", {})
+            for l in lines_:
+                k = str(l.get("seller_sku") or l.get("sku_id") or "(no sku)").strip() or "(no sku)"
+                su[k] = su.get(k, 0) + 1
+                ss[k] = round(ss.get(k, 0.0) + _f(l.get("orig")), 2)
         if fees.get("settled"):
             row["settled_orders"] += 1
             row["gross_sales_settled"] += gross
@@ -747,6 +765,8 @@ def bucket_orders(orders, statement_days):
             for k in v:
                 if isinstance(v[k], float):
                     v[k] = round(v[k], 2)
+                elif isinstance(v[k], dict):
+                    v[k] = {kk: (round(vv, 2) if isinstance(vv, float) else vv) for kk, vv in sorted(v[k].items())}
     return dict(sorted(daily.items())), dict(sorted(refunds.items()))
 
 
