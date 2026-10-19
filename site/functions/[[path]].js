@@ -15,6 +15,8 @@
 //   2. permissions — a user sees only the pages in their list (exec, sales, marketing, pnl, inventory, opex, data on
 //      /pnl; sns = /sns) and only the /data files those pages need (VIEW_FILES); everything else answers 403.
 //      /api/me tells the page who is signed in; /users + /api/users manage accounts (admins only).
+//      Invite e-mails (optional): secret RESEND_API_KEY (or BREVO_API_KEY) + MAIL_FROM — see sendMail(); without a key the
+//      admin copies the invite link by hand.
 //   3. /data/<file>.json — the dashboards' data: the GitHub repo that the sync workflows commit to
 //      (raw.githubusercontent.com), kept in the Cloudflare edge cache so a viewer never waits for GitHub when a
 //      copy already exists here (see serveRepoFile: fresh / stale-while-revalidate / GitHub-first / mirror), plus
@@ -485,7 +487,7 @@ async function handleInviteAccept(request, env, url) {
 // ---------- /api/* (JSON; the X-Requested-With header keeps plain cross-site forms out) ----------
 async function handleApi(path, request, env, url, me) {
   if (request.headers.get('X-Requested-With') !== 'ctu') return json({ error: 'bad request' }, 400);
-  if (path === '/api/me') return json({ me: publicMe(me), users_enabled: !!kv(env) }, 200);
+  if (path === '/api/me') return json({ me: publicMe(me), users_enabled: !!kv(env), mail_enabled: mailEnabled(env) }, 200);
   if (!me.admin) return json({ error: 'forbidden' }, 403);
   if (!path.startsWith('/api/users')) return json({ error: 'not found' }, 404);
   if (!kv(env)) return json({ error: 'KV USERS chưa được gắn vào dự án (Pages → Settings → Bindings → KV namespace, tên biến USERS) rồi Retry deployment.' }, 503);
@@ -510,7 +512,9 @@ async function handleApi(path, request, env, url, me) {
         created_at: now, created_by: me.email || 'owner', invited_at: now, last_login: null };
       await putUser(env, u);
       const token = await inviteToken(env, email, 0);
-      return json({ user: userSummary(u), invite_url: origin + '/invite?t=' + token, invite_days: INVITE_DAYS }, 201);
+      const link = origin + '/invite?t=' + token;
+      const sent = body.send_email === false ? null : await sendInvite(env, u, link, false, me);
+      return json({ user: userSummary(u), invite_url: link, invite_days: INVITE_DAYS, emailed: !!(sent && sent.ok), email_error: sent && !sent.ok ? sent.error : null }, 201);
     }
     return json({ error: 'method' }, 405);
   }
@@ -522,7 +526,9 @@ async function handleApi(path, request, env, url, me) {
     u.invited_at = new Date().toISOString();
     await putUser(env, u);
     const token = await inviteToken(env, u.email, u.pwver || 0);
-    return json({ user: userSummary(u), invite_url: origin + '/invite?t=' + token, invite_days: INVITE_DAYS }, 200);
+    const link = origin + '/invite?t=' + token;
+    const sent = body.send_email === false ? null : await sendInvite(env, u, link, !!u.hash, me);
+    return json({ user: userSummary(u), invite_url: link, invite_days: INVITE_DAYS, emailed: !!(sent && sent.ok), email_error: sent && !sent.ok ? sent.error : null }, 200);
   }
   if (!action && request.method === 'PUT') {
     if ('name' in body) u.name = String(body.name || '').trim().slice(0, 80);
@@ -540,6 +546,49 @@ async function handleApi(path, request, env, url, me) {
   return json({ error: 'method' }, 405);
 }
 function cleanViews(v) { return Array.isArray(v) ? VIEWS.filter((x) => v.includes(x)) : []; }
+
+// ---------- invite e-mail (optional) ----------
+// Provider = whichever secret exists: RESEND_API_KEY (https://resend.com, domain verified in DNS) or BREVO_API_KEY
+// (https://brevo.com, sender verified). MAIL_FROM = 'Name <address>' (default dashboard@cattasaurus.com). No key -> the admin
+// page shows the link to copy by hand. Nothing is sent unless an admin creates / re-invites a user.
+function mailEnabled(env) { return !!(env.RESEND_API_KEY || env.BREVO_API_KEY); }
+async function sendMail(env, to, subject, text, html) {
+  const from = String(env.MAIL_FROM || 'Cattasaurus Dashboard <dashboard@cattasaurus.com>');
+  try {
+    if (env.RESEND_API_KEY) {
+      const r = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ from, to: [to], subject, text, html }) });
+      if (r.ok) return { ok: true, via: 'resend' };
+      return { ok: false, error: 'Resend HTTP ' + r.status + ': ' + (await r.text()).slice(0, 240) };
+    }
+    if (env.BREVO_API_KEY) {
+      const m = from.match(/^(.*?)\s*<([^>]+)>$/);
+      const sender = m ? { name: m[1].trim() || 'Cattasaurus Dashboard', email: m[2].trim() } : { email: from };
+      const r = await fetch('https://api.brevo.com/v3/smtp/email', { method: 'POST', headers: { 'api-key': env.BREVO_API_KEY, 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify({ sender, to: [{ email: to }], subject, textContent: text, htmlContent: html }) });
+      if (r.ok) return { ok: true, via: 'brevo' };
+      return { ok: false, error: 'Brevo HTTP ' + r.status + ': ' + (await r.text()).slice(0, 240) };
+    }
+    return { ok: false, error: 'Chưa cấu hình gửi email (Secret RESEND_API_KEY hoặc BREVO_API_KEY trên Cloudflare).' };
+  } catch (e) {
+    return { ok: false, error: 'Gửi email lỗi: ' + ((e && e.message) || e) };
+  }
+}
+async function sendInvite(env, u, link, isReset, by) {
+  if (!mailEnabled(env)) return { ok: false, error: 'Chưa cấu hình gửi email (Secret RESEND_API_KEY hoặc BREVO_API_KEY trên Cloudflare).' };
+  const name = u.name || u.email;
+  const pages = (u.views || []).map((v) => VIEW_LABELS[v] || v).join(', ');
+  const who = by && by.email ? by.email : 'Admin';
+  const subject = isReset ? 'Đặt lại mật khẩu — Cattasaurus Dashboard' : 'Mời bạn vào Cattasaurus Dashboard';
+  const intro = isReset ? `${who} vừa tạo link đặt lại mật khẩu cho tài khoản ${u.email} trên dashboard số liệu nội bộ của Cattasaurus.`
+    : `${who} mời bạn vào dashboard số liệu nội bộ của Cattasaurus với tài khoản ${u.email}.`;
+  const text = `Chào ${name},\n\n${intro}\n${pages ? 'Bạn được xem: ' + pages + '.\n' : ''}\nBấm link dưới đây để ${isReset ? 'đặt mật khẩu mới' : 'tạo mật khẩu'} rồi vào xem (link dùng 1 lần, hết hạn sau ${INVITE_DAYS} ngày):\n${link}\n\nSau đó đăng nhập tại https://dashboard.cattasaurus.com/login bằng email + mật khẩu của bạn.\nNếu bạn không mong đợi email này, hãy bỏ qua.\n\n— Cattasaurus Dashboard`;
+  const html = `<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;line-height:1.5;color:#05372E;max-width:560px">
+<p>Chào <b>${escapeHtml(name)}</b>,</p>
+<p>${escapeHtml(intro)}${pages ? '<br>Bạn được xem: <b>' + escapeHtml(pages) + '</b>.' : ''}</p>
+<p><a href="${escapeHtml(link)}" style="display:inline-block;background:#05372E;color:#C9E595;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:10px">${isReset ? 'Đặt mật khẩu mới' : 'Tạo mật khẩu & vào xem'}</a></p>
+<p style="font-size:13px;color:#33544a">Link dùng 1 lần, hết hạn sau ${INVITE_DAYS} ngày. Nếu nút không bấm được, mở link này: <a href="${escapeHtml(link)}">${escapeHtml(link)}</a><br>Sau đó đăng nhập tại <a href="https://dashboard.cattasaurus.com/login">dashboard.cattasaurus.com</a> bằng email + mật khẩu của bạn. Nếu bạn không mong đợi email này, hãy bỏ qua.</p>
+<p style="font-size:13px;color:#33544a">— Cattasaurus Dashboard</p></div>`;
+  return sendMail(env, u.email, subject, text, html);
+}
 
 // ---------- crypto helpers ----------
 const enc = (s) => new TextEncoder().encode(s);
@@ -699,11 +748,12 @@ const USERS_CSS = `
 
 function usersPage(me, env) {
   const views = JSON.stringify(VIEWS), labels = JSON.stringify(VIEW_LABELS);
-  const kvOk = !!kv(env);
+  const kvOk = !!kv(env), mailOk = mailEnabled(env);
   const body = `<div class="top"><img class="wm light" src="/img/logo-h-pine.png" alt="Cattasaurus" width="1000" height="327"><img class="wm dark" src="/img/logo-h-pistachio.png" alt="" aria-hidden="true" width="1000" height="327"><nav><a href="/pnl">P&amp;L</a><a href="/sns">S&amp;S</a><a href="/">Trang chính</a><a href="/logout">Đăng xuất</a></nav></div>
 <div class="panel"><h2>Quản lý user</h2>
 <p>Đang đăng nhập: <b>${escapeHtml(me.name)}</b>${me.email ? ' (' + escapeHtml(me.email) + ')' : ''} — admin. Mỗi user có email + mật khẩu riêng và chỉ thấy các trang được tick; dữ liệu của trang không được cấp cũng không tải về máy họ.</p>
 ${kvOk ? '' : `<div class="msg bad">Chưa gắn kho user: Cloudflare → Workers &amp; Pages → dự án → <b>Settings → Bindings → Add → KV namespace</b>, Variable name <code>USERS</code>, chọn/tạo namespace (ví dụ <code>ctu-dashboard-users</code>) → Save → <b>Deployments → Retry deployment</b>. Xong tải lại trang này.</div>`}
+${mailOk ? `<div class="muted">Email mời được gửi tự động từ <code>${escapeHtml(String(env.MAIL_FROM || 'dashboard@cattasaurus.com'))}</code>; link vẫn hiện ở đây để gửi tay nếu cần.</div>` : `<div class="muted">Gửi email mời tự động <b>chưa bật</b> — thêm Secret <code>RESEND_API_KEY</code> (hoặc <code>BREVO_API_KEY</code>) và biến <code>MAIL_FROM</code> trên Cloudflare rồi Retry deployment. Tạm thời copy link mời gửi tay.</div>`}
 </div>
 <div class="panel"><h2>Thêm user</h2>
 <form id="addForm">
@@ -714,7 +764,7 @@ ${kvOk ? '' : `<div class="msg bad">Chưa gắn kho user: Cloudflare → Workers
 <div class="acts"><button type="submit" class="sm" id="aBtn">Tạo &amp; lấy link mời</button></div>
 <div id="aMsg" class="msg"></div>
 <div id="aLink" class="link" hidden><input id="aLinkIn" readonly><button type="button" class="sm ghost" id="aCopy">Copy</button></div>
-<div class="muted" style="margin-top:8px">Gửi link mời cho user (Slack/Zalo/email). Link dùng 1 lần, hết hạn sau ${INVITE_DAYS} ngày; user tự đặt mật khẩu (≥ ${MIN_PASSWORD} ký tự). Quên mật khẩu → bấm "Link mới" ở bảng dưới.</div>
+<div class="muted" style="margin-top:8px">${mailOk ? 'User nhận email mời có link tạo mật khẩu' : 'Gửi link mời cho user (Slack/Zalo/email)'}. Link dùng 1 lần, hết hạn sau ${INVITE_DAYS} ngày; user tự đặt mật khẩu (≥ ${MIN_PASSWORD} ký tự). Quên mật khẩu → bấm "Gửi lại / Link mới" ở bảng dưới.</div>
 </form></div>
 <div class="panel"><h2>Danh sách user</h2><div class="wrap"><table id="tbl"><thead><tr><th>User</th><th>Được xem</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="tb"><tr><td colspan="4" class="muted">Đang tải…</td></tr></tbody></table></div><div id="tMsg" class="msg"></div></div>
 <script>
@@ -735,7 +785,7 @@ ${kvOk ? '' : `<div class="msg bad">Chưa gắn kho user: Cloudflare → Workers
   document.getElementById('addForm').addEventListener('submit', function(e){
     e.preventDefault(); var m = document.getElementById('aMsg'); m.className = 'msg'; m.textContent = 'Đang tạo…';
     api('POST', '/api/users', {email: document.getElementById('aEmail').value, name: document.getElementById('aName').value, views: picked(aViews), admin: document.getElementById('aAdmin').checked}).then(function(j){
-      m.className = 'msg ok'; m.textContent = 'Đã tạo ' + j.user.email + '. Gửi link mời này cho user (hết hạn sau ' + j.invite_days + ' ngày):';
+      m.className = j.emailed || !j.email_error ? 'msg ok' : 'msg bad'; m.textContent = 'Đã tạo ' + j.user.email + '. ' + (j.emailed ? 'Đã gửi email mời tới ' + j.user.email + ' (hết hạn sau ' + j.invite_days + ' ngày). Link dự phòng:' : (j.email_error ? 'Không gửi được email (' + j.email_error + ') — copy link mời gửi tay (hết hạn sau ' + j.invite_days + ' ngày):' : 'Gửi link mời này cho user (hết hạn sau ' + j.invite_days + ' ngày):'));
       var l = document.getElementById('aLink'); l.hidden = false; document.getElementById('aLinkIn').value = j.invite_url; document.getElementById('aCopy').textContent = 'Copy';
       document.getElementById('aEmail').value = ''; document.getElementById('aName').value = ''; load();
     }).catch(function(err){ m.className = 'msg bad'; m.textContent = err.message; });
@@ -749,7 +799,7 @@ ${kvOk ? '' : `<div class="msg bad">Chưa gắn kho user: Cloudflare → Workers
         return '<tr data-email="'+esc(u.email)+'"><td><b>'+esc(u.name||'')+'</b><br><span class="muted">'+esc(u.email)+'</span><br><span class="muted">Đăng nhập gần nhất: '+fmt(u.last_login)+'</span></td>'+
           '<td><div class="chips" id="v'+i+'"></div><div class="chips"><label id="ad'+i+'" class="'+(u.admin?'on':'')+'"><input type="checkbox" id="adi'+i+'"'+(u.admin?' checked':'')+'> Admin</label></div><button type="button" class="sm ghost" data-act="save">Lưu quyền</button></td>'+
           '<td>'+st+'</td>'+
-          '<td><div class="acts"><button type="button" class="sm ghost" data-act="invite">Link mới (mời / đặt lại mật khẩu)</button><button type="button" class="sm ghost" data-act="toggle">'+(u.active?'Tắt':'Bật')+'</button><button type="button" class="sm danger" data-act="del">Xoá</button></div><div class="link" hidden><input readonly><button type="button" class="sm ghost" data-act="copy">Copy</button></div><div class="msg"></div></td></tr>';
+          '<td><div class="acts"><button type="button" class="sm ghost" data-act="invite">Gửi lại / Link mới (mời, đặt lại mật khẩu)</button><button type="button" class="sm ghost" data-act="toggle">'+(u.active?'Tắt':'Bật')+'</button><button type="button" class="sm danger" data-act="del">Xoá</button></div><div class="link" hidden><input readonly><button type="button" class="sm ghost" data-act="copy">Copy</button></div><div class="msg"></div></td></tr>';
       }).join('');
       j.users.forEach(function(u, i){ chips(document.getElementById('v'+i), u.views); document.getElementById('adi'+i).addEventListener('change', function(){ document.getElementById('ad'+i).classList.toggle('on', this.checked); }); });
     }).catch(function(err){ document.getElementById('tb').innerHTML = '<tr><td colspan="4" class="msg bad">'+esc(err.message)+'</td></tr>'; });
@@ -760,7 +810,7 @@ ${kvOk ? '' : `<div class="msg bad">Chưa gắn kho user: Cloudflare → Workers
     var i = Array.prototype.indexOf.call(tr.parentNode.children, tr);
     var ok = function(t){ m.className = 'msg ok'; m.textContent = t; }, bad = function(err){ m.className = 'msg bad'; m.textContent = err.message; };
     if(act === 'save') api('PUT', path, {views: picked(document.getElementById('v'+i)), admin: document.getElementById('adi'+i).checked}).then(function(){ ok('Đã lưu.'); load(); }).catch(bad);
-    if(act === 'invite') api('POST', path + '/invite').then(function(j){ var l = tr.querySelector('.link'); l.hidden = false; l.querySelector('input').value = j.invite_url; ok('Link mới (hết hạn sau ' + j.invite_days + ' ngày) — gửi cho user:'); }).catch(bad);
+    if(act === 'invite') api('POST', path + '/invite', {}).then(function(j){ var l = tr.querySelector('.link'); l.hidden = false; l.querySelector('input').value = j.invite_url; if(j.emailed) ok('Đã gửi email (hết hạn sau ' + j.invite_days + ' ngày). Link dự phòng:'); else if(j.email_error) bad(new Error('Không gửi được email (' + j.email_error + ') — gửi tay link này:')); else ok('Link mới (hết hạn sau ' + j.invite_days + ' ngày) — gửi cho user:'); }).catch(bad);
     if(act === 'copy'){ var inp = tr.querySelector('.link input'); inp.select(); try{ navigator.clipboard.writeText(inp.value); b.textContent = 'Đã copy'; }catch(err){ document.execCommand('copy'); } }
     if(act === 'toggle'){ var on = b.textContent.trim() === 'Bật'; if(!on && !confirm('Tắt tài khoản ' + email + '? User sẽ bị đăng xuất khỏi mọi thiết bị.')) return; api('PUT', path, {active: on}).then(function(){ ok(on ? 'Đã bật.' : 'Đã tắt.'); load(); }).catch(bad); }
     if(act === 'del'){ if(!confirm('Xoá hẳn tài khoản ' + email + '?')) return; api('DELETE', path).then(function(){ load(); }).catch(bad); }
