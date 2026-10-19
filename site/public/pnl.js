@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 1aeb89dc5b).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 658aa46130).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -128,7 +128,7 @@
   // ---------- V10 dictionary, part A: static text of pnl.html (data-i18n="h.*"); VI values = the original innerHTML byte for byte ----------
   Object.assign(L.en, {
     'h.matrixTitle':'Sales channels',
-    'h.matrixNote':'Net revenue by order date · vs the same days of the previous period &amp; last year · plan = each group\'s plan on its own basis (Shopify + TikTok vs the Shopify net-sales plan, Amazon + Walmart vs the Amazon gross-sales plan)',
+    'h.matrixNote':'Net revenue by order date, one row per channel · vs the same days of the previous period &amp; last year · plan compared per group (Shopify + TikTok Shop vs the Shopify net-sales plan, Amazon + Walmart vs the Amazon gross-sales plan)',
     'h.bridgeTitle':'Profit bridge — what moved CM3',
     'h.alertTitle':'Alerts',
     'h.alertNote':'Computed from the selected period · threshold shown next to each line',
@@ -204,7 +204,7 @@
   });
   Object.assign(L.vi, {
     'h.matrixTitle':'Kênh bán',
-    'h.matrixNote':'Doanh thu thuần theo ngày đặt · so cùng số ngày kỳ trước &amp; năm trước · kế hoạch = theo nhóm kênh (Shopify + TikTok so kế hoạch Shopify thuần; Amazon + Walmart so kế hoạch Amazon gộp)',
+    'h.matrixNote':'Doanh thu thuần theo ngày đặt, mỗi kênh một dòng · so cùng số ngày kỳ trước &amp; năm trước · kế hoạch so theo nhóm (Shopify + TikTok Shop so kế hoạch Shopify thuần; Amazon + Walmart so kế hoạch Amazon gộp)',
     'h.bridgeTitle':'Cầu lợi nhuận — CM3 đổi vì đâu',
     'h.alertTitle':'Cảnh báo',
     'h.alertNote':'Tự tính từ kỳ đang xem · ngưỡng ghi cạnh mỗi dòng',
@@ -760,7 +760,7 @@
     return m;
   }
   // human label of the active selection (channel · market · product)
-  const chMaskLabel = () => { const parts = []; const done = {}; CH_KEYS.filter(k=>CH_MASK[k]).forEach(k=>{ const g = GROUP_OF[k], grp = CH_GROUPS.find(x=>x.id===g); const whole = grp.members.every(m=> CH_MASK[m] || (_chAvail && !_chAvail.includes(m))); if(whole){ if(!done[g]){ done[g] = true; parts.push(groupLabel(g)); } } else parts.push(CH_LABEL[k]); }); return parts.join(' + '); };
+  const chMaskLabel = () => CH_KEYS.filter(k=> CH_MASK[k] && (!_chAvail || _chAvail.includes(k))).map(k=>CH_LABEL[k]).join(' + ');   // V11.3: channels listed one by one
   const maskLabel = (o) => { const p = []; if(chPartial()) p.push(chMaskLabel()); if(o && o.chOnly) return p.join(''); if(FILTER.market!=='all') p.push(marketLabel(FILTER.market)); if(FILTER.product!=='all') p.push(productLineName(FILTER.product)); return p.join(' · '); };
 
   // ---------- aggregate ----------
@@ -1168,8 +1168,8 @@
     const dd = (id, label, value, items, extra) => `<div class="dd fdd" id="${id}"><button class="ddbtn" type="button"><span class="k">${label}</span><span class="v">${value}</span><span class="caret">▾</span></button><div class="ddpanel"><div class="ddlist one">${items}</div>${extra||''}</div></div>`;
     const mkItems = ['all'].concat(marketsAvailable()).map(cc=>`<div class="dditem ${FILTER.market===cc?'active':''}" data-market="${cc}">${marketLabel(cc)}${cc!=='all' && cc!=='US' ? '' : ''}</div>`).join('');
     const plItems = ['all'].concat(productLinesAvailable()).map(id=>`<div class="dditem ${FILTER.product===id?'active':''}" data-product="${id}">${productLineName(id)}</div>`).join('');
-    const grpOn = g => CH_GROUPS.find(x=>x.id===g).members.some(k=> _chAvail.includes(k) && CH_MASK[k]);
-    const chItems = `<div class="dditem ${chPartial()?'':'active'}" data-ch="all">${tx('f.allChannels')}</div>` + CH_GROUPS.filter(g=>g.members.some(k=>_chAvail.includes(k))).map(g=>`<div class="dditem chk ${grpOn(g.id)?'on':''}" data-ch="${g.id}"><span class="box">${grpOn(g.id)?'✓':''}</span>${groupLabel(g.id, true)}</div>`).join('');
+    // V11.3: one entry per channel (Shopify, TikTok Shop, Amazon, Walmart); the reporting groups are only used for plans / pacing
+    const chItems = `<div class="dditem ${chPartial()?'':'active'}" data-ch="all">${tx('f.allChannels')}</div>` + CH_KEYS.filter(k=>_chAvail.includes(k)).map(k=>`<div class="dditem chk ${CH_MASK[k]?'on':''}" data-ch="${k}"><span class="box">${CH_MASK[k]?'✓':''}</span>${CH_LABEL[k]}</div>`).join('');
     el.innerHTML = dd('ddMarket', tx('f.market'), marketLabel(FILTER.market), mkItems) + dd('ddProduct', tx('f.product'), productLineName(FILTER.product), plItems) + dd('ddChannel', tx('f.channel'), chTxt, chItems);
     const closeAll = () => document.querySelectorAll('.dd.open').forEach(d=>d.classList.remove('open'));
     el.querySelectorAll('.dd > .ddbtn').forEach(b=>b.addEventListener('click', (e)=>{ e.stopPropagation(); const d = b.parentElement, open = d.classList.contains('open'); closeAll(); if(!open) d.classList.add('open'); }));
@@ -1179,7 +1179,7 @@
     el.querySelectorAll('[data-ch]').forEach(i=>i.addEventListener('click', ()=>{
       const k = i.dataset.ch, next = {...CH_MASK};
       if(k==='all') CH_KEYS.forEach(x=>next[x]=true);
-      else { const grp = CH_GROUPS.find(x=>x.id===k); const on = !grp.members.some(x=>next[x]); grp.members.forEach(x=>{ next[x] = on; }); if(!CH_KEYS.some(x=>next[x])) CH_KEYS.forEach(x=>next[x]=true); }
+      else { next[k] = !next[k]; if(!CH_KEYS.some(x=>next[x])) CH_KEYS.forEach(x=>next[x]=true); }
       setChannelMask(next); renderAll();
     }));
     renderFilterBanner();
@@ -2617,8 +2617,8 @@
   // ---- sales channels: donut + list (CH_COLOR defined with the other channel constants) ----
   function renderChannels(){
     const el = document.getElementById('chanList'); if(!el) return;
-    const rows = currentRows(), a = aggregate(rows), ce0 = channelEcon(a), ce = groupEcon(ce0);
-    const keys = CH_GROUPS.map(g=>g.id).filter(k=> ce[k].net>0.005).sort((x,y)=>ce[y].net-ce[x].net);
+    const rows = currentRows(), a = aggregate(rows), ce = channelEcon(a);   // V11.3: the four channels, each on its own
+    const keys = CH_KEYS.filter(k=> ce[k].net>0.005).sort((x,y)=>ce[y].net-ce[x].net);
     const tot = sum(keys.map(k=>ce[k].net));
     const svg = document.getElementById('chanDonut');
     if(svg){
@@ -2627,8 +2627,7 @@
       out += `<text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="17" font-weight="600" fill="${resolveVar('var(--ink-primary)')}" font-family="var(--font-display)">${money(tot,{compact:true})}</text><text x="${cx}" y="${cy+14}" text-anchor="middle" font-size="10" fill="${resolveVar('var(--ink-muted)')}">${tx('m.netRevenue')}</text>`;
       svg.innerHTML = out;
     }
-    const sub = k => { const m = CH_GROUPS.find(g=>g.id===k).members.filter(x=>ce0[x].net>0.005); return m.length>1 ? `<small style="display:block;color:var(--ink-muted);font-weight:400;">${m.map(x=>CH_LABEL[x]+' '+money(ce0[x].net,{compact:true})).join(' · ')}</small>` : ''; };
-    el.innerHTML = keys.map(k=>`<div class="r"><span class="sw" style="background:${CH_COLOR[k]}"></span><span><div style="font-weight:600;">${groupLabel(k)}${sub(k)}</div><div class="bar"><i style="width:${tot>0?(ce[k].net/tot*100).toFixed(1):0}%;background:${CH_COLOR[k]}"></i></div></span><span class="v">${money(ce[k].net,{compact:true})}</span><span class="p">${tot>0?Math.round(ce[k].net/tot*100):0}%</span></div>`).join('') || `<div class="r"><span>${tx('u.noData')}</span></div>`;
+    el.innerHTML = keys.map(k=>`<div class="r"><span class="sw" style="background:${CH_COLOR[k]}"></span><span><div style="font-weight:600;">${CH_LABEL[k]}</div><div class="bar"><i style="width:${tot>0?(ce[k].net/tot*100).toFixed(1):0}%;background:${CH_COLOR[k]}"></i></div></span><span class="v">${money(ce[k].net,{compact:true})}</span><span class="p">${tot>0?Math.round(ce[k].net/tot*100):0}%</span></div>`).join('') || `<div class="r"><span>${tx('u.noData')}</span></div>`;
     setNote('chanNote', tx('chan.note', {total: money(tot,{compact:true}), n: keys.length}));
     const st = document.getElementById('chanStats'); if(st) st.innerHTML = `<div class="ms"><div class="l">${tx('chan.avgDay')}</div><div class="v">${money(rows.length ? tot/rows.length : 0,{compact:true})}</div></div><div class="ms"><div class="l">${tx('chan.perOrder')}</div><div class="v">${money(a.blendedAOV)}</div></div>`;
   }
@@ -2652,8 +2651,8 @@
         const gross = ak.gross[k]*g, disc = ak.discountBy[k]*g, ref = ak.refund[k]*rs, net = gross - disc - ref;
         const sc = skuCogsOf(fc, x, units, net, ck, g), cogs = sc.cogs;
         const fulfil = ck.fulfil*us, fees = ck.fees*g, ads = ck.adsAll*g;
-        const it = items[x] = items[x] || {sku:x, line: productLineOf(x), ch:{}, units:0, refunds:0, gross:0, disc:0, ref:0, net:0, cogs:0, cogsReal:0, fulfil:0, fees:0, ads:0, cm:0};
-        it.ch[k] = true; it.units += units; it.refunds += o.refunds[x]||0; it.gross += gross; it.disc += disc; it.ref += ref; it.net += net; it.cogs += cogs; it.cogsReal += sc.real; it.fulfil += fulfil; it.fees += fees; it.ads += ads; it.cm += net - cogs - fulfil - fees - ads;
+        const it = items[x] = items[x] || {sku:x, line: productLineOf(x), ch:{}, chNet:{}, units:0, refunds:0, gross:0, disc:0, ref:0, net:0, cogs:0, cogsReal:0, fulfil:0, fees:0, ads:0, cm:0};
+        it.ch[k] = true; it.chNet[k] = (it.chNet[k]||0) + net; it.units += units; it.refunds += o.refunds[x]||0; it.gross += gross; it.disc += disc; it.ref += ref; it.net += net; it.cogs += cogs; it.cogsReal += sc.real; it.fulfil += fulfil; it.fees += fees; it.ads += ads; it.cm += net - cogs - fulfil - fees - ads;
         allSkus++; if(sc.real>0) realCost++;
       });
     });
@@ -2661,7 +2660,7 @@
   }
   function lineEconomics(rows){
     const e = skuEconomics(rows); const lines = {};
-    Object.values(e.items).forEach(it=>{ const l = lines[it.line] = lines[it.line] || {id: it.line, skus:0, units:0, refunds:0, gross:0, net:0, cogs:0, cogsReal:0, fulfil:0, fees:0, ads:0, cm:0}; l.skus++; ['units','refunds','gross','net','cogs','cogsReal','fulfil','fees','ads','cm'].forEach(f=>{ l[f] += it[f]; }); });
+    Object.values(e.items).forEach(it=>{ const l = lines[it.line] = lines[it.line] || {id: it.line, skus:0, chNet:{}, units:0, refunds:0, gross:0, net:0, cogs:0, cogsReal:0, fulfil:0, fees:0, ads:0, cm:0}; l.skus++; ['units','refunds','gross','net','cogs','cogsReal','fulfil','fees','ads','cm'].forEach(f=>{ l[f] += it[f]; }); Object.keys(it.chNet||{}).forEach(k=>{ l.chNet[k] = (l.chNet[k]||0) + it.chNet[k]; }); });
     return {lines, keys: e.keys, covMin: e.covMin, n: e.n, realCost: e.realCost, allSkus: e.allSkus};
   }
 
@@ -2713,7 +2712,7 @@
     const coverOf = id => { const rs = stock.filter(s=>s.line===id && s.known); const pd = sum(rs.map(s=>s.perDay)), st = sum(rs.map(s=>s.stock)); return pd>0 ? st/pd : null; };
     const dcell = (cur, prev) => (prev===null || prev===undefined || !isFinite(prev) || prev<=0) ? '<td class="num d-flat">—</td>' : `<td class="num">${pillOf((cur/prev-1)*100)}</td>`;
     t.innerHTML = `<thead><tr><th>${tx('pl.line')}</th><th class="num">${tx('m.units')}</th><th class="num">${tx('m.netRevenue')}</th><th>${tx('pl.share')}</th><th class="num">${tx('pl.vsPrior')}</th><th class="num">CM3</th><th class="num">CM3 %</th><th class="num">${tx('pl.cover')}</th></tr></thead><tbody>` +
-      list.map(l=>{ const cv = coverOf(l.id); const pv = lp && lp.lines[l.id] ? lp.lines[l.id].net : null; return `<tr><td class="name">${productLineName(l.id)}<small style="display:block;font-weight:400;color:var(--ink-muted);">${l.skus} SKU</small></td><td class="num">${intFmt(l.units)}</td><td class="num">${money(l.net,{compact:true})}</td><td><div class="bar"><i style="width:${totNet>0?(l.net/totNet*100).toFixed(1):0}%"></i></div></td>${dcell(l.net, pv)}<td class="num ${l.cm<0?'d-down':''}">${money(l.cm,{compact:true})}</td><td class="num">${l.net>0 ? (l.cm/l.net*100).toFixed(0)+'%' : '—'}</td><td class="num ${cv!==null && cv<30 ? 'd-down' : ''}">${cv===null ? '—' : (cv>365 ? '>1y' : Math.round(cv)+' '+tx('u.d'))}</td></tr>`; }).join('') +
+      list.map(l=>{ const cv = coverOf(l.id); const pv = lp && lp.lines[l.id] ? lp.lines[l.id].net : null; return `<tr><td class="name">${productLineName(l.id)}<small style="display:block;font-weight:400;color:var(--ink-muted);">${l.skus} SKU${(() => { const ks = Object.keys(l.chNet||{}).filter(k=>l.chNet[k]>0.005).sort((x,y)=>l.chNet[y]-l.chNet[x]); return ks.length>1 && l.net>0 ? ' · ' + ks.map(k=>CH_LABEL[k]+' '+Math.round(l.chNet[k]/l.net*100)+'%').join(' · ') : (ks.length===1 ? ' · '+CH_LABEL[ks[0]] : ''); })()}</small></td><td class="num">${intFmt(l.units)}</td><td class="num">${money(l.net,{compact:true})}</td><td><div class="bar"><i style="width:${totNet>0?(l.net/totNet*100).toFixed(1):0}%"></i></div></td>${dcell(l.net, pv)}<td class="num ${l.cm<0?'d-down':''}">${money(l.cm,{compact:true})}</td><td class="num">${l.net>0 ? (l.cm/l.net*100).toFixed(0)+'%' : '—'}</td><td class="num ${cv!==null && cv<30 ? 'd-down' : ''}">${cv===null ? '—' : (cv>365 ? '>1y' : Math.round(cv)+' '+tx('u.d'))}</td></tr>`; }).join('') +
       `<tr style="font-weight:700;"><td class="name">${tx('u.total')}</td><td class="num">${intFmt(totUnits)}</td><td class="num">${money(totNet,{compact:true})}</td><td></td><td class="num"></td><td class="num">${money(totCm,{compact:true})}</td><td class="num">${totNet>0 ? (totCm/totNet*100).toFixed(0)+'%' : '—'}</td><td class="num"></td></tr></tbody>`;
     setNote('plNote', tx('pl.note', {n: list.length, ch: le.keys.map(k=>CH_LABEL[k]).join(' + '), cov: le.covMin<le.n ? ' · '+le.covMin+'/'+le.n+' '+tx('u.daysWithSku') : ''}));
     if(caption) caption.textContent = tx('pl.caption') + (le.realCost>0 ? ' '+tx('pl.realCost', {n: le.realCost, of: le.allSkus}) : ' '+tx('pl.estCost'));
@@ -2884,26 +2883,38 @@
     const planGross = k => planForRows(rows, x=> x.channels[k] ? x.channels[k].gross : null, true);
     const planNet = k => planForRows(rows, x=> x.channels[k] ? x.channels[k].net : null, true);   // V10.2: Shopify plan is on net sales
     const dcell = d => d===null ? '<td class="num d-flat">—</td>' : `<td class="num ${Math.abs(d)<0.05?'d-flat':(d>=0?'d-up':'d-down')}">${d>=0?'+':''}${d.toFixed(1)}%</td>`;
-    const keys = CH_GROUPS.map(g=>g.id).filter(k=> cur[k].net>0.005 || gsum(k, x=>a.gross[x])>0.005 || (pe && pe[k].net>0.005)).sort((x,y)=>cur[y].net-cur[x].net);
+    // V11.3: every channel on its own row; the reporting group (Shopify + TikTok Shop, Amazon + Walmart) appears as a
+    // subtotal row only to compare with the plan, because the plans are set per group (Shopify plan = net, Amazon plan = gross).
+    const pe0 = pe ? channelEcon(p) : null, le0 = le ? channelEcon(ly) : null;
+    const chKeys = CH_KEYS.filter(k=> cur0[k].net>0.005 || a.gross[k]>0.005 || (pe0 && pe0[k].net>0.005));
+    const groups = CH_GROUPS.map(g=>({id:g.id, members:g.members.filter(k=>chKeys.includes(k)).sort((x,y)=>cur0[y].net-cur0[x].net)})).filter(g=>g.members.length).sort((x,y)=>cur[y.id].net-cur[x.id].net);
+    const keys = groups.map(g=>g.id);
     const head = `<thead><tr><th>${tx('f.channel')}</th><th class="num">${tx('u.netRev')}</th><th class="num">Mix</th><th class="num">${likeLabel()}</th><th class="num">${tv('Last year','Năm trước')}</th><th class="num">${tv('Plan','Kế hoạch')}</th><th class="num">${tv('Refunds','Hoàn tiền')}</th><th class="num">Ads + affiliate</th><th class="num">${tv('Ads/revenue','Ads/DT')}</th><th class="num">CM3${a.productCostEst?'*':''}</th><th class="num">CM3 %</th></tr></thead>`;
-    const body = keys.map(k=>{
-      const c = cur[k];
-      const pn = planNet(k), pg = pn===null ? planGross(k) : null, pv = pn!==null ? pn : pg, pact = pn!==null ? c.net : gsum(k, x=>a.gross[x]);
-      const members = CH_GROUPS.find(g=>g.id===k).members.filter(x=> cur0[x].net>0.005 || a.gross[x]>0.005);
-      const split = members.length>1 ? members.map(x=>CH_LABEL[x]+' '+money(cur0[x].net,{compact:true})).join(' · ')+' · ' : '';
-      const planTxt = pv!==null ? `${money(pv,{compact:true})} <small style="color:var(--ink-muted)">${pn!==null ? tv('net','thuần') : tv('gross','gộp')}</small> · ${pact>0 ? '<span class="'+(pact>=pv?'d-up':'d-down')+'">'+(pact/pv*100).toFixed(0)+'%</span>' : '—'}` : '<span class="d-flat">'+tx('u.none')+'</span>';
-      return `<tr><td class="name">${groupLabel(k)}<small style="display:block;font-weight:400;color:var(--ink-muted);">${split}${intFmt(c.orders)} ${tx('u.orders')} · AOV ${c.orders>0 ? money(c.net/c.orders) : '—'}</small></td>
+    const planCell = (k) => {
+      const pn = planNet(k), pg = pn===null ? planGross(k) : null, pv = pn!==null ? pn : pg, pact = pn!==null ? cur[k].net : gsum(k, x=>a.gross[x]);
+      return pv!==null ? `${money(pv,{compact:true})} <small style="color:var(--ink-muted)">${pn!==null ? tv('net','thuần') : tv('gross','gộp')}</small> · ${pact>0 ? '<span class="'+(pact>=pv?'d-up':'d-down')+'">'+(pact/pv*100).toFixed(0)+'%</span>' : '—'}` : '<span class="d-flat">'+tx('u.none')+'</span>';
+    };
+    const chRow = (k, planTxt) => { const c = cur0[k];
+      return `<tr><td class="name">${CH_LABEL[k]}<small style="display:block;font-weight:400;color:var(--ink-muted);">${intFmt(c.orders)} ${tx('u.orders')} · AOV ${c.orders>0 ? money(c.net/c.orders) : '—'}</small></td>
         <td class="num">${money(c.net,{compact:true})}</td><td class="num">${totalNet>0 ? (c.net/totalNet*100).toFixed(0)+'%' : '—'}</td>
-        ${dcell(pe ? dAbs(c.net, pe[k].net) : null)}${dcell(le ? dAbs(c.net, le[k].net) : null)}
+        ${dcell(pe0 ? dAbs(c.net, pe0[k].net) : null)}${dcell(le0 ? dAbs(c.net, le0[k].net) : null)}
         <td class="num">${planTxt}</td>
-        <td class="num">${gsum(k, x=>a.gross[x])>0 ? (gsum(k, x=>a.refund[x])/gsum(k, x=>a.gross[x])*100).toFixed(1)+'%' : '—'}</td>
+        <td class="num">${a.gross[k]>0 ? (a.refund[k]/a.gross[k]*100).toFixed(1)+'%' : '—'}</td>
         <td class="num">${money(c.adsAll,{compact:true})}</td><td class="num">${c.net>0 ? (c.adsAll/c.net*100).toFixed(0)+'%' : '—'}</td>
-        <td class="num ${c.cm>=0?'':'d-down'}">${money(c.cm,{compact:true})}</td><td class="num">${c.net>0 ? (c.cm/c.net*100).toFixed(0)+'%' : '—'}</td></tr>`;
-    }).join('');
+        <td class="num ${c.cm>=0?'':'d-down'}">${money(c.cm,{compact:true})}</td><td class="num">${c.net>0 ? (c.cm/c.net*100).toFixed(0)+'%' : '—'}</td></tr>`; };
+    const groupRow = (g) => { const c = cur[g.id];
+      return `<tr class="group" style="background:var(--surface-card-2);color:var(--ink-secondary);"><td class="name" style="font-weight:600;">${g.members.map(k=>CH_LABEL[k]).join(' + ')}<small style="display:block;font-weight:400;color:var(--ink-muted);">${tv('group vs plan','nhóm so kế hoạch')} · ${intFmt(c.orders)} ${tx('u.orders')}</small></td>
+        <td class="num">${money(c.net,{compact:true})}</td><td class="num">${totalNet>0 ? (c.net/totalNet*100).toFixed(0)+'%' : '—'}</td>
+        ${dcell(pe ? dAbs(c.net, pe[g.id].net) : null)}${dcell(le ? dAbs(c.net, le[g.id].net) : null)}
+        <td class="num">${planCell(g.id)}</td>
+        <td class="num">${gsum(g.id, x=>a.gross[x])>0 ? (gsum(g.id, x=>a.refund[x])/gsum(g.id, x=>a.gross[x])*100).toFixed(1)+'%' : '—'}</td>
+        <td class="num">${money(c.adsAll,{compact:true})}</td><td class="num">${c.net>0 ? (c.adsAll/c.net*100).toFixed(0)+'%' : '—'}</td>
+        <td class="num ${c.cm>=0?'':'d-down'}">${money(c.cm,{compact:true})}</td><td class="num">${c.net>0 ? (c.cm/c.net*100).toFixed(0)+'%' : '—'}</td></tr>`; };
+    const body = groups.map(g=> g.members.length>1 ? g.members.map(k=>chRow(k, '<span class="d-flat" title="'+tv('The plan is set for the group — see the group row','Kế hoạch đặt theo nhóm — xem dòng nhóm')+'">'+tv('group ↓','theo nhóm ↓')+'</span>')).join('') + groupRow(g) : chRow(g.members[0], planCell(g.id))).join('');
     const tot = keys.reduce((s,k)=>({net:s.net+cur[k].net, ads:s.ads+cur[k].adsAll, cm:s.cm+cur[k].cm}), {net:0, ads:0, cm:0});
     const foot = `<tr style="font-weight:700;"><td class="name">${tx('u.total')}</td><td class="num">${money(tot.net,{compact:true})}</td><td class="num">100%</td>${dcell(p ? dAbs(a.netRevenue, p.netRevenue) : null)}${dcell(ly ? dAbs(a.netRevenue, ly.netRevenue) : null)}<td class="num"></td><td class="num">${a.grossSales>0 ? (sum(CH_KEYS.map(k=>a.refund[k]))/a.grossSales*100).toFixed(1)+'%' : '—'}</td><td class="num">${money(tot.ads,{compact:true})}</td><td class="num">${tot.net>0 ? (tot.ads/tot.net*100).toFixed(0)+'%' : '—'}</td><td class="num">${money(tot.cm,{compact:true})}</td><td class="num">${tot.net>0 ? (tot.cm/tot.net*100).toFixed(0)+'%' : '—'}</td></tr>`;
     t.innerHTML = head + '<tbody>' + body + foot + '</tbody>';
-    document.getElementById('matrixCaption').innerHTML = tv('Walmart is reported inside Amazon and TikTok Shop inside Shopify (the P&L page keeps the four channels apart). Ads by channel: Meta + Google + AppLovin → Shopify; Amazon Ads → Amazon; GMV Max → TikTok Shop; Walmart Connect → Walmart. CM3 = net revenue − product cost','Walmart gộp vào Amazon, TikTok Shop gộp vào Shopify (trang P&L vẫn tách 4 kênh). Ads gắn kênh: Meta + Google + AppLovin → Shopify; Amazon Ads → Amazon; GMV Max → TikTok Shop; Walmart Connect → Walmart. CM3 = doanh thu thuần − giá vốn') + (a.productCostEst ? tv(' (*estimated at ',' (*ước ')+(a.cogsEstRate*100).toFixed(0)+'%'+(a.productCostHasActual?tv(', partly from the accounting inventory ledger',', một phần theo sổ kho kế toán'):'')+')' : (a.productCostHasActual ? tv(' (from the accounting inventory ledger)',' (theo sổ kho kế toán)') : tv(' ($0, not available)',' ($0, chưa có)'))) + tv(' − per-order fulfillment (FBA, ShipMonk) − marketplace/payment fees − ads − affiliate; storage and G&amp;A not deducted (column total = the CM3 tile). Plan: % = this period\'s actual (net for Shopify, gross for Amazon) ÷ plan spread evenly by day.',' − fulfillment theo đơn (FBA, ShipMonk) − phí sàn/cổng − ads − affiliate; chưa trừ lưu kho và G&amp;A (tổng cột = CM3 trên ô chỉ số). Kế hoạch: % = số thực kỳ này (Shopify thuần, Amazon gộp) ÷ kế hoạch rải đều theo ngày.');
+    document.getElementById('matrixCaption').innerHTML = tv('One row per channel. The plans are set per group (Shopify + TikTok Shop vs the Shopify net-sales plan, Amazon + Walmart vs the Amazon gross-sales plan), so a group row shows the plan comparison when both channels of the group sold. Ads by channel: Meta + Google + AppLovin → Shopify; Amazon Ads → Amazon; GMV Max → TikTok Shop; Walmart Connect → Walmart. CM3 = net revenue − product cost','Mỗi kênh một dòng. Kế hoạch đặt theo nhóm (Shopify + TikTok Shop so kế hoạch Shopify thuần; Amazon + Walmart so kế hoạch Amazon gộp) nên dòng nhóm chỉ hiện để so kế hoạch khi cả hai kênh trong nhóm có bán. Ads gắn kênh: Meta + Google + AppLovin → Shopify; Amazon Ads → Amazon; GMV Max → TikTok Shop; Walmart Connect → Walmart. CM3 = doanh thu thuần − giá vốn') + (a.productCostEst ? tv(' (*estimated at ',' (*ước ')+(a.cogsEstRate*100).toFixed(0)+'%'+(a.productCostHasActual?tv(', partly from the accounting inventory ledger',', một phần theo sổ kho kế toán'):'')+')' : (a.productCostHasActual ? tv(' (from the accounting inventory ledger)',' (theo sổ kho kế toán)') : tv(' ($0, not available)',' ($0, chưa có)'))) + tv(' − per-order fulfillment (FBA, ShipMonk) − marketplace/payment fees − ads − affiliate; storage and G&amp;A not deducted (column total = the CM3 tile). Plan: % = this period\'s actual (net for Shopify, gross for Amazon) ÷ plan spread evenly by day.',' − fulfillment theo đơn (FBA, ShipMonk) − phí sàn/cổng − ads − affiliate; chưa trừ lưu kho và G&amp;A (tổng cột = CM3 trên ô chỉ số). Kế hoạch: % = số thực kỳ này (Shopify thuần, Amazon gộp) ÷ kế hoạch rải đều theo ngày.');
   }
 
   // ---------- alerts ----------
@@ -3417,8 +3428,8 @@
         const sc = skuCogsOf(fc, x, units, net, ck, g), cogs = sc.cogs;
         const fulfil = ck.fulfil*us, fees = ck.fees*g, ads = ck.adsAll*g;
         const key = PROD_STATE.group==='code' ? ((COGS_SKUS[x] && COGS_SKUS[x].code) || x) : x;
-        const it = items[key] = items[key] || {key, skus:[], ch:{}, units:0, refunds:0, gross:0, disc:0, ref:0, net:0, cogs:0, cogsReal:0, fulfil:0, fees:0, ads:0, cm:0};
-        if(!it.skus.includes(x)) it.skus.push(x); it.ch[k] = true;
+        const it = items[key] = items[key] || {key, skus:[], ch:{}, chNet:{}, chUnits:{}, units:0, refunds:0, gross:0, disc:0, ref:0, net:0, cogs:0, cogsReal:0, fulfil:0, fees:0, ads:0, cm:0};
+        if(!it.skus.includes(x)) it.skus.push(x); it.ch[k] = true; it.chNet[k] = (it.chNet[k]||0) + net; it.chUnits[k] = (it.chUnits[k]||0) + units;   // V11.3: split per channel
         it.units += units; it.refunds += o.refunds[x]||0; it.gross += gross; it.disc += disc; it.ref += ref; it.net += net; it.cogs += cogs; it.cogsReal += sc.real; it.fulfil += fulfil; it.fees += fees; it.ads += ads; it.cm += net - cogs - fulfil - fees - ads;
         allSkus++; if(sc.real>0) realCost++;
       });
@@ -3435,7 +3446,7 @@
     const tot = list.reduce((s,it)=>{ ['units','refunds','gross','net','cogs','fulfil','fees','ads','cm'].forEach(f=>{ s[f] += it[f]; }); return s; }, {units:0, refunds:0, gross:0, net:0, cogs:0, fulfil:0, fees:0, ads:0, cm:0});
     const nameOf = it => PROD_STATE.group==='code' ? (it.skus.map(skuName).find(Boolean)||'') : skuName(it.key);
     t.innerHTML = '<thead><tr><th>'+(PROD_STATE.group==='code' ? tv('Internal code','Mã nội bộ') : 'SKU')+'</th><th>'+tx('u.product')+'</th><th>'+tx('f.channel')+'</th><th class="num">Units</th><th class="num">'+tv('Returned','Trả')+'</th><th class="num">'+tx('u.grossRev')+' (pb)</th><th class="num">'+tx('u.netRev')+' (pb)</th><th class="num">'+tv('Product cost','Giá vốn')+'</th><th class="num">Fulfillment (pb)</th><th class="num">'+tv('Fees','Phí')+' (pb)</th><th class="num">Ads + aff (pb)</th><th class="num">CM3</th><th class="num">CM3 / unit</th><th class="num">'+tv('% of net revenue','% DT thuần')+'</th></tr></thead><tbody>' +
-      show.map(it=>`<tr><td style="font-family:var(--font-mono);font-size:11.5px;" title="${it.skus.join(', ')}">${it.key}${PROD_STATE.group==='code' && it.skus.length>1 ? ' <small style="color:var(--ink-muted)">'+it.skus.length+' SKU</small>' : ''}</td><td title="${nameOf(it).replace(/"/g,'&quot;')}">${nameOf(it).slice(0,36)}</td><td>${Object.keys(it.ch).map(k=>CH_LABEL[k]).join(', ')}</td><td class="num">${intFmt(it.units)}</td><td class="num">${intFmt(it.refunds)}</td><td class="num">${money(it.gross,{compact:true})}</td><td class="num">${money(it.net,{compact:true})}</td><td class="num" title="${it.cogsReal>0 ? (Math.abs(it.cogsReal-it.cogs)<0.5 ? tv('actual cost (FIFO lots / cogs_skus.json)','giá vốn thật (lô FIFO / cogs_skus.json)') : tv('partly actual cost','một phần giá vốn thật')) : tv('allocated from the channel\'s estimated product cost','phân bổ từ giá vốn ước tính của kênh')}">${money(it.cogs,{compact:true})}${it.cogsReal>0 ? '' : ' <small style="color:var(--ink-muted)">'+tv('est.','ước')+'</small>'}</td><td class="num">${money(it.fulfil,{compact:true})}</td><td class="num">${money(it.fees,{compact:true})}</td><td class="num">${money(it.ads,{compact:true})}</td><td class="num ${it.cm<0?'d-down':''}">${money(it.cm,{compact:true})}</td><td class="num ${it.cm<0?'d-down':''}">${it.units>0 ? money(it.cm/it.units) : '—'}</td><td class="num">${it.net>0 ? (it.cm/it.net*100).toFixed(0)+'%' : '—'}</td></tr>`).join('') +
+      show.map(it=>`<tr><td style="font-family:var(--font-mono);font-size:11.5px;" title="${it.skus.join(', ')}">${it.key}${PROD_STATE.group==='code' && it.skus.length>1 ? ' <small style="color:var(--ink-muted)">'+it.skus.length+' SKU</small>' : ''}</td><td title="${nameOf(it).replace(/"/g,'&quot;')}">${nameOf(it).slice(0,36)}</td><td style="white-space:nowrap;">${Object.keys(it.ch).sort((x,y)=>(it.chNet[y]||0)-(it.chNet[x]||0)).map(k=>`<div>${CH_LABEL[k]} <span style="color:var(--ink-muted)">${intFmt(it.chUnits[k]||0)} · ${money(it.chNet[k]||0,{compact:true})}${it.net>0 && Object.keys(it.ch).length>1 ? ' · '+Math.round((it.chNet[k]||0)/it.net*100)+'%' : ''}</span></div>`).join('')}</td><td class="num">${intFmt(it.units)}</td><td class="num">${intFmt(it.refunds)}</td><td class="num">${money(it.gross,{compact:true})}</td><td class="num">${money(it.net,{compact:true})}</td><td class="num" title="${it.cogsReal>0 ? (Math.abs(it.cogsReal-it.cogs)<0.5 ? tv('actual cost (FIFO lots / cogs_skus.json)','giá vốn thật (lô FIFO / cogs_skus.json)') : tv('partly actual cost','một phần giá vốn thật')) : tv('allocated from the channel\'s estimated product cost','phân bổ từ giá vốn ước tính của kênh')}">${money(it.cogs,{compact:true})}${it.cogsReal>0 ? '' : ' <small style="color:var(--ink-muted)">'+tv('est.','ước')+'</small>'}</td><td class="num">${money(it.fulfil,{compact:true})}</td><td class="num">${money(it.fees,{compact:true})}</td><td class="num">${money(it.ads,{compact:true})}</td><td class="num ${it.cm<0?'d-down':''}">${money(it.cm,{compact:true})}</td><td class="num ${it.cm<0?'d-down':''}">${it.units>0 ? money(it.cm/it.units) : '—'}</td><td class="num">${it.net>0 ? (it.cm/it.net*100).toFixed(0)+'%' : '—'}</td></tr>`).join('') +
       `<tr style="font-weight:700;"><td class="name" colspan="3">${tx('u.total')} ${list.length} ${tv('rows','dòng')}${list.length>40 ? tv(' (showing 40)',' (hiện 40)') : ''}</td><td class="num">${intFmt(tot.units)}</td><td class="num">${intFmt(tot.refunds)}</td><td class="num">${money(tot.gross,{compact:true})}</td><td class="num">${money(tot.net,{compact:true})}</td><td class="num">${money(tot.cogs,{compact:true})}</td><td class="num">${money(tot.fulfil,{compact:true})}</td><td class="num">${money(tot.fees,{compact:true})}</td><td class="num">${money(tot.ads,{compact:true})}</td><td class="num ${tot.cm<0?'d-down':''}">${money(tot.cm,{compact:true})}</td><td class="num">${tot.units>0 ? money(tot.cm/tot.units) : '—'}</td><td class="num">${tot.net>0 ? (tot.cm/tot.net*100).toFixed(0)+'%' : '—'}</td></tr></tbody>`;
     const best = list[0], worst = list.length>1 ? list[list.length-1] : null;
     setNote('prodNote', allSkus+tv(' SKUs on ',' SKU trên ')+keys.map(k=>CH_LABEL[k]).join(' + ')+tv(' · actual cost for ',' · giá vốn thật cho ')+realCost+'/'+allSkus+(covMin<n ? ' · '+covMin+'/'+n+' '+tx('u.daysWithSku') : '')+(best ? tv(' · best ',' · tốt nhất ')+best.key+' '+money(best.cm,{compact:true}) : '')+(worst && worst.cm<0 ? tv(' · worst ',' · kém nhất ')+worst.key+' '+money(worst.cm,{compact:true}) : ''));
