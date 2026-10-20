@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build ef6287755a).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 6c56401af0).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -194,7 +194,7 @@
     'h.cashTitle':'Cash &amp; runway',
     'h.cashNote':'No source yet',
     'h.liveBanner':'Connecting live data…',
-    'h.syncBanner':'<b>Note on the latest day:</b> the selected range includes today (LA time), so that day is not final — Amazon posts fees/settlements 24–48h late, the other sources update every 30 minutes.',
+    'h.syncBanner':'<b>Note on the latest day:</b> the selected range includes today (LA time), so that day is not final — Amazon posts fees/settlements 24–48h late, the other sources sync every few hours.',
     'h.healthTitle':'Data health by source',
     'h.healthNote':'Automation status of each source · dot colour = age of the latest sync (Green &lt; 4h · Yellow 4–48h · Red over 48h or not connected) · "N/14 days" = days with actual data in the last 14 days (today excluded, since today is not final)',
     'h.gapsTitle':'What\'s missing on the P&amp;L',
@@ -270,7 +270,7 @@
     'h.cashTitle':'Tiền mặt &amp; runway',
     'h.cashNote':'Chưa có nguồn',
     'h.liveBanner':'Đang kết nối dữ liệu thật…',
-    'h.syncBanner':'<b>Lưu ý ngày gần nhất:</b> khoảng xem gồm ngày hôm nay (giờ LA) nên số ngày đó chưa chốt — Amazon ghi nhận phí/settlement muộn 24–48h, các nguồn khác cập nhật mỗi 30 phút.',
+    'h.syncBanner':'<b>Lưu ý ngày gần nhất:</b> khoảng xem gồm ngày hôm nay (giờ LA) nên số ngày đó chưa chốt — Amazon ghi nhận phí/settlement muộn 24–48h, các nguồn khác tự đồng bộ vài giờ một lần.',
     'h.healthTitle':'Sức khoẻ dữ liệu theo nguồn',
     'h.healthNote':'Trạng thái tự động hoá của từng nguồn · chấm màu = tuổi lần đồng bộ gần nhất (Xanh &lt; 4h · Vàng 4–48h · Đỏ quá 48h hoặc chưa kết nối) · "N/14 ngày" = số ngày có số liệu thật trong 14 ngày gần nhất (không tính hôm nay, vì hôm nay chưa chốt)',
     'h.gapsTitle':'Còn thiếu gì trên P&amp;L',
@@ -616,6 +616,7 @@
     mkSource('paypal', () => tv('PayPal (transaction fees)', 'PayPal (phí giao dịch)'), NC0, 'c'),
     mkSource('klaviyo', () => 'Klaviyo (email & SMS marketing)', NC, 'c'),
     mkSource('loop', () => tv('Loop Subscriptions (recurring subscriptions)', 'Loop Subscriptions (đăng ký định kỳ)'), NC, 'c'),
+    mkSource('cogs', () => tv('Product cost (FIFO, Notion receipt lots)', 'Giá vốn (FIFO, lô nhập Notion)'), NC0, 'c'),
     mkSource('ga', () => tv('Accounting (G&A)', 'Kế toán (G&A)'), NC0, 'c'),
   ];
 
@@ -2152,7 +2153,7 @@
       const statLine = fresh
         ? `<div class="stat"><span>${fresh.present}/${fresh.total} ${tx('u.days')}</span><span class="bar"><i style="width:${fresh.pct}%"></i></span><span>${tv('latest ', 'gần nhất ')}${fmtLastIso(fresh.lastIso)}</span></div>`
         : '';
-      const ghLink = wf ? `<a class="gh" href="${GH_ACTIONS_BASE}${wf}" target="_blank" rel="noopener">↗ GitHub Actions</a>` : '';
+      const ghLink = '';   // V11.6: no link to the sync jobs (not useful to readers)
       return `<div class="healthcard ${s.level}${unconnected?' unconnected':''}">
         <div class="hc-top"><span class="dot ${s.level}"></span><span class="name">${s.name}</span></div>
         <div class="age">${s.age}</div>
@@ -2190,22 +2191,70 @@
     el.innerHTML = html;
   }
 
-  // ---------- "còn thiếu gì" gaps list (tab "Quản lý dữ liệu") ----------
-  const staticGaps = () => [
-    {name: tv('Cost of goods sold (COGS)', 'Giá vốn hàng bán (COGS)'), note: (Object.keys(COGS_ACTUAL.months).length
-        ? tv('Accountant\'s figures available for: ', 'Đã có số kế toán cho tháng: ')+Object.keys(COGS_ACTUAL.months).sort().join(', ')+tv(' — other months still ', ' — các tháng khác vẫn ') + (COGS_EST ? tv('estimated at ', 'ước ')+(COGS_EST.rate*100).toFixed(0)+'%' : '$0') + tv('. Add more to data/cogs_monthly.json', '. Điền thêm vào data/cogs_monthly.json')
-        : (COGS_EST ? tv('ESTIMATED at ', 'Đang ƯỚC TÍNH ')+(COGS_EST.rate*100).toFixed(0)+tv('% of net revenue (', '% doanh thu thuần (')+COGS_EST.basis+tv(') — enter the accountant\'s monthly figures in data/cogs_monthly.json to replace it with actuals', ') — điền số kế toán theo tháng vào data/cogs_monthly.json để thay bằng số thật') : tv('Actual product cost needed — the biggest remaining impact on gross profit', 'Cần giá vốn thật — ảnh hưởng lớn nhất còn lại tới lợi nhuận gộp')))},
-    {name: tv('Afterpay fees (estimated at 6% + $0.30/order)', 'Phí Afterpay (đang ước tính 6% + $0,30/đơn)'), note: tv('Shopify does not expose the Afterpay fee — Afterpay\'s settlement report (or the contract rate) is needed to replace it with actuals', 'Shopify không lộ phí Afterpay — cần báo cáo settlement của Afterpay (hoặc tỷ lệ trong hợp đồng) để thay bằng số thật')},
-    {name: tv('Detailed G&A (beyond Snowball $350/month + Klaviyo invoices + manual OpEx)', 'G&A chi tiết (ngoài Snowball $350/tháng + Klaviyo hoá đơn + OpEx nhập tay)'), note: tv('Enter manually when available, or connect QuickBooks/Xero', 'Nhập tay khi có, hoặc nối QuickBooks/Xero')},
-  ];
+  // ---------- "what's missing" (Data tab) — V11.6: built from the data actually loaded, for the selected period ----------
+  // Only real gaps are listed (red = material, amber = partial / small), each with what it is worth this period;
+  // what is already real is summed up on one green line underneath.
   function renderGaps(){
     const el = document.getElementById('gapsList');
     if(!el) return;
-    const dynamic = SOURCES.filter(s=>s.level==='c').map(s=>({name:s.name, note:s.age}));
-    const all = dynamic.concat(staticGaps());
-    el.innerHTML = all.length
-      ? all.map(g=>`<div class="gap-row"><span class="dot c"></span><span class="g-name">${g.name}</span><span class="g-note">${g.note}</span></div>`).join('')
-      : '<div class="caption" style="padding-left:0;">'+tv('No known gaps left', 'Không còn khoảng trống nào đã biết')+'</div>';
+    let a = null, rows = [];
+    try{ rows = currentRows(); a = aggregate(rows); }catch(e){ a = null; }
+    const gaps = [], done = [];
+    const fmtM = m => m.slice(5,7)+'/'+m.slice(0,4);
+    const span = ms => ms.length===1 ? fmtM(ms[0]) : fmtM(ms[0])+' → '+fmtM(ms[ms.length-1]);
+    const pct = v => (v<1 && v>0 ? v.toFixed(1) : v.toFixed(0))+'%';
+    SOURCES.filter(s=>s.level==='c').forEach(s=>gaps.push({lvl:'c', name:s.name, note:s.age}));
+    // product cost
+    if(a){
+      if(a.productCostHasLots){
+        const U = a.productCostLotUnits + a.productCostFbUnits + a.productCostEstUnits;
+        const lotPct = U>0 ? a.productCostLotUnits/U*100 : 0, fbPct = U>0 ? a.productCostFbUnits/U*100 : 0;
+        const estShare = a.productCost>0 ? a.productCostEstAmount/a.productCost*100 : 0;
+        if(a.productCostEstAmount>0.5) gaps.push({lvl: estShare>10 ? 'c' : 'w', amt: a.productCostEstAmount,
+          name: tv('Product cost: ','Giá vốn: ')+money(a.productCostEstAmount,{compact:true})+' ('+pct(estShare)+tv(' of product cost) still estimated at ',' giá vốn) còn ước ')+(a.cogsEstRate*100).toFixed(0)+'%',
+          note: tv('sales without units per SKU — Walmart / TikTok Shop days before their SKU data, items without a SKU','doanh số chưa có units theo SKU — Walmart / TikTok Shop những ngày trước khi có SKU, hàng không gắn SKU')});
+        done.push(tv('product cost FIFO by Notion receipt lot for ','giá vốn FIFO theo lô nhập Notion cho ')+pct(lotPct)+tv(' of units',' units')+(fbPct>=0.5 ? tv(' (+ ',' (+ ')+pct(fbPct)+tv(' at the nearest lot / per-SKU cost)',' theo giá lô gần nhất / giá SKU)') : ''));
+        const g = COGS_LOTS_LIVE_DATA && (COGS_LOTS_LIVE_DATA.generated_at || (COGS_LOTS_LIVE_DATA.meta||{}).fetched_at);
+        const ageD = g ? (Date.now()-new Date(g).getTime())/86400000 : null;
+        if(ageD!==null && ageD>7) gaps.push({lvl:'w', name: tv('Receipt lots last read from Notion on ','Lô nhập đọc từ Notion lần cuối ')+String(g).slice(8,10)+'/'+String(g).slice(5,7)+'/'+String(g).slice(0,4),
+          note: tv('receipts added in Notion after that date are priced at the nearest lot — add NOTION_TOKEN for the nightly sync or ask Claude to refresh','lô mới trên Notion sau ngày đó đang tính theo giá lô gần nhất — thêm NOTION_TOKEN để đồng bộ hằng đêm hoặc nhờ Claude cập nhật')});
+      } else if(a.productCostEst || !a.productCostHasActual){
+        gaps.push({lvl:'c', amt: a.productCost, name: tv('Cost of goods sold (COGS)', 'Giá vốn hàng bán (COGS)'), note: COGS_EST ? tv('ESTIMATED at ', 'Đang ƯỚC TÍNH ')+(COGS_EST.rate*100).toFixed(0)+tv('% of net revenue — receipt lots (data/cogs_lots.json) are not loaded', '% doanh thu thuần — chưa nạp được lô nhập (data/cogs_lots.json)') : tv('Actual product cost needed', 'Cần giá vốn thật')});
+      } else done.push(tv('product cost from the accountant\'s inventory book','giá vốn theo sổ kho kế toán'));
+    }
+    // payment fees
+    if(a){
+      if(a.afterpayOrders>0) gaps.push({lvl:'w', amt: a.afterpayFees,
+        name: tv('Afterpay fee: ','Phí Afterpay: ')+money(a.afterpayFees)+tv(' estimated (',' đang ước (')+a.afterpayOrders.toLocaleString('en-US')+' '+tx('u.orders')+', '+money(a.afterpayAmount,{compact:true})+tv(' collected)',' thu)'),
+        note: tv('6% + $0.30 per order is an assumption — Afterpay\'s settlement report (merchant portal) or the contract rate replaces it','6% + $0,30/đơn là giả định — cần báo cáo settlement (merchant portal Afterpay) hoặc tỷ lệ hợp đồng để thay bằng số thật')});
+      const pf = [];
+      if(shopifyMeta && shopifyMeta.meta && shopifyMeta.meta.payment_fees_basis) pf.push('Shopify Payments');
+      if(paypalMatched) pf.push('PayPal');
+      if(pf.length) done.push(tv('actual payment fees for ','phí cổng thanh toán thật cho ')+pf.join(' + '));
+    }
+    // G&A (data/opex_monthly.json)
+    const OM = OPEX_MONTHLY_LIVE_DATA && OPEX_MONTHLY_LIVE_DATA.months;
+    if(!opexMeta || !OM) gaps.push({lvl:'c', name: tv('G&A (salaries, software, office…)','G&A (lương, phần mềm, văn phòng…)'), note: tv('enter per month in data/opex_monthly.json','nhập theo tháng vào data/opex_monthly.json')});
+    else {
+      const months = [...new Set(rows.map(r=>r.iso.slice(0,7)))].sort();
+      const num = (m,k) => parseFloat(OM[m] && OM[m][k]) || 0;
+      const missing = months.filter(m=>!OM[m]);
+      const prov = months.filter(m=>OM[m] && /t[aạ]m l[aấ]y theo|provisional|carried/i.test(String(OM[m].note||'')));
+      const noVN = months.filter(m=>OM[m] && !(num(m,'office')>0));
+      if(prov.length) gaps.push({lvl:'w', name: tv('G&A ','G&A ')+span(prov)+tv(' is provisional (copied from the previous month)',' đang tạm tính (lấy theo tháng trước)'), note: tv('replace with the month\'s actual figures in data/opex_monthly.json once the books close','thay bằng số thật của tháng trong data/opex_monthly.json khi chốt sổ')});
+      if(missing.length) gaps.push({lvl:'w', name: tv('G&A ','G&A ')+span(missing)+tv(' not entered',' chưa nhập'), note: tv('uses the latest entered month until a row is added to data/opex_monthly.json','đang lấy theo tháng gần nhất đã nhập cho tới khi thêm dòng vào data/opex_monthly.json')});
+      if(noVN.length) gaps.push({lvl:'w', name: tv('G&A ','G&A ')+span(noVN)+tv(': no Vietnam payroll / office yet',': chưa có lương & văn phòng VN'), note: tv('these months only have Upwork contractors, software and accounting — add the Vietnam cost file for them if there were costs','các tháng này mới có Upwork, phần mềm, kế toán — bổ sung file chi phí VN nếu có phát sinh')});
+      const entered = months.filter(m=>OM[m]);
+      if(entered.length) done.push(tv('G&A entered monthly ','G&A nhập theo tháng ')+span(entered)+tv(' (salaries incl. Upwork, software, office, accounting, other)',' (lương gồm Upwork, phần mềm, văn phòng, kế toán, khác)'));
+      if(entered.length && entered.every(m=>!(num(m,'depreciation')>0) && !(num(m,'interest')>0)))
+        gaps.push({lvl:'w', name: tv('Depreciation & interest not entered','Khấu hao & lãi vay chưa nhập'), note: tv('below EBITDA only — enter per month in data/opex_monthly.json if there are any','chỉ ảnh hưởng dưới EBITDA — nhập theo tháng vào data/opex_monthly.json nếu có')});
+    }
+    const order = {c:0, w:1};
+    gaps.sort((x,y)=> order[x.lvl]-order[y.lvl] || (y.amt||0)-(x.amt||0));
+    el.innerHTML = (gaps.length
+        ? gaps.map(g=>`<div class="gap-row ${g.lvl==='c'?'crit':'warn'}"><span class="dot ${g.lvl}"></span><span class="g-name">${g.name}</span><span class="g-note">${g.note||''}</span></div>`).join('')
+        : '<div class="caption" style="padding-left:0;">'+tv('No known gaps left', 'Không còn khoảng trống nào đã biết')+'</div>')
+      + (done.length ? `<div class="gap-row ok"><span class="dot g"></span><span class="g-name">${tv('Already real: ','Đã có số thật: ')}${done.join(' · ')}</span></div>` : '');
   }
 
   // ---------- Amazon data-quality gaps (service fees / ad spend not yet captured) ----------
@@ -3765,6 +3814,11 @@
       const km = (KLAVIYO_INVOICES_LIVE_DATA && KLAVIYO_INVOICES_LIVE_DATA.meta) || {};
       setSource('klaviyo',(klaviyoMatched ? ageLevel(KLAVIYO_LIVE_DATA.generated_at) : 'w'), (klaviyoMatched ? fmtAmazonAge(KLAVIYO_LIVE_DATA.generated_at)+fmtCoverage(KLAVIYO_LIVE_DATA) : tv('API not available','API chưa có')) + (klaviyoInvMatched ? tv(' · invoices through ',' · hoá đơn đến ')+fmtD(km.last_day) : tv(' · no invoices yet',' · chưa có hoá đơn')));
     }
+    if(COGS_LOTS_LIVE_DATA){
+      const cm = COGS_LOTS_LIVE_DATA.meta || {}, cg = COGS_LOTS_LIVE_DATA.generated_at || cm.fetched_at;
+      const cAge = cg ? (Date.now()-new Date(cg).getTime())/86400000 : null;
+      setSource('cogs', cAge===null ? 'w' : cAge<=7 ? 'g' : cAge<=31 ? 'w' : 'c', (cg ? tv('read from Notion ','đọc từ Notion ')+fmtD(String(cg).slice(0,10)) : '')+' · '+(cm.lots||0).toLocaleString('en-US')+tv(' lots · ',' lô · ')+(cm.skus||0)+' SKU · '+(cm.lots_with_landed||0).toLocaleString('en-US')+tv(' with landed cost',' có landed cost')+(COGS_SKUS_LIVE_DATA ? tv(' + per-SKU cost (cogs_skus)',' + giá theo SKU (cogs_skus)') : ''));
+    }
     if(opexMatched){
       const e = opexMeta.entered;
       const fmtM = m => m.slice(5,7)+'/'+m.slice(0,4);
@@ -3796,6 +3850,8 @@
     if(walmartMatched) names.push(tv('Walmart (real Marketplace API — orders by order date, actual commission from the reconciliation report)','Walmart (Marketplace API thật — đơn theo ngày đặt, hoa hồng thật từ báo cáo đối soát)'));
     if(klaviyoMatched) names.push(tv('Klaviyo (real API — email & SMS)','Klaviyo (API thật — email & SMS)'));
     if(klaviyoInvMatched) names.push(tv('Klaviyo invoices (plan cost)','hoá đơn Klaviyo (chi phí gói)'));
+    if(COGS_LOTS_LIVE_DATA) names.push(tv('product cost (FIFO by Notion receipt lot)','giá vốn (FIFO theo lô nhập Notion)'));
+    if(opexMatched) names.push(tv('G&A (entered monthly)','G&A (nhập theo tháng)'));
     return names;
   }
   booted = true;
@@ -4902,7 +4958,7 @@
   function ageLevel(iso){
     if(!iso) return 'w';
     const h = (Date.now()-new Date(iso).getTime())/3600000;
-    return h < 4 ? 'g' : h < 48 ? 'w' : 'c';
+    return h < 6 ? 'g' : h < 48 ? 'w' : 'c';   // V11.6: GitHub runs the scheduled syncs every ~3-4.5 h in practice
   }
   function fmtAmazonAge(iso){
     if(!iso) return tx('age.just');
@@ -4921,6 +4977,8 @@
   }
 
   // Sources with no live feed yet - they show $0 on the page (never a sample figure).
+  // V11.6: real sync cadence; the "not connected" clause only when something really is not connected
+  function bannerTail(){ const m = stillMockNames(); return tv(', sources sync automatically every few hours — press ↻ to load new figures',', nguồn tự đồng bộ vài giờ một lần — bấm ↻ để tải số mới') + (m.length ? tv('. <b>Not connected = $0</b> (no sample figures): ','. <b>Chưa kết nối = $0</b> (kh&ocirc;ng d&ugrave;ng số mẫu): ') + m.join(', ') : ''); }
   function stillMockNames(){
     const m = [];
     if(!shopifyMatched) m.push('Shopify');
@@ -4931,17 +4989,17 @@
     if(!shipmonkMatched) m.push('ShipMonk');
     if(!shipmonkInvMatched) m.push(tv('ShipMonk invoices (storage, receiving, returns)','hoá đơn ShipMonk (lưu kho, receiving, hàng trả)'));
     if(!amazonAdsMatched) m.push(tv('Amazon Ads (pending approval)','Amazon Ads (chờ duyệt)'));
-    if(!tiktokAdsMatched) m.push('TikTok Ads'); if(!applovinMatched) m.push('AppLovin'); m.push(tv('product cost per SKU','giá vốn theo SKU'));
+    if(!tiktokAdsMatched) m.push('TikTok Ads'); if(!applovinMatched) m.push('AppLovin'); if(!COGS_LOTS_LIVE_DATA && !COGS_SKUS_LIVE_DATA) m.push(tv('product cost per SKU','giá vốn theo SKU'));
     if(!(shopifyMeta && shopifyMeta.meta && shopifyMeta.meta.payment_fees_basis)) m.push(tv('payment processing fees','phí cổng thanh toán')); else if(!paypalMatched) m.push(tv('PayPal fees (Shopify Payments done)','phí PayPal (Shopify Payments đã có)'));
     if(!klaviyoMatched) m.push('Klaviyo');
-    m.push(tv('G&A (except Snowball, Klaviyo)','G&A (trừ Snowball, Klaviyo)'));
+    if(!opexMatched) m.push(tv('G&A (except Snowball, Klaviyo)','G&A (trừ Snowball, Klaviyo)'));
     return m;
   }
   (async function connectLiveData(){
     // Shopify baked in by the hourly sync = the source of truth; don't also pull the
     // connector's ShopifyQL numbers on top (slightly different definitions would flicker).
     if(shopifyMatched){
-      _bannerPaint = ()=> setLiveBanner(bicon('check')+'<span><b>'+bakedLiveNames().join(' + ')+tv(' are LIVE',' đang LIVE')+'</b>'+tv(', sources refresh every 30 minutes — press ↻ to load new figures. <b>Not connected = $0</b> (no sample figures): ',', nguồn tự cập nhật mỗi 30 phút — bấm ↻ để tải số mới. <b>Chưa kết nối = $0</b> (kh&ocirc;ng d&ugrave;ng số mẫu): ')+stillMockNames().join(', ')+'.</span>', 'good');
+      _bannerPaint = ()=> setLiveBanner(bicon('check')+'<span><b>'+bakedLiveNames().join(' + ')+tv(' are LIVE',' đang LIVE')+'</b>'+bannerTail()+'.</span>', 'good');
       _bannerPaint();
       return;
     }
@@ -4950,7 +5008,7 @@
     if(!mcp){
       const live = bakedLiveNames();
       if(live.length){
-        _bannerPaint = ()=> setLiveBanner(bicon('check')+'<span><b>'+bakedLiveNames().join(' + ')+tv(' are LIVE',' đang LIVE')+'</b>'+tv(', sources refresh every 30 minutes — press ↻ to load new figures. <b>Not connected = $0</b> (no sample figures): ',', nguồn tự cập nhật mỗi 30 phút — bấm ↻ để tải số mới. <b>Chưa kết nối = $0</b> (kh&ocirc;ng d&ugrave;ng số mẫu): ')+stillMockNames().join(', ')+tv('. Shopify revenue is not in this build yet — wait for the next sync.</span>','. Doanh thu Shopify chưa c&oacute; trong bản n&agrave;y — chờ lần sync kế tiếp.</span>'), 'warn');
+        _bannerPaint = ()=> setLiveBanner(bicon('check')+'<span><b>'+bakedLiveNames().join(' + ')+tv(' are LIVE',' đang LIVE')+'</b>'+bannerTail()+tv('. Shopify revenue is not in this build yet — wait for the next sync.</span>','. Doanh thu Shopify chưa c&oacute; trong bản n&agrave;y — chờ lần sync kế tiếp.</span>'), 'warn');
       } else {
         _bannerPaint = ()=> setLiveBanner(bicon('info')+'<span>'+tv('No source has been synced into this build yet — every figure is $0 (no sample figures). Wait for the next sync.','Chưa c&oacute; nguồn n&agrave;o được đồng bộ v&agrave;o bản n&agrave;y — mọi số đang l&agrave; $0 (kh&ocirc;ng d&ugrave;ng số mẫu). Chờ lần sync kế tiếp.')+'</span>', 'warn');
       }

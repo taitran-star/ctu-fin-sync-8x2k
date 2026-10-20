@@ -1121,7 +1121,7 @@
 
   <div id="viewData" class="view" hidden>
   <div class="banner" id="liveBanner" style="border-color:color-mix(in srgb, var(--accent) 35%, var(--border));background:color-mix(in srgb, var(--accent) 8%, var(--surface-card));"><i data-icon="plug"></i><span data-i18n="h.liveBanner">Đang kết nối dữ liệu thật…</span></div>
-  <div class="banner" id="syncBanner"><i data-icon="clock"></i><span data-i18n="h.syncBanner"><b>Lưu ý ngày gần nhất:</b> khoảng xem gồm ngày hôm nay (giờ LA) nên số ngày đó chưa chốt — Amazon ghi nhận phí/settlement muộn 24–48h, các nguồn khác cập nhật mỗi 30 phút.</span></div>
+  <div class="banner" id="syncBanner"><i data-icon="clock"></i><span data-i18n="h.syncBanner"><b>Lưu ý ngày gần nhất:</b> khoảng xem gồm ngày hôm nay (giờ LA) nên số ngày đó chưa chốt — Amazon ghi nhận phí/settlement muộn 24–48h, các nguồn khác tự đồng bộ vài giờ một lần.</span></div>
     <div class="card">
       <div class="card-head"><h2 data-i18n="h.healthTitle">Sức khoẻ dữ liệu theo nguồn</h2><div class="note" data-i18n="h.healthNote">Trạng thái tự động hoá của từng nguồn · chấm màu = tuổi lần đồng bộ gần nhất (Xanh &lt; 4h · Vàng 4–48h · Đỏ quá 48h hoặc chưa kết nối) · "N/14 ngày" = số ngày có số liệu thật trong 14 ngày gần nhất (không tính hôm nay, vì hôm nay chưa chốt)</div></div>
       <div class="sources healthgrid" id="healthGrid"></div>
@@ -1195,7 +1195,7 @@
     return load(k, 1).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })); }).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=ef6287755a';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=6c56401af0';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');
