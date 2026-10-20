@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 074e04927c).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 3c7e1a52d9).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -382,6 +382,24 @@
   // Amazon FBA inventory snapshot + monthly storage fee reports + a per-day storage estimate for months Amazon has not
   // billed yet - data/amazon_storage.json from fetch_amazon_storage.py (hourly). Do not rename this line.
   const AMAZON_STORAGE_LIVE_DATA = (window.__LIVE && window.__LIVE["amazon_storage"]) || null; /*AMAZON_STORAGE_INJECT*/
+  // V12.2: tooltip of the estimated FBA storage line — Amazon's formula (sync v1.5) + how close it came to Amazon's reports
+  function storageEstTitle(){
+    const st = (AMAZON_STORAGE_LIVE_DATA && AMAZON_STORAGE_LIVE_DATA.storage) || {};
+    const e = st.estimate || {}, acc = e.accuracy || {};
+    const p1 = x => { const s = (Math.abs(x)*100).toFixed(1); return tv(s, s.replace('.', ',')) + '%'; };
+    let t = tv('Estimated with Amazon\'s own formula: sum over SKUs of units at FBA (Inventory Ledger, incl. units in transit between warehouses) × billed unit volume (Amazon\'s current measurement) × (list rate by season & size tier + the utilization surcharge of the latest report)',
+               'Ước tính theo đúng công thức Amazon: Σ SKU unit ở kho FBA (sổ Inventory Ledger, gồm hàng đang chuyển giữa các kho) × thể tích tính phí (kích thước Amazon đo hiện tại) × (đơn giá niêm yết theo mùa & size tier + phụ phí sử dụng kho của report gần nhất)');
+    const rl = st.rates_learned || {}, mk = Object.keys(rl).sort().pop(), r = mk ? rl[mk] : null;
+    if(r && r.surcharge){
+      const parts = Object.keys(r.surcharge).filter(k=> r.surcharge[k]>0).map(k=> (k==='standard' ? 'standard-size' : 'oversize')+' $'+tv(r.surcharge[k].toFixed(2), r.surcharge[k].toFixed(2).replace('.', ','))+'/cu ft');
+      if(parts.length && r.surcharge_from) t += tv(' — surcharge ', ' — phụ phí ')+parts.join(', ')+tv(' as in the '+r.surcharge_from.slice(5,7)+'/'+r.surcharge_from.slice(0,4)+' report', ' theo report '+r.surcharge_from.slice(5,7)+'/'+r.surcharge_from.slice(0,4));
+    }
+    const u = acc.units && e.basis ? acc.units[e.basis] : null, vr = acc.volume_rate_dims, bits = [];
+    if(u && u.months) bits.push(tv('units within ±', 'số unit lệch ±')+p1(u.mae)+tv(' of Amazon\'s billed average (', ' so với số Amazon tính phí (')+u.months+tv(' months)', ' tháng)'));
+    if(vr && vr.months) bits.push(tv('volume × rate off by ', 'thể tích × đơn giá lệch TB ')+p1(vr.mape)+tv(' on average ('+vr.months+' months, '+vr.within_3pct+' within ±3%)', ' ('+vr.months+' tháng, '+vr.within_3pct+' tháng trong ±3%)'));
+    if(bits.length) t += tv('. Back-test vs Amazon\'s reports: ', '. Kiểm chứng ngược với report Amazon: ')+bits.join('; ');
+    return t + tv('. Replaced by Amazon\'s report (~7th–15th of the next month), then by the amount Amazon actually charges.', '. Tự thay bằng report của Amazon (~ngày 7–15 tháng sau) rồi bằng số Amazon thu thật.');
+  }
   let amazonStorageMeta = null;
   // Monthly OpEx entered by hand (no API): payroll, software, office, accounting, insurance, other (G&A, above EBITDA)
   // and depreciation, interest, income tax (below EBITDA) - data/opex_monthly.json in the repo, USD per month,
@@ -534,6 +552,10 @@
   // Amazon Ads spend per day (SP / SB / SD). Today: exported from Sellerboard (which pulls the Amazon Ads API);
   // later: data/amazon_ads.json from the Amazon Ads API workflow once Amazon approves access. Same shape either way.
   const AMAZON_ADS_LIVE_DATA = (window.__LIVE && window.__LIVE["amazon_ads"]) || null; /*AMAZON_ADS_DATA_INJECT*/
+  // V12.2: Amazon DSP (SparkX orders run in Xnurta) — daily spend of the paid orders + Amazon's bonus media (free), read
+  // from Xnurta in Claude's browser with the owner's session (data/amazon_dsp.json, scheduled task). Booked from book_from.
+  const AMAZON_DSP_LIVE_DATA = (window.__LIVE && window.__LIVE["amazon_dsp"]) || null;
+  let dspMeta = null;   // set by applyDspRows (book_from, last day, generated_at)
   // Loop Subscriptions (Shopify subscription app): new subscriptions/subscribers/checkout revenue per day (real,
   // from Loop's Admin API) + mrr_estimate (run-rate from active subs' billing schedule, NOT period-actual
   // recurring revenue - Loop has no endpoint to list orders store-wide) - data/loop_subscriptions.json.
@@ -652,6 +674,7 @@
     mkSource('tiktokads', () => 'TikTok Ads', NC0, 'c'),
     mkSource('applovin', () => 'AppLovin', NC0, 'c'),
     mkSource('amazonads', () => 'Amazon Ads (SP / SB / SD)', () => tv('Waiting for Amazon to approve the Advertising API — $0', 'Chờ Amazon duyệt Advertising API — $0'), 'c'),
+    mkSource('amazon_dsp', () => tv('Amazon DSP (SparkX orders in Xnurta)', 'Amazon DSP (order SparkX trên Xnurta)'), () => tv('Not connected — DSP top-ups entered monthly', 'Chưa kết nối — DSP theo tiền nạp nhập tay'), 'w'),
     mkSource('amazonfin', () => 'Amazon SP-API Finances', NC0, 'c'),
     mkSource('amazon_storage', () => tv('Amazon FBA inventory & storage fees (Inventory API + report)', 'Amazon FBA tồn kho & phí lưu kho (Inventory API + report)'), () => tv('Not connected — storage as charged by Amazon', 'Chưa kết nối — lưu kho theo số Amazon thu'), 'c'),
     mkSource('shipmonk', () => tv('ShipMonk (per-order fulfillment fees)', 'ShipMonk (phí fulfillment theo đơn)'), NC0, 'c'),
@@ -774,7 +797,7 @@
     m.ads = {}; m.adsAttr = {};
     AD_KEYS.forEach(k=>{ const f = F[AD_CHANNEL[k]]; m.ads[k] = r.ads[k]*f; m.adsAttr[k] = r.adsAttr[k]*f; });
     const sc = (obj, f) => (obj===null || obj===undefined) ? obj : (f>=1 ? obj : (f<=0 ? null : scaleDeep(obj, f)));
-    m.amazonReal = sc(r.amazonReal, F.amazon); m.amazonAdsReal = sc(r.amazonAdsReal, F.amazon);
+    m.amazonReal = sc(r.amazonReal, F.amazon); m.amazonAdsReal = sc(r.amazonAdsReal, F.amazon); m.dspReal = sc(r.dspReal, F.amazon);
     ['shopifyReal','paypalReal','snowballReal','shopifyAttr','klaviyoReal','klaviyoCost','loopReal','metaReal','googleReal','applovinReal'].forEach(key=>{ m[key] = sc(r[key], F.shopify); });
     m.tiktokReal = sc(r.tiktokReal, F.tiktok); m.tiktokAdsReal = sc(r.tiktokAdsReal, F.tiktok);
     m.walmartReal = sc(r.walmartReal, F.walmart);
@@ -1031,7 +1054,10 @@
     const mktItems = OPEX_MKT_KEYS.map(k=>({key:k, value: sum(rows.map(r=> r.opex ? (r.opex.vals[k]||0) : 0)), has: rows.some(r=> r.opex && r.opex.has[k]), estDays: rows.filter(r=> r.opex && r.opex.est && r.opex.has[k]).length}));
     const mktOf = k => (mktItems.find(x=>x.key===k)||{}).value||0;
     const mktAgency = mktOf('mkt_agency'), mktCreator = mktOf('mkt_creator'), mktDsp = mktOf('mkt_dsp');
-    const mktManual = mktAgency + mktCreator + mktDsp;
+    // V12.2: Amazon DSP spend per day from Xnurta (paid orders; from book_from on it replaces the monthly top-up above)
+    const dspLive = sum(rows.map(r=> r.dspReal ? r.dspReal.paid : 0)), dspBonus = sum(rows.map(r=> r.dspReal ? r.dspReal.bonus : 0)), dspLiveDays = rows.filter(r=> r.dspReal).length;
+    const dspRecent = rows.some(r=> r.dspReal && dspMeta && dspMeta.recentFrom && r.iso >= dspMeta.recentFrom);   // the last 2 days Xnurta may still revise
+    const mktManual = mktAgency + mktCreator + mktDsp + dspLive;
     const feesTotal = paymentFeesAll + marketplaceFees;               // payment gateways + marketplace selling fees
     const marketingTotal = adSpend + snowballCommission + tiktokAffiliate + tiktokSmart + walmartAds + mktManual;   // paid ads + affiliate commissions + manual marketing (V11.8)
     const otherVarTotal = feesTotal + marketingTotal;
@@ -1134,7 +1160,7 @@
       smInvDays, smInv, smInvOther, smInvAdjCredits, smStorageOpen, smStorageOpenDays, smStorageCarryDays, smStorageReportDays, smInvShipCmp, smApiShipCmp, smCmpDays, smCmpMissingDays, smTrueUp, shipmonkInvoiceExtras, shipmonkLogistics, amazonLogistics, logisticsTotal, feesTotal, marketingTotal, cmBeforeMarketing,
       paymentFees, afterpayFees, afterpayAmount, afterpayOrders, paymentFeeDays, paymentFeeOrders, feesMissingOrders, gatewayMix, feeTypeMix, paypalDays, paypalFees, paypalPayments, paypalPaymentsCount, paypalCompare, paymentFeesAll, marketplaceFees, adSpend, otherVarTotal, contributionProfit,
       gaItems, gaTotal, inventoryHolding, fixedTotal, netProfit, klaviyoCost, klaviyoCostDays, klaviyoCostParts,
-      mktItems, mktAgency, mktCreator, mktDsp, mktManual,
+      mktItems, mktAgency, mktCreator, mktDsp, mktManual, dspLive, dspBonus, dspLiveDays, dspRecent,
       opexDays, opexCarriedDays, opexEstDays, opexEstMonths, opexEstAmount, opexNote, salaryEntered, depreciation, interest, depreciationEntered, interestEntered, taxEntered, taxRate, ebit, ebt, incomeTax, incomeTaxEstimated, netIncome, belowEbitdaEntered,
       variableTotal, variableRatio, cmRatio, breakEvenRevenue, blendedAOV, breakEvenOrders,
       merValue, merSpend, attrRevenueSum,
@@ -1604,6 +1630,10 @@
       const label = MKT_LABEL[it.key] + (allEst ? '' : tx('st.manualMonthly')) + (it.estDays>0 ? (allEst ? tv(' — estimated',' — tạm tính') : tv(` — ${it.estDays} days estimated`, ` — ${it.estDays} ngày tạm tính`)) + (estT ? ': '+estT : '') : '');
       rows.push({...stLine(label, -it.value, nr, it.key==='mkt_agency' ? 'fix' : 'var', 'mkt'), neg: it.value>=0, live: allEst ? false : 'manual', est: it.estDays>0, estTitle: tv('Month not closed yet — estimated on the basis written in the label; replaced once the month is entered in data/opex_monthly.json', 'Tháng chưa chốt sổ — tạm tính theo cơ sở ghi trong nhãn; tự thay khi nhập tháng vào data/opex_monthly.json'), hget: x=>-((x.mktItems.find(g=>g.key===it.key)||{}).value||0)});
     });
+    if(a.dspLiveDays>0 && (Math.abs(a.dspLive)>=0.005 || a.dspBonus>=0.005)){   // V12.2
+      const lb = tv('Amazon DSP — daily spend from Xnurta (paid SparkX orders', 'Amazon DSP — chi phí theo ngày từ Xnurta (order SparkX trả phí') + (a.dspBonus>=0.005 ? tv('; Amazon bonus media ', '; không gồm media tặng của Amazon ') + money(a.dspBonus) + tv(' is free, not included', '') : '') + ')';
+      rows.push({...stLine(lb, -a.dspLive, nr, 'var', 'mkt'), neg: a.dspLive>=0, live:true, est: a.dspRecent && dspFresh(), estTitle: tv('Xnurta updates the last 1–2 days during the day; the scheduled read refreshes them', 'Xnurta còn cập nhật 1–2 ngày gần nhất trong ngày; lần đọc theo lịch sẽ làm mới'), hget: x=>-(x.dspLive||0)});
+    }
     rows.push({...stSub(tv('= Total marketing & selling', '= Tổng marketing & bán hàng'), -a.marketingTotal, nr, 'mkt_sub'), hget: x=>-x.marketingTotal});
     rows.push({...stSub(tv('= Contribution margin (CM3, after marketing)', '= Lợi nhuận đóng góp (Contribution Margin, sau marketing)'), a.contributionProfit, nr, 'cm'), hget: x=>x.contributionProfit});
 
@@ -1617,7 +1647,7 @@
         if(a.amazonStorageEstDays>0) slParts.push(a.amazonStorageEstDays+tv(' days estimated ', ' ngày ước tính ')+money(a.amazonStorageEstAmt)+tv(' = FBA stock per SKU × volume × Amazon\'s rate', ' = tồn kho FBA từng SKU × thể tích × đơn giá Amazon'));
         if(a.amazonStorageMissingDays>0) slParts.push(a.amazonStorageMissingDays+tv(' days in a month Amazon has not charged yet = $0', ' ngày thuộc tháng Amazon chưa thu phí = $0'));
         if(slParts.length) sl += ' ('+slParts.join(' · ')+')';
-        rows.push({...stLine(sl, -a.amazonStorageAlloc, nr, 'fix', 'logi'), neg:true, live:true, est: a.amazonStorageEstDays>0, estTitle: tv('Estimated the way Amazon calculates it (average units/day × cu ft × seasonal rate by size tier, learned from earlier months\' reports); replaced by the report, then by the amount Amazon actually charges', 'Ước tính theo cách tính của Amazon (unit trung bình/ngày × cu ft × đơn giá theo mùa & size tier, học từ report các tháng trước); thay bằng report rồi bằng số Amazon thu thật'), hget: x=>-x.amazonStorageAlloc});
+        rows.push({...stLine(sl, -a.amazonStorageAlloc, nr, 'fix', 'logi'), neg:true, live:true, est: a.amazonStorageEstDays>0, estTitle: storageEstTitle(), hget: x=>-x.amazonStorageAlloc});
         if(Math.abs(a.amazonStoragePosted) >= 0.01) rows.push({...stLine(tv('Reconciliation: Amazon charged ', 'Đối chiếu: Amazon thu phí lưu kho ')+money(a.amazonStoragePosted)+tv(' of storage fees in this period (7th–15th of each month, for the previous month)', ' trong khoảng này (ngày 7–15 hàng tháng, cho tháng trước)'), 0, nr, null, 'logi'), detail:true, live:true});
       }
       rows.push({...stLine(feeOrdered ? tv('Amazon service fees (subscription, returns processing, removal, Vine/coupon — excluding monthly storage)', 'Phí dịch vụ Amazon (subscription, xử lý trả hàng, removal, Vine/coupon — không gồm lưu kho tháng)') : tv('Amazon service fees (subscription, FBA storage, returns processing, removal, Vine/coupon)', 'Phí dịch vụ Amazon (subscription, lưu kho FBA, xử lý trả hàng, removal, Vine/coupon)'), -a.amazonServiceFeesReal, nr, 'fix', 'logi'), neg:true, gap: a.amazonServiceFeesReal===0, hget: x=>-x.amazonServiceFeesReal});
@@ -1810,7 +1840,7 @@
       ]},
       {label: tx('cc.mktOn'), rows:[
         {n:'Amazon Ads (SP · SB · SD)', s: a.amazonAdsProvisionalDays>0 ? a.amazonAdsProvisionalDays+tv(' days of same-day figures (Sellerboard, every 2 h)', ' ngày số trong ngày (Sellerboard, 2 giờ/lần)') : '', v: a.ads.amazonads, gap: !amazonAdsMatched, est: a.amazonAdsProvisionalDays>0},
-        ...(a.mktDsp>0.005 ? [{n: tv('Amazon DSP (top-ups via SparkX)', 'Amazon DSP (nạp qua SparkX)'), s: tv('entered monthly', 'nhập tay theo tháng'), v: a.mktDsp}] : []),
+        ...((a.mktDsp + (a.dspLive||0))>0.005 ? [{n: tv('Amazon DSP (SparkX via Xnurta)', 'Amazon DSP (SparkX qua Xnurta)'), s: a.dspLiveDays>0 ? tv('daily spend from Xnurta', 'chi phí theo ngày từ Xnurta') + (a.mktDsp>0.005 ? tv(' + top-ups entered monthly', ' + nạp tiền nhập tay') : '') : tv('entered monthly', 'nhập tay theo tháng'), v: a.mktDsp + (a.dspLive||0)}] : []),
       ]},
     ]});
     chans.push({key:'shopify', name:'Shopify (D2C)', sub: tv('payment gateways, ShipMonk, ads, affiliates, D2C tools', 'cổng thanh toán, ShipMonk, quảng cáo, affiliate, công cụ D2C'), net: netOf('shopify'), orders: a.orders.shopify, groups:[
@@ -3871,6 +3901,8 @@
   const klaviyoInvMatched = KLAVIYO_INVOICES_LIVE_DATA ? applyKlaviyoInvoiceRows(KLAVIYO_INVOICES_LIVE_DATA) : false;
   // Monthly OpEx entered by hand in the repo (data/opex_monthly.json).
   const opexMatched = OPEX_MONTHLY_LIVE_DATA ? applyOpexRows(OPEX_MONTHLY_LIVE_DATA) : false;
+  // V12.2: Amazon DSP daily spend from Xnurta (after the OpEx rows: it replaces the monthly DSP top-up from book_from on).
+  const dspMatched = AMAZON_DSP_LIVE_DATA ? applyDspRows(AMAZON_DSP_LIVE_DATA) : false;
   const targetsMatched = TARGETS_LIVE_DATA ? applyTargets(TARGETS_LIVE_DATA) : false;
   const cogsMatched = COGS_LIVE_DATA ? applyCogsActual(COGS_LIVE_DATA) : false;
   // Shopify + Snowball baked in by the same hourly sync.
@@ -3883,6 +3915,9 @@
       const st = AMAZON_STORAGE_LIVE_DATA.storage || {}, iv = AMAZON_STORAGE_LIVE_DATA.inventory || {};
       const mr = st.months_with_report || [];
       setSource('amazon_storage', ageLevel(AMAZON_STORAGE_LIVE_DATA.generated_at), fmtAmazonAge(AMAZON_STORAGE_LIVE_DATA.generated_at) + tv(' · stock ',' · tồn kho ') + (iv.on_hand||0).toLocaleString('en-US') + ' units / ' + (iv.skus||0) + ' SKU' + (mr.length ? tv(' · storage fee reports ',' · report phí lưu kho ') + mr[0].slice(5,7)+'/'+mr[0].slice(0,4) + ' → ' + mr[mr.length-1].slice(5,7)+'/'+mr[mr.length-1].slice(0,4) : tv(' · no monthly report yet',' · chưa có report tháng nào')));
+    }
+    if(dspMatched){   // V12.2
+      setSource('amazon_dsp', ageLevel(AMAZON_DSP_LIVE_DATA.generated_at), fmtAmazonAge(AMAZON_DSP_LIVE_DATA.generated_at) + tv(' · read from Xnurta in Claude\'s browser · booked from ', ' · đọc từ Xnurta bằng trình duyệt của Claude · ghi nhận từ ') + fmtD(dspMeta.from) + (dspMeta.last ? tv(' · data to ', ' · số tới ') + fmtD(dspMeta.last) : ''));
     }
     if(amazonMatched){
       setSource('amazon',ageLevel(AMAZON_LIVE_DATA.generated_at), fmtAmazonAge(AMAZON_LIVE_DATA.generated_at)+fmtCoverage(AMAZON_LIVE_DATA));
@@ -4375,6 +4410,29 @@
   //   - software (Slash card) and Upwork contractors = actual charges to date ("actual_to_date"), as a daily run-rate;
   //   - a figure written in the open month itself always wins.
   // Replaced automatically once the month is entered without status "open".
+  // V12.2: data/amazon_dsp.json -> d.dspReal {paid, bonus} for every day from book_from; those days drop the monthly
+  // "Amazon DSP top-up" figure of opex_monthly.json (the accountant books DSP by spend from 10/2026) so nothing is counted twice.
+  function applyDspRows(data){
+    if(!data || !data.daily) return false;
+    const from = data.book_from || '2026-10-01';
+    let matched = 0, last = null;
+    days.forEach(d=>{
+      if(d.iso < from) return;
+      if(d.opex && d.opex.vals && d.opex.vals.mkt_dsp){ d.opex = Object.assign({}, d.opex, {vals: Object.assign({}, d.opex.vals, {mkt_dsp: 0}), has: Object.assign({}, d.opex.has, {mkt_dsp: false})}); }
+      const x = data.daily[d.iso];
+      if(!x) return;
+      const paid = +(Array.isArray(x) ? x[0] : x.paid) || 0, bonus = +(Array.isArray(x) ? x[1] : x.bonus) || 0;
+      d.dspReal = {paid, bonus}; matched++; last = d.iso;
+    });
+    dspMeta = {from, last, generated_at: data.generated_at || null, recentFrom: last ? new Date(Date.parse(last+'T00:00:00Z') - 86400000).toISOString().slice(0,10) : null};
+    return matched>0;
+  }
+  // the DSP line carries the "estimate" tag while its last day may still move (Xnurta fills the last 1-2 days later)
+  function dspFresh(){
+    if(!dspMeta || !dspMeta.last) return false;
+    const lastMs = Date.parse(dspMeta.last+'T00:00:00Z'), genMs = dspMeta.generated_at ? Date.parse(dspMeta.generated_at) : 0;
+    return genMs - lastMs < 2.5*86400000;
+  }
   function applyOpexRows(data){
     if(!data || !data.months) return false;
     const months = {};
