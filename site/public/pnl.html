@@ -833,6 +833,78 @@
   .v12tip[hidden]{display:none;}
   @media print{.v12tip{display:none!important} tr.v12-hid{display:table-row!important} tr.v12-more-row{display:none!important} .lc > .lt{white-space:normal;}}
   @media (max-width:640px){.lc{--lc-max:62vw;} table.stmt .lc{--lc-max:56vw;}}
+  /* ---- V12.6: overview cards (value + change; the eye opens the P&L or the expenses table), revenue chart as columns or lines, expenses dialog ---- */
+  .exec-kpis.v126{grid-template-columns:repeat(4,minmax(0,1fr));}
+  @media (max-width:1100px){.exec-kpis.v126{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  @media (max-width:340px){.exec-kpis.v126{grid-template-columns:minmax(0,1fr);}}
+  .exec-kpis.v126 .kpi{gap:6px;padding:14px 16px 13px;}
+  .exec-kpis.v126 .kpi .value{font-size:28px;margin-top:0;}
+  .exec-kpis.v126 .kpi .kh{min-height:22px;}
+  .kpi.act{cursor:pointer;transition:border-color .12s, box-shadow .12s;}
+  .kpi.act:hover{border-color:color-mix(in srgb, var(--accent) 45%, var(--border));box-shadow:0 2px 10px rgba(0,0,0,.06);}
+  .kpi.act:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .kpi-eye{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;margin:-4px -8px -4px 0;border-radius:8px;color:var(--ink-muted);flex:none;}
+  .kpi.act:hover .kpi-eye,.kpi.act:focus-visible .kpi-eye{color:var(--accent);background:color-mix(in srgb, var(--accent) 10%, transparent);}
+  .kpi .cmp{display:flex;align-items:baseline;gap:4px 6px;flex-wrap:wrap;font-size:12px;color:var(--ink-muted);font-variant-numeric:tabular-nums;line-height:1.35;}
+  .kpi .cmp b{font-weight:600;white-space:nowrap;}
+  .kpi .cmp.good b{color:var(--success-text);} .kpi .cmp.bad b{color:var(--status-critical);} .kpi .cmp.flat b{color:var(--ink-secondary);}
+  @media (max-width:520px){.exec-kpis.v126 .kpi .value{font-size:22px;} .exec-kpis.v126 .kpi{padding:12px 12px;} .kpi .cmp{font-size:11.5px;}}
+  .seg.two{grid-template-columns:repeat(2,1fr);}
+  .card-head .v12-expall{display:none;}   /* the statement's Compact / Detail switch drives it */
+  .tooltip .t-row .sw{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;}
+  .tooltip .t-row.off{opacity:.45;}
+  .tooltip .t-row.sep{border-top:1px solid var(--gridline);margin-top:3px;padding-top:3px;}
+  .legend button.li b{font-weight:600;color:var(--ink-primary);font-variant-numeric:tabular-nums;margin-left:3px;}
+  /* expenses dialog */
+  .xp-overlay{position:fixed;inset:0;z-index:60;background:rgba(8,20,14,.45);display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;overflow:auto;}
+  .xp-dialog{background:var(--surface-card);color:var(--ink-primary);border:1px solid var(--border);border-radius:14px;box-shadow:0 18px 48px rgba(0,0,0,.25);width:min(1100px, 100%);display:flex;flex-direction:column;max-height:calc(100vh - 48px);min-height:0;}
+  .xp-head{display:flex;align-items:flex-start;gap:12px;padding:16px 18px 10px;}
+  .xp-head h2{font-size:16px;font-weight:600;margin:0;}
+  .xp-head .sub{font-size:12px;color:var(--ink-muted);margin-top:3px;}
+  .xp-close{margin-left:auto;border:0;background:transparent;color:var(--ink-secondary);font-size:24px;line-height:1;width:36px;height:36px;border-radius:8px;cursor:pointer;flex:none;}
+  .xp-close:hover{background:var(--surface-card-2);} .xp-close:focus-visible{outline:2px solid var(--accent);}
+  .xp-sum{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;padding:0 18px;}
+  .xp-sum .s{font:inherit;text-align:left;background:var(--surface-card-2);border:1px solid transparent;border-radius:10px;padding:8px 12px;min-width:0;color:inherit;}
+  .xp-sum button.s{cursor:pointer;} .xp-sum button.s:hover{border-color:var(--border);} .xp-sum button.s.active{border-color:var(--accent);background:color-mix(in srgb, var(--accent) 8%, var(--surface-card));}
+  .xp-sum .s .l{font-size:11px;color:var(--ink-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .xp-sum .s .v{font-family:var(--font-display);font-size:18px;font-variant-numeric:tabular-nums;white-space:nowrap;margin-top:2px;}
+  .xp-sum .s .p{font-size:11px;color:var(--ink-muted);font-variant-numeric:tabular-nums;}
+  .xp-ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px 18px;border-bottom:1px solid var(--border);}
+  .xp-ctl input[type=search],.xp-ctl select{font:inherit;font-size:13px;color:var(--ink-primary);background:var(--surface-card);border:1px solid var(--border);border-radius:8px;padding:6px 10px;min-width:0;max-width:100%;}
+  .xp-ctl input[type=search]{flex:1 1 220px;}
+  .xp-ctl .seg button{padding:5px 11px;font-size:12.5px;}
+  .xp-body{overflow:auto;padding:0 18px;flex:1 1 auto;min-height:160px;}
+  .xp-body table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:660px;}
+  .xp-body th{position:sticky;top:0;background:var(--surface-card);text-align:left;font-size:11px;font-weight:600;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.04em;padding:9px 8px 7px;border-bottom:1px solid var(--border);z-index:1;}
+  .xp-body td{padding:6px 8px;border-bottom:1px solid var(--gridline);vertical-align:top;}
+  .xp-body .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .xp-body td.nm{max-width:480px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .xp-body td.nm .rest{color:var(--ink-muted);}
+  .xp-body table.narrow td.nm{white-space:normal;max-width:none;}
+  .xp-body td.dt{white-space:nowrap;color:var(--ink-secondary);}
+  .xp-body td .tag{margin-left:0;}
+  .xp-body tr.day td{background:var(--surface-card-2);font-weight:600;color:var(--ink-secondary);border-bottom-color:var(--border);}
+  .xp-body tfoot td{font-weight:700;border-top:2px solid var(--border);border-bottom:0;position:sticky;bottom:0;background:var(--surface-card);}
+  .xp-body td.cr{color:var(--success-text);}
+  .xp-body .more td{color:var(--ink-muted);font-style:italic;}
+  .xp-foot{padding:10px 18px 14px;font-size:11.5px;color:var(--ink-muted);line-height:1.5;border-top:1px solid var(--border);}
+  .xp-foot b.ok{color:var(--success-text);} .xp-foot b.warn{color:var(--status-critical);}
+  body.xp-open{overflow:hidden;}
+  @media (max-width:760px){.xp-sum{grid-template-columns:repeat(2,minmax(0,1fr));} .xp-sum .s:first-child{grid-column:1 / -1;}}
+  .xp-body .xs{font-size:11px;color:var(--ink-muted);margin-top:2px;font-weight:400;}
+  .xp-body table.narrow{min-width:0;}
+  .exec-kpis.v126 .kpi .foot{white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+  @media (max-width:640px){
+    .xp-overlay{padding:0;}
+    .xp-dialog{border-radius:0;max-height:none;min-height:100%;border:0;}
+    .xp-head{padding:calc(14px + env(safe-area-inset-top, 0px)) 12px 8px;}
+    .xp-sum{padding:0 12px;gap:6px;} .xp-sum .s{padding:7px 10px;} .xp-sum .s .v{font-size:16px;}
+    .xp-ctl{padding:10px 12px;} .xp-ctl .seg{width:auto;flex:1 1 100%;}
+    .xp-body{overflow:visible;padding:0 12px;}
+    .xp-body th{top:0;}
+    .xp-foot{padding:10px 12px calc(14px + env(safe-area-inset-bottom, 0px));}
+  }
+  @media (max-width:520px){#revCard .card-head .seg{width:auto;flex:1 1 0;} #revCard .card-head #revType{flex:0 0 40%;margin-left:0!important;}}
 </style>
 </head>
 <body>
@@ -882,7 +954,6 @@
   <div class="banner" id="chBanner" hidden><i data-icon="filter"></i><span id="chBannerTxt"></span></div>
 
   <div id="viewExec" class="view">
-  <div class="strip" id="periodStrip"></div>
   <div class="exec-kpis" id="execKpis"></div>
   <section class="card brief" id="briefCard">
     <div class="card-head"><h2 data-i18n="brief.title">Brief &amp; actions</h2></div>
@@ -897,7 +968,7 @@
 
   <div class="ov-grid">
     <div class="card" id="revCard">
-      <div class="card-head"><h2 data-i18n="rev.title">Revenue performance</h2><div class="note" id="revNote"></div><div class="seg" id="revSeg" style="margin-left:auto;"><button type="button" data-g="day" class="active" data-i18n="rev.daily">Daily</button><button type="button" data-g="week" data-i18n="rev.weekly">Weekly</button><button type="button" data-g="month" data-i18n="rev.monthly">Monthly</button></div></div>
+      <div class="card-head"><h2 data-i18n="rev.title">Revenue, costs &amp; profit</h2><div class="note" id="revNote"></div><div class="seg two" id="revType" style="margin-left:auto;" role="group"><button type="button" data-t="bar" class="active" data-i18n="rev.bar">Columns</button><button type="button" data-t="line" data-i18n="rev.line">Line</button></div><div class="seg" id="revSeg"><button type="button" data-g="day" class="active" data-i18n="rev.daily">Daily</button><button type="button" data-g="week" data-i18n="rev.weekly">Weekly</button><button type="button" data-g="month" data-i18n="rev.monthly">Monthly</button></div></div>
       <div class="legend" id="revLegend" style="margin-bottom:6px;"></div>
       <div style="position:relative;"><svg id="revChart" style="width:100%;display:block;"></svg><div class="tooltip" id="revTip"></div></div>
       <div class="caption" id="revCaption" style="margin-top:6px;"></div>
@@ -1092,6 +1163,7 @@
       <h2 data-i18n="h.stmtTitle">Báo cáo lãi lỗ (P&amp;L statement)</h2>
       <div class="note" id="stmtFinding"></div>
       <button class="btn mini" type="button" data-export="stmtTable" data-name="pnl">CSV</button>
+      <div class="seg two" id="stmtMode" role="group"><button type="button" data-m="compact" class="active" aria-pressed="true" data-i18n="stmt.compact">Thu gọn</button><button type="button" data-m="full" aria-pressed="false" data-i18n="stmt.full">Chi tiết</button></div>
       <div class="note" data-i18n="h.stmtNote">% tính trên Doanh thu thuần của từng cột · bấm dòng nhóm để thu gọn/mở rộng · có thêm 6 kỳ liền trước để so xu hướng ở hầu hết các dòng (một vài dòng phụ có cấu trúc đổi theo kỳ — mix loại phí, breakdown kho theo kỳ hoá đơn, dòng đối chiếu — chỉ hiện cho kỳ đang xem)</div>
     </div>
     <div class="stmt-wrap"><table class="stmt" id="stmtTable"></table></div>
@@ -1281,7 +1353,7 @@
     return load(k, 1).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })); }).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=71ada0a2b9';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=81ad479c26';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');

@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 71ada0a2b9).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 81ad479c26).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -41,7 +41,7 @@
     'mode.day':'Day', 'mode.week':'Week', 'mode.month':'Month', 'mode.range':'Custom',
     'tb.loadedAt':'When the numbers were loaded (your clock)', 'tb.reload':'Reload the latest numbers', 'tb.install':'Install', 'tb.installTitle':'Install as an app', 'tb.theme':'Light / dark', 'tb.signout':'Sign out',
     'brief.summary':'In brief', 'brief.moved':'What moved profit', 'brief.risks':'Biggest risks', 'brief.decide':'Decide this week', 'brief.title':'Brief & actions', 'brief.todo':'What to do', 'brief.why':'Why profit moved',
-    'rev.title':'Revenue performance', 'rev.daily':'Daily', 'rev.weekly':'Weekly', 'rev.monthly':'Monthly', 'rev.peak':'Peak', 'rev.note':'Net revenue and CM3 · best {day}: {best}', 'rev.caption':'Net revenue = gross − discounts − refunds, by order date (Los Angeles). CM3 = contribution after product cost, fulfillment, fees and all marketing. Hover for orders and ad spend.',
+    'rev.title':'Revenue, costs & profit', 'rev.daily':'Daily', 'rev.weekly':'Weekly', 'rev.monthly':'Monthly', 'rev.peak':'Peak', 'rev.bar':'Columns', 'rev.line':'Line', 'stmt.compact':'Compact', 'stmt.full':'Detail', 'rev.note':'Best {day}: {best}', 'rev.caption':'Same figures as the P&L, by order date (Los Angeles). Net revenue = gross − discounts − refunds. Order costs = COGS (product cost, packaging, fulfillment, postage) + transaction fees. Marketing & ads = ads, affiliates, agency, creators. Operating costs = warehousing & logistics + G&A. Profit = EBITDA = net revenue − all of these. Click a legend item to hide or show it; the amounts next to it are the period totals.',
     'chan.title':'Sales channels', 'chan.note':'{total} across {n} channels', 'chan.avgDay':'Average day', 'chan.perOrder':'Revenue per order',
     'pl.title':'Product lines', 'pl.line':'Product line', 'pl.share':'Share', 'pl.vsPrior':'vs prior', 'pl.cover':'Days of cover', 'pl.dollar':'Where each $100 of net revenue goes',
     'pl.note':'{n} lines on {ch}{cov}', 'pl.caption':'Revenue, fees and ads are allocated to a line by its share of gross sales in each channel; fulfillment by units. Days of cover = FBA fulfillable + ShipMonk available ÷ units sold per day (last 30 days). Lines come from data/products.json.',
@@ -59,7 +59,7 @@
     'mode.day':'Ngày', 'mode.week':'Tuần', 'mode.month':'Tháng', 'mode.range':'Tuỳ chọn',
     'tb.loadedAt':'Giờ tải số liệu (giờ trên máy bạn)', 'tb.reload':'Tải lại số liệu mới nhất', 'tb.install':'Cài app', 'tb.installTitle':'Cài như app lên máy / điện thoại', 'tb.theme':'Sáng / tối', 'tb.signout':'Đăng xuất',
     'brief.summary':'Tóm tắt kỳ này', 'brief.moved':'Điều gì làm lợi nhuận đổi', 'brief.risks':'Rủi ro lớn nhất', 'brief.decide':'Cần quyết tuần này', 'brief.title':'Tóm tắt & việc cần làm', 'brief.todo':'Việc cần làm', 'brief.why':'Vì sao lợi nhuận đổi',
-    'rev.title':'Doanh thu theo thời gian', 'rev.daily':'Ngày', 'rev.weekly':'Tuần', 'rev.monthly':'Tháng', 'rev.peak':'Đỉnh', 'rev.note':'Doanh thu thuần và CM3 · cao nhất {day}: {best}', 'rev.caption':'Doanh thu thuần = gộp − giảm giá − hoàn tiền, theo ngày đặt (giờ Los Angeles). CM3 = lợi nhuận đóng góp sau giá vốn, fulfillment, phí và toàn bộ marketing. Rê chuột để xem số đơn và chi quảng cáo.',
+    'rev.title':'Doanh thu, chi phí & lợi nhuận', 'rev.daily':'Ngày', 'rev.weekly':'Tuần', 'rev.monthly':'Tháng', 'rev.peak':'Đỉnh', 'rev.bar':'Cột', 'rev.line':'Đường', 'stmt.compact':'Thu gọn', 'stmt.full':'Chi tiết', 'rev.note':'Cao nhất {day}: {best}', 'rev.caption':'Cùng số với báo cáo P&L, theo ngày đặt hàng (giờ Los Angeles). Doanh thu thuần = gộp − giảm giá − hoàn tiền. Chi phí đơn hàng = giá vốn COGS (sản phẩm, bao bì, fulfillment, cước) + phí giao dịch. Marketing & quảng cáo = quảng cáo, affiliate, agency, creator. Chi phí vận hành = kho bãi & logistics + G&A. Lợi nhuận = EBITDA = doanh thu thuần − tất cả các khoản trên. Bấm vào chú thích để ẩn/hiện từng cột; số cạnh chú thích là tổng cả kỳ.',
     'chan.title':'Kênh bán', 'chan.note':'{total} trên {n} kênh', 'chan.avgDay':'Trung bình mỗi ngày', 'chan.perOrder':'Doanh thu mỗi đơn',
     'pl.title':'Dòng sản phẩm', 'pl.line':'Dòng sản phẩm', 'pl.share':'Tỷ trọng', 'pl.vsPrior':'so kỳ trước', 'pl.cover':'Ngày còn hàng', 'pl.dollar':'Mỗi $100 doanh thu thuần đi đâu',
     'pl.note':'{n} dòng trên {ch}{cov}', 'pl.caption':'Doanh thu, phí và quảng cáo phân bổ cho dòng theo tỷ trọng doanh thu gộp của từng kênh; fulfillment theo units. Ngày còn hàng = FBA bán được + ShipMonk sẵn bán ÷ units bán mỗi ngày (30 ngày gần nhất). Dòng sản phẩm lấy từ data/products.json.',
@@ -1565,7 +1565,7 @@
         else rows.push({...stLine(base+tv(' — fees not connected', ' — phí chưa kết nối'), 0, nr, null, 'opvar'), detail:true, neg:true, gap:true});
       });
       if(a.afterpayOrders>0){
-        rows.push({...stLine(tv('Afterpay (instalments) — ', 'Afterpay (trả góp) — ')+a.afterpayOrders.toLocaleString('en-US')+' '+tx('u.orders')+', '+money(a.afterpayAmount)+tv(' collected through this gateway — fee ', ' thu qua cổng này — phí ')+(AFTERPAY_FEE.pct*100).toFixed(0)+'% + $'+AFTERPAY_FEE.fixed.toFixed(2)+tv('/order (contract rate)', '/đơn (biểu phí hợp đồng)'), -a.afterpayFees, nr, null, 'opvar'), detail:true, neg:true, live:true, est:false, estTitle: tv('Afterpay contract rate: 6% + $0.30 per order for US buyers (8% + $0.30 for Canada). Checked against Afterpay\'s settlement reports 06/2025–07/2026: 187/187 US orders and 7/7 CA orders match to the cent; the fee is not returned on refunds.', 'Biểu phí hợp đồng Afterpay: 6% + $0,30/đơn với khách Mỹ (8% + $0,30 với khách Canada). Đối chiếu báo cáo settlement Afterpay 06/2025–07/2026: 187/187 đơn Mỹ và 7/7 đơn Canada khớp tới cent; phí không được hoàn khi refund.'), hget: x=>-x.afterpayFees});
+        rows.push({...stLine(tv('Afterpay (instalments) — ', 'Afterpay (trả góp) — ')+a.afterpayOrders.toLocaleString('en-US')+' '+tx('u.orders')+', '+money(a.afterpayAmount)+tv(' collected through this gateway — fee ', ' thu qua cổng này — phí ')+(AFTERPAY_FEE.pct*100).toFixed(0)+'% + $'+AFTERPAY_FEE.fixed.toFixed(2)+tv('/order (contract rate)', '/đơn (biểu phí hợp đồng)'), -a.afterpayFees, nr, null, 'opvar'), detail:true, xp:true, neg:true, live:true, est:false, estTitle: tv('Afterpay contract rate: 6% + $0.30 per order for US buyers (8% + $0.30 for Canada). Checked against Afterpay\'s settlement reports 06/2025–07/2026: 187/187 US orders and 7/7 CA orders match to the cent; the fee is not returned on refunds.', 'Biểu phí hợp đồng Afterpay: 6% + $0,30/đơn với khách Mỹ (8% + $0,30 với khách Canada). Đối chiếu báo cáo settlement Afterpay 06/2025–07/2026: 187/187 đơn Mỹ và 7/7 đơn Canada khớp tới cent; phí không được hoàn khi refund.'), hget: x=>-x.afterpayFees});
       }
     } else if(a.paypalDays===0){
       rows.push({...stLine(tv('Payment processing fees (Shopify Payments / PayPal / ShopPay) — not connected', 'Phí cổng thanh toán (Shopify Payments / PayPal / ShopPay) — chưa kết nối'), -a.paymentFees, nr, 'var', 'opvar'), neg:true, gap:true});
@@ -1636,8 +1636,8 @@
       rows.push({...stLine(tv('Creator/affiliate commission — TikTok Shop (actual fees on settled orders', 'Hoa hồng creator/affiliate — TikTok Shop (phí thật đơn đã quyết toán')+(estA ? tv(' + estimate for unsettled orders', ' + ước tính đơn chưa quyết toán') : '')+')', -a.tiktokAffiliate, nr, 'var', 'mkt'), neg: a.tiktokAffiliate>=0, live:true, est: estA, estTitle: estA ? tv('Creator commission varies per order (0–30%). ', 'Hoa hồng creator thay đổi theo từng đơn (0–30%). ')+money(a.tiktokAffiliateEst)+tv(' is an estimate at the average rate of settled orders.', ' là ước tính theo tỷ lệ trung bình của các đơn đã quyết toán.') : '', hget: x=>-x.tiktokAffiliate});
       rows.push({...stLine(tv('Smart Promotion — TikTok Shop (in-marketplace ads, charged on revenue)', 'Smart Promotion — TikTok Shop (quảng cáo trong sàn, tính theo doanh thu)')+(estP ? tv(' · unsettled orders: estimate', ' · đơn chưa quyết toán: ước tính') : ''), -a.tiktokSmart, nr, 'var', 'mkt'), neg: a.tiktokSmart>=0, live:true, est: estP, estTitle: estP ? money(a.tiktokSmartEst)+tv(' is an estimate at the rate of settled orders.', ' là ước tính theo tỷ lệ của các đơn đã quyết toán.') : '', hget: x=>-x.tiktokSmart});
     }
-    if(a.walmartDays>0 && a.walmartAds>0.005){
-      rows.push({...stLine(tv('Walmart Connect ads (deducted in the reconciliation report)', 'Quảng cáo Walmart Connect (khoản trừ trong báo cáo đối soát)'), -a.walmartAds, nr, 'var', 'mkt'), neg:true, live:true, hget: x=>-x.walmartAds});
+    if(a.walmartDays>0 && Math.abs(a.walmartAds)>0.005){   // V12.6: a credit day shows too (it is in the marketing total)
+      rows.push({...stLine(tv('Walmart Connect ads (deducted in the reconciliation report)', 'Quảng cáo Walmart Connect (khoản trừ trong báo cáo đối soát)'), -a.walmartAds, nr, 'var', 'mkt'), neg: a.walmartAds>0, live:true, hget: x=>-x.walmartAds});
     }
     // V11.8: marketing without an API, entered monthly in data/opex_monthly.json (US GAAP ASC 720-35: advertising & agency fees = selling & marketing expense)
     const MKT_LABEL = {mkt_agency: tv('Agency creative — Goodo, Adcrate (monthly retainer, by service month)', 'Agency creative — Goodo, Adcrate (phí retainer, theo tháng dịch vụ)'),
@@ -1774,11 +1774,17 @@
   // breakdowns, ShipMonk per-store rows, reconciliation memo lines, one-off gap fallbacks) are left
   // without `hget`, which renders as a blank cell in the history columns for that row only.
   const SECTION_DEFAULT_OPEN = {cogs:true, opvar:true, mkt:true, logi:true, fixed:true, below:true};
+  // V12.6: the statement opens compact (every section closed, breakdown rows folded); "Detail" opens every section and every
+  // breakdown row (through the V12 fold's "Open all details", whose own button is hidden). Not remembered: each visit starts compact.
+  let STMT_FULL = false;
+  const secDefaultOpen = k => STMT_FULL && !!SECTION_DEFAULT_OPEN[k];
 
   function renderStatement(){
     const rows = currentRows();
     const a = aggregate(rows);
     const built = buildRows(a);
+    const sm = document.getElementById('stmtMode');   // V12.6
+    if(sm){ if(!sm._wired){ sm._wired = true; sm.addEventListener('click', e=>{ const b = e.target.closest('button'); if(!b) return; const full = b.dataset.m==='full'; if(full===STMT_FULL) return; STMT_FULL = full; Object.keys(SECTION_DEFAULT_OPEN).forEach(k=>{ delete collapsed[k]; }); renderStatement(); const xb = sm.closest('.card') && sm.closest('.card').querySelector('.v12-expall'); if(xb && (xb.textContent===tv('Collapse details', 'Thu gọn chi tiết'))!==full) xb.click(); }); } [...sm.querySelectorAll('button')].forEach(b=>{ const on = (b.dataset.m==='full')===STMT_FULL; b.classList.toggle('active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); }); }
     // [] in range mode (no "kỳ trước" concept there) - see the `hget` note above SECTION_DEFAULT_OPEN.
     // Full array so the CURRENT period (last entry, current:true) also gets its own date/label in the
     // header - a bare "Số tiền" column with no date next to 6 clearly-dated history columns reads as
@@ -1810,7 +1816,7 @@
     built.forEach(r=>{
       if(r.t==='section'){
         curSection = r.key;
-        sectionOpen = collapsed[curSection]===undefined ? SECTION_DEFAULT_OPEN[curSection] : !collapsed[curSection];
+        sectionOpen = collapsed[curSection]===undefined ? secDefaultOpen(curSection) : !collapsed[curSection];
         html += `<tr class="section" data-toggle="${r.key}"><td class="label" colspan="${totalCols}"><span class="caret ${sectionOpen?'open':''}">▸</span> ${r.label}</td></tr>`;
         return;
       }
@@ -1835,7 +1841,7 @@
     table.querySelectorAll('tr.section').forEach(tr=>{
       tr.addEventListener('click', ()=>{
         const key = tr.dataset.toggle;
-        const openNow = collapsed[key]===undefined ? SECTION_DEFAULT_OPEN[key] : !collapsed[key];
+        const openNow = collapsed[key]===undefined ? secDefaultOpen(key) : !collapsed[key];
         collapsed[key] = openNow;
         renderStatement();
       });
@@ -2879,8 +2885,17 @@
   }
   const pillOf = (d, lowerIsBetter) => { if(d===null || d===undefined || !isFinite(d)) return ''; const good = lowerIsBetter ? d<=0 : d>=0; const cls = Math.abs(d)<0.05 ? 'flat' : (good ? 'up' : 'down'); const arrow = Math.abs(d)<0.05 ? '' : (d>=0 ? '↑ ' : '↓ '); return `<span class="pill-d ${cls}">${arrow}${Math.abs(d).toFixed(1)}%</span>`; };
 
-  // ---- revenue performance: net revenue + CM3 on one $ axis, daily / weekly / monthly buckets of the period ----
-  const REV_STATE = {g:'day'};
+  // ---- V12.6 revenue chart: net revenue, order costs, marketing, operating costs and profit (EBITDA) — the same figures as the
+  // P&L — per day / week / month of the period, as grouped columns (default) or lines; a legend item switches its series off/on ----
+  const REV_STATE = {g:'day', type:'bar', hide:{}};
+  try{ const t0 = localStorage.getItem('ctu_rev_type'); if(t0==='bar' || t0==='line') REV_STATE.type = t0; }catch(e){}
+  const REV_SERIES = [
+    {k:'net', c:'var(--series-1)', get l(){ return tx('m.netRevenue'); }},
+    {k:'order', c:'var(--series-3)', get l(){ return tv('Order costs', 'Chi phí đơn hàng'); }},
+    {k:'mkt', c:'var(--series-6)', get l(){ return tv('Marketing & ads', 'Marketing & quảng cáo'); }},
+    {k:'opex', c:'var(--series-5)', get l(){ return tv('Operating costs', 'Chi phí vận hành'); }},
+    {k:'profit', c:'var(--series-4)', get l(){ return tv('Profit (EBITDA)', 'Lợi nhuận (EBITDA)'); }},
+  ];
   function bucketRows(rows, g){
     if(g==='day') return rows.map(r=>({label: r.iso, rows:[r]}));
     const map = {}, order = [];
@@ -2890,39 +2905,68 @@
   function renderRev(){
     const svg = document.getElementById('revChart'); if(!svg) return;
     const rows = currentRows();
-    const seg = document.getElementById('revSeg');
+    const seg = document.getElementById('revSeg'), tseg = document.getElementById('revType'), lg = document.getElementById('revLegend');
     if(seg && !seg._wired){ seg._wired = true; seg.addEventListener('click', e=>{ const b = e.target.closest('button'); if(!b) return; REV_STATE.g = b.dataset.g; renderRev(); }); }
-    if(seg) [...seg.querySelectorAll('button')].forEach(b=>b.classList.toggle('active', b.dataset.g===REV_STATE.g));
-    const g = rows.length<14 ? 'day' : REV_STATE.g;
+    if(tseg && !tseg._wired){ tseg._wired = true; tseg.addEventListener('click', e=>{ const b = e.target.closest('button'); if(!b) return; REV_STATE.type = b.dataset.t==='line' ? 'line' : 'bar'; try{ localStorage.setItem('ctu_rev_type', REV_STATE.type); }catch(_){} renderRev(); }); }
+    if(lg && !lg._wired){ lg._wired = true; lg.addEventListener('click', e=>{ const b = e.target.closest('button[data-k]'); if(!b) return; const k = b.dataset.k; if(!REV_STATE.hide[k] && REV_SERIES.filter(s=>!REV_STATE.hide[s.k]).length<=1) return; REV_STATE.hide[k] = !REV_STATE.hide[k]; renderRev(); }); }
+    const bar = REV_STATE.type==='bar';
+    let g = rows.length<14 ? 'day' : REV_STATE.g;
+    const autoWeek = bar && g==='day' && rows.length>62; if(autoWeek) g = 'week';   // more than ~62 day columns per series is unreadable
+    if(seg) [...seg.querySelectorAll('button')].forEach(b=>b.classList.toggle('active', b.dataset.g===g));
+    if(tseg) [...tseg.querySelectorAll('button')].forEach(b=>b.classList.toggle('active', b.dataset.t===REV_STATE.type));
     const buckets = bucketRows(rows, g);
     const daily = g==='day' ? dailyAgg(rows) : null;
-    const series = buckets.map((b,i)=>{ const x = daily ? daily[i] : aggregate(b.rows); return {label: b.label, n: b.rows.length, net: x.netRevenue, cm: x.contributionProfit, orders: x.totalOrders, ads: x.merSpend}; });
-    const W = Math.max(320, svg.clientWidth || svg.parentNode.clientWidth || 800), H = 240, padL = 52, padR = 14, padT = 18, padB = 26;
-    const vals = series.map(s=>s.net).concat(series.map(s=>s.cm));
-    const maxY = Math.max(1, ...vals)*1.1, minY = Math.min(0, ...vals)*1.1;
-    const n = series.length, X = i => padL + (n>1 ? i/(n-1) : 0.5)*(W-padL-padR), Y = v => padT + (1-(v-minY)/(maxY-minY))*(H-padT-padB);
-    const grid = resolveVar('var(--gridline)'), ink = resolveVar('var(--ink-muted)'), c1 = resolveVar('var(--series-1)'), c4 = resolveVar('var(--series-4)');
+    const series = buckets.map((b,i)=>{ const x = daily ? daily[i] : aggregate(b.rows); return {label: b.label, n: b.rows.length, net: x.netRevenue, order: x.cogs + x.feesTotal, mkt: x.marketingTotal, opex: x.fixedTotal, profit: x.netProfit, orders: x.totalOrders, ads: x.merSpend}; });
+    const vis = REV_SERIES.filter(s=>!REV_STATE.hide[s.k]);
+    const W = Math.max(320, svg.clientWidth || svg.parentNode.clientWidth || 800), H = 260, padL = 54, padR = 12, padT = 16, padB = 26;
+    const vals = []; series.forEach(s=>vis.forEach(v=>vals.push(s[v.k])));
+    let maxY = Math.max(1, ...vals), minY = Math.min(0, ...vals);
+    const raw = (maxY-minY)/4, mag = Math.pow(10, Math.floor(Math.log10(raw))), fr = raw/mag, step = (fr<=1 ? 1 : fr<=2 ? 2 : fr<=2.5 ? 2.5 : fr<=5 ? 5 : 10)*mag;
+    maxY = Math.ceil(maxY/step)*step; minY = Math.floor(minY/step)*step; if(maxY<=minY) maxY = minY + step;
+    const n = series.length, plotW = W-padL-padR, slot = plotW/Math.max(1,n);
+    const X = bar ? (i => padL + (i+0.5)*slot) : (i => padL + (n>1 ? i/(n-1) : 0.5)*plotW);
+    const Y = v => padT + (1-(v-minY)/(maxY-minY))*(H-padT-padB);
+    const grid = resolveVar('var(--gridline)'), ink = resolveVar('var(--ink-muted)'), ink1 = resolveVar('var(--ink-primary)');
+    const col = {}; REV_SERIES.forEach(s=>{ col[s.k] = resolveVar(s.c); });
+    const tick = v => Math.abs(v)>=1000 ? money(v,{compact:true}).replace(/\.0(k|M)$/, '$1') : (v<0 ? '-' : '')+'$'+Math.round(Math.abs(v));
     let out = '';
-    for(let i=0;i<=4;i++){ const v = minY + (maxY-minY)*i/4; out += `<line x1="${padL}" x2="${W-padR}" y1="${Y(v)}" y2="${Y(v)}" stroke="${grid}" stroke-width="1"/><text x="${padL-6}" y="${Y(v)+4}" text-anchor="end" font-size="10" fill="${ink}">${money(v,{compact:true})}</text>`; }
+    const nt = Math.round((maxY-minY)/step);
+    for(let i=0;i<=nt;i++){ const v = minY + step*i, y = Y(v).toFixed(1); out += `<line x1="${padL}" x2="${W-padR}" y1="${y}" y2="${y}" stroke="${grid}" stroke-width="1"/><text x="${padL-6}" y="${(+y+3.5).toFixed(1)}" text-anchor="end" font-size="10" fill="${ink}">${tick(v)}</text>`; }
     const labelOf = s => g==='month' ? (LANG==='vi' ? 'T'+parseInt(s.label.slice(5,7),10) : MONTHS_EN[+s.label.slice(5,7)-1]) : fmtDate(new Date(+s.label.slice(0,4), +s.label.slice(5,7)-1, +s.label.slice(8,10)));
-    const step = Math.max(1, Math.ceil(n/8));
-    series.forEach((s,i)=>{ if(i%step===0 || i===n-1) out += `<text x="${X(i)}" y="${H-8}" text-anchor="middle" font-size="10" fill="${ink}">${labelOf(s)}</text>`; });
-    if(minY<0) out += `<line x1="${padL}" x2="${W-padR}" y1="${Y(0)}" y2="${Y(0)}" stroke="${ink}" stroke-width="1" stroke-dasharray="3 3"/>`;
-    const path = key => series.map((s,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(s[key]).toFixed(1)).join(' ');
-    out += `<path d="${path('net')} L${X(n-1).toFixed(1)} ${Y(Math.max(0,minY)).toFixed(1)} L${X(0).toFixed(1)} ${Y(Math.max(0,minY)).toFixed(1)} Z" fill="${c1}" fill-opacity=".08"/>`;
-    out += `<path d="${path('net')}" fill="none" stroke="${c1}" stroke-width="2.2" stroke-linejoin="round"/>`;
-    out += `<path d="${path('cm')}" fill="none" stroke="${c4}" stroke-width="2" stroke-linejoin="round"/>`;
-    // peak label
+    const lstep = Math.max(1, Math.ceil(n/(W<560 ? 5 : 9)));
+    series.forEach((s,i)=>{ if(i%lstep===0 || (i===n-1 && (n-1)%lstep>=lstep/2)) out += `<text x="${X(i).toFixed(1)}" y="${H-8}" text-anchor="${!bar && n>1 && i===0 ? 'start' : (!bar && n>1 && i===n-1 ? 'end' : 'middle')}" font-size="10" fill="${ink}">${labelOf(s)}</text>`; });
+    out += `<rect id="revHover" x="0" y="${padT}" width="0" height="${H-padT-padB}" fill="${ink1}" fill-opacity=".06"/>`;
+    if(bar){
+      const k = vis.length, gw = Math.min(slot*0.8, k*18 + (k-1)), bw = Math.max(0.8, (gw - (k-1)*(slot>=k*4 ? 1 : 0))/k), gap = slot>=k*4 ? 1 : 0;
+      series.forEach((s,i)=>{ const x0 = X(i) - gw/2; vis.forEach((v,j)=>{ const val = s[v.k]; if(!val) return; const y0 = Y(Math.max(0,val)), y1 = Y(Math.min(0,val)); out += `<rect x="${(x0 + j*(bw+gap)).toFixed(2)}" y="${y0.toFixed(1)}" width="${bw.toFixed(2)}" height="${Math.max(1, y1-y0).toFixed(1)}" rx="${bw>=7 ? 1.5 : 0}" fill="${col[v.k]}"/>`; }); });
+    } else {
+      const path = key => series.map((s,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(s[key]).toFixed(1)).join(' ');
+      if(!REV_STATE.hide.net && n>1) out += `<path d="${path('net')} L${X(n-1).toFixed(1)} ${Y(Math.max(0,minY)).toFixed(1)} L${X(0).toFixed(1)} ${Y(Math.max(0,minY)).toFixed(1)} Z" fill="${col.net}" fill-opacity=".07"/>`;
+      vis.forEach(v=>{ if(n>1) out += `<path d="${path(v.k)}" fill="none" stroke="${col[v.k]}" stroke-width="${v.k==='net' ? 2.2 : 1.8}" stroke-linejoin="round" stroke-linecap="round"/>`; if(n<=31) series.forEach((s,i)=>{ out += `<circle cx="${X(i).toFixed(1)}" cy="${Y(s[v.k]).toFixed(1)}" r="${n>1 ? 2.2 : 4}" fill="${col[v.k]}"/>`; }); });
+    }
+    if(minY<0) out += `<line x1="${padL}" x2="${W-padR}" y1="${Y(0).toFixed(1)}" y2="${Y(0).toFixed(1)}" stroke="${ink}" stroke-width="1"/>`;
     let pi = 0; series.forEach((s,i)=>{ if(s.net>series[pi].net) pi = i; });
-    if(n>1){ const px = X(pi), py = Y(series[pi].net); out += `<circle cx="${px}" cy="${py}" r="3.5" fill="${c1}"/><text x="${px}" y="${Math.max(10, py-9)}" text-anchor="${pi>n*0.8?'end':(pi<n*0.2?'start':'middle')}" font-size="10.5" font-weight="600" fill="${resolveVar('var(--ink-primary)')}">${tx('rev.peak')} ${money(series[pi].net,{compact:true})}</text>`; }
-    // hover
-    out += series.map((s,i)=>`<rect data-i="${i}" x="${(X(i)-(W-padL-padR)/Math.max(1,n-1)/2).toFixed(1)}" y="${padT}" width="${((W-padL-padR)/Math.max(1,n-1)).toFixed(1)}" height="${H-padT-padB}" fill="transparent"/>`).join('');
+    if(!bar && n>1 && !REV_STATE.hide.net){ const px = X(pi), py = Y(series[pi].net); out += `<text x="${px.toFixed(1)}" y="${Math.max(10, py-9).toFixed(1)}" text-anchor="${pi>n*0.8?'end':(pi<n*0.2?'start':'middle')}" font-size="10.5" font-weight="600" fill="${ink1}">${tx('rev.peak')} ${money(series[pi].net,{compact:true})}</text>`; }
+    const hx = i => bar ? padL + i*slot : X(i) - (n>1 ? plotW/(n-1)/2 : plotW/2), hw = bar ? slot : (n>1 ? plotW/(n-1) : plotW);
+    out += series.map((s,i)=>`<rect data-i="${i}" x="${hx(i).toFixed(1)}" y="${padT}" width="${hw.toFixed(1)}" height="${H-padT-padB}" fill="transparent"/>`).join('');
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('height', H); svg.innerHTML = out;
-    const tip = document.getElementById('revTip');
-    if(tip){ svg.onmousemove = e=>{ const r = e.target.closest('rect[data-i]'); if(!r){ tip.style.opacity = 0; return; } const s = series[+r.dataset.i]; tip.innerHTML = `<div class="t-title">${labelOf(s)}${s.n>1 ? ' · '+s.n+' '+tx('u.days') : ''}</div><div class="t-row"><span>${tx('m.netRevenue')}</span><b>${money(s.net)}</b></div><div class="t-row"><span>CM3</span><b>${money(s.cm)}</b></div><div class="t-row"><span>${tx('m.orders')}</span><b>${intFmt(s.orders)}</b></div><div class="t-row"><span>${tx('m.adSpend')}</span><b>${money(s.ads)}</b></div>`; tip.style.opacity = 1; const bx = svg.getBoundingClientRect(); tip.style.left = Math.min(bx.width-170, Math.max(0, e.clientX-bx.left+12))+'px'; tip.style.top = Math.max(0, e.clientY-bx.top-70)+'px'; }; svg.onmouseleave = ()=>{ tip.style.opacity = 0; }; }
+    const tip = document.getElementById('revTip'), hov = svg.querySelector('#revHover');
+    if(tip){
+      svg.onmousemove = e=>{
+        const r = e.target.closest('rect[data-i]'); if(!r){ tip.style.opacity = 0; if(hov) hov.setAttribute('width', 0); return; }
+        const i = +r.dataset.i, s = series[i];
+        if(hov){ hov.setAttribute('x', bar ? hx(i).toFixed(1) : (X(i)-1).toFixed(1)); hov.setAttribute('width', bar ? hw.toFixed(1) : 2); }
+        tip.innerHTML = `<div class="t-title">${labelOf(s)}${s.n>1 ? ' · '+s.n+' '+tx('u.days') : ''}</div>` + REV_SERIES.map(v=>`<div class="t-row${REV_STATE.hide[v.k] ? ' off' : ''}"><span><i class="sw" style="background:${col[v.k]}"></i>${v.l}</span><b>${money(s[v.k])}</b></div>`).join('') + `<div class="t-row sep"><span>${tv('Profit margin', 'Biên lợi nhuận')}</span><b>${s.net>0 ? (s.profit/s.net*100).toFixed(1)+'%' : '—'}</b></div><div class="t-row"><span>${tx('m.orders')}</span><b>${intFmt(s.orders)}</b></div>`;
+        tip.style.opacity = 1;
+        const bx = svg.getBoundingClientRect(), tw = tip.offsetWidth || 220, th = tip.offsetHeight || 180, cx = e.clientX-bx.left, cy = e.clientY-bx.top;
+        tip.style.left = (cx+14+tw > bx.width ? Math.max(0, cx-14-tw) : cx+14)+'px';
+        tip.style.top = Math.max(0, Math.min(bx.height-th, cy-th/2))+'px';
+      };
+      svg.onmouseleave = ()=>{ tip.style.opacity = 0; if(hov) hov.setAttribute('width', 0); };
+    }
     const best = series[pi];
-    setNote('revNote', n>1 ? tx('rev.note', {best: money(best.net,{compact:true}), day: labelOf(best)}) : '');
-    const lg = document.getElementById('revLegend'); if(lg) lg.innerHTML = `<span class="li"><span class="sw" style="background:${c1}"></span>${tx('m.netRevenue')}</span><span class="li"><span class="sw" style="background:${c4}"></span>CM3</span>`;
+    setNote('revNote', (n>1 ? tx('rev.note', {best: money(best.net,{compact:true}), day: labelOf(best)}) : '') + (autoWeek ? tv(' · columns by week (period over 62 days)', ' · cột theo tuần (kỳ dài hơn 62 ngày)') : ''));
+    if(lg){ const tot = {}; REV_SERIES.forEach(v=>{ tot[v.k] = sum(series.map(s=>s[v.k])); }); lg.innerHTML = REV_SERIES.map(v=>`<button type="button" class="li${REV_STATE.hide[v.k] ? ' off' : ''}" data-k="${v.k}" aria-pressed="${REV_STATE.hide[v.k] ? 'false' : 'true'}" title="${tv('Show / hide', 'Ẩn / hiện')}"><span class="sw" style="background:${col[v.k]}"></span>${v.l}<b>${money(tot[v.k],{compact:true})}</b></button>`).join(''); }
     setNote('revCaption', tx('rev.caption'));
   }
 
@@ -3046,6 +3090,169 @@
     bar.innerHTML = parts.map(p=>`<i style="width:${Math.max(0,per(p.v)).toFixed(1)}%;background:${p.c}" title="${p.l} ${money(p.v,{compact:true})}"></i>`).join('') + (keep>0 ? `<i style="width:${per(keep).toFixed(1)}%;background:var(--series-1)" title="EBITDA"></i>` : '');
     rowsEl.innerHTML = parts.map(p=>`<div class="r"><span class="sw" style="background:${p.c}"></span><span>${p.l}</span><span class="v">$${per(p.v).toFixed(2)}</span><span class="p">${per(p.v).toFixed(0)}%</span></div>`).join('') + `<div class="r keep"><span class="sw" style="background:var(--series-1)"></span><span>${tx('d.keep')}</span><span class="v">$${per(keep).toFixed(2)}</span><span class="p">${per(keep).toFixed(0)}%</span></div>`;
   }
+  // ---------- V12.6: the eye on the overview cards ----------
+  // Profit -> the P&L page for the same dates (as a day / week / month when the dates are exactly one, else a custom range);
+  // a cost card -> the expenses table below.
+  function openEye(key){
+    if(key==='pnl'){ eyeToPnl(); return; }
+    if(key && key.indexOf('exp:')===0) openExpenses(key.slice(4));
+  }
+  function eyeToPnl(){
+    const r = execRange(), f = r[0], t = r[1];
+    let m = 'range';
+    if(f===t){ const i = days.findIndex(d=>d.iso===f); if(i>=0){ m = 'day'; PNL_STATE.selDayIdx = i; } }
+    else {
+      const mk = f.slice(0,7), mr = monthMap[mk];
+      if(mr && mr.length && mr[0].iso===f && mr[mr.length-1].iso===t){ m = 'month'; PNL_STATE.selMonth = mk; }
+      else { const wr = weekMap[f]; if(wr && wr.length && wr[wr.length-1].iso===t){ m = 'week'; PNL_STATE.selWeek = f; } }
+    }
+    PNL_STATE.mode = m; PNL_STATE.rangeFrom = f; PNL_STATE.rangeTo = t;
+    showView('pnl');
+    try{ window.scrollTo({top:0, behavior:'smooth'}); }catch(e){ window.scrollTo(0,0); }
+  }
+
+  // ---------- V12.6: expenses line by line, day by day (opened from the eye on a cost card) ----------
+  // Every cost line of the P&L statement (buildRows) for each day of the period, so the table adds up to the card and to the
+  // P&L: order costs = COGS + transaction fees, marketing, operating costs = warehousing & logistics + G&A, below EBITDA =
+  // depreciation, interest, income tax. Breakdown, memo and reconciliation rows (detail) are not counted twice.
+  const XP_SECS = ['cogs','opvar','mkt','logi','fixed','below'];
+  const XP_GROUP_SECS = {order:['cogs','opvar'], mkt:['mkt'], opex:['logi','fixed'], below:['below']};
+  const XP_GROUPS = ['order','mkt','opex','below'];
+  const XP_STATE = {group:'order', view:'day', sort:'date', q:''};
+  let _xpCache = {key:null};
+  const xpEsc = s => String(s==null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const xpText = (()=>{ const d = document.createElement('div'); return h=>{ d.innerHTML = h; return d.textContent.replace(/\s+/g,' ').trim(); }; })();
+  const xpIsoDate = iso => new Date(+iso.slice(0,4), +iso.slice(5,7)-1, +iso.slice(8,10));
+  const xpSecLabel = s => ({cogs: tv('COGS & fulfillment', 'Giá vốn & fulfillment'), opvar: tv('Transaction fees', 'Phí giao dịch'), mkt: tv('Marketing & ads', 'Marketing & quảng cáo'), logi: tv('Warehousing & logistics', 'Kho bãi & logistics'), fixed: 'G&A', below: tv('Below EBITDA', 'Dưới EBITDA')})[s] || s;
+  const xpGroupLabel = g => ({all: tv('All costs', 'Tất cả chi phí'), order: tv('Order costs', 'Chi phí đơn hàng'), mkt: tv('Marketing & ads', 'Marketing & quảng cáo'), opex: tv('Operating costs', 'Chi phí vận hành'), below: tv('Below EBITDA', 'Dưới EBITDA')})[g] || g;
+  const xpSrc = r => r.gap ? 'gap' : r.est ? 'est' : r.live==='manual' ? 'manual' : (r.live ? 'live' : 'calc');
+  const xpSrcLabel = s => ({gap: tv('Not connected', 'Chưa kết nối'), est: tv('Estimate', 'Ước tính'), manual: tv('Entered', 'Nhập tay'), live: tv('Live', 'Số thật'), calc: tv('Calculated', 'Tính toán')})[s] || '';
+  const xpExpect = (A, g) => g==='order' ? A.cogs + A.feesTotal : g==='mkt' ? A.marketingTotal : g==='opex' ? A.fixedTotal : g==='below' ? A.depreciation + A.interest + A.incomeTax : sum(XP_GROUPS.map(k=>xpExpect(A, k)));
+  function xpLines(a, iso){
+    const out = []; let sec = null;
+    buildRows(a).forEach(r=>{
+      if(r.t==='section'){ sec = r.key; return; }
+      if(r.t==='final'){ sec = null; return; }
+      if(r.t!=='line' || !sec || (r.detail && !r.xp) || !XP_SECS.includes(sec)) return;
+      const v = -(r.value||0); if(Math.abs(v)<0.005) return;
+      const full = xpText(r.label), cut = full.indexOf(' — ');
+      out.push({iso, sec, name: cut>=6 ? full.slice(0, cut) : full, rest: cut>=6 ? full.slice(cut+3) : '', full, amt: v, src: xpSrc(r)});
+    });
+    return out;
+  }
+  function xpData(){
+    const rows = currentRows();
+    const key = (rows[0] ? rows[0].iso : '')+'|'+rows.length+'|'+_maskVer+'|'+LANG;
+    if(_xpCache.key===key) return _xpCache;
+    const daily = dailyAgg(rows), items = [];
+    rows.forEach((r,i)=>{ xpLines(daily[i], r.iso).forEach(x=>items.push(x)); });
+    const A = aggregate(rows);
+    _xpCache = {key, items, period: xpLines(A, null), A, from: rows.length ? rows[0].iso : null, to: rows.length ? rows[rows.length-1].iso : null, n: rows.length};
+    return _xpCache;
+  }
+  function xpFiltered(){
+    const D = xpData();
+    const secs = XP_STATE.group==='all' ? XP_SECS : XP_GROUP_SECS[XP_STATE.group];
+    const src = XP_STATE.view==='period' ? D.period : D.items;
+    const q = XP_STATE.q.trim().toLowerCase();
+    const inGroup = src.filter(x=> secs.includes(x.sec));
+    const list = inGroup.filter(x=> !q || x.full.toLowerCase().includes(q) || xpSecLabel(x.sec).toLowerCase().includes(q) || (x.iso||'').includes(q)).slice();
+    const s = XP_STATE.sort;
+    list.sort((x,y)=> s==='amount' ? (y.amt-x.amt) : s==='name' ? (x.name.localeCompare(y.name) || ((x.iso||'')<(y.iso||'') ? 1 : -1)) : ((x.iso||'')<(y.iso||'') ? 1 : (x.iso||'')>(y.iso||'') ? -1 : (y.amt-x.amt)));
+    return {D, list, inGroup, secs};
+  }
+  function openExpenses(group){
+    XP_STATE.group = (group==='all' || XP_GROUP_SECS[group]) ? group : 'order'; XP_STATE.q = '';
+    let ov = document.getElementById('xpOverlay');
+    if(!ov){
+      ov = document.createElement('div'); ov.id = 'xpOverlay'; ov.className = 'xp-overlay'; ov.hidden = true;
+      ov.innerHTML = `<div class="xp-dialog" role="dialog" aria-modal="true" aria-labelledby="xpTitle"><div class="xp-head"><div><h2 id="xpTitle"></h2><div class="sub" id="xpSub"></div></div><button type="button" class="xp-close" id="xpClose">×</button></div><div class="xp-sum" id="xpSum"></div><div class="xp-ctl"><input type="search" id="xpQ" autocomplete="off"><select id="xpGroup"></select><div class="seg two" id="xpView"><button type="button" data-v="day"></button><button type="button" data-v="period"></button></div><select id="xpSort"></select><button class="btn mini" type="button" id="xpCsv" style="margin-left:0;">CSV</button></div><div class="xp-body" id="xpBody"></div><div class="xp-foot" id="xpFoot"></div></div>`;
+      document.body.appendChild(ov);
+      ov.addEventListener('click', e=>{ if(e.target===ov) closeExpenses(); });
+      ov.querySelector('#xpClose').addEventListener('click', closeExpenses);
+      ov.querySelector('#xpQ').addEventListener('input', e=>{ XP_STATE.q = e.target.value; renderXp(); });
+      ov.querySelector('#xpGroup').addEventListener('change', e=>{ XP_STATE.group = e.target.value; renderXp(); });
+      ov.querySelector('#xpSort').addEventListener('change', e=>{ XP_STATE.sort = e.target.value; renderXp(); });
+      ov.querySelector('#xpView').addEventListener('click', e=>{ const b = e.target.closest('button'); if(!b) return; XP_STATE.view = b.dataset.v; renderXp(); });
+      ov.querySelector('#xpSum').addEventListener('click', e=>{ const b = e.target.closest('button[data-g]'); if(!b) return; XP_STATE.group = b.dataset.g; renderXp(); });
+      ov.querySelector('#xpCsv').addEventListener('click', xpCsv);
+      document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !ov.hidden) closeExpenses(); });
+      try{ window.matchMedia('(max-width:640px)').addEventListener('change', ()=>renderXp()); }catch(e){}
+    }
+    ov.querySelector('#xpQ').value = '';
+    ov._ret = document.activeElement;
+    ov.hidden = false; document.body.classList.add('xp-open');
+    renderXp();
+    const cl = ov.querySelector('#xpClose'); if(cl) cl.focus();
+  }
+  function closeExpenses(){
+    const ov = document.getElementById('xpOverlay'); if(!ov) return;
+    ov.hidden = true; document.body.classList.remove('xp-open');
+    if(ov._ret && ov._ret.focus) try{ ov._ret.focus(); }catch(e){}
+  }
+  function renderXp(){
+    const ov = document.getElementById('xpOverlay'); if(!ov || ov.hidden) return;
+    const {D, list, inGroup, secs} = xpFiltered();
+    const g = XP_STATE.group, A = D.A, byPeriod = XP_STATE.view==='period';
+    const m0 = v => (v<0 ? '-' : '')+'$'+Math.round(Math.abs(v)).toLocaleString('en-US');
+    const span = D.from ? (D.from===D.to ? fmtDateLong(xpIsoDate(D.from)) : fmtDate(xpIsoDate(D.from))+' – '+fmtDateLong(xpIsoDate(D.to))) : '';
+    ov.querySelector('#xpTitle').textContent = tv('Expenses by day', 'Chi phí theo ngày');
+    ov.querySelector('#xpSub').textContent = span+' · '+D.n+' '+tx('u.days')+(maskPartial() ? ' · '+maskLabel() : '')+tv(' · same figures as the P&L', ' · cùng số với báo cáo P&L');
+    ov.querySelector('#xpClose').setAttribute('aria-label', tv('Close', 'Đóng'));
+    ov.querySelector('#xpQ').placeholder = tv('Search a cost line, e.g. FBA, Meta, salary…', 'Tìm khoản chi, vd FBA, Meta, lương…');
+    ov.querySelector('#xpGroup').innerHTML = ['all'].concat(XP_GROUPS).map(k=>`<option value="${k}"${k===g ? ' selected' : ''}>${xpGroupLabel(k)}</option>`).join('');
+    ov.querySelector('#xpSort').innerHTML = [['date', tv('Newest day first', 'Ngày mới nhất trước')], ['amount', tv('Largest first', 'Số tiền lớn nhất trước')], ['name', tv('Name A–Z', 'Tên A–Z')]].map(([k,l])=>`<option value="${k}"${k===XP_STATE.sort ? ' selected' : ''}>${l}</option>`).join('');
+    const vb = ov.querySelectorAll('#xpView button'); vb[0].textContent = tv('By day', 'Theo ngày'); vb[1].textContent = tv('Whole period', 'Cộng cả kỳ'); vb.forEach(b=>b.classList.toggle('active', b.dataset.v===XP_STATE.view));
+    const nr = A.netRevenue;
+    ov.querySelector('#xpSum').innerHTML = `<div class="s"><div class="l">${tx('m.netRevenue')}</div><div class="v">${m0(nr)}</div><div class="p">${tv('EBITDA ', 'EBITDA ')}${m0(A.netProfit)}</div></div>` + XP_GROUPS.map(k=>{ const v = xpExpect(A, k); return `<button type="button" class="s${k===g ? ' active' : ''}" data-g="${k}" aria-pressed="${k===g}"><div class="l">${xpGroupLabel(k)}</div><div class="v">${m0(v)}</div><div class="p">${nr>0 ? (v/nr*100).toFixed(1)+tv('% of net revenue', '% doanh thu thuần') : '—'}</div></button>`; }).join('');
+    const LIM = 1500;
+    // phone width: two columns (cost line with date / group / source underneath, amount); otherwise five columns
+    const narrow = !!(window.matchMedia && window.matchMedia('(max-width:640px)').matches);
+    const grouped = !byPeriod && XP_STATE.sort==='date';
+    const NC = narrow ? 2 : 5;
+    const tag = x => { const cls = {gap:'gap', est:'info', manual:'live', live:'live'}[x.src]; return cls ? `<span class="tag ${cls}"><span class="d"></span>${xpSrcLabel(x.src)}</span>` : `<span style="color:var(--ink-muted);">${xpSrcLabel(x.src)}</span>`; };
+    const dateOf = x => x.iso ? fmtDate(xpIsoDate(x.iso)) : xpEsc(span);
+    const amtCell = x => `<td class="num${x.amt<0 ? ' cr' : ''}">${money(x.amt)}</td>`;
+    const row = x => narrow
+      ? `<tr><td class="nm" title="${xpEsc(x.full)}">${xpEsc(x.name)}<div class="xs">${grouped ? '' : dateOf(x)+' · '}${xpSecLabel(x.sec)} · ${xpSrcLabel(x.src)}</div></td>${amtCell(x)}</tr>`
+      : `<tr><td class="dt">${grouped ? '' : dateOf(x)}</td><td class="nm" title="${xpEsc(x.full)}">${xpEsc(x.name)}${x.rest ? `<span class="rest"> — ${xpEsc(x.rest)}</span>` : ''}</td><td>${xpSecLabel(x.sec)}</td><td>${tag(x)}</td>${amtCell(x)}</tr>`;
+    const total = sum(list.map(x=>x.amt));
+    let h = `<table class="${narrow ? 'narrow' : ''}"><thead><tr>` + (narrow ? `<th>${tv('Cost line', 'Khoản chi')}</th>` : `<th>${byPeriod ? tv('Period', 'Kỳ') : tv('Date', 'Ngày')}</th><th>${tv('Cost line', 'Khoản chi')}</th><th>${tv('Group', 'Nhóm')}</th><th>${tv('Source', 'Nguồn số')}</th>`) + `<th class="num">${tv('Amount', 'Số tiền')}</th></tr></thead><tbody>`;
+    let shown = 0;
+    if(grouped){
+      const dayTot = {}, dayN = {}; list.forEach(x=>{ dayTot[x.iso] = (dayTot[x.iso]||0) + x.amt; dayN[x.iso] = (dayN[x.iso]||0) + 1; });
+      let cur = null;
+      for(const x of list){ if(shown>=LIM) break; if(x.iso!==cur){ cur = x.iso; const d = xpIsoDate(x.iso); h += `<tr class="day"><td colspan="${NC-1}">${d.toLocaleDateString(LANG==='vi' ? 'vi-VN' : 'en-US', {weekday:'short'})} ${narrow ? fmtDate(d) : fmtDateLong(d)} · ${dayN[x.iso]} ${tv('lines', 'khoản')}</td><td class="num">${money(dayTot[x.iso])}</td></tr>`; } h += row(x); shown++; }
+    } else { list.slice(0, LIM).forEach(x=>{ h += row(x); shown++; }); }
+    if(!list.length) h += `<tr class="more"><td colspan="${NC}">${tv('No cost line matches.', 'Không có khoản chi nào khớp.')}</td></tr>`;
+    if(list.length>shown) h += `<tr class="more"><td colspan="${NC}">${tv('Showing the first ', 'Đang hiện ')+intFmt(shown)+tv(' of ', ' / ')+intFmt(list.length)+tv(' lines — the CSV has all of them.', ' dòng — file CSV có đủ tất cả.')}</td></tr>`;
+    h += `</tbody><tfoot><tr><td colspan="${NC-1}">${tv('Total', 'Tổng')} · ${intFmt(list.length)} ${tv('lines', 'dòng')}${XP_STATE.q.trim() ? tv(' matching the search', ' khớp ô tìm') : ''}</td><td class="num">${money(total)}</td></tr></tfoot></table>`;
+    ov.querySelector('#xpBody').innerHTML = h;
+    // reconciliation with the P&L
+    const exp = xpExpect(A, g), got = sum(inGroup.map(x=>x.amt)), diff = got - exp;
+    const what = {
+      all: tv('All costs = order costs + marketing + operating costs + below EBITDA.', 'Tất cả = chi phí đơn hàng + marketing + chi phí vận hành + dưới EBITDA.'),
+      order: tv('Order costs = total COGS (product cost FIFO, packaging, fulfillment, postage) + transaction fees (marketplace commissions, payment processing).', 'Chi phí đơn hàng = tổng giá vốn COGS (giá vốn sản phẩm FIFO, bao bì, fulfillment, cước) + phí giao dịch (hoa hồng sàn, cổng thanh toán).'),
+      mkt: tv('Marketing & ads = paid ads, affiliate commissions, agency, creators, Amazon DSP.', 'Marketing & quảng cáo = quảng cáo trả phí, hoa hồng affiliate, agency, creator, Amazon DSP.'),
+      opex: tv('Operating costs = warehousing & logistics (storage, 3PL) + G&A (salaries, software, office…). Monthly figures are spread evenly over the days of the month.', 'Chi phí vận hành = kho bãi & logistics (lưu kho, 3PL) + G&A (lương, phần mềm, văn phòng…). Số theo tháng được rải đều cho các ngày trong tháng.'),
+      below: tv('Below EBITDA = depreciation, interest, income tax — not part of EBITDA.', 'Dưới EBITDA = khấu hao, lãi vay, thuế TNDN — không nằm trong EBITDA.'),
+    }[g] || '';
+    const okLine = Math.abs(diff)<0.05
+      ? `<b class="ok">✓ ${tv('Matches the P&L', 'Khớp báo cáo P&L')}: ${money(exp)}</b>`
+      : `<b class="warn">${tv('P&L ', 'P&L ')}${money(exp)} · ${tv('this table ', 'bảng này ')}${money(got)} · ${tv('difference ', 'chênh ')}${money(diff)}</b>` + ((g==='below' || g==='all') && !byPeriod ? tv(' (income tax is estimated on the whole period, so its day-by-day split differs — "Whole period" matches)', ' (thuế TNDN ước tính trên cả kỳ nên chia theo ngày lệch một chút — chế độ "Cộng cả kỳ" khớp)') : '');
+    ov.querySelector('#xpFoot').innerHTML = okLine + ' · ' + what + ' ' + tv('Negative amounts reduce costs (e.g. card cashback, fee refunds). Breakdown and reconciliation memo rows of the P&L are not repeated here.', 'Số âm là khoản giảm trừ chi phí (vd hoàn tiền thẻ, hoàn phí). Các dòng breakdown và ghi nhớ đối chiếu của P&L không lặp lại ở đây.');
+  }
+  function xpCsv(){
+    const {D, list} = xpFiltered();
+    const q = s => '"'+String(s==null ? '' : s).replace(/"/g,'""')+'"';
+    const lines = [[XP_STATE.view==='period' ? tv('Period', 'Kỳ') : tv('Date', 'Ngày'), tv('Cost line', 'Khoản chi'), tv('Full description', 'Diễn giải đầy đủ'), tv('Group', 'Nhóm'), tv('Source', 'Nguồn số'), tv('Amount (USD)', 'Số tiền (USD)')].map(q).join(',')];
+    list.forEach(x=> lines.push([q(x.iso || (D.from+' – '+D.to)), q(x.name), q(x.full), q(xpSecLabel(x.sec)), q(xpSrcLabel(x.src)), x.amt.toFixed(2)].join(',')));
+    lines.push([q(tv('Total', 'Tổng')), q(''), q(''), q(''), q(''), sum(list.map(x=>x.amt)).toFixed(2)].join(','));
+    const blob = new Blob(['﻿'+lines.join('\n')], {type:'text/csv;charset=utf-8'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'cattasaurus-expenses-'+XP_STATE.group+'-'+(D.from||'')+'_'+(D.to||'')+(XP_STATE.view==='period' ? '-period' : '-daily')+'.csv';
+    document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
   function renderExec(){
     const el = document.getElementById('execKpis'); if(!el) return;
     const rows = currentRows();
@@ -3061,33 +3268,51 @@
     const cmp = EXEC_STATE.cmp;
     const dl = (dPrev, dYear, dFix) => cmp==='none' ? [dFix||''] : (cmp==='year' ? [dYear, dPrev, dFix||''] : [dPrev, dYear, dFix||'']);
     const ncacNow = ncac({a, newC});
-    const tiles = [
-      {label:tv('Net revenue','Doanh thu thuần'), value: money(a.netRevenue, {compact:true}), title: money(a.netRevenue),
-        deltas: dl(deltaLine(lk, p && dAbs(a.netRevenue, p.netRevenue)), deltaLine(tx('u.lastYear'), ly && dAbs(a.netRevenue, ly.netRevenue)), deltaLine(tx('u.plan'), planNet!==null ? dAbs(a.netRevenue, planNet) : null)),
-        foot: (planNet===null ? tv('Company plan: not entered','Kế hoạch tổng: chưa nhập') : tv('Plan for this period ','Kế hoạch kỳ này ')+money(planNet,{compact:true})) + (refundPct(a)!==null ? tv(' · refunds ',' · hoàn tiền ')+refundPct(a).toFixed(1)+tv('% of gross sales','% doanh thu gộp') : ''), alert: refundPct(a)!==null && refundPct(a)>8},
-      {label:tv('CM3 — contribution margin','CM3 — LN đóng góp'), value: money(a.contributionProfit, {compact:true}), title: money(a.contributionProfit),
-        deltas: dl(deltaLine(lk, p && dAbs(a.contributionProfit, p.contributionProfit)), deltaLine(tx('u.lastYear'), ly && dAbs(a.contributionProfit, ly.contributionProfit)), deltaLine(tx('u.plan'), planCm3!==null ? dAbs(a.contributionProfit, planCm3) : null)),
-        foot: (a.netRevenue>0 ? (a.contributionProfit/a.netRevenue*100).toFixed(1)+tv('% of net revenue','% doanh thu thuần') : '') + (a.productCostHasLots ? tv(' · product cost FIFO by receipt lot',' · giá vốn FIFO theo lô nhập')+(a.productCostEstAmount>0.5 ? tv(' + estimate',' + ước tính') : '') : a.productCostHasActual ? (a.productCostEst ? tv(' · product cost mostly from the ledger',' · giá vốn phần lớn theo sổ kho') : tv(' · product cost from the ledger',' · giá vốn theo sổ kho')) : (a.productCostEst ? tv(' · product cost estimated at ',' · giá vốn ước ')+(a.cogsEstRate*100).toFixed(0)+'%' : tv(' · product cost not deducted',' · chưa trừ giá vốn')))},
-      {label:'EBITDA', value: money(a.netProfit, {compact:true}), title: money(a.netProfit),
-        deltas: dl(deltaLine(lk, p && dAbs(a.netProfit, p.netProfit)), deltaLine(tx('u.lastYear'), ly && dAbs(a.netProfit, ly.netProfit)), deltaLine(tx('u.margin'), a.netRevenue>0 && p && p.netRevenue>0 ? (a.netProfit/a.netRevenue - p.netProfit/p.netRevenue)*100 : null, {pts:true})),
-        foot: (a.netRevenue>0 ? tv('Margin ','Biên ')+(a.netProfit/a.netRevenue*100).toFixed(1)+'%' : '') + (a.opexDays>0 ? (a.opexEstDays>0 ? tv(' · G&A includes estimate (month not closed)',' · G&A có tạm tính (tháng chưa chốt)') : tv(' · G&A entered manually',' · G&A nhập tay')) : tv(' · no G&A yet',' · chưa có G&A')) + ((a.productCostEst||a.productCostHasActual||a.productCostHasLots) ? '' : tv(' · product cost not deducted',' · chưa trừ giá vốn'))},
-      {label:'MER', value: merNow.value!==null ? merNow.value.toFixed(2)+'x' : '—',
-        deltas: dl(deltaLine(lk, (merPrev && merPrev.value!==null && merNow.value!==null) ? dAbs(merNow.value, merPrev.value) : null), deltaLine(tx('u.lastYear'), (merLy && merLy.value!==null && merNow.value!==null) ? dAbs(merNow.value, merLy.value) : null), (()=>{ const be = breakEvenMer(a); return be ? `<div class="delta ${merNow.value!==null && merNow.value>=be ? 'up':'down'}"><span class="k">${tx('u.breakEven')}:</span> ${be.toFixed(2)}x</div>` : deltaLine(tx('u.breakEven'), null); })()),
-        foot: merNow.days<merNow.of ? tv('Based on ','Tính trên ')+merNow.days+'/'+merNow.of+tv(' days with complete data (Amazon Ads arrives after ~18:00 VN)',' ngày đủ số (Amazon Ads về sau ~18h VN)') : tv('Every ad source reported','Đủ số mọi nguồn quảng cáo'), alert: merNow.value!==null && breakEvenMer(a) && merNow.value<breakEvenMer(a)},
-      {label:tv('Marketing spend','Chi marketing'), value: money(a.marketingTotal, {compact:true}), title: money(a.marketingTotal),
-        deltas: dl(deltaLine(lk, p && dAbs(a.marketingTotal, p.marketingTotal), {lowerIsBetter:true}), deltaLine(tx('u.lastYear'), ly && dAbs(a.marketingTotal, ly.marketingTotal), {lowerIsBetter:true}), deltaLine(tx('u.plan'), planMkt!==null ? dAbs(a.marketingTotal, planMkt) : null, {lowerIsBetter:true})),
-        foot: (a.netRevenue>0 ? (a.marketingTotal/a.netRevenue*100).toFixed(1)+tv('% of net revenue','% doanh thu thuần') : '') + (ncacNow!==null ? ' · nCAC Shopify '+money(ncacNow)+' ('+intFmt(newC)+tv(' new customers)',' khách mới)') : tv(' · ads ',' · quảng cáo ')+money(a.merSpend,{compact:true}))},
-      {label:tv('Orders · AOV','Đơn hàng · AOV'), value: intFmt(a.totalOrders), title: a.totalOrders+' '+tx('u.orders'),
-        deltas: dl(deltaLine(lk, p && dAbs(a.totalOrders, p.totalOrders)), deltaLine(tx('u.lastYear'), ly && dAbs(a.totalOrders, ly.totalOrders)), deltaLine(tx('u.plan'), planOrders!==null ? dAbs(a.totalOrders, planOrders) : null)),
-        foot: 'AOV '+money(a.blendedAOV)+(p ? ' · '+lk+' '+money(p.blendedAOV) : '')},
-    ];
-    // V10: primary comparison as a pill (top right) + sparkline of the period's daily values
+    // V12.6: eight cards — the value, then the change against the comparison chosen in the picker. The eye on Profit opens
+    // the P&L for the same dates; the eye on a cost card opens that cost line by line, day by day (openExpenses).
     const prim = cmp==='year' ? ly : (cmp==='none' ? null : p), primMer = cmp==='year' ? merLy : (cmp==='none' ? null : merPrev);
-    const pd = [prim && dAbs(a.netRevenue, prim.netRevenue), prim && dAbs(a.contributionProfit, prim.contributionProfit), prim && dAbs(a.netProfit, prim.netProfit), (primMer && primMer.value!==null && merNow.value!==null) ? dAbs(merNow.value, primMer.value) : null, prim && dAbs(a.marketingTotal, prim.marketingTotal), prim && dAbs(a.totalOrders, prim.totalOrders)];
-    const lower = [false, false, false, false, true, false];
-    const daily = rows.length>=3 ? dailyAgg(rows) : null;
-    const sparks = daily ? [daily.map(x=>x.netRevenue), daily.map(x=>x.contributionProfit), daily.map(x=>x.netProfit), daily.map(x=> x.merSpend>0 ? x.merValue : null), daily.map(x=>x.marketingTotal), daily.map(x=>x.totalOrders)] : null;
-    el.innerHTML = tiles.map((t,i)=>`<div class="kpi${t.alert?' alert':''}"><div class="kh"><span class="label">${t.label}</span>${pillOf(pd[i], lower[i])}</div><div class="value" title="${t.title||''}">${t.value}</div><div class="deltas">${t.deltas.slice(1).join('')}</div>${t.foot ? `<div class="foot">${t.foot}</div>` : ''}${sparks ? sparkSvg(sparks[i], {free: i===3}) : ''}</div>`).join('');
+    const primLbl = cmp==='year' ? tx('u.lastYear') : lk;
+    const m0 = v => (v<0 ? '-' : '')+'$'+Math.round(Math.abs(v)).toLocaleString('en-US');
+    const pctOf = (v, base) => base>0 ? (v/base*100).toFixed(1)+'%' : '—';
+    const orderC = x => x.cogs + x.feesTotal;
+    const marginOf = x => x.netRevenue>0 ? x.netProfit/x.netRevenue*100 : null;
+    const beMer = breakEvenMer(a);
+    const costTitle = tv('Open these costs line by line, day by day', 'Xem chi tiết từng khoản chi theo ngày');
+    const cards = [
+      {k:'net', label: tv('Net revenue', 'Doanh thu thuần'), v: a.netRevenue, pv: prim ? prim.netRevenue : null, f: m0,
+        foot: tv('Gross ', 'Gộp ')+m0(a.grossSales)+(refundPct(a)!==null ? tv(' · refunds ', ' · hoàn tiền ')+refundPct(a).toFixed(1)+'%' : '')+(planNet!==null ? tv(' · plan ', ' · kế hoạch ')+m0(planNet)+' ('+pctOf(a.netRevenue, planNet)+')' : ''), alert: refundPct(a)!==null && refundPct(a)>8},
+      {k:'profit', eye:'pnl', label: tv('Profit (EBITDA)', 'Lợi nhuận (EBITDA)'), v: a.netProfit, pv: prim ? prim.netProfit : null, f: m0, title: tv('Open the P&L for these dates', 'Mở báo cáo P&L cho cùng khoảng ngày'),
+        foot: 'CM3 '+m0(a.contributionProfit)+(a.opexDays>0 ? (a.opexEstDays>0 ? tv(' · G&A includes estimate (month not closed)', ' · G&A có tạm tính (tháng chưa chốt)') : '') : tv(' · no G&A yet', ' · chưa có G&A'))+((a.productCostEst||a.productCostHasActual||a.productCostHasLots) ? '' : tv(' · product cost not deducted', ' · chưa trừ giá vốn'))},
+      {k:'margin', pts:true, label: tv('Profit margin', 'Biên lợi nhuận'), v: marginOf(a), pv: prim ? marginOf(prim) : null, f: v => (v===null || v===undefined) ? '—' : (Math.abs(v)<0.05 ? 0 : v).toFixed(1)+'%',
+        foot: tv('EBITDA ÷ net revenue · CM3 ', 'EBITDA ÷ doanh thu thuần · CM3 ')+pctOf(a.contributionProfit, a.netRevenue)},
+      {k:'orders', label: tv('Orders', 'Đơn hàng'), v: a.totalOrders, pv: prim ? prim.totalOrders : null, f: v => intFmt(v),
+        foot: 'AOV '+money(a.blendedAOV)+(prim && prim.blendedAOV ? ' · '+tv('vs ', 'so với ')+money(prim.blendedAOV) : '')},
+      {k:'order', eye:'exp:order', lower:true, label: tv('Order costs', 'Chi phí đơn hàng'), v: orderC(a), pv: prim ? orderC(prim) : null, f: m0, title: costTitle,
+        foot: tv('COGS ', 'Giá vốn ')+m0(a.cogs)+tv(' · fees ', ' · phí ')+m0(a.feesTotal)+' · '+pctOf(orderC(a), a.netRevenue)+tv(' of net revenue', ' doanh thu thuần')},
+      {k:'mkt', eye:'exp:mkt', lower:true, label: tv('Marketing & ads', 'Marketing & quảng cáo'), v: a.marketingTotal, pv: prim ? prim.marketingTotal : null, f: m0, title: costTitle,
+        foot: pctOf(a.marketingTotal, a.netRevenue)+tv(' of net revenue · ads ', ' doanh thu thuần · quảng cáo ')+m0(a.merSpend)+(ncacNow!==null ? ' · nCAC '+money(ncacNow) : '')},
+      {k:'opex', eye:'exp:opex', lower:true, label: tv('Operating costs', 'Chi phí vận hành'), v: a.fixedTotal, pv: prim ? prim.fixedTotal : null, f: m0, title: costTitle,
+        foot: tv('Warehousing ', 'Kho bãi ')+m0(a.inventoryHolding + a.logisticsTotal)+' · G&A '+m0(a.gaTotal)+(a.opexEstDays>0 ? tv(' (incl. estimate)', ' (có tạm tính)') : '')},
+      {k:'mer', label: 'MER', v: merNow.value, pv: primMer ? primMer.value : null, f: v => (v===null || v===undefined) ? '—' : v.toFixed(2)+'x',
+        foot: (beMer ? tv('Break-even ', 'Hoà vốn ')+beMer.toFixed(2)+'x' : '')+(merNow.days<merNow.of ? (beMer ? ' · ' : '')+merNow.days+'/'+merNow.of+tv(' days with every ad source', ' ngày đủ số quảng cáo') : ''), alert: merNow.value!==null && beMer && merNow.value<beMer},
+    ];
+    const eyeSvg = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>';
+    const vsTxt = tv('vs ', 'so với ');
+    const cmpHtml = c => {
+      if(cmp==='none') return '';
+      const ok = v => v!==null && v!==undefined && isFinite(v);
+      if(!ok(c.v) || !ok(c.pv)) return `<div class="cmp flat"><b>—</b><span>${tv('no comparison', 'chưa có số so sánh')}</span></div>`;
+      // a % change on a base at or below zero (profit) means nothing: show the change in dollars there
+      const absD = !c.pts && c.f===m0 && (c.pv<=0 || Math.abs(dAbs(c.v, c.pv)||0)>=1000);
+      const d = (c.pts || absD) ? c.v - c.pv : dAbs(c.v, c.pv);
+      if(d===null || !isFinite(d)) return `<div class="cmp flat"><b>—</b><span title="${primLbl}">${vsTxt}${c.f(c.pv)}</span></div>`;
+      const flat = absD ? Math.abs(d)<0.5 : Math.abs(d)<0.05, good = c.lower ? d<=0 : d>=0;
+      const txt = (flat ? '' : (d>0 ? '↑ ' : '↓ '))+(absD ? m0(Math.abs(d)) : Math.abs(d).toFixed(1)+(c.pts ? ' '+tx('u.pts') : '%'));
+      return `<div class="cmp ${flat ? 'flat' : (good ? 'good' : 'bad')}"><b>${txt}</b><span title="${primLbl}">${vsTxt}${c.f(c.pv)}</span></div>`;
+    };
+    el.classList.add('v126');
+    el.innerHTML = cards.map(c=>`<div class="kpi${c.alert ? ' alert' : ''}${c.eye ? ' act' : ''}"${c.eye ? ` data-eye="${c.eye}" role="button" tabindex="0" title="${c.title||''}" aria-label="${c.label} — ${c.title||''}"` : ''}><div class="kh"><span class="label">${c.label}</span>${c.eye ? `<span class="kpi-eye">${eyeSvg}</span>` : ''}</div><div class="value" title="${c.k==='orders' || c.pts || c.k==='mer' ? '' : money(c.v||0)}">${c.f(c.v)}</div>${cmpHtml(c)}${c.foot ? `<div class="foot">${c.foot}</div>` : ''}</div>`).join('');
+    if(!el._eyeWired){ el._eyeWired = true; const go = e=>{ const c = e.target.closest('[data-eye]'); if(!c || !el.contains(c)) return; if(e.type==='keydown' && e.key!=='Enter' && e.key!==' ') return; e.preventDefault(); openEye(c.dataset.eye); }; el.addEventListener('click', go); el.addEventListener('keydown', go); }
     const _F = fifoState();
     const defCogs = document.getElementById('defCogs'); if(defCogs) defCogs.textContent = (_F && _F.ok ? tv('FIFO by receipt lot from ','FIFO theo lô nhập từ ')+_F.meta.lots+tv(' Notion lots (',' lô Notion (')+_F.meta.skus+tv(' SKUs) on every day with units per SKU since ',' SKU) cho mọi ngày có units theo SKU từ ')+_F.first+'; ' : '') + (Object.keys(COGS_ACTUAL.months).length ? tv('actuals from the accounting inventory ledger for ','số thật từ sổ kho kế toán cho ')+Object.keys(COGS_ACTUAL.months).sort().join(', ')+tv('; the remaining months ','; các tháng còn lại ') : '') + (COGS_EST ? tv('estimated at ','ước ')+(COGS_EST.rate*100).toFixed(0)+'% — '+COGS_EST.basis : tv('not enabled — product cost $0','chưa bật — giá vốn $0'));
     renderPace(rows, a);
@@ -3926,7 +4151,7 @@
     const c = document.getElementById('pageCtx'); if(!c) return;
     const parts = [];
     if(maskPartial()) parts.push(maskLabel());
-    if(!onPnl() && EXEC_STATE.cmp!=='none') parts.push(tx('ctx.vs', {cmp: likeLabel()}));
+    if(!onPnl() && EXEC_STATE.cmp!=='none') parts.push(tx('ctx.vs', {cmp: EXEC_STATE.cmp==='year' ? tx('u.lastYear') : likeLabel()}));   // V12.6: + last year
     const rows = currentRows(); if(rows.length && rows[rows.length-1]._syncing) parts.push(tx('ctx.today'));
     c.textContent = parts.join(' · ');
   }
