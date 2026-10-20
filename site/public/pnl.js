@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build ef5a04cfb4).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build b36cf45808).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -40,7 +40,7 @@
     'nav.exec':'Overview', 'nav.sales':'Sales &amp; customers', 'nav.marketing':'Marketing', 'nav.pnl':'P&amp;L', 'nav.inventory':'Products &amp; inventory', 'nav.opex':'Fixed costs &amp; cash', 'nav.data':'Data',
     'mode.day':'Day', 'mode.week':'Week', 'mode.month':'Month', 'mode.range':'Custom',
     'tb.loadedAt':'When the numbers were loaded (your clock)', 'tb.reload':'Reload the latest numbers', 'tb.install':'Install', 'tb.installTitle':'Install as an app', 'tb.theme':'Light / dark', 'tb.signout':'Sign out',
-    'brief.summary':'In brief', 'brief.moved':'What moved profit', 'brief.risks':'Biggest risks', 'brief.decide':'Decide this week',
+    'brief.summary':'In brief', 'brief.moved':'What moved profit', 'brief.risks':'Biggest risks', 'brief.decide':'Decide this week', 'brief.title':'Brief & actions', 'brief.todo':'What to do', 'brief.why':'Why profit moved',
     'rev.title':'Revenue performance', 'rev.daily':'Daily', 'rev.weekly':'Weekly', 'rev.monthly':'Monthly', 'rev.peak':'Peak', 'rev.note':'Net revenue and CM3 · best {day}: {best}', 'rev.caption':'Net revenue = gross − discounts − refunds, by order date (Los Angeles). CM3 = contribution after product cost, fulfillment, fees and all marketing. Hover for orders and ad spend.',
     'chan.title':'Sales channels', 'chan.note':'{total} across {n} channels', 'chan.avgDay':'Average day', 'chan.perOrder':'Revenue per order',
     'pl.title':'Product lines', 'pl.line':'Product line', 'pl.share':'Share', 'pl.vsPrior':'vs prior', 'pl.cover':'Days of cover', 'pl.dollar':'Where each $100 of net revenue goes',
@@ -58,7 +58,7 @@
     'nav.exec':'Điều hành', 'nav.sales':'Bán hàng &amp; khách', 'nav.marketing':'Marketing', 'nav.pnl':'Lãi lỗ (P&amp;L)', 'nav.inventory':'Sản phẩm &amp; tồn kho', 'nav.opex':'Chi phí cố định &amp; tiền', 'nav.data':'Dữ liệu',
     'mode.day':'Ngày', 'mode.week':'Tuần', 'mode.month':'Tháng', 'mode.range':'Tuỳ chọn',
     'tb.loadedAt':'Giờ tải số liệu (giờ trên máy bạn)', 'tb.reload':'Tải lại số liệu mới nhất', 'tb.install':'Cài app', 'tb.installTitle':'Cài như app lên máy / điện thoại', 'tb.theme':'Sáng / tối', 'tb.signout':'Đăng xuất',
-    'brief.summary':'Tóm tắt kỳ này', 'brief.moved':'Điều gì làm lợi nhuận đổi', 'brief.risks':'Rủi ro lớn nhất', 'brief.decide':'Cần quyết tuần này',
+    'brief.summary':'Tóm tắt kỳ này', 'brief.moved':'Điều gì làm lợi nhuận đổi', 'brief.risks':'Rủi ro lớn nhất', 'brief.decide':'Cần quyết tuần này', 'brief.title':'Tóm tắt & việc cần làm', 'brief.todo':'Việc cần làm', 'brief.why':'Vì sao lợi nhuận đổi',
     'rev.title':'Doanh thu theo thời gian', 'rev.daily':'Ngày', 'rev.weekly':'Tuần', 'rev.monthly':'Tháng', 'rev.peak':'Đỉnh', 'rev.note':'Doanh thu thuần và CM3 · cao nhất {day}: {best}', 'rev.caption':'Doanh thu thuần = gộp − giảm giá − hoàn tiền, theo ngày đặt (giờ Los Angeles). CM3 = lợi nhuận đóng góp sau giá vốn, fulfillment, phí và toàn bộ marketing. Rê chuột để xem số đơn và chi quảng cáo.',
     'chan.title':'Kênh bán', 'chan.note':'{total} trên {n} kênh', 'chan.avgDay':'Trung bình mỗi ngày', 'chan.perOrder':'Doanh thu mỗi đơn',
     'pl.title':'Dòng sản phẩm', 'pl.line':'Dòng sản phẩm', 'pl.share':'Tỷ trọng', 'pl.vsPrior':'so kỳ trước', 'pl.cover':'Ngày còn hàng', 'pl.dollar':'Mỗi $100 doanh thu thuần đi đâu',
@@ -2410,30 +2410,99 @@
     if(cap) cap.textContent = tv('The effects add up exactly to the change in CM3. Computed per channel and then summed: orders per channel (including shifts between channels) in the first rows, the rates below are the total effect across all channels. The order effect uses that channel\'s contribution margin before marketing; marketing spend (not per order) sits on its own in the last row. Right column: value in the prior period → this period at company level.', 'Các hiệu ứng cộng đúng bằng thay đổi CM3. Tính riêng từng kênh rồi cộng lại: số đơn mỗi kênh (gồm cả dịch chuyển giữa các kênh) ở các dòng đầu, các tỷ lệ bên dưới là hiệu ứng tổng của mọi kênh. Hiệu ứng số đơn tính theo biên đóng góp trước marketing của kênh đó; chi marketing (không tính theo đơn) tách riêng ở dòng cuối. Cột phải: giá trị kỳ trước → kỳ này ở mức toàn công ty.');
     return br;
   }
-  // ---- V7: "in brief" block: a two-sentence summary, the top 3 profit drivers, the top 3 things to decide ----
+  // ---- V11.5: brief card — verdict (what happened + why), prioritised actions with money and a link to the detail,
+  // the profit drivers as diverging bars, and the data caveats on one line. Actions = alerts that are not data notes
+  // (kind 'data'); the bridge effects add up exactly to ΔCM3 (see renderBridge).
+  function briefGo(view, id){
+    const show = () => {
+      const el = id ? document.getElementById(id) : null, box = el ? (el.closest('.card') || el) : null;
+      if(!box) return;
+      box.scrollIntoView({behavior:'smooth', block:'start'});
+      box.classList.add('bf-flash'); setTimeout(()=>box.classList.remove('bf-flash'), 1800);
+    };
+    if(view && view!==currentView){ showView(view); setTimeout(show, 150); } else show();
+  }
   function renderBrief(rows, a, p, bridge, alerts, merNow, lk){
-    const sEl = document.getElementById('briefSummary'); if(!sEl) return;
+    const card = document.getElementById('briefCard'); if(!card) return;
+    if(!card.dataset.bound){
+      card.dataset.bound = '1';
+      card.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if(!b) return; const [v, id] = b.dataset.go.split('|'); briefGo(v, id); });
+    }
+    const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const m = v => money(Math.abs(v), {compact:true});
+    const sgn = v => v>=0 ? '+' : '−';
+    const pctOfNet = (x) => x.netRevenue>0 ? x.contributionProfit/x.netRevenue*100 : null;
     const cmD = p ? dAbs(a.contributionProfit, p.contributionProfit) : null, nrD = p ? dAbs(a.netRevenue, p.netRevenue) : null;
-    const byAbs = (x,y)=>Math.abs(y.value)-Math.abs(x.value);
-    const top = bridge ? [...bridge.effects].sort(byAbs)[0] : null;
-    const crit = alerts.filter(i=>i.lvl!=='ok' && i.stake>0).sort((x,y)=>y.stake-x.stake)[0];
-    const cmPct = a.netRevenue>0 ? (a.contributionProfit/a.netRevenue*100).toFixed(1)+'%' : '—';
-    sEl.innerHTML = `<b>CM3 ${money(a.contributionProfit,{compact:true})}</b> (${cmPct} ${tv('of net revenue','doanh thu thuần')})` + (cmD!==null && isFinite(cmD) ? ', '+(cmD>=0?tv('up ','tăng '):tv('down ','giảm '))+Math.abs(cmD).toFixed(0)+'% '+tx('u.vs')+' '+lk : '') + `. ${tv('Net revenue','Doanh thu thuần')} ${money(a.netRevenue,{compact:true})}` + (nrD!==null && isFinite(nrD) ? ' ('+(nrD>=0?'+':'')+nrD.toFixed(0)+'%)' : '') + `, MER ${merNow.value!==null ? merNow.value.toFixed(2)+'x' : '—'}, EBITDA ${money(a.netProfit,{compact:true})}.` + (top ? ` ${tv('Biggest driver','Yếu tố đổi lớn nhất')}: ${top.label} ${top.value>=0?'+':'−'}${money(Math.abs(top.value),{compact:true})}.` : '') + (crit ? ` ${tv('Biggest risk','Rủi ro lớn nhất')}: ${crit.name} — ${money(crit.stake,{compact:true})}.` : '');
-    setNote('briefSummarySub', (document.getElementById('rangeLbl')||{}).textContent + (a.productCostEst ? tv(' · product cost still estimated',' · giá vốn còn ước tính') : '') + (merNow.days<merNow.of ? tv(' · Amazon Ads missing ',' · Amazon Ads thiếu ')+nDays(merNow.of-merNow.days) : ''));
-    const mv = document.getElementById('briefMoved');
+    const fin = v => v!==null && v!==undefined && isFinite(v);
+    const live = alerts.filter(i => i.lvl!=='ok');
+    const acts = live.filter(i => i.kind!=='data').sort((x,y)=> (x.lvl==='crit'?0:1)-(y.lvl==='crit'?0:1) || (y.stake||0)-(x.stake||0));
+    const dataNotes = live.filter(i => i.kind==='data');
+    // ---- 1. verdict ----
+    const crit = acts.some(i => i.lvl==='crit');
+    let tone = 'neutral';
+    if(a.contributionProfit<0 || (fin(cmD) && cmD<=-20) || acts.some(i=>i.key==='mer' && i.lvl==='crit')) tone = 'bad';
+    else if(fin(cmD) && cmD>=5 && !crit) tone = 'good';
+    else if(fin(cmD) || crit) tone = 'warn';
+    const toneLbl = {bad: tv('Needs action','Cần xử lý'), warn: tv('Watch','Cần chú ý'), good: tv('On track','Đang tốt'), neutral: tv('This period','Kỳ này')}[tone];
+    const cmPct = pctOfNet(a), cmPctP = p ? pctOfNet(p) : null;
+    const head = (p && fin(cmD))
+      ? `CM3 ${cmD>=0 ? tv('up','tăng') : tv('down','giảm')} ${Math.abs(cmD).toFixed(0)}% ${tx('u.vs')} ${lk}: <b>${money(p.contributionProfit,{compact:true})} → ${money(a.contributionProfit,{compact:true})}</b>`
+      : `CM3 <b>${money(a.contributionProfit,{compact:true})}</b>` + (cmPct!==null ? ` · ${cmPct.toFixed(1)}% ${tv('of net revenue','doanh thu thuần')}` : '');
+    const effShort = e => { const f = (v,k)=> ['dsc','rf','c','fe'].includes(k) ? (v*100).toFixed(1)+'%' : money(v,{compact:true}); return e.key.startsWith('O') ? intFmt(e.from)+' → '+intFmt(e.to)+' '+tx('u.orders') : f(e.from,e.key)+' → '+f(e.to,e.key); };
+    const effTxt = e => `<b class="${e.value>=0?'up':'dn'}">${esc(e.label)} ${sgn(e.value)}${m(e.value)}</b> <span class="bf-dim">(${effShort(e)})</span>`;
+    let why = '';
     if(bridge){
-      const eff = [...bridge.effects].sort(byAbs).slice(0,3);
-      mv.innerHTML = eff.map(e=>`<div class="r"><span class="n">${e.label}<small>${effDetail(e)}</small></span><span class="v ${e.value>=0?'d-up':'d-down'}">${e.value>=0?'+':'−'}${money(Math.abs(e.value),{compact:true})}</span></div>`).join('');
-      const dd = bridge.end-bridge.start;
-      setNote('briefMovedSub', 'ΔCM3 '+(dd>=0?'+':'−')+money(Math.abs(dd),{compact:true})+' '+tx('u.vs')+' '+lk+tv(' · every effect in the "Profit bridge" card below',' · đủ các yếu tố ở thẻ "Cầu lợi nhuận" bên dưới'));
-    } else { mv.innerHTML = '<div class="r"><span class="n">'+tx('u.noPrior')+'</span></div>'; setNote('briefMovedSub', ''); }
-    const rk = document.getElementById('briefRisks');
-    const risks = alerts.filter(i=>i.lvl!=='ok' && i.stake>0).sort((x,y)=>(y.stake||0)-(x.stake||0)).slice(0,3);
-    if(rk){ rk.innerHTML = risks.length ? risks.map(i=>`<div class="r"><span class="n">${i.name}</span><span class="v">${money(i.stake,{compact:true})}</span></div>`).join('') : `<div class="r"><span class="n">${tv('No money at risk this period','Không có rủi ro tiền trong kỳ')}</span></div>`; setNote('briefRisksSub', risks.length ? tv('$ at stake = what the threshold breach costs this period','$ đặt cược = phần vượt ngưỡng tính ra tiền trong kỳ') : ''); }
-    const dc = document.getElementById('briefDecide');
-    const acts = alerts.filter(i=>i.lvl!=='ok' && i.action).sort((x,y)=>(y.stake||0)-(x.stake||0) || (x.lvl==='crit'?-1:1)).slice(0,3);
-    dc.innerHTML = acts.length ? acts.map(i=>`<div class="r"><span class="n">${i.action}<small>${i.name}</small></span><span class="v">${i.stake>0 ? money(i.stake,{compact:true}) : ''}</span></div>`).join('') : '<div class="r"><span class="n">'+tv('Nothing urgent','Không có việc gấp')+'</span></div>';
-    setNote('briefDecideSub', acts.length ? tv('Sorted by the money affected · full list in the "Alerts" card','Xếp theo số tiền đang bị ảnh hưởng · đủ danh sách ở thẻ "Cảnh báo"') : '');
+      const dd = bridge.end - bridge.start, floor = Math.max(Math.abs(dd)*0.15, 500);
+      const neg = bridge.effects.filter(e=>e.value<0 && Math.abs(e.value)>=floor).sort((x,y)=>x.value-y.value).slice(0,2);
+      const pos = bridge.effects.filter(e=>e.value>0 && e.value>=floor).sort((x,y)=>y.value-x.value).slice(0,2);
+      if(dd<0 && neg.length) why = tv('Pulled down by ','Kéo xuống: ') + neg.map(effTxt).join(', ') + (pos.length ? tv('; offset by ','; bù lại: ') + pos.map(effTxt).join(', ') : '') + '.';
+      else if(dd>=0 && pos.length) why = tv('Lifted by ','Đẩy lên: ') + pos.map(effTxt).join(', ') + (neg.length ? tv('; held back by ','; kéo lại: ') + neg.map(effTxt).join(', ') : '') + '.';
+    }
+    let margin = '';
+    if(p && fin(cmD) && fin(nrD) && cmPct!==null && cmPctP!==null && Math.abs(cmD-nrD)>=10)
+      margin = (cmD<nrD ? tv('Profit fell faster than revenue','Lợi nhuận giảm nhanh hơn doanh thu') : tv('Profit grew faster than revenue','Lợi nhuận tăng nhanh hơn doanh thu'))
+        + ` (CM3 ${sgn(cmD)}${Math.abs(cmD).toFixed(0)}% ${tv('vs net revenue','so với doanh thu thuần')} ${sgn(nrD)}${Math.abs(nrD).toFixed(0)}%): ${tv('CM3 margin','biên CM3')} ${cmPctP.toFixed(1)}% → <b>${cmPct.toFixed(1)}%</b>.`;
+    if(a.netProfit<0) margin += (margin ? ' ' : '') + tv('EBITDA after G&A is ','EBITDA sau G&A đang âm ') + `<b class="dn">−${m(a.netProfit)}</b>.`;
+    document.getElementById('briefVerdict').className = 'bf-verdict t-'+tone;
+    document.getElementById('briefVerdict').innerHTML = `<div class="bf-v1"><span class="bf-tone">${toneLbl}</span><span class="bf-head">${head}</span></div>`
+      + (why ? `<p class="bf-v2">${why}</p>` : '') + (margin ? `<p class="bf-v3">${margin}</p>` : '');
+    // ---- 2. actions ----
+    const can = v => !v || VIEWS.includes(v);
+    const goLbl = {marketing: tv('See ROAS & MER','Xem ROAS & MER'), exec: tv('See pacing','Xem nhịp độ'), sales: tv('See returns by SKU','Xem trả hàng theo SKU'), pnl: tv('See the P&L','Xem lãi lỗ'), inventory: tv('See stock by SKU','Xem tồn kho'), data: tv('See data health','Xem sức khoẻ dữ liệu')};
+    const whyOf = i => {
+      if(i.key==='mer') return i.name;
+      if(i.key==='disc') return i.name + ' · ' + tv('threshold 40%','ngưỡng 40%');
+      if(i.key==='stock') return i.name + (i.soon && i.soon.cover!==null ? ' · ' + (i.soon.cover<1 ? tv('already out: ','đã hết hàng: ') + i.soon.sku : tv('first: ','sớm nhất: ') + i.soon.sku + ' ' + tv('in ','còn ') + Math.floor(i.soon.cover) + tv(' days',' ngày')) : '');
+      return i.name + (i.note ? ' · ' + i.note : '');
+    };
+    const titleOf = i => (i.key==='stock' && i.skus && i.skus.length>1) ? tv('Place or expedite POs for the ','Đặt hoặc đẩy nhanh PO cho ') + i.skus.length + tv(' SKUs at most risk',' SKU rủi ro nhất') : (i.todo || i.action || i.name);
+    const skuTags = i => (i.key==='stock' && i.skus && i.skus.length>1) ? '<div class="bf-skus">' + i.skus.map(k=>'<span class="bf-sku">'+esc(k)+'</span>').join('') + '</div>' : '';
+    const pri = i => i.lvl==='crit' ? ['crit', tv('Urgent','Gấp')] : (i.stake>0 ? ['warn', tv('This week','Tuần này')] : ['watch', tv('Watch','Theo dõi')]);
+    const shown = acts.slice(0, 4);
+    document.getElementById('briefActsN').textContent = acts.length ? String(acts.length) : '';
+    document.getElementById('briefActs').innerHTML = shown.length ? shown.map((i, n) => {
+      const [cls, lbl] = pri(i);
+      const go = i.go && can(i.go[0]) ? `<button type="button" class="bf-go" data-go="${i.go[0]}|${i.go[1]||''}">${goLbl[i.go[0]] || tv('Details','Chi tiết')} →</button>` : '';
+      return `<li class="bf-act ${cls}${n===0?' top':''}"><span class="bf-pri ${cls}">${lbl}</span>`
+        + `<div class="bf-act-b"><div class="bf-act-t">${titleOf(i)}</div>${skuTags(i)}<div class="bf-act-w">${whyOf(i)}</div>${go}</div>`
+        + `<div class="bf-act-v">${i.stake>0 ? `<b>${m(i.stake)}</b><small>${i.stakeLbl || tv('money affected','tiền bị ảnh hưởng')}</small>` : ''}</div></li>`;
+    }).join('') + (acts.length>shown.length ? `<li class="bf-more"><button type="button" class="bf-go" data-go="exec|alertCard">${tv('+ ','+ ')}${acts.length-shown.length}${tv(' more in Alerts',' việc khác ở thẻ Cảnh báo')} →</button></li>` : '')
+      : `<li class="bf-none">${tv('Nothing urgent this period — no threshold breached.','Kỳ này không có việc gấp — chưa vượt ngưỡng nào.')}</li>`;
+    // ---- 3. drivers ----
+    const dr = document.getElementById('briefDrivers');
+    if(bridge){
+      const eff = [...bridge.effects].sort((x,y)=>Math.abs(y.value)-Math.abs(x.value)).slice(0, 5).filter(e=>Math.abs(e.value)>=1);
+      const mx = Math.max(1, ...eff.map(e=>Math.abs(e.value))), dd = bridge.end - bridge.start;
+      dr.innerHTML = `<div class="bf-drv">` + eff.map(e => `<div class="bf-dr" title="${esc(e.label)}: ${esc(effDetail(e))}"><span class="l">${esc(e.label)}<small>${effShort(e)}</small></span><span class="bf-bar" aria-hidden="true"><i class="${e.value>=0?'up':'dn'}" style="width:${(Math.abs(e.value)/mx*50).toFixed(1)}%"></i></span><span class="v ${e.value>=0?'up':'dn'}">${sgn(e.value)}${m(e.value)}</span></div>`).join('') + `</div>`
+        + `<div class="bf-tot"><span>${tv('Total','Tổng')}: CM3 ${money(bridge.start,{compact:true})} → ${money(bridge.end,{compact:true})} <b class="${dd>=0?'up':'dn'}">${sgn(dd)}${m(dd)}</b></span>${can('exec') ? `<button type="button" class="bf-go" data-go="exec|bridgeCard">${tv('All effects','Đủ các yếu tố')} →</button>` : ''}</div>`;
+    } else dr.innerHTML = `<p class="bf-none">${tx('u.noPrior')}</p>`;
+    // ---- 4. data caveats ----
+    const dn = document.getElementById('briefData');
+    dn.hidden = !dataNotes.length;
+    dn.innerHTML = dataNotes.length ? `<span class="k">${tv('Numbers not final:','Số liệu chưa đủ:')}</span>` + dataNotes.map(i=>`<span class="bf-chip ${i.lvl}" title="${esc(i.name + (i.note ? ' — ' + i.note : ''))}">${esc(i.short || i.name)}</span>`).join('') : '';
+    document.getElementById('briefCaption').textContent = tv(
+      'Priority: Urgent = a critical threshold is breached; This week = money is affected; Watch = no money yet. Money: revenue at risk = units that cannot be sold over the next 30 days at the current pace × price (incoming stock not counted); over the threshold = the part above the alert level, in money, for this period; short of plan = plan spread evenly to the last closed day − actual. "Why profit moved" comes from the Profit bridge card: the effects add up exactly to the change in CM3. Data notes: hover a chip for the detail.',
+      'Mức ưu tiên: Gấp = vượt ngưỡng nghiêm trọng; Tuần này = có tiền bị ảnh hưởng; Theo dõi = chưa ra tiền. Số tiền: DT có thể mất = số units không đủ hàng để bán trong 30 ngày tới theo tốc độ hiện tại × giá bán (chưa tính hàng đang về); vượt ngưỡng = phần vượt mức cảnh báo tính ra tiền trong kỳ; thiếu so kế hoạch = kế hoạch rải đều đến ngày đã chốt − thực tế. "Vì sao lợi nhuận đổi" lấy từ thẻ Cầu lợi nhuận: các yếu tố cộng đúng bằng thay đổi CM3. Lưu ý số liệu: rê chuột lên từng mục để xem chi tiết.');
   }
   // ---- V7: unit economics (P&L page): what one average order earns, per channel ----
   function renderUnitEconomics(){
@@ -2695,7 +2764,7 @@
   }
   function stockRisk(){
     const list = stockRows().filter(r=> r.perDay>=0.2 && r.cover!==null && r.cover<30).sort((x,y)=>y.atRisk-x.atRisk);
-    return {count: list.length, atRisk: sum(list.map(r=>r.atRisk)), top: list.slice(0,3)};
+    return {count: list.length, atRisk: sum(list.map(r=>r.atRisk)), top: list.slice(0,3), soonest: list.slice().sort((x,y)=>x.cover-y.cover)[0] || null};
   }
 
   // ---- product lines card (overview) ----
@@ -2923,32 +2992,32 @@
     const items = [];
     const be = breakEvenMer(a);
     if(merNow.value!==null && be){
-      if(merNow.value < be) items.push({lvl:'crit', name:'MER '+merNow.value.toFixed(2)+tv('x below break-even ','x dưới mức hoà vốn ')+be.toFixed(2)+'x', note:tv('Every $1 of ads is not covering CM2 — see the Marketing page','Mỗi $1 quảng cáo đang không đủ bù CM2 — xem trang Marketing'), stake:(be-merNow.value)*merNow.spend, action:tv('Cut spend on the lowest-ROAS channel or raise AOV; ','Cắt chi ở kênh ROAS thấp nhất hoặc nâng AOV; cần thêm ')+money((be-merNow.value)*merNow.spend,{compact:true})+tv(' more revenue needed to break even',' doanh thu để hoà vốn')});
-      else if(merNow.value < be*1.15) items.push({lvl:'warn', name:'MER '+merNow.value.toFixed(2)+tv('x close to break-even ','x sát mức hoà vốn ')+be.toFixed(2)+'x', note:tv('Safety margin under 15% · ','Biên an toàn dưới 15% · còn ')+money((merNow.value-be)*merNow.spend,{compact:true})+tv(' left before a loss',' trước khi lỗ'), stake:null, action:tv('Watch daily; do not raise budgets until ROAS improves','Theo dõi từng ngày; đừng tăng ngân sách khi ROAS chưa cải thiện')});
+      if(merNow.value < be) items.push({key:'mer', go:['marketing','roasGrid'], stakeLbl:tv('more revenue to break even','DT cần thêm để hoà vốn'), todo:tv('Cut spend on the lowest-ROAS channel or raise AOV','Cắt chi kênh ROAS thấp nhất hoặc nâng AOV'), lvl:'crit', name:'MER '+merNow.value.toFixed(2)+tv('x below break-even ','x dưới mức hoà vốn ')+be.toFixed(2)+'x', note:tv('Every $1 of ads is not covering CM2 — see the Marketing page','Mỗi $1 quảng cáo đang không đủ bù CM2 — xem trang Marketing'), stake:(be-merNow.value)*merNow.spend, action:tv('Cut spend on the lowest-ROAS channel or raise AOV; ','Cắt chi ở kênh ROAS thấp nhất hoặc nâng AOV; cần thêm ')+money((be-merNow.value)*merNow.spend,{compact:true})+tv(' more revenue needed to break even',' doanh thu để hoà vốn')});
+      else if(merNow.value < be*1.15) items.push({key:'merNear', go:['marketing','roasGrid'], todo:tv('Hold ad budgets and watch ROAS daily','Giữ nguyên ngân sách quảng cáo, theo dõi ROAS hằng ngày'), lvl:'warn', name:'MER '+merNow.value.toFixed(2)+tv('x close to break-even ','x sát mức hoà vốn ')+be.toFixed(2)+'x', note:tv('Safety margin under 15% · ','Biên an toàn dưới 15% · còn ')+money((merNow.value-be)*merNow.spend,{compact:true})+tv(' left before a loss',' trước khi lỗ'), stake:null, action:tv('Watch daily; do not raise budgets until ROAS improves','Theo dõi từng ngày; đừng tăng ngân sách khi ROAS chưa cải thiện')});
     }
     const last = rows[rows.length-1], m = last.iso.slice(0,7), plan = PLAN.months[m];
     if(plan){
       const closed = (monthMap[m]||[]).filter(r=>!r._syncing), lastDom = closed.length ? closed[closed.length-1].date.getDate() : 0, dim = daysInMonth(m);
-      const check = (label, actual, planV) => { if(planV===null || !lastDom) return; const exp = planV*lastDom/dim; const d = (actual/exp-1)*100; if(d < -10) items.push({lvl: d<-25?'crit':'warn', name: label+tv(' through day ',' đến ngày ')+lastDom+tv(' is below plan by ',' thấp hơn kế hoạch ')+Math.abs(d).toFixed(0)+'%', note: money(actual,{compact:true})+tv(' vs ',' so với ')+money(exp,{compact:true})+tv(' plan spread evenly',' kế hoạch rải đều'), stake: exp-actual, action:tv('Short ','Thiếu ')+money(exp-actual,{compact:true})+tv(' vs the evenly spread plan — decide to push or lower the plan',' so kế hoạch rải đều — quyết thúc đẩy hay hạ kế hoạch')}); };
+      const check = (label, actual, planV) => { if(planV===null || !lastDom) return; const exp = planV*lastDom/dim; const d = (actual/exp-1)*100; if(d < -10) items.push({key:'pace', go:['exec','paceCard'], stakeLbl:tv('short of plan','thiếu so kế hoạch'), todo:tv('Decide: push ','Quyết: đẩy ')+label+tv(' or lower the plan',' hay hạ kế hoạch'), lvl: d<-25?'crit':'warn', name: label+tv(' through day ',' đến ngày ')+lastDom+tv(' is below plan by ',' thấp hơn kế hoạch ')+Math.abs(d).toFixed(0)+'%', note: money(actual,{compact:true})+tv(' vs ',' so với ')+money(exp,{compact:true})+tv(' plan spread evenly',' kế hoạch rải đều'), stake: exp-actual, action:tv('Short ','Thiếu ')+money(exp-actual,{compact:true})+tv(' vs the evenly spread plan — decide to push or lower the plan',' so kế hoạch rải đều — quyết thúc đẩy hay hạ kế hoạch')}); };
       check(tv('Net revenue','Doanh thu thuần'), sum(closed.map(r=> sum(CH_KEYS.map(k=>r.channels[k]-r.discounts[k]-r.refunds[k])))), plan.net_revenue);
       CH_GROUPS.forEach(g=>{ const cp = plan.channels[g.members[0]]; if(!cp) return; const mem = g.members; if(cp.net!==null) check(groupLabel(g.id)+tv(' (net revenue)',' (doanh thu thuần)'), sum(closed.map(r=>sum(mem.map(k=>r.channels[k]-r.discounts[k]-r.refunds[k])))), cp.net); else if(cp.gross!==null) check(groupLabel(g.id)+tv(' (gross sales)',' (doanh thu gộp)'), sum(closed.map(r=>sum(mem.map(k=>r.channels[k])))), cp.gross); });
-    } else items.push({lvl:'warn', name:tv('No plan for ','Chưa có kế hoạch tháng ')+(LANG==='vi' ? parseInt(m.slice(5,7),10)+'/'+m.slice(0,4) : MONTHS_EN[parseInt(m.slice(5,7),10)-1]+' '+m.slice(0,4)), note:tv('Fill in data/targets_monthly.json to get the "vs plan" column and pacing alerts','Điền data/targets_monthly.json để có cột "so kế hoạch" và cảnh báo nhịp độ'), stake:null});
+    } else items.push({kind:'data', short:tv('No plan for this month','Chưa có kế hoạch tháng'), lvl:'warn', name:tv('No plan for ','Chưa có kế hoạch tháng ')+(LANG==='vi' ? parseInt(m.slice(5,7),10)+'/'+m.slice(0,4) : MONTHS_EN[parseInt(m.slice(5,7),10)-1]+' '+m.slice(0,4)), note:tv('Fill in data/targets_monthly.json to get the "vs plan" column and pacing alerts','Điền data/targets_monthly.json để có cột "so kế hoạch" và cảnh báo nhịp độ'), stake:null});
     const refundPct = a.grossSales>0 ? sum(CH_KEYS.map(k=>a.refund[k]))/a.grossSales*100 : 0;
-    if(refundPct>8) items.push({lvl: refundPct>12?'crit':'warn', name:tv('Refunds ','Hoàn tiền ')+refundPct.toFixed(1)+tv('% of gross sales','% doanh thu gộp'), note:tv('Alert threshold 8% · ','Ngưỡng cảnh báo 8% · ')+CH_KEYS.filter(k=>a.gross[k]>0).map(k=>CH_LABEL[k]+' '+(a.refund[k]/a.gross[k]*100).toFixed(1)+'%').join(', '), stake:(refundPct-8)/100*a.grossSales, action:tv('Excess over the 8% threshold = ','Phần vượt ngưỡng 8% = ')+money((refundPct-8)/100*a.grossSales,{compact:true})+tv(' — review return reasons by channel/product',' — xem lý do trả theo kênh/sản phẩm')});
+    if(refundPct>8) items.push({key:'refund', go:['sales','returnsCard'], stakeLbl:tv('over the 8% threshold','vượt ngưỡng 8%'), todo:tv('Check return reasons by channel and SKU','Xem lý do trả hàng theo kênh và SKU'), lvl: refundPct>12?'crit':'warn', name:tv('Refunds ','Hoàn tiền ')+refundPct.toFixed(1)+tv('% of gross sales','% doanh thu gộp'), note:tv('Alert threshold 8% · ','Ngưỡng cảnh báo 8% · ')+CH_KEYS.filter(k=>a.gross[k]>0).map(k=>CH_LABEL[k]+' '+(a.refund[k]/a.gross[k]*100).toFixed(1)+'%').join(', '), stake:(refundPct-8)/100*a.grossSales, action:tv('Excess over the 8% threshold = ','Phần vượt ngưỡng 8% = ')+money((refundPct-8)/100*a.grossSales,{compact:true})+tv(' — review return reasons by channel/product',' — xem lý do trả theo kênh/sản phẩm')});
     const discPct = a.gross.shopify>0 ? a.discountBy.shopify/a.gross.shopify*100 : 0;
-    if(discPct>40) items.push({lvl:'warn', name:tv('Shopify discounts ','Giảm giá Shopify ')+discPct.toFixed(0)+tv('% of Shopify gross sales','% doanh thu gộp Shopify'), note:tv('Threshold 40% · discount codes, automatic promotions, B1G2F — see the P&L page','Ngưỡng 40% · mã giảm giá, KM tự động, B1G2F — xem trang Lãi lỗ'), stake:(discPct-40)/100*a.gross.shopify, action:tv('Excess over the 40% threshold = ','Phần vượt ngưỡng 40% = ')+money((discPct-40)/100*a.gross.shopify,{compact:true})+tv(' — review discount codes and B1G2F',' — rà mã giảm giá và B1G2F')});
-    if(a.amazonAdsProvisionalDays>0 || merNow.days<merNow.of) items.push({lvl:'warn', name:tv('Amazon Ads has no data for the last ','Amazon Ads chưa có số cho ')+(merNow.of-merNow.days)+tv((merNow.of-merNow.days)===1 ? ' day of the period' : ' days of the period',' ngày cuối kỳ'), note:tv('Sellerboard exports once a day (~18:00 VN) — MER and marketing spend for this period will rise when it lands','Sellerboard xuất 1 lần/ngày (~18h giờ VN) — MER và chi marketing kỳ này sẽ tăng khi số về'), stake:null, action: a.amazonAdsProvisionalAmt>0 ? tv('Provisionally counting ','Đang tạm tính ')+money(a.amazonAdsProvisionalAmt,{compact:true})+tv(' of cost',' chi phí') : tv('Wait for the data, then recheck MER','Chờ số về rồi xem lại MER')});
-    SOURCES.filter(s0=> s0.level==='w' || s0.level==='c').forEach(s0=>{ if(s0.level==='c' && !HEALTH_FLAG[s0.key]) return; items.push({lvl: s0.level==='c'?'crit':'warn', name:tx('u.source')+' '+s0.name, note: s0.age, stake:null, action:tx('u.seeData')}); });
+    if(discPct>40) items.push({key:'disc', go:['pnl','stmtTable'], stakeLbl:tv('over the 40% threshold','vượt ngưỡng 40%'), todo:tv('Review Shopify discount codes and B1G2F','Rà mã giảm giá và B1G2F trên Shopify'), lvl:'warn', name:tv('Shopify discounts ','Giảm giá Shopify ')+discPct.toFixed(0)+tv('% of Shopify gross sales','% doanh thu gộp Shopify'), note:tv('Threshold 40% · discount codes, automatic promotions, B1G2F — see the P&L page','Ngưỡng 40% · mã giảm giá, KM tự động, B1G2F — xem trang Lãi lỗ'), stake:(discPct-40)/100*a.gross.shopify, action:tv('Excess over the 40% threshold = ','Phần vượt ngưỡng 40% = ')+money((discPct-40)/100*a.gross.shopify,{compact:true})+tv(' — review discount codes and B1G2F',' — rà mã giảm giá và B1G2F')});
+    if(a.amazonAdsProvisionalDays>0 || merNow.days<merNow.of) items.push({kind:'data', short:tv('Amazon Ads missing ','Amazon Ads thiếu ')+nDays(merNow.of-merNow.days), lvl:'warn', name:tv('Amazon Ads has no data for the last ','Amazon Ads chưa có số cho ')+(merNow.of-merNow.days)+tv((merNow.of-merNow.days)===1 ? ' day of the period' : ' days of the period',' ngày cuối kỳ'), note:tv('Sellerboard exports once a day (~18:00 VN) — MER and marketing spend for this period will rise when it lands','Sellerboard xuất 1 lần/ngày (~18h giờ VN) — MER và chi marketing kỳ này sẽ tăng khi số về'), stake:null, action: a.amazonAdsProvisionalAmt>0 ? tv('Provisionally counting ','Đang tạm tính ')+money(a.amazonAdsProvisionalAmt,{compact:true})+tv(' of cost',' chi phí') : tv('Wait for the data, then recheck MER','Chờ số về rồi xem lại MER')});
+    SOURCES.filter(s0=> s0.level==='w' || s0.level==='c').forEach(s0=>{ if(s0.level==='c' && !HEALTH_FLAG[s0.key]) return; items.push({kind:'data', short:s0.name+' · '+s0.age, lvl: s0.level==='c'?'crit':'warn', name:tx('u.source')+' '+s0.name, note: s0.age, stake:null, action:tx('u.seeData')}); });
     if(a.productCostHasLots){
       const U = a.productCostLotUnits + a.productCostFbUnits + a.productCostEstUnits, estPct = a.productCost>0 ? a.productCostEstAmount/a.productCost*100 : 0;
-      if(estPct>10) items.push({lvl:'warn', name:tv('Product cost: ','Giá vốn: ')+estPct.toFixed(0)+tv('% still estimated','% còn ước tính'), note:money(a.productCostLots+a.productCostFallback,{compact:true})+tv(' FIFO by receipt lot, ',' FIFO theo lô nhập, ')+money(a.productCostEstAmount,{compact:true})+tv(' estimated at ',' ước ')+(a.cogsEstRate*100).toFixed(0)+tv('% for sales without units per SKU (Walmart, TikTok Shop, items without SKU, days before the SKU data)','% cho doanh số không có units theo SKU (Walmart, TikTok Shop, hàng không SKU, ngày trước khi có dữ liệu SKU)'), stake:null, action:tv('Run the SKU backfill (Shopify / Amazon sync, from 2025-01-01)','Chạy backfill SKU (sync Shopify / Amazon, từ 01/01/2025)')});
+      if(estPct>10) items.push({kind:'data', short:tv('Product cost ','Giá vốn ')+estPct.toFixed(0)+tv('% estimated','% còn ước tính'), lvl:'warn', name:tv('Product cost: ','Giá vốn: ')+estPct.toFixed(0)+tv('% still estimated','% còn ước tính'), note:money(a.productCostLots+a.productCostFallback,{compact:true})+tv(' FIFO by receipt lot, ',' FIFO theo lô nhập, ')+money(a.productCostEstAmount,{compact:true})+tv(' estimated at ',' ước ')+(a.cogsEstRate*100).toFixed(0)+tv('% for sales without units per SKU (Walmart, TikTok Shop, items without SKU, days before the SKU data)','% cho doanh số không có units theo SKU (Walmart, TikTok Shop, hàng không SKU, ngày trước khi có dữ liệu SKU)'), stake:null, action:tv('Run the SKU backfill (Shopify / Amazon sync, from 2025-01-01)','Chạy backfill SKU (sync Shopify / Amazon, từ 01/01/2025)')});
       else items.push({lvl:'ok', name:tv('Product cost: FIFO by receipt lot','Giá vốn: FIFO theo lô nhập'), note:(U>0 ? (a.productCostLotUnits/U*100).toFixed(0)+tv('% of units from Notion receipt lots',' % units theo lô nhập Notion') : '')+(a.productCostFbUnits>0 ? tv(' · ',' · ')+(a.productCostFbUnits/U*100).toFixed(0)+tv('% nearest-lot / per-SKU cost','% giá lô gần nhất / theo SKU') : '')+(SHIPMONK_BOM ? tv(' · BOM: ShipMonk bundles',' · BOM: bundle ShipMonk') : tv(' · BOM: cogs_skus only',' · BOM: chỉ cogs_skus'))+(a.boxMode ? tv(' · boxes per package',' · hộp theo kiện') : ''), stake:null});
     }
-    else if(!a.productCostEst && !a.productCostHasActual) items.push({lvl:'warn', name:tv('Product cost not deducted','Chưa trừ giá vốn sản phẩm'), note:tv('CM3 and EBITDA are overstated — fill in data/cogs_monthly.json (accounting figures) or enable cogs_estimate in data/targets_monthly.json','CM3 và EBITDA đang cao hơn thực tế — điền data/cogs_monthly.json (số kế toán) hoặc bật cogs_estimate trong data/targets_monthly.json'), stake:null});
+    else if(!a.productCostEst && !a.productCostHasActual) items.push({kind:'data', short:tv('Product cost not deducted','Chưa trừ giá vốn'), lvl:'warn', name:tv('Product cost not deducted','Chưa trừ giá vốn sản phẩm'), note:tv('CM3 and EBITDA are overstated — fill in data/cogs_monthly.json (accounting figures) or enable cogs_estimate in data/targets_monthly.json','CM3 và EBITDA đang cao hơn thực tế — điền data/cogs_monthly.json (số kế toán) hoặc bật cogs_estimate trong data/targets_monthly.json'), stake:null});
     else if(a.productCostEst && a.productCostHasActual) items.push({lvl:'ok', name:tv('Product cost: partly still estimated','Giá vốn: một phần còn ước tính'), note:money(a.productCostActual,{compact:true})+tv(' from the accounting inventory ledger, ',' theo sổ kho kế toán, ')+money(a.productCostEstAmount,{compact:true})+tv(' still estimated at ',' còn ước ')+(a.cogsEstRate*100).toFixed(0)+tv('% — fill in the remaining channels/months in data/cogs_monthly.json','% — điền nốt các kênh/tháng còn trống trong data/cogs_monthly.json'), stake:null});
-    else if(a.productCostEst) items.push({lvl:'warn', name:tv('Product cost is still an estimate of ','Giá vốn còn là ước tính ')+(a.cogsEstRate*100).toFixed(0)+'%', note:tv('No accounting figures for this period — CM3, EBITDA and channel margins are approximations (','Chưa có số kế toán kỳ này — CM3, EBITDA và biên theo kênh chỉ là xấp xỉ (')+money(a.productCostEstAmount,{compact:true})+tv(' estimated). Fill in data/cogs_monthly.json once the inventory report is available.',' đang ước). Điền data/cogs_monthly.json khi có báo cáo tồn kho.'), stake:null, action:tv('Send CAU_HOI_GUI_KE_TOAN.txt to the accountant','Gửi CAU_HOI_GUI_KE_TOAN.txt cho kế toán')});
-    try{ const sr = stockRisk(); if(sr.count>0){ const list = sr.top.map(r=>r.sku).join(', '); items.push({lvl: sr.atRisk>5000 ? 'crit' : 'warn', name: tx('risk.stockout', {n: sr.count}), note: tx('risk.stockoutNote', {list}), stake: sr.atRisk, action: tx('risk.stockoutAction', {list})}); } }catch(e){}
-    if(a.opexDays===0) items.push({lvl:'warn', name:tv('No G&A for this period','Chưa có G&A kỳ này'), note:tv('EBITDA does not yet deduct salaries/office — fill in data/opex_monthly.json','EBITDA chưa trừ lương/văn phòng — điền data/opex_monthly.json'), stake:null});
+    else if(a.productCostEst) items.push({kind:'data', short:tv('Product cost estimated at ','Giá vốn ước ')+(a.cogsEstRate*100).toFixed(0)+'%', lvl:'warn', name:tv('Product cost is still an estimate of ','Giá vốn còn là ước tính ')+(a.cogsEstRate*100).toFixed(0)+'%', note:tv('No accounting figures for this period — CM3, EBITDA and channel margins are approximations (','Chưa có số kế toán kỳ này — CM3, EBITDA và biên theo kênh chỉ là xấp xỉ (')+money(a.productCostEstAmount,{compact:true})+tv(' estimated). Fill in data/cogs_monthly.json once the inventory report is available.',' đang ước). Điền data/cogs_monthly.json khi có báo cáo tồn kho.'), stake:null, action:tv('Send CAU_HOI_GUI_KE_TOAN.txt to the accountant','Gửi CAU_HOI_GUI_KE_TOAN.txt cho kế toán')});
+    try{ const sr = stockRisk(); if(sr.count>0){ const list = sr.top.map(r=>r.sku).join(', '); items.push({key:'stock', go:['inventory','invCard'], stakeLbl:tv('revenue at risk · 30 days','DT có thể mất · 30 ngày'), todo: tx('risk.stockoutAction', {list}), skus: sr.top.map(r=>r.sku), soon: sr.soonest, lvl: sr.atRisk>5000 ? 'crit' : 'warn', name: tx('risk.stockout', {n: sr.count}), note: tx('risk.stockoutNote', {list}), stake: sr.atRisk, action: tx('risk.stockoutAction', {list})}); } }catch(e){}
+    if(a.opexDays===0) items.push({kind:'data', short:tv('No G&A this period','Chưa có G&A kỳ này'), lvl:'warn', name:tv('No G&A for this period','Chưa có G&A kỳ này'), note:tv('EBITDA does not yet deduct salaries/office — fill in data/opex_monthly.json','EBITDA chưa trừ lương/văn phòng — điền data/opex_monthly.json'), stake:null});
     if(!items.length) items.push({lvl:'ok', name:tv('No alerts','Không có cảnh báo'), note:tv('MER above break-even, pacing on plan, every source reported','MER trên hoà vốn, nhịp độ trong kế hoạch, mọi nguồn đủ số'), stake:null});
     const order = {crit:0, warn:1, ok:2};
     items.sort((x,y)=> (order[x.lvl]-order[y.lvl]) || ((y.stake||0)-(x.stake||0)));
