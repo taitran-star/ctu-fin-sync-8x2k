@@ -657,6 +657,31 @@
   /* phones: the bar spans the bottom, and the page gets room under it so the last P&L rows are not hidden behind it */
   @media (max-width:520px){
   }
+  /* V11.4: notes & captions on demand — (i) next to the card title opens them; "Always show notes" puts them back */
+  body:not(.notes-open) .card.has-info .card-head .note:not([id$="Finding"]),
+  body:not(.notes-open) .card.has-info .caption,
+  body:not(.notes-open) .brief-grid > .has-info > .sub{display:none;}
+  .brief-grid > div > .ch-title{display:flex;margin:0 0 8px;} .brief-grid > div > .ch-title > h3{margin:0;}
+  .ch-title{display:inline-flex;align-items:center;gap:2px;min-width:0;max-width:100%;}
+  .info-btn{display:inline-flex;align-items:center;justify-content:center;flex:none;width:24px;height:24px;margin:-4px 0;padding:0;border:0;border-radius:50%;background:transparent;color:var(--ink-muted);cursor:pointer;}
+  .info-btn:hover,.info-btn.on{color:var(--accent);background:var(--surface-card-2);}
+  .info-btn:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+  .info-btn[hidden]{display:none;}
+  .info-pop{position:absolute;z-index:60;display:flex;flex-direction:column;max-height:min(60vh,520px);background:var(--surface-card);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(5,55,46,.16),0 2px 6px rgba(5,55,46,.08);font-size:12.5px;line-height:1.55;color:var(--ink-secondary);text-align:left;}
+  .info-pop .ip-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 8px 4px 16px;}
+  .info-pop .ip-title{font-weight:600;font-size:13px;color:var(--ink-primary);}
+  .info-pop .ip-x{flex:none;width:28px;height:28px;border:0;border-radius:8px;background:transparent;color:var(--ink-muted);font-size:19px;line-height:1;cursor:pointer;}
+  .info-pop .ip-x:hover{background:var(--surface-card-2);color:var(--ink-primary);}
+  .info-pop .ip-body{padding:2px 16px 12px;overflow:auto;}
+  .info-pop .ip-lead{margin:0 0 8px;color:var(--ink-primary);}
+  .info-pop .ip-cap{margin:0 0 8px;}
+  .info-pop .ip-lead:last-child,.info-pop .ip-cap:last-child{margin-bottom:0;}
+  .info-pop code{font-family:var(--font-mono);font-size:11px;background:var(--surface-card-3);padding:1px 4px;border-radius:4px;}
+  .info-pop .ip-foot{border-top:1px solid var(--border);padding:8px 16px 10px;}
+  .info-pop .ip-pin{border:0;background:none;padding:0;font:inherit;font-size:12px;font-weight:600;color:var(--accent);cursor:pointer;}
+  .info-pop .ip-pin:hover{text-decoration:underline;}
+  .info-pop.sheet{position:fixed;left:0;right:0;bottom:0;top:auto;width:auto!important;max-height:70vh;border-radius:16px 16px 0 0;padding-bottom:env(safe-area-inset-bottom,0px);}
+  @media print{.info-btn,.info-pop{display:none!important}body .card.has-info .caption,body .card.has-info .card-head .note,body .brief-grid > .has-info > .sub{display:block!important}}
 </style>
 </head>
 <body>
@@ -1096,7 +1121,7 @@
     return load(k, 1).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })); }).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=50c2947f60';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=ef5a04cfb4';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');

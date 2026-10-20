@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 50c2947f60).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build ef5a04cfb4).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -4924,5 +4924,83 @@
       const shopInfo = await mcp.callTool('Shopify','get-shop-info');
       // shop identity available at shopInfo.payload if needed later
     }catch(e){ /* non-critical */ }
+  })();
+  // ---- V11.4: explanations on demand. A card's header note and its captions sit behind an (i) button next to the
+  // card title; the popover copies them at open time, so it always shows what the card currently says. Notes with an
+  // id ending in "Finding" (MER, P&L, OpEx findings) stay visible. "Always show notes" is remembered per browser.
+  (function(){
+    const KEY = 'ctu_notes';
+    let pinned = false; try{ pinned = localStorage.getItem(KEY) === 'open'; }catch(e){}
+    document.body.classList.toggle('notes-open', pinned);
+    const isFinding = el => /Finding$/.test(el.id || '');
+    const txt = el => (el.textContent || '').replace(/\s+/g, ' ').trim();
+    const shown = el => !el.closest('[hidden]') && el.style.display !== 'none';
+    const escH = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    // a box = a card (title h2 in .card-head; notes in the head, captions anywhere) or a column of the brief (h3 + .sub)
+    function sourcesOf(box){
+      if(box.classList.contains('card')){
+        const head = box.querySelector('.card-head');
+        return { notes: head ? [...head.querySelectorAll('.note')].filter(n => !isFinding(n)) : [], caps: [...box.querySelectorAll('.caption')] };
+      }
+      return { notes: [], caps: [...box.querySelectorAll(':scope > .sub')] };
+    }
+    const titleOf = box => box.querySelector(box.classList.contains('card') ? '.card-head h2' : ':scope > h3, :scope > .ch-title > h3');
+    function hasContent(card){ const s = sourcesOf(card); return s.notes.some(n => txt(n)) || s.caps.some(c => txt(c) && shown(c)); }
+    let pop = null, openBtn = null;
+    function close(){
+      if(pop){ pop.remove(); pop = null; }
+      if(openBtn){ openBtn.setAttribute('aria-expanded', 'false'); openBtn.classList.remove('on'); openBtn = null; }
+    }
+    function place(btn){
+      if(!pop) return;
+      if(window.matchMedia('(max-width: 640px)').matches){ pop.classList.add('sheet'); return; }
+      const r = btn.getBoundingClientRect(), w = Math.min(480, window.innerWidth - 32);
+      pop.style.width = w + 'px';
+      const left = Math.max(16, Math.min(r.left - 14, window.innerWidth - w - 16));
+      pop.style.left = (left + window.scrollX) + 'px';
+      pop.style.top = (r.bottom + window.scrollY + 8) + 'px';
+    }
+    function open(btn, card){
+      close();
+      const s = sourcesOf(card), parts = [];
+      s.notes.filter(n => txt(n)).forEach(n => parts.push('<p class="ip-lead">' + n.innerHTML + '</p>'));
+      s.caps.filter(c => txt(c) && shown(c)).forEach(c => parts.push('<div class="ip-cap">' + c.innerHTML + '</div>'));
+      const h2 = titleOf(card);
+      pop = document.createElement('div');
+      pop.className = 'info-pop'; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', h2 ? txt(h2) : tv('Notes', 'Ghi chú'));
+      pop.innerHTML = '<div class="ip-head"><span class="ip-title">' + escH(h2 ? txt(h2) : '') + '</span><button type="button" class="ip-x" aria-label="' + tv('Close', 'Đóng') + '">&times;</button></div>' +
+        '<div class="ip-body">' + (parts.join('') || '<p class="ip-lead">' + tv('No notes for this card yet.', 'Chưa có ghi chú cho mục này.') + '</p>') + '</div>' +
+        '<div class="ip-foot"><button type="button" class="ip-pin">' + (pinned ? tv('Hide notes on the page again', 'Ẩn lại ghi chú trên trang') : tv('Always show notes on the page', 'Luôn hiện ghi chú trên trang')) + '</button></div>';
+      pop.querySelectorAll('[id]').forEach(e => e.removeAttribute('id'));
+      document.body.appendChild(pop);
+      place(btn);
+      btn.setAttribute('aria-expanded', 'true'); btn.classList.add('on'); openBtn = btn;
+      pop.querySelector('.ip-x').addEventListener('click', () => { const b = openBtn; close(); if(b) b.focus(); });
+      pop.querySelector('.ip-pin').addEventListener('click', () => {
+        pinned = !pinned; try{ localStorage.setItem(KEY, pinned ? 'open' : ''); }catch(e){}
+        document.body.classList.toggle('notes-open', pinned); close();
+      });
+      pop.querySelector('.ip-x').focus({preventScroll: true});
+    }
+    const ICON = '<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7.3v4.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="4.9" r="1" fill="currentColor"/></svg>';
+    [...document.querySelectorAll('.card'), ...document.querySelectorAll('.brief-grid > div')].forEach(card => {
+      const h2 = titleOf(card); if(!h2) return;
+      const s = sourcesOf(card); if(!s.notes.length && !s.caps.length) return;
+      card.classList.add('has-info');
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'info-btn'; b.innerHTML = ICON;
+      b.setAttribute('aria-expanded', 'false'); b.setAttribute('aria-haspopup', 'dialog');
+      b.title = tv('What this shows', 'Giải thích mục này'); b.setAttribute('aria-label', b.title);
+      const wrap = document.createElement('span'); wrap.className = 'ch-title';   // keeps the (i) next to the title whatever the header layout
+      h2.parentNode.insertBefore(wrap, h2); wrap.appendChild(h2); wrap.appendChild(b);
+      b.addEventListener('click', e => { e.stopPropagation(); if(openBtn === b){ close(); return; } open(b, card); });
+      const sync = () => { b.hidden = !hasContent(card); };
+      sync();
+      const mo = new MutationObserver(sync);
+      s.notes.concat(s.caps).forEach(el => mo.observe(el, {childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['style', 'hidden']}));
+    });
+    document.addEventListener('click', e => { if(pop && !pop.contains(e.target)) close(); });
+    document.addEventListener('keydown', e => { if(e.key === 'Escape' && pop){ const b = openBtn; close(); if(b) b.focus(); } });
+    window.addEventListener('resize', close);
   })();
 })();
