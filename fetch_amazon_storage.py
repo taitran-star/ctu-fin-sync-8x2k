@@ -40,7 +40,7 @@ from datetime import datetime, timedelta, timezone
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import fetch_amazon_pnl as base  # noqa: E402  (LWA token, rate limiter, SP-API GET/POST, report download, log)
 
-SCRIPT_VERSION = "1.5"
+SCRIPT_VERSION = "1.5.1"
 SCHEMA = 1
 OUTPUT_PATH = os.environ.get("OUTPUT_PATH", "data/amazon_storage.json")
 HISTORY_START = os.environ.get("HISTORY_START", "2025-01-01").strip() or "2025-01-01"
@@ -79,7 +79,8 @@ REMEASURE_TOLERANCE = 0.05     # fee-preview volume vs the report's item_volume:
 SUS_CARRY_MONTHS = 2           # the latest report's utilization surcharge is carried into the next 2 months
 UNITS_CALIB_BOUNDS = (0.9, 1.1)
 REFRESH_REPORT_MONTHS = 3      # the last 3 billed months are re-read once to keep Amazon's surcharge columns
-LEDGER_CHUNK_MONTHS = int(os.environ.get("LEDGER_CHUNK_MONTHS", "4"))   # months per ledger report when back-filling
+LEDGER_CHUNK_MONTHS = int(os.environ.get("LEDGER_CHUNK_MONTHS", "19"))  # v1.5.1: max months in the one ledger report of a run
+LEDGER_REFRESH_HOURS = 12      # v1.5.1: the current month's ledger is re-read at most every 12 h (Amazon throttles this report)
 QUOTA_COOLDOWN_SECONDS = int(os.environ.get("QUOTA_COOLDOWN_SECONDS", "180"))
 
 log = base.log
@@ -245,7 +246,7 @@ def ingest_storage_report(text, mk, fnsku_to_sku):
     rows = parse_tsv(text)
     by_sku, rates, total, n = {}, {}, 0.0, 0
     charge_months = set()
-    sus_ratios, sus_units = [], None
+    sus_ratios, sus_units = {}, None
     for r in rows:
         moc = r.get("month_of_charge") or ""
         if moc:
@@ -280,7 +281,7 @@ def ingest_storage_report(text, mk, fnsku_to_sku):
             d["dims"] = sides
             d["dim_unit"] = r.get("measurement_units") or None
         if r.get("storage_utilization_ratio"):
-            sus_ratios.append(num(r.get("storage_utilization_ratio")))
+            sus_ratios.setdefault(tier_class(r.get("product_size_tier")), []).append(num(r.get("storage_utilization_ratio")))
             sus_units = r.get("storage_utilization_ratio_units") or sus_units
         total += fee
         n += 1
@@ -313,12 +314,14 @@ def ingest_storage_report(text, mk, fnsku_to_sku):
         for d in by_sku.values():
             x = by_t.setdefault(tier_class(d.get("tier")), {"fee": 0.0, "base_fee": 0.0, "sus_fee": 0.0, "vol": 0.0})
             x["fee"] += d["fee"]; x["base_fee"] += d["base_fee"]; x["sus_fee"] += d["sus_fee"]; x["vol"] += d["volume"]
-        for x in by_t.values():
+        for t, x in by_t.items():
+            x["utilization_ratio"] = round(statistics.median(sus_ratios[t]), 2) if sus_ratios.get(t) else None   # v1.5.1: per size tier
             x["base_rate"] = round(x["base_fee"] / x["vol"], 4) if x["vol"] else None
             x["sus_rate"] = round(x["sus_fee"] / x["vol"], 4) if x["vol"] else None
             for k in ("fee", "base_fee", "sus_fee", "vol"):
                 x[k] = round(x[k], 2)
-        sus = {"by_tier": by_t, "utilization_ratio": round(statistics.median(sus_ratios), 2) if sus_ratios else None,
+        all_r = [v for vs in sus_ratios.values() for v in vs]
+        sus = {"by_tier": by_t, "utilization_ratio": round(statistics.median(all_r), 2) if all_r else None,
                "utilization_ratio_units": sus_units}
     return {"total": round(total, 2), "rows": n, "skus": len(by_sku), "by_sku": by_sku, "rates": rate_med, "rates_effective": rate_eff, "rates_volume": rate_vol,
             "sus": sus, "ingest": SCRIPT_VERSION,
@@ -427,7 +430,8 @@ def rates_for(months, mk):
         for t, x in report_tier_rates(months[sus_from], sus_from).items():
             if x["vol"] >= 5 and t in sus:
                 sus[t] = round(max(0.0, x["sus"]), 4)
-    return {t: round(base[t] + sus[t], 4) for t in base}, {"base": base, "surcharge": sus, "surcharge_from": sus_from}
+    ratio = {t: x.get("utilization_ratio") for t, x in (((months.get(sus_from) or {}).get("sus") or {}).get("by_tier") or {}).items()} if sus_from else {}
+    return {t: round(base[t] + sus[t], 4) for t in base}, {"base": base, "surcharge": sus, "surcharge_from": sus_from, "utilization_ratio_weeks": ratio}
 
 
 def sku_volumes(months, dims=None, before=None):
@@ -673,6 +677,7 @@ def main():
     ledger_daily = dict((prev.get("ledger") or {}).get("daily") or {})
     transit_daily = dict((prev.get("ledger") or {}).get("transit_daily") or {})   # v1.4
     ledger_columns = list((prev.get("ledger") or {}).get("columns") or [])
+    ledger_chunk_max = int((prev.get("ledger") or {}).get("chunk_max") or LEDGER_CHUNK_MONTHS)   # v1.5.1
     dims = dict((prev.get("dims") or {}).get("by_sku") or {})          # v1.5 fee-preview package dims
     dims_meta = dict((prev.get("dims") or {}).get("meta") or {})
     warnings = {}
@@ -736,7 +741,7 @@ def main():
             if requested >= MAX_REPORTS_PER_RUN:
                 break
             ent_s = months.get(mk)
-            refresh = bool(ent_s) and not ent_s.get("empty") and mk in refresh_cut and ent_s.get("ingest") is None   # v1.5
+            refresh = bool(ent_s) and not ent_s.get("empty") and mk in refresh_cut and ent_s.get("ingest") not in (SCRIPT_VERSION, "refresh-empty", "refresh-failed", "refresh-mismatch")   # v1.5
             if due(ent_s, mk) or refresh:
                 start = datetime(int(mk[:4]), int(mk[5:7]), 1, tzinfo=timezone.utc)
                 end = start + timedelta(days=days_in_month(mk)) - timedelta(seconds=1)
@@ -787,68 +792,84 @@ def main():
                 else:
                     ltsf_months[mk] = empty_entry(ltsf_months, mk, "cancelled" if txt == "" else "fatal/timeout")
 
-        # Inventory Ledger, one month per report (DAILY ending balances), newest first, within the 18-month window
+        # Inventory Ledger (DAILY ending balance + in transit per SKU). v1.5.1: at most ONE ledger report per run - Amazon
+        # throttles this report type on its own. It spans every month that still needs data (missing / no in-transit
+        # column) up to the current month (refreshed at most every LEDGER_REFRESH_HOURS while it grows); a span Amazon
+        # rejects is halved next time (ledger.chunk_max).
         cur_mk = month_key(today)
-        done_chunk = set()
         ledger_wanted = [m for m in wanted if m >= month_key(today.replace(day=1) - timedelta(days=31 * LEDGER_MONTHS - 31))] + [cur_mk]
-        for mk in reversed(ledger_wanted):
-            if requested >= MAX_REPORTS_PER_RUN:
-                break
-            ent = ledger_months.get(mk)
-            # the current month is refreshed while it grows (days before the hourly snapshots began); past months once
-            cur_due = mk == cur_mk and ent and not ent.get("empty") and ent.get("days", 0) < today.day - 1
-            def needs_transit(e):
-                return bool(e) and not e.get("empty") and not e.get("transit") and (e.get("transit_tries") or 0) < 2
-            no_transit = needs_transit(ent)   # v1.4: re-fetch once for the in-transit column
-            if mk in done_chunk or not (due(ent, mk) or cur_due or no_transit):
-                continue
-            chunk = [mk]
-            if no_transit and not (due(ent, mk) or cur_due) and not ent.get("chunk_failed"):
-                # v1.5: older months that also lack the in-transit column go in the same report (fewer createReport calls)
-                for m2 in reversed(ledger_wanted):
-                    if m2 < chunk[-1] and len(chunk) < LEDGER_CHUNK_MONTHS:
-                        e2 = ledger_months.get(m2)
-                        if needs_transit(e2) and not e2.get("chunk_failed") and months_between(m2, chunk[-1]) == 1:
-                            chunk.append(m2)
-            start = datetime(int(chunk[-1][:4]), int(chunk[-1][5:7]), 1, tzinfo=timezone.utc)
-            m0 = datetime(int(mk[:4]), int(mk[5:7]), 1, tzinfo=timezone.utc)
-            end = m0 + timedelta(days=days_in_month(mk)) - timedelta(seconds=1)
-            label = f"ledger {mk}" if len(chunk) == 1 else f"ledger {chunk[-1]}..{mk}"
-            body_opts = {"aggregateByLocation": "COUNTRY", "aggregatedByTimePeriod": "DAILY"}
+
+        def needs_transit(e):
+            return bool(e) and not e.get("empty") and not e.get("transit") and (e.get("transit_tries") or 0) < 3
+
+        def stale(e, hours):
+            ts = (e or {}).get("fetched_at")
+            if not ts:
+                return True
             try:
-                txt = request_report(access_token, LEDGER_REPORT, start, end, label, body_opts)
+                age = datetime.now(timezone.utc) - datetime.strptime(ts, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+                return age.total_seconds() > hours * 3600
+            except ValueError:
+                return True
+        cur_ent = ledger_months.get(cur_mk)
+        if not cur_ent:
+            cur_due = True
+        elif cur_ent.get("empty"):
+            cur_due = due(cur_ent, cur_mk)
+        else:
+            cur_due = cur_ent.get("days", 0) < today.day - 1 and stale(cur_ent, LEDGER_REFRESH_HOURS)
+        oldest_ok = month_key(today - timedelta(days=30 * 17))   # Amazon keeps ~18 months of ledger: stay clear of the edge
+        past_need = [m for m in ledger_wanted[:-1] if m >= oldest_ok and (due(ledger_months.get(m), m) or needs_transit(ledger_months.get(m)))]
+        span = []
+        if past_need:
+            span = [m for m in ledger_wanted if m >= past_need[0] and (cur_due or m <= past_need[-1])]
+        elif cur_due:
+            span = [cur_mk]
+        span = span[-max(1, int(ledger_chunk_max)):]      # the newest months first when the span has to be cut
+        if span and requested < MAX_REPORTS_PER_RUN:
+            start = datetime(int(span[0][:4]), int(span[0][5:7]), 1, tzinfo=timezone.utc)
+            m_last = datetime(int(span[-1][:4]), int(span[-1][5:7]), 1, tzinfo=timezone.utc)
+            end = m_last + timedelta(days=days_in_month(span[-1])) - timedelta(seconds=1)
+            label = f"ledger {span[0]}" if len(span) == 1 else f"ledger {span[0]}..{span[-1]}"
+            txt = False
+            try:
+                txt = request_report(access_token, LEDGER_REPORT, start, end, label, {"aggregateByLocation": "COUNTRY", "aggregatedByTimePeriod": "DAILY"})
+                requested += 1
             except QuotaExceeded as e:
-                log(str(e)); warnings["quota_exceeded"] = str(e)[:200]; break
-            requested += 1
-            done_chunk.update(chunk)
-            got_all, n, tr_all, cols = ingest_ledger_report(txt, fnsku_to_sku) if txt else ({}, 0, {}, [])
-            if cols:
-                ledger_columns = cols
-            for m3 in chunk:
-                got = {k: v for k, v in got_all.items() if k[:7] == m3}
-                if got:
-                    ledger_daily.update(got)
-                    for k in list(transit_daily):
-                        if k[:7] == m3:
-                            del transit_daily[k]
-                    transit_daily.update({k: v for k, v in tr_all.items() if k[:7] == m3})
-                    ledger_months[m3] = {"days": len(got), "rows": sum(len(v) for v in got.values()), "skus": len({s for v in got.values() for s in v}), "transit": True,
-                                         "transit_units_avg": round(sum(sum(v.values()) for k, v in tr_all.items() if k[:7] == m3) / max(1, len(got)), 1),
-                                         "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                                         **({"chunk": f"{chunk[-1]}..{chunk[0]}"} if len(chunk) > 1 else {})}
-                    log(f"ledger {m3}: {len(got)} days, {ledger_months[m3]['rows']} rows, {ledger_months[m3]['skus']} SKUs")
-                elif len(chunk) > 1:
-                    e3 = ledger_months.get(m3) or {}
-                    if e3 and not e3.get("empty"):
-                        e3["chunk_failed"] = True          # next time: one month per report
-                        e3["transit_tries"] = (e3.get("transit_tries") or 0) + (0 if txt else 1)
+                log(str(e)); warnings["ledger_throttled"] = str(e)[:200]
+            if txt is not False:
+                got_all, n, tr_all, cols = ingest_ledger_report(txt, fnsku_to_sku) if txt else ({}, 0, {}, [])
+                if cols:
+                    ledger_columns = cols
+                if not got_all and len(span) > 1:
+                    ledger_chunk_max = max(1, len(span) // 2)
+                    log(f"{label}: no rows ({'empty' if txt == '' else 'fatal/timeout' if txt is None else 'no data'}) - next run asks for at most {ledger_chunk_max} months")
+                now_s = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+                for m3 in span:
+                    got = {k: v for k, v in got_all.items() if k[:7] == m3}
+                    e3 = ledger_months.get(m3)
+                    if got:
+                        ledger_daily.update(got)
+                        for k in list(transit_daily):
+                            if k[:7] == m3:
+                                del transit_daily[k]
+                        transit_daily.update({k: v for k, v in tr_all.items() if k[:7] == m3})
+                        ledger_months[m3] = {"days": len(got), "rows": sum(len(v) for v in got.values()), "skus": len({s for v in got.values() for s in v}), "transit": True,
+                                             "transit_units_avg": round(sum(sum(v.values()) for k, v in tr_all.items() if k[:7] == m3) / max(1, len(got)), 1),
+                                             "fetched_at": now_s, **({"span": label} if len(span) > 1 else {})}
+                        log(f"ledger {m3}: {len(got)} days, {ledger_months[m3]['rows']} rows, {ledger_months[m3]['skus']} SKUs")
+                    elif not got_all and len(span) > 1:
+                        continue                         # the whole span failed: retried next run with a shorter span
+                    elif e3 and not e3.get("empty"):
+                        if m3 == cur_mk:
+                            e3["fetched_at"] = now_s     # nothing newer yet
+                        else:
+                            e3["transit_tries"] = (e3.get("transit_tries") or 0) + 1
                         ledger_months[m3] = e3
-                    log(f"ledger {m3}: no rows in the {label} report")
-                elif ent and not ent.get("empty") and not (due(ent, mk) or cur_due):
-                    ent["transit_tries"] = (ent.get("transit_tries") or 0) + 1
-                    ledger_months[m3] = ent
-                else:
-                    ledger_months[m3] = empty_entry(ledger_months, m3, "no rows" if txt else ("cancelled" if txt == "" else "fatal/timeout"))
+                    else:
+                        ledger_months[m3] = empty_entry(ledger_months, m3, "no rows" if txt else ("cancelled" if txt == "" else "fatal/timeout"))
+        elif not span:
+            log("ledger: nothing due this run")
 
     # 3. daily storage cost -------------------------------------------------------------------------
     # v1.5: back-test every billed month, pick the unit basis by units accuracy, then estimate with Amazon's formula
@@ -980,7 +1001,7 @@ def main():
                                              "latest report) / days in month x units calibration")}},
         "dims": {"by_sku": dims, "meta": dims_meta},
         "ltsf": {"months": ltsf_months, "daily": ltsf_daily},
-        "ledger": {"months": ledger_months, "daily": ledger_daily, "transit_daily": transit_daily, "columns": ledger_columns,
+        "ledger": {"months": ledger_months, "daily": ledger_daily, "transit_daily": transit_daily, "columns": ledger_columns, "chunk_max": ledger_chunk_max,
                    "note": "Inventory Ledger summary, DAILY ending balance per SKU (all dispositions, all US locations) - historical on-hand units; transit_daily = units in transit between warehouses (v1.4)"},
         "backtest": backtest,
         "meta": {
