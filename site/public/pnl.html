@@ -1194,6 +1194,11 @@
       <div style="overflow-x:auto;"><table class="simple" id="opexTable" style="min-width:760px;"></table></div>
     </div>
 
+  <div class="card" id="assetsCard">
+    <div class="card-head" id="assetsHead"><h2>Tài sản cố định &amp; phân bổ</h2></div>
+    <div id="assetsBody"></div>
+  </div>
+
   <div class="card">
     <div class="card-head"><h2 data-i18n="h.cashTitle">Tiền mặt &amp; runway</h2><div class="note" data-i18n="h.cashNote">Chưa có nguồn</div></div>
     <div id="cashGaps" class="gapslist"></div>
@@ -1276,7 +1281,7 @@
     return load(k, 1).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })); }).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=9b7a23149d';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=71ada0a2b9';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');

@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 9b7a23149d).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 71ada0a2b9).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -540,16 +540,19 @@
     return any ? total : null;
   }
   let opexMeta = null;
-  const OPEX_GA_KEYS = ['salary','software','office','accounting','insurance','training','other','other_us','cashback'];   // V11.9: + training; V12.4: + other_us, cashback (bank statements)
+  const OPEX_GA_KEYS = ['salary','software','office','accounting','insurance','training','other','other_us','cashback','cert'];   // V11.9: + training; V12.4: + other_us, cashback (bank statements); V12.5: + cert
   const OPEX_BELOW_KEYS = ['depreciation','interest','income_tax'];
   // V11.8: marketing entered monthly in the same file (no API): agency creative retainers, creator/UGC payouts, Amazon DSP top-ups
   const OPEX_MKT_KEYS = ['mkt_agency','mkt_creator','mkt_dsp','mkt_other'];   // V12.4: + mkt_other (Microsoft Ads, branding)
   // V12.4: cost of goods entered monthly from the Mercury / Slash statements: other 3PL fulfilment (Big Sky 2025, Deliverr, Andejian SSWF)
   // and cost adjustments (IEEPA tariff refund, negative)
-  const OPEX_COGS_KEYS = ['ful_other','cogs_adj'];
+  const OPEX_COGS_KEYS = ['ful_other','cogs_adj','tooling_exp'];   // V12.5: + tooling_exp (moulds below the capitalisation threshold, expensed)
   const OPEX_MKT_CH = {mkt_agency:'shopify', mkt_creator:'shopify', mkt_dsp:'amazon', mkt_other:'shopify', ful_other:'shopify'};   // channel each one belongs to (channel filter, take-rate card)
   const OPEX_ALL_KEYS = OPEX_GA_KEYS.concat(OPEX_BELOW_KEYS, OPEX_MKT_KEYS, OPEX_COGS_KEYS);
-  const OPEX_HIDE_ZERO = ['other_us','cashback'];   // V12.4: these G&A rows only show when the period has an amount
+  const OPEX_HIDE_ZERO = ['other_us','cashback','cert'];   // V12.4: these G&A rows only show when the period has an amount; V12.5: + cert
+  // V12.5: one-off items are not carried into an estimated month (a month not entered yet takes the last closed month otherwise)
+  const OPEX_NO_AVG = ['cogs_adj','cashback','mkt_other','cert','tooling_exp'];
+  let ASSET_REG = null;   // V12.5: fixed-asset register from data/opex_monthly.json -> assets (see buildAssetReg)
   const OPEX_AVG_MONTHS = 1;   // V12.1 (user 20/10/2026): open / missing month = the last closed month (V11.7 used the average of the last 6)
   const SNOWBALL_PAYOUT_FEE = 0.04;   // V12.1: Snowball's 4% payout fee on the commissions, accrued with the commission (accountant's basis)
   const OPEX_EST_TITLE = () => tv('Month not closed yet — estimated until its actual figures are entered: Vietnam costs = the last closed month; software (Slash card) and Upwork contractors = actual charges to date, spread per day. Replaced automatically once the month is entered in data/opex_monthly.json', 'Tháng chưa chốt sổ — tạm tính tới khi nhập số thật: chi phí VN = tháng đã chốt gần nhất; phần mềm (thẻ Slash) và Upwork = số thực tế tới nay, rải theo ngày. Tự thay khi nhập tháng vào data/opex_monthly.json');
@@ -628,6 +631,7 @@
     {key:'other', get label(){ return tv('Other', 'Khác'); }, monthly:0},
     {key:'other_us', get label(){ return tv('Other US costs — travel, bank & FX fees, small items (Mercury / Slash statements)', 'Chi phí khác ở Mỹ — công tác, phí ngân hàng & ngoại tệ, khoản nhỏ (sao kê Mercury / Slash)'); }, monthly:0},
     {key:'cashback', get label(){ return tv('Card cashback (Mercury IO Cashback) — reduces costs', 'Hoàn tiền thẻ Mercury (cashback) — giảm trừ chi phí'); }, monthly:0},
+    {key:'cert', get label(){ return tv('Product certification & testing (OEKO-TEX) — testing expensed when paid; licence & QA package amortised over 12 months', 'Chứng nhận & thử nghiệm sản phẩm (OEKO-TEX) — phí thử nghiệm ghi ngay; license & gói QA phân bổ 12 tháng'); }, monthly:0},   // V12.5
   ];
   const INVENTORY_MONTHLY = 0;   // holding cost: no source connected yet
   const META_ROAS_WARN = 1.5, META_CPA_WARN = 90;   // thresholds for the Meta campaign table
@@ -993,7 +997,9 @@
     // Deliverr, Andejian SSWF fulfilment) - scaled to the Shopify channel in maskRow - and adjustments (IEEPA tariff refund, negative), allocated.
     const cogsOther = sum(rows.map(r=> r.opex ? (r.opex.vals.ful_other||0) : 0));
     const cogsAdj = sum(rows.map(r=> r.opex ? (r.opex.vals.cogs_adj||0) : 0)) * allocShare;
-    const cogs = productCost + packaging + fulfillment + shipmonkPickPack + postage + shipmonkInvoiceExtras + cogsOther + cogsAdj;
+    // V12.5: moulds / tooling below the $2,500 capitalisation threshold, expensed in the month paid (data/opex_monthly.json tooling_exp), allocated
+    const cogsTooling = sum(rows.map(r=> r.opex ? (r.opex.vals.tooling_exp||0) : 0)) * allocShare;
+    const cogs = productCost + packaging + fulfillment + shipmonkPickPack + postage + shipmonkInvoiceExtras + cogsOther + cogsAdj + cogsTooling;
     const grossProfit = netRevenue - cogs;
 
     // Shopify Payments processing fees (sync v1.7+): real per transaction, on the order day.
@@ -1081,7 +1087,7 @@
     const opexEstRows = rows.filter(r=>r.opex && r.opex.est);
     const opexEstDays = opexEstRows.length;
     const opexEstMonths = [...new Set(opexEstRows.map(r=>r.opex.month))].sort();
-    const opexEstAmount = sum(opexEstRows.map(r=> OPEX_GA_KEYS.reduce((s,k)=> s+(r.opex.vals[k]||0), 0))) * allocShare;
+    const opexEstAmount = sum(opexEstRows.map(r=> OPEX_GA_KEYS.reduce((s,k)=> s+(r.opex.vals[k]||0)-((r.opex.schedVals||{})[k]||0), 0))) * allocShare;   // V12.5: minus register amounts
     const opexEstFor = k => { const t = []; opexEstMonths.forEach(m=>{ const x = opexEstText(m,k); if(x && !t.includes(x)) t.push(x); }); return t.join('; '); };
     const opexSum = k => sum(rows.map(r=> r.opex ? (r.opex.vals[k]||0) : 0));
     const opexHas = k => rows.some(r=> r.opex && r.opex.has[k]);
@@ -1089,7 +1095,7 @@
     const gaItems = GA_ITEMS.map(it=>{
       const manualKey = OPEX_GA_KEYS.includes(it.key);
       const entered = manualKey && opexHas(it.key);
-      const est = entered && opexEstRows.some(r=>r.opex.has[it.key]), allEst = est && opexEstDays>=opexDays;
+      const est = entered && opexEstRows.some(r=>r.opex.has[it.key] && !(r.opex.sched && r.opex.sched[it.key])), allEst = est && opexEstDays>=opexDays;   // V12.5: register-only values are not estimates
       const estT = est ? opexEstFor(it.key) : '';
       return {...it, value: (it.monthly/30*n + (manualKey ? opexSum(it.key) : 0)) * allocShare, manual: entered, est, allEst,
         label: it.label + (entered ? (allEst ? '' : tx('st.manualMonthly')) + (est ? (allEst ? tv(' — estimated',' — tạm tính') : tv(` — ${opexEstDays} days estimated`, ` — ${opexEstDays} ngày tạm tính`)) + (estT ? ': '+estT : '') : '') + opexNote : '')};
@@ -1171,7 +1177,7 @@
       smInvDays, smInv, smInvOther, smInvAdjCredits, smStorageOpen, smStorageOpenDays, smStorageCarryDays, smStorageReportDays, smInvShipCmp, smApiShipCmp, smCmpDays, smCmpMissingDays, smTrueUp, shipmonkInvoiceExtras, shipmonkLogistics, amazonLogistics, logisticsTotal, feesTotal, marketingTotal, cmBeforeMarketing,
       paymentFees, afterpayFees, afterpayAmount, afterpayOrders, paymentFeeDays, paymentFeeOrders, feesMissingOrders, gatewayMix, feeTypeMix, paypalDays, paypalFees, paypalPayments, paypalPaymentsCount, paypalCompare, paymentFeesAll, marketplaceFees, adSpend, otherVarTotal, contributionProfit,
       gaItems, gaTotal, inventoryHolding, fixedTotal, netProfit, klaviyoCost, klaviyoCostDays, klaviyoCostParts,
-      mktItems, mktAgency, mktCreator, mktDsp, mktManual, dspLive, dspBonus, dspLiveDays, dspRecent, dspEstDays, dspEstAmt, mktOther, cogsOther, cogsAdj,
+      mktItems, mktAgency, mktCreator, mktDsp, mktManual, dspLive, dspBonus, dspLiveDays, dspRecent, dspEstDays, dspEstAmt, mktOther, cogsOther, cogsAdj, cogsTooling,
       opexDays, opexCarriedDays, opexEstDays, opexEstMonths, opexEstAmount, opexNote, salaryEntered, depreciation, interest, depreciationEntered, interestEntered, taxEntered, taxRate, ebit, ebt, incomeTax, incomeTaxEstimated, netIncome, belowEbitdaEntered,
       variableTotal, variableRatio, cmRatio, breakEvenRevenue, blendedAOV, breakEvenOrders,
       merValue, merSpend, attrRevenueSum,
@@ -1501,8 +1507,9 @@
     if(a.amazonInboundFreightReal !== 0){
       rows.push({...stLine(tv('Memo — inbound freight & duty into FBA ', 'Memo — cước & thuế nhập hàng vào FBA ')+money(a.amazonInboundFreightReal)+tv(' (Amazon Global Logistics, invoice date): capitalised into inventory cost, NOT deducted here', ' (Amazon Global Logistics, ngày hoá đơn): tính vào giá vốn hàng nhập kho, KHÔNG trừ ở đây'), 0, nr, null, 'cogs'), detail:true, live:true});
     }
-    if(Math.abs(a.cogsOther)>=0.005) rows.push({...stLine(tv('Other 3PL fulfilment — Big Sky Fulfillment (second warehouse, 2025), Deliverr, Andejian SSWF fulfilment fees (incl. a little lot QA/freight), single parcels — Mercury / Slash statements, by payment date', 'Fulfillment 3PL khác — Big Sky Fulfillment (kho thứ 2, 2025), Deliverr, phí fulfillment SSWF trả Andejian (gồm ít phí QA/cước lô), cước gửi lẻ — sao kê Mercury / Slash, theo ngày trả')+tx('st.manualMonthly'), -a.cogsOther, nr, 'var', 'cogs'), neg: a.cogsOther>=0, live:'manual', hget: x=>-(x.cogsOther||0)});   // V12.4
+    if(Math.abs(a.cogsOther)>=0.005) rows.push({...stLine(tv('Other 3PL fulfilment — Big Sky Fulfillment (second warehouse, 2025), Deliverr, Andejian SSWF fulfilment fees (incl. a little lot QA/freight), single parcels — Mercury / Slash statements, by payment date (SSWF from the 21 Jun 2026 invoice: by service days)', 'Fulfillment 3PL khác — Big Sky Fulfillment (kho thứ 2, 2025), Deliverr, phí fulfillment SSWF trả Andejian (gồm ít phí QA/cước lô), cước gửi lẻ — sao kê Mercury / Slash, theo ngày trả (SSWF từ hoá đơn 21/06/2026: theo kỳ dịch vụ)')+tx('st.manualMonthly'), -a.cogsOther, nr, 'var', 'cogs'), neg: a.cogsOther>=0, live:'manual', hget: x=>-(x.cogsOther||0)});   // V12.4
     if(Math.abs(a.cogsAdj)>=0.005) rows.push({...stLine(tv('Cost of goods adjustment — IEEPA import tariff refund from the US Treasury, booked in the month received', 'Điều chỉnh giá vốn — hoàn thuế nhập khẩu IEEPA (tariff) từ Bộ Tài chính Mỹ, ghi tháng nhận tiền')+tx('st.manualMonthly'), -a.cogsAdj, nr, 'var', 'cogs'), neg: a.cogsAdj>=0, live:'manual', hget: x=>-(x.cogsAdj||0)});   // V12.4
+    if(Math.abs(a.cogsTooling)>=0.005) rows.push({...stLine(tv('Moulds & tooling below the $2,500 capitalisation threshold — expensed in the month paid (capitalisation policy, Fixed costs & cash page)', 'Khuôn & dụng cụ dưới ngưỡng vốn hoá $2.500 — ghi chi phí tháng trả (chính sách vốn hoá, trang Chi phí cố định & dòng tiền)')+tx('st.manualMonthly'), -a.cogsTooling, nr, 'var', 'cogs'), neg: a.cogsTooling>=0, live:'manual', hget: x=>-(x.cogsTooling||0)});   // V12.5
     rows.push({...stSub(tv('= Total COGS', '= Tổng COGS'), -a.cogs, nr, 'cogs_sub'), hget: x=>-x.cogs});
     rows.push({...stSub(tv('= Gross profit', '= Lợi nhuận gộp (Gross Profit)'), a.grossProfit, nr, 'gp'), hget: x=>x.grossProfit});
 
@@ -1712,7 +1719,7 @@
     // Below EBITDA: D&A -> EBIT, interest -> EBT, income tax -> net income (manual monthly entries in data/opex_monthly.json)
     rows.push(stSection(tv('Below EBITDA — depreciation, interest, income tax (manual monthly entry)', 'Dưới EBITDA — khấu hao, lãi vay, thuế TNDN (nhập tay theo tháng)'),'below'));
     const manualNote = tx('st.manualMonthly') + a.opexNote + alloc;
-    rows.push({...stLine(tv('Depreciation & amortisation (D&A) — moulds, equipment, software bought outright', 'Khấu hao & phân bổ (D&A) — khuôn, thiết bị, phần mềm mua đứt') + (a.depreciationEntered ? manualNote : tx('st.notEntered')), -a.depreciation, nr, 'fix', 'below'), neg:true, live: a.depreciationEntered ? 'manual' : false, gap: a.depreciationEntered ? false : 'manual', hget: x=>-x.depreciation});
+    rows.push({...stLine(tv('Depreciation & amortisation (D&A) — moulds, equipment, software bought outright', 'Khấu hao & phân bổ (D&A) — khuôn, thiết bị, phần mềm mua đứt') + (a.depreciationEntered ? (ASSET_REG && ASSET_REG.fixed.some(x=>x.ins) ? tv(' — straight-line from the fixed-asset register (Fixed costs & cash page)', ' — đường thẳng theo danh mục tài sản (trang Chi phí cố định & dòng tiền)') + a.opexNote + alloc : manualNote) : tx('st.notEntered')), -a.depreciation, nr, 'fix', 'below'), neg:true, live: a.depreciationEntered ? 'manual' : false, gap: a.depreciationEntered ? false : 'manual', hget: x=>-x.depreciation});
     rows.push({...stSub(tv('= EBIT (profit before interest & tax)', '= EBIT (lợi nhuận trước lãi vay & thuế)'), a.ebit, nr, 'ebit_sub'), hget: x=>x.ebit});
     rows.push({...stLine(tv('Interest & finance costs (± deposit interest, exchange differences)', 'Lãi vay & chi phí tài chính (± lãi tiền gửi, chênh lệch tỷ giá)') + (a.interestEntered ? manualNote : tx('st.notEntered')), -a.interest, nr, 'fix', 'below'), neg: a.interest>=0, live: a.interestEntered ? 'manual' : false, gap: a.interestEntered ? false : 'manual', hget: x=>-x.interest});
     rows.push({...stSub(tv('= Profit before tax (EBT)', '= Lợi nhuận trước thuế (EBT)'), a.ebt, nr, 'ebt_sub'), hget: x=>x.ebt});
@@ -2322,7 +2329,7 @@
     }
     const months = OPEX_MONTHLY_LIVE_DATA.months;
     const cols = OPEX_GA_KEYS.concat(OPEX_MKT_KEYS, OPEX_COGS_KEYS, OPEX_BELOW_KEYS);
-    const LABEL = {depreciation: tv('Depreciation & amortisation (D&A)', 'Khấu hao & phân bổ (D&A)'), interest: tv('Interest & finance costs', 'Lãi vay & chi phí tài chính'), income_tax: tv('Income tax', 'Thuế TNDN'), mkt_agency: tv('Marketing — agency', 'Marketing — agency'), mkt_creator: tv('Marketing — creators/UGC', 'Marketing — creator/UGC'), mkt_dsp: tv('Marketing — Amazon DSP', 'Marketing — Amazon DSP'), mkt_other: tv('Marketing — other (Microsoft Ads, branding)', 'Marketing — khác (Microsoft Ads, branding)'), ful_other: tv('COGS — other 3PL fulfilment', 'Giá vốn — fulfillment 3PL khác'), cogs_adj: tv('COGS — adjustment (tariff refund)', 'Giá vốn — điều chỉnh (hoàn tariff)')};
+    const LABEL = {depreciation: tv('Depreciation & amortisation (D&A)', 'Khấu hao & phân bổ (D&A)'), interest: tv('Interest & finance costs', 'Lãi vay & chi phí tài chính'), income_tax: tv('Income tax', 'Thuế TNDN'), mkt_agency: tv('Marketing — agency', 'Marketing — agency'), mkt_creator: tv('Marketing — creators/UGC', 'Marketing — creator/UGC'), mkt_dsp: tv('Marketing — Amazon DSP', 'Marketing — Amazon DSP'), mkt_other: tv('Marketing — other (Microsoft Ads, branding)', 'Marketing — khác (Microsoft Ads, branding)'), ful_other: tv('COGS — other 3PL fulfilment', 'Giá vốn — fulfillment 3PL khác'), cogs_adj: tv('COGS — adjustment (tariff refund)', 'Giá vốn — điều chỉnh (hoàn tariff)'), tooling_exp: tv('COGS — moulds below threshold', 'Giá vốn — khuôn dưới ngưỡng')};
     GA_ITEMS.forEach(it=>{ if(OPEX_GA_KEYS.includes(it.key)) LABEL[it.key] = it.label; });
     let html = `<thead><tr><th>${tv('Month', 'Tháng')}</th>${cols.map(k=>`<th class="num">${LABEL[k]||k}</th>`).join('')}</tr></thead><tbody>`;
     const estM = opexMeta.est || {};
@@ -2425,7 +2432,7 @@
       if(noVN.length) gaps.push({lvl:'w', name: tv('G&A ','G&A ')+span(noVN)+tv(': no Vietnam payroll / office yet',': chưa có lương & văn phòng VN'), note: tv('these months only have Upwork contractors, software and accounting — add the Vietnam cost file for them if there were costs','các tháng này mới có Upwork, phần mềm, kế toán — bổ sung file chi phí VN nếu có phát sinh')});
       const entered = months.filter(m=>OM[m] && !isOpenM(m));
       if(entered.length) done.push(tv('G&A entered monthly ','G&A nhập theo tháng ')+span(entered)+tv(' (salaries incl. Upwork, software, office, accounting, other)',' (lương gồm Upwork, phần mềm, văn phòng, kế toán, khác)'));
-      if(entered.length && entered.every(m=>!(num(m,'depreciation')>0) && !(num(m,'interest')>0)))
+      if(entered.length && entered.every(m=>!(num(m,'depreciation')>0) && !(num(m,'interest')>0)) && !(ASSET_REG && ASSET_REG.fixed.some(x=>x.ins)))   // V12.5
         gaps.push({lvl:'w', name: tv('Depreciation & interest not entered','Khấu hao & lãi vay chưa nhập'), note: tv('below EBITDA only — enter per month in data/opex_monthly.json if there are any','chỉ ảnh hưởng dưới EBITDA — nhập theo tháng vào data/opex_monthly.json nếu có')});
     }
     const order = {c:0, w:1, i:2};
@@ -3843,6 +3850,66 @@
       {name:tv('Bank balance & runway','Số dư ngân hàng & runway'), note:tv('Bank/Mercury/QuickBooks not connected — enter by hand or connect the API when ready','Chưa nối ngân hàng/Mercury/QuickBooks — nhập tay hoặc nối API khi sẵn sàng')},
       {name:tv('Cash in transit (Amazon, Walmart, TikTok payouts)','Tiền đang trên đường về (Amazon, Walmart, TikTok payout)'), note:tv('Amazon Finances has settlement data — not yet built into a cash flow','Amazon Finances có số liệu quyết toán — chưa dựng thành dòng tiền')},
     ].map(g=>`<div class="gap-row"><span class="dot c"></span><span class="g-name">${g.name}</span><span class="g-note">${g.note}</span></div>`).join('');
+    renderAssets();   // V12.5
+  }
+  // V12.5: fixed assets & amortisation — register, depreciation by year, prepaid, items expensed below the threshold
+  function renderAssets(){
+    const body = document.getElementById('assetsBody'), head = document.getElementById('assetsHead');
+    if(!body) return;
+    const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const L = o => (o && typeof o==='object') ? tv(o.en||o.vi||'', o.vi||o.en||'') : String(o||'');
+    const R = ASSET_REG;
+    if(head) head.innerHTML = `<h2>${tv('Fixed assets & amortisation','Tài sản cố định & phân bổ')}</h2><div class="note">${tv('US GAAP · depreciation and prepaid amortisation are computed from the register (<code>assets</code> in data/opex_monthly.json) and flow into the P&amp;L by month','US GAAP · khấu hao và phân bổ trả trước tự tính từ danh mục (<code>assets</code> trong data/opex_monthly.json) và tự vào P&amp;L theo tháng')}</div>${R ? '<button class="btn mini" type="button" data-export="assetsTable" data-name="tai-san-co-dinh">CSV</button>' : ''}`;
+    if(!R){ body.innerHTML = `<div class="caption" style="padding-left:2px;">${tv('No asset register yet — add <code>assets</code> to data/opex_monthly.json.','Chưa có danh mục tài sản — thêm <code>assets</code> vào data/opex_monthly.json.')}</div>`; return; }
+    const cur = days.length ? days[days.length-1].iso.slice(0,7) : null;
+    const mm = m => m ? m.slice(5,7)+'/'+m.slice(0,4) : '—';
+    const upto = pl => pl.filter(([m])=>!cur || m<=cur).reduce((s,[,v])=>s+v,0);
+    const dash = '<span style="color:var(--ink-muted);">—</span>';
+    const sub = t => `<div class="subhead">${t}</div>`;
+    let h = `<div class="caption" style="padding-left:2px;margin:0 0 4px;">${esc(L(R.policy))}</div>`;
+    // register
+    h += sub(tv('Register','Danh mục tài sản'));
+    h += `<div style="overflow-x:auto;"><table class="simple" id="assetsTable" style="min-width:900px;"><thead><tr><th>${tv('Asset','Tài sản')}</th><th>${tv('Status','Trạng thái')}</th><th class="num">${tv('Cost','Nguyên giá')}</th><th class="num">${tv('Paid','Đã trả')}</th><th class="num">${tv('Still owed','Còn phải trả')}</th><th>${tv('In service from','Bắt đầu dùng')}</th><th class="num">${tv('Months','Số tháng')}</th><th class="num">${tv('Per month','Khấu hao/tháng')}</th><th class="num">${tv('Accumulated to ','Luỹ kế đến ')}${mm(cur)}</th><th class="num">${tv('Book value','Giá trị còn lại')}</th></tr></thead><tbody>`;
+    const T = {cost:0, paid:0, owed:0, acc:0, nbv:0, cip:0};
+    R.fixed.forEach(x=>{
+      const cip = !x.ins, acc = upto(x.months), owed = Math.max(0, x.cost - x.paid);
+      const nbv = cip ? x.paid : Math.max(0, x.base + x.salvage - acc);
+      T.cost += x.cost; T.paid += x.paid; T.owed += owed; T.acc += acc; T.nbv += nbv; if(cip) T.cip += x.paid;
+      const tag = cip ? `<span class="tag info" title="${tv('Paid but not in service yet: construction in progress, not depreciated. Set status to in_service and in_service to the month of the first production lot.','Đã trả nhưng chưa đưa vào dùng: tài sản dở dang, chưa khấu hao. Đổi status thành in_service và in_service = tháng chạy lô sản xuất đầu tiên.')}"><span class="d"></span>${tv('In progress (CIP)','Dở dang (CIP)')}</span>`
+        : x.disp ? `<span class="tag gap"><span class="d"></span>${tv('Written off ','Đã ghi giảm ')}${mm(x.disp)}</span>`
+        : (acc >= x.base - 0.004 ? `<span class="tag info"><span class="d"></span>${tv('Fully depreciated','Đã khấu hao hết')}</span>` : `<span class="tag live"><span class="d"></span>${tv('In service','Đang dùng')}</span>`);
+      const cost = cip ? (x.cost>0 ? `<span title="${tv('contract price','giá hợp đồng')}" style="color:var(--ink-muted);">${money(x.cost)}</span>` : dash) : money(x.cost);
+      h += `<tr><td class="name" title="${esc(L(x.basis))}">${esc(L(x.name))}</td><td>${tag}</td><td class="num">${cost}</td><td class="num">${money(x.paid)}</td><td class="num">${owed>0.004 ? money(owed) : dash}</td><td>${cip ? dash : mm(x.ins)}</td><td class="num">${cip ? dash : x.life}</td><td class="num">${cip ? dash : money(x.perMonth)}</td><td class="num">${cip ? dash : money(acc)}</td><td class="num">${money(nbv)}</td></tr>`;
+    });
+    h += `</tbody><tfoot><tr><td class="name"><b>${tv('Total','Tổng')}</b></td><td></td><td class="num"><b>${money(T.cost)}</b></td><td class="num"><b>${money(T.paid)}</b></td><td class="num"><b>${T.owed>0.004 ? money(T.owed) : '—'}</b></td><td></td><td></td><td></td><td class="num"><b>${money(T.acc)}</b></td><td class="num"><b>${money(T.nbv)}</b></td></tr></tfoot></table></div>`;
+    const bases = R.fixed.filter(x=>x.basis).map(x=>`<b>${esc(L(x.name))}</b>: ${esc(L(x.basis))}`);
+    if(bases.length) h += `<div class="caption" style="padding-left:2px;margin-top:6px;">${tv('Basis — ','Căn cứ — ')}${bases.join(' · ')}</div>`;
+    // by year
+    const years = {};
+    const Y = y => years[y] = years[y] || {dep:0, amort:0, exp:0, expOut:0};
+    Object.keys(R.sched).forEach(m=>{ const s = R.sched[m], y = Y(m.slice(0,4)); Object.keys(s).forEach(k=>{ if(k==='depreciation') y.dep += s[k]; else y.amort += s[k]; }); });
+    R.expensed.forEach(e=>{ const y = Y(e.month.slice(0,4)); if(e.in_pnl===false) y.expOut += e.amount; else y.exp += e.amount; });
+    const ys = Object.keys(years).sort();
+    if(ys.length){
+      h += sub(tv('Charged to the P&L by year','Ghi vào P&L theo năm'));
+      h += `<div style="overflow-x:auto;"><table class="simple" style="min-width:620px;"><thead><tr><th>${tv('Year','Năm')}</th><th class="num">${tv('Depreciation (D&A, below EBITDA)','Khấu hao (D&A, dưới EBITDA)')}</th><th class="num">${tv('Prepaid amortisation (G&A)','Phân bổ trả trước (G&A)')}</th><th class="num">${tv('Moulds expensed below threshold (COGS)','Khuôn dưới ngưỡng ghi chi phí (giá vốn)')}</th><th class="num">${tv('Total','Tổng')}</th></tr></thead><tbody>`+
+        ys.map(y=>{ const v = years[y], tot = v.dep + v.amort + v.exp + v.expOut;
+          return `<tr><td class="name">${y}${cur && y===cur.slice(0,4) ? ' <span class="tag info"><span class="d"></span>'+tv('full year','cả năm')+'</span>' : ''}</td><td class="num">${v.dep ? money(v.dep) : dash}</td><td class="num">${v.amort ? money(v.amort) : dash}</td><td class="num">${(v.exp+v.expOut) ? money(v.exp+v.expOut)+(v.expOut ? ' <span class="tag info" title="'+tv('before the first month in the dashboard — shown here only','trước tháng đầu tiên của dashboard — chỉ hiện ở đây')+'"><span class="d"></span>'+tv('outside P&L range','ngoài phạm vi P&L')+'</span>' : '') : dash}</td><td class="num">${money(tot)}</td></tr>`; }).join('')+`</tbody></table></div>`;
+    }
+    // prepaid
+    if(R.prepaid.length){
+      h += sub(tv('Prepaid expenses (amortised evenly)','Chi phí trả trước (phân bổ đều)'));
+      h += `<div style="overflow-x:auto;"><table class="simple" style="min-width:620px;"><thead><tr><th>${tv('Item','Khoản')}</th><th class="num">${tv('Amount','Số tiền')}</th><th>${tv('From','Từ')}</th><th class="num">${tv('Months','Số tháng')}</th><th class="num">${tv('Per month','/tháng')}</th><th class="num">${tv('Amortised to ','Đã phân bổ đến ')}${mm(cur)}</th><th class="num">${tv('Remaining','Còn lại')}</th></tr></thead><tbody>`+
+        R.prepaid.map(p=>{ const done = upto(p.months); return `<tr><td class="name">${esc(L(p.name))}</td><td class="num">${money(p.amount)}</td><td>${mm(p.start)}</td><td class="num">${p.n}</td><td class="num">${money(p.perMonth)}</td><td class="num">${money(done)}</td><td class="num">${money(Math.max(0, p.amount-done))}</td></tr>`; }).join('')+`</tbody></table></div>`;
+    }
+    // expensed below the threshold
+    if(R.expensed.length){
+      h += sub(tv('Below the threshold — expensed when paid','Dưới ngưỡng — ghi chi phí khi trả'));
+      h += `<div style="overflow-x:auto;"><table class="simple" style="min-width:520px;"><thead><tr><th>${tv('Month paid','Tháng trả')}</th><th>${tv('Item','Khoản')}</th><th class="num">${tv('Amount','Số tiền')}</th><th>${tv('In the P&L','Trên P&L')}</th></tr></thead><tbody>`+
+        R.expensed.slice().sort((a,b)=> a.month<b.month ? 1 : a.month>b.month ? -1 : 0).map(e=>`<tr><td>${mm(e.month)}</td><td class="name">${esc(L(e.name))}</td><td class="num">${money(e.amount)}</td><td>${e.in_pnl===false ? '<span class="tag info"><span class="d"></span>'+tv('before the dashboard range','trước phạm vi dashboard')+'</span>' : '<span class="tag live"><span class="d"></span>'+tv('COGS','Giá vốn')+'</span>'}</td></tr>`).join('')+`</tbody></table></div>`;
+    }
+    h += `<div class="caption" style="padding-left:2px;margin-top:8px;">${T.cip>0.004 ? tv('Construction in progress ','Tài sản dở dang ')+money(T.cip)+tv(' is not depreciated until the asset goes into service. ',' chưa khấu hao cho tới khi đưa vào dùng. ') : ''}${tv('To add an asset: append it to assets.fixed (cost, paid, status, in_service, life_months); the P&L updates by itself. Do not also enter depreciation by hand for these assets.','Thêm tài sản: thêm vào assets.fixed (cost, paid, status, in_service, life_months); P&L tự cập nhật. Không nhập tay depreciation cho các tài sản này nữa.')}</div>`;
+    body.innerHTML = h;
   }
 
   // ---------- wire up ----------
@@ -4474,8 +4541,44 @@
     const lastMs = Date.parse(dspMeta.last+'T00:00:00Z'), genMs = dspMeta.generated_at ? Date.parse(dspMeta.generated_at) : 0;
     return genMs - lastMs < 2.5*86400000;
   }
+  // V12.5: fixed-asset register (data/opex_monthly.json -> assets; US GAAP ASC 360). An asset in service is depreciated
+  // straight-line from its in-service month (full month; the last month takes the rounding so the total equals cost − salvage);
+  // a disposed asset writes its remaining value off in the disposal month; "cip" (paid, not in service) is not depreciated.
+  // Prepaid items are amortised evenly from their start month into their G&A key. Both join the monthly figures per day.
+  function buildAssetReg(data){
+    const A = data && data.assets;
+    if(!A || typeof A!=='object') return null;
+    const num = v => (v===null || v===undefined || v==='' || !isFinite(parseFloat(v))) ? 0 : parseFloat(v);
+    const isM = m => typeof m==='string' && /^\d{4}-\d{2}$/.test(m);
+    const addM = (m, k) => { const t = (+m.slice(0,4))*12 + (+m.slice(5,7)-1) + k; return Math.floor(t/12)+'-'+String(t%12+1).padStart(2,'0'); };
+    const r2 = v => Math.round(v*100)/100;
+    const plan = (amt, start, n) => { const out = []; let acc = 0; for(let i=0;i<n;i++){ const t = r2(amt*(i+1)/n); out.push([addM(start,i), r2(t-acc)]); acc = t; } return out; };
+    const pol = (A.policy && typeof A.policy==='object') ? A.policy : {};
+    const sched = {};
+    const put = (m, k, v) => { if(!v) return; const s = sched[m] = sched[m] || {}; s[k] = r2((s[k]||0) + v); };
+    const fixed = (Array.isArray(A.fixed) ? A.fixed : []).filter(x=>x && typeof x==='object').map(x=>{
+      const cost = num(x.cost), paid = (x.paid===undefined || x.paid===null) ? cost : num(x.paid);
+      const salvage = num(x.salvage!==undefined ? x.salvage : pol.salvage);
+      const life = Math.max(1, Math.round(num(x.life_months) || num(pol.life_months) || 36));
+      const ins = String(x.status||'').toLowerCase()!=='cip' && isM(x.in_service) ? x.in_service : null;
+      const disp = ins && isM(x.disposed) ? x.disposed : null;
+      const base = Math.max(0, cost - salvage);
+      let months = ins ? plan(base, ins, life) : [];
+      if(disp){ const kept = months.filter(([m])=>m<disp), done = r2(kept.reduce((s,[,v])=>s+v,0)); months = kept.concat(base-done>0.004 ? [[disp, r2(base-done)]] : []); }
+      months.forEach(([m,v])=>put(m, 'depreciation', v));
+      return Object.assign({}, x, {cost, paid, salvage, life, base, ins, disp, months, perMonth: ins ? base/life : 0});
+    });
+    const prepaid = (Array.isArray(A.prepaid) ? A.prepaid : []).filter(p=>p && typeof p==='object' && isM(p.start)).map(p=>{
+      const amt = num(p.amount), n = Math.max(1, Math.round(num(p.months) || 12)), key = OPEX_ALL_KEYS.includes(p.key) ? p.key : 'other';
+      const pl = plan(amt, p.start, n); pl.forEach(([m,v])=>put(m, key, v));
+      return Object.assign({}, p, {amount: amt, n, key, months: pl, perMonth: amt/n});
+    });
+    const expensed = (Array.isArray(A.expensed) ? A.expensed : []).filter(e=>e && typeof e==='object' && isM(e.month)).map(e=>Object.assign({}, e, {amount: num(e.amount)}));
+    return {policy: pol, fixed, prepaid, expensed, sched};
+  }
   function applyOpexRows(data){
     if(!data || !data.months) return false;
+    try { ASSET_REG = buildAssetReg(data); } catch(err){ ASSET_REG = null; console.warn('asset register', err); }   // V12.5
     const months = {};
     Object.keys(data.months).forEach(m=>{ if(/^\d{4}-\d{2}$/.test(m) && data.months[m] && typeof data.months[m]==='object') months[m] = data.months[m]; });
     const entered = Object.keys(months).sort();
@@ -4508,6 +4611,7 @@
           const d = Math.round((Date.parse(a.to+'T00:00:00Z')-Date.parse(a.from+'T00:00:00Z'))/86400000)+1;
           if(d>0){ const fx = num(a.fixed)||0; e.basis[k] = 'actual'; e.actual[k] = {amount:amt, from:a.from, to:a.to, days:d, source:a.source||'', fixed:fx}; return fx + amt/d*dim; }
         }
+        if(OPEX_NO_AVG.includes(k)) return null;   // V12.5: one-off items are not carried into an estimated month
         const v = avg(k); if(v!==null) e.basis[k] = 'avg'; return v;
       };
       OPEX_ALL_KEYS.forEach(k=>{
@@ -4534,6 +4638,17 @@
         if(!e) return;
         o.est = true;
         OPEX_ALL_KEYS.forEach(k=>{ const v = e.perMonth[k]; const g = v!==null && v!==undefined; o.given[k] = g; o.has[k] = g && v!==0; o.vals[k] = (g ? v : 0)/dim; });
+      }
+      // V12.5: depreciation & prepaid amortisation from the asset register, on top of the entered / estimated figures
+      const sch = ASSET_REG && ASSET_REG.sched[m];
+      if(sch){
+        o.sched = {}; o.schedVals = {};
+        Object.keys(sch).forEach(k=>{
+          if(!OPEX_ALL_KEYS.includes(k) || !sch[k]) return;
+          const pd = sch[k]/dim;
+          if(!o.has[k]) o.sched[k] = true;
+          o.vals[k] = (o.vals[k]||0) + pd; o.schedVals[k] = pd; o.has[k] = true; o.given[k] = true;
+        });
       }
       d.opex = o; matched++;
     });
