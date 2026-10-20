@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 7b7f04a024).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 4219872570).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -490,7 +490,7 @@
     return any ? total : null;
   }
   let opexMeta = null;
-  const OPEX_GA_KEYS = ['salary','software','office','accounting','insurance','other'];
+  const OPEX_GA_KEYS = ['salary','software','office','accounting','insurance','training','other'];   // V11.9: + training
   const OPEX_BELOW_KEYS = ['depreciation','interest','income_tax'];
   // V11.8: marketing entered monthly in the same file (no API): agency creative retainers, creator/UGC payouts, Amazon DSP top-ups
   const OPEX_MKT_KEYS = ['mkt_agency','mkt_creator','mkt_dsp'];
@@ -563,6 +563,7 @@
     {key:'office', get label(){ return tv('Office & operations', 'Văn phòng & vận hành'); }, monthly:0},
     {key:'accounting', get label(){ return tv('Accounting & legal', 'Kế toán & pháp lý'); }, monthly:0},
     {key:'insurance', get label(){ return tv('Insurance', 'Bảo hiểm'); }, monthly:0},
+    {key:'training', get label(){ return tv('Training & communities (Daily Mentor, Skool, Whop) — prepaid programs spread over their term', 'Đào tạo & cộng đồng (Daily Mentor, Skool, Whop) — khoá trả trước chia đều theo thời gian học'); }, monthly:0},
     {key:'other', get label(){ return tv('Other', 'Khác'); }, monthly:0},
   ];
   const INVENTORY_MONTHLY = 0;   // holding cost: no source connected yet
@@ -2286,10 +2287,10 @@
       const noVN = months.filter(m=>OM[m] && !isOpenM(m) && !(num(m,'office')>0));
       if(prov.length){
         const last = prov[prov.length-1];
-        const KN = {salary: tv('payroll','nhân sự'), office: tv('office','văn phòng'), other: tv('other','khác'), accounting: tv('accounting','kế toán'), software: tv('software','phần mềm')};
+        const KN = {salary: tv('payroll','nhân sự'), office: tv('office','văn phòng'), other: tv('other','khác'), accounting: tv('accounting','kế toán'), software: tv('software','phần mềm'), training: tv('training','đào tạo')};
         const grp = {};
         Object.assign(KN, {mkt_agency: tv('agency','agency'), mkt_creator: tv('creators','creator'), mkt_dsp: 'Amazon DSP'});
-        ['salary','office','other','accounting','software','mkt_agency','mkt_creator','mkt_dsp'].forEach(k=>{ if(OPEX_MKT_KEYS.includes(k) && !((((opexMeta.est[last]||{}).perMonth)||{})[k]>0)) return; const t = opexEstText(last,k); if(t) (grp[t] = grp[t] || []).push(KN[k]); });
+        ['salary','office','other','accounting','software','training','mkt_agency','mkt_creator','mkt_dsp'].forEach(k=>{ if(OPEX_MKT_KEYS.includes(k) && !((((opexMeta.est[last]||{}).perMonth)||{})[k]>0)) return; const t = opexEstText(last,k); if(t) (grp[t] = grp[t] || []).push(KN[k]); });
         gaps.push({lvl:'w', amt: a ? a.opexEstAmount : 0,
           name: tv('G&A ','G&A ')+span(prov)+tv(' estimated (month not closed)',' đang tạm tính (tháng chưa chốt)')+(a && a.opexEstAmount>0 ? ': '+money(a.opexEstAmount,{compact:true}) : ''),
           note: Object.keys(grp).map(t=>grp[t].join(', ')+' = '+t).join(' · ')+tv(' — enter the actual month in data/opex_monthly.json once the books close',' — nhập số thật của tháng vào data/opex_monthly.json khi chốt sổ')});
