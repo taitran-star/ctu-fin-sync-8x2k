@@ -86,6 +86,12 @@ Inventory snapshot (v1.4, additive - runs AFTER the order sync, never fails the 
 
 v1.5 (2026-10-19) - exact product cost per order (dashboard V11.1), two additions:
   daily[d].packaging_items   {box_sku: units} - the packaging material ShipMonk picked for the day's
+                             orders. v1.6: orders that carry NO packaging line (Nevada 3 stopped listing the
+                             box on the order from 01/10/2026) get the box(es) INFERRED from the orders that do
+                             list it - per warehouse and order composition (Large / Jumbo caves, Calming Donut,
+                             bunk bed, other) - learned every run and kept in meta.packaging_rules; the inferred
+                             boxes are included in packaging_items / packaging_units and counted apart in
+                             packaging_units_est / packaging_orders_est (rows CSV: packaging_basis).
                              orders (order items with source = "packaging": one box per package,
                              e.g. NEW-PKCTCVBX-SNGL-L); daily[d].packaging_units = their sum. The
                              dashboard expenses the boxes through FIFO over the Notion box lots
@@ -103,6 +109,7 @@ v1.5 (2026-10-19) - exact product cost per order (dashboard V11.1), two addition
 import email.utils
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -115,7 +122,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "1.5.0"
+SCRIPT_VERSION = "1.6.0"
 SCHEMA = 1
 
 API_KEY = os.environ.get("SHIPMONK_API_KEY", "").strip()
@@ -155,13 +162,101 @@ WAREHOUSE_COUNTRY = {
     "NY7": "US", "CA7": "US", "KY7": "US", "NV2": "US", "NV7": "US", "NJ1": "US", "NJ7": "US", "TO7": "CA", "CA1": "US", "FL1": "US",
 }
 
-DAILY_FIELDS = ["orders", "orders_shipped", "orders_unshipped", "orders_onhold", "units", "packages", "packaging_units", "shipping_cost", "packaging_cost", "pick_pack_cost", "total_cost", "cost_missing_orders"]
+DAILY_FIELDS = ["orders", "orders_shipped", "orders_unshipped", "orders_onhold", "units", "packages", "packaging_units", "packaging_units_est", "packaging_orders_est", "shipping_cost", "packaging_cost", "pick_pack_cost", "total_cost", "cost_missing_orders"]
 MONEY_FIELDS = ["shipping_cost", "packaging_cost", "pick_pack_cost", "total_cost"]
 GROUP_FIELDS = ["orders", "units", "shipping_cost", "packaging_cost", "pick_pack_cost", "total_cost"]
 
 
 def log(msg):
     print(f"[shipmonk] {msg}", file=sys.stderr, flush=True)
+
+
+# v1.6: box inference. Order composition classes (from the product SKUs, bundles resolved through the BOM):
+#   L = Peekaboo cave Large (PKCTCV-L-*, PKCTCV-3L-*, PKCTCV2Z-L-*), J = Jumbo (PKCTCV-JMB-*, PKCTCV-2J-*),
+#   C = Calming Donut (CLMDNT-L-*), B = bunk bed (PKBKBD-M-*), O:<prefix> = anything else.
+_CLS_RULES = (
+    (re.compile(r"^PKCTCV(?:2Z)?-(\d*)L-"), "L"),
+    (re.compile(r"^PKCTCV-(\d*)J(?:MB)?-"), "J"),
+    (re.compile(r"^CLMDNT-(\d*)L-"), "C"),
+    (re.compile(r"^PKBKBD-(\d*)M-"), "B"),
+)
+PACK_RULES_MAX = 400   # learned (warehouse|signature) keys kept in meta.packaging_rules
+PACK_FALLBACK = {"L1": "NEW-PKCTCVBX-SNGL-L", "L3": "PKCTCVBX-TRIO-L", "J": "PKCTCVBX-SNGL-J", "C": "PKCTCVBX-SNGL-L"}
+
+
+def sku_class(sku):
+    """-> (class, units per item) for one product SKU."""
+    s = (sku or "").strip().upper()
+    for rx, cls in _CLS_RULES:
+        m = rx.match(s)
+        if m:
+            try:
+                n = int(m.group(1)) if m.group(1) else 1
+            except ValueError:
+                n = 1
+            return cls, max(1, n)
+    return "O:" + (s.split("-")[0][:8] or "?"), 1
+
+
+def order_signature(items, bundles):
+    """Composition of an order as 'cls×n|cls×n' (sorted), bundles expanded through the BOM when known."""
+    comp = {}
+    for it in items or []:
+        if (it.get("source") or "") == "packaging":
+            continue
+        q = it.get("quantity") or 0
+        try:
+            q = int(q)
+        except (TypeError, ValueError):
+            q = 0
+        if q <= 0:
+            continue
+        sku = str(it.get("sku") or "").strip()
+        parts = bundles.get(sku) if isinstance(bundles, dict) else None
+        if isinstance(parts, dict) and parts:
+            for c, cq in parts.items():
+                cls, n = sku_class(c)
+                try:
+                    cq = float(cq)
+                except (TypeError, ValueError):
+                    cq = 1.0
+                comp[cls] = comp.get(cls, 0) + int(round(q * cq * n))
+        else:
+            cls, n = sku_class(sku)
+            comp[cls] = comp.get(cls, 0) + q * n
+    return "|".join(f"{k}×{v}" for k, v in sorted(comp.items()) if v > 0), comp
+
+
+def pack_key(items):
+    return ";".join(f"{k}x{v}" for k, v in sorted(items.items()) if v > 0)
+
+
+def pack_items(key):
+    out = {}
+    for part in (key or "").split(";"):
+        if "x" in part:
+            sku, _, n = part.rpartition("x")
+            try:
+                out[sku] = out.get(sku, 0) + int(n)
+            except ValueError:
+                pass
+    return out
+
+
+def fallback_boxes(comp):
+    """No learned rule: one box per cave / donut (3 Large -> Trio), nothing for the rest."""
+    items = {}
+    L, J, C = comp.get("L", 0), comp.get("J", 0), comp.get("C", 0)
+    if L >= 3:
+        items[PACK_FALLBACK["L3"]] = L // 3
+        L = L % 3
+    if L > 0:
+        items[PACK_FALLBACK["L1"]] = items.get(PACK_FALLBACK["L1"], 0) + L
+    if J > 0:
+        items[PACK_FALLBACK["J"]] = J
+    if C > 0:
+        items[PACK_FALLBACK["C"]] = items.get(PACK_FALLBACK["C"], 0) + C
+    return items
 
 
 def new_bucket():
@@ -395,8 +490,21 @@ class ApiError(Exception):
 
 # ---------------------------------------------------------------- aggregation
 class Aggregator:
-    def __init__(self, tz, window_start, window_end):
+    def __init__(self, tz, window_start, window_end, previous=None):
         self.tz = tz
+        # v1.6: box inference - BOM of the previous run (bundle -> components) + learned (warehouse|signature) -> box rules
+        prev = previous if isinstance(previous, dict) else {}
+        self.bom_bundles = ((prev.get("bom") or {}).get("bundles") or {}) if isinstance(prev.get("bom"), dict) else {}
+        self.pack_rules = {}      # key "WH|sig" -> {pack_key: count}, learned this run
+        self.prior_rules = {}     # the same, carried over from meta.packaging_rules of the previous file
+        pr = (prev.get("meta") or {}).get("packaging_rules") if isinstance(prev.get("meta"), dict) else None
+        if isinstance(pr, dict):
+            for k, v in pr.items():
+                if isinstance(v, dict):
+                    self.prior_rules[k] = {pk: int(c) for pk, c in v.items() if isinstance(c, (int, float))}
+        self.pending_pack = []    # orders without a packaging line: resolved in finalise()
+        self.pack_stats = {"orders_with_lines": 0, "orders_estimated": 0, "boxes_estimated": 0, "orders_no_box": 0,
+                           "by_warehouse": {}, "by_basis": {"rule_warehouse": 0, "rule_any": 0, "fallback": 0}}
         self.window_start = window_start
         self.window_end = window_end
         self.daily = {}          # keyed by the basis day (order date by default)
@@ -421,6 +529,75 @@ class Aggregator:
         }
         self.fx_native = {}   # currency -> native total converted this run
         self.oldest_seen = None   # ordered_at day of the oldest order seen (paging stop condition)
+
+    # ---- v1.6: box inference ------------------------------------------------------------------------------
+    def _learn(self, wh_key, sig, items):
+        pk = pack_key(items)
+        if not sig or not pk:
+            return
+        for key in (f"{wh_key}|{sig}", f"*|{sig}"):
+            t = self.pack_rules.setdefault(key, {})
+            t[pk] = t.get(pk, 0) + 1
+
+    def _rule(self, key):
+        merged = {}
+        for src in (self.prior_rules.get(key), self.pack_rules.get(key)):
+            if src:
+                for pk, c in src.items():
+                    merged[pk] = merged.get(pk, 0) + c
+        if not merged:
+            return None
+        return max(merged.items(), key=lambda kv: (kv[1], kv[0]))[0]
+
+    def _estimate(self, wh_key, sig, comp):
+        """-> (items, basis) for an order with no packaging line; ({}, None) when nothing applies."""
+        if sig:
+            pk = self._rule(f"{wh_key}|{sig}")
+            if pk is not None:
+                return pack_items(pk), "rule_warehouse"
+            pk = self._rule(f"*|{sig}")
+            if pk is not None:
+                return pack_items(pk), "rule_any"
+        fb = fallback_boxes(comp)
+        return (fb, "fallback") if fb else ({}, None)
+
+    def resolve_packaging(self):
+        """Apply the learned rules to the orders that had no packaging line (called from finalise)."""
+        for p in self.pending_pack:
+            items, basis = self._estimate(p["wh"], p["sig"], p["comp"])
+            w = self.pack_stats["by_warehouse"].setdefault(p["wh"], {"orders_without_line": 0, "orders_estimated": 0, "boxes_estimated": 0})
+            w["orders_without_line"] += 1
+            if not items:
+                self.pack_stats["orders_no_box"] += 1
+                continue
+            n = sum(items.values())
+            self.pack_stats["orders_estimated"] += 1
+            self.pack_stats["boxes_estimated"] += n
+            self.pack_stats["by_basis"][basis] += 1
+            w["orders_estimated"] += 1
+            w["boxes_estimated"] += n
+            for d in p["targets"]:
+                d["packaging_units"] += n
+                d["packaging_units_est"] += n
+                d["packaging_orders_est"] += 1
+                for psku, pq in items.items():
+                    d["packaging_items"][psku] = d["packaging_items"].get(psku, 0) + pq
+            row = self.rows[p["row"]]
+            row["packaging_units"] = n
+            row["packaging_skus"] = ";".join(f"{k}x{v}" for k, v in sorted(items.items()))
+            row["packaging_basis"] = "estimated:" + basis
+        self.pending_pack = []
+
+    def packaging_rules_out(self):
+        """Learned + prior rules, trimmed, for meta.packaging_rules (what the next run starts from)."""
+        merged = {}
+        for src in (self.prior_rules, self.pack_rules):
+            for key, t in src.items():
+                m = merged.setdefault(key, {})
+                for pk, c in t.items():
+                    m[pk] = m.get(pk, 0) + c
+        keys = sorted(merged, key=lambda k: -sum(merged[k].values()))[:PACK_RULES_MAX]
+        return {k: dict(sorted(merged[k].items(), key=lambda kv: -kv[1])[:5]) for k in keys}
 
     def in_window(self, day):
         return day is not None and self.window_start <= day <= self.window_end
@@ -538,6 +715,11 @@ class Aggregator:
             units += int(q or 0)
         packaging_units = sum(packaging_items.values())
         packages = len(o.get("packages") or [])
+        # v1.6: composition of the order (for the box rules); orders that list the box teach the rule,
+        # the others are queued and get the box inferred in finalise()
+        wh_key = str(wh.get("identifier") or wh.get("name") or "?")
+        sig, comp = order_signature(o.get("items") or [], self.bom_bundles)
+        packaging_basis = "shipmonk" if packaging_items else "none"
         sd = o.get("shipment_data") or {}
         carrier = sd.get("carrier")
         if isinstance(carrier, dict):
@@ -581,6 +763,11 @@ class Aggregator:
             c["shipping_cost"] += ship
             for cur, amt in native.items():
                 d["foreign_cost"][cur] = d["foreign_cost"].get(cur, 0.0) + amt
+        if packaging_items:
+            self.pack_stats["orders_with_lines"] += 1
+            self._learn(wh_key, sig, packaging_items)
+        elif units > 0 and status != "cancelled":
+            self.pending_pack.append({"wh": wh_key, "sig": sig, "comp": comp, "targets": targets, "row": len(self.rows)})
         if not in_pnl:
             self.counts["orders_shipped_series_only"] += 1   # placed before the window, shipped inside it
         else:
@@ -601,10 +788,11 @@ class Aggregator:
             "packaging_skus": ";".join(f"{k}x{v}" for k, v in sorted(packaging_items.items())),
             "shipping_cost": round(ship, 2), "pick_pack_cost": round(pick, 2), "packaging_cost": round(pack, 2),
             "total_cost": round(ship + pick + pack, 2), "cost_status": "missing" if missing else "shipmonk_estimate",
-            "cost_currency": cost_currency,
+            "cost_currency": cost_currency, "packaging_basis": packaging_basis,
         })
 
     def finalise(self):
+        self.resolve_packaging()   # v1.6: boxes for the orders ShipMonk did not list them on
         for series in (self.daily, self.daily_shipped):
             for d in series.values():
                 for f in MONEY_FIELDS:
@@ -626,6 +814,9 @@ class Aggregator:
             self.warnings.add(f"{self.order_types.get('unknown', 0)} orders came back with no order_type (counted as D2C); samples: {self.unknown_type_samples}")
         if self.counts["cost_missing_orders"]:
             self.warnings.add(f"{self.counts['cost_missing_orders']} orders had no cost estimate from ShipMonk yet - their cost is $0 until ShipMonk fills it in (re-fetched every run)")
+        if self.pack_stats["orders_estimated"]:
+            ws = ", ".join(f"{k} {v['orders_estimated']}/{v['orders_without_line']}" for k, v in sorted(self.pack_stats["by_warehouse"].items()) if v["orders_without_line"])
+            self.warnings.add(f"{self.pack_stats['orders_estimated']} orders had no packaging line in the API - their box ({self.pack_stats['boxes_estimated']} boxes) was inferred from the orders that list it ({ws})")
 
 
 def sum_range(daily, start_key, end_key):
@@ -712,7 +903,7 @@ def fetch_shipped_orders(client, agg, start_utc, end_utc):
 
 
 CSV_COLS = ["order_number", "order_key", "store", "order_type", "status", "ordered_day", "shipped_day", "pnl_day", "warehouse",
-            "carrier", "units", "packages", "packaging_units", "packaging_skus", "shipping_cost", "pick_pack_cost", "packaging_cost", "total_cost", "cost_status", "cost_currency"]
+            "carrier", "units", "packages", "packaging_units", "packaging_skus", "packaging_basis", "shipping_cost", "pick_pack_cost", "packaging_cost", "total_cost", "cost_status", "cost_currency"]
 
 
 def write_order_csvs(rows, fetched_start, fetched_end):
@@ -1166,7 +1357,8 @@ def main():
     end_utc = min(now_utc, (datetime.strptime(window_end, "%Y-%m-%d").replace(tzinfo=tz) + timedelta(days=1)).astimezone(timezone.utc))
 
     client = Client(API_KEY)
-    agg = Aggregator(tz, window_start, window_end)
+    previous = history_previous(OUTPUT_PATH)   # v1.6: also seeds the box rules + BOM for the inference
+    agg = Aggregator(tz, window_start, window_end, previous)
     log(f"ShipMonk {BASE_URL}, tz {TZ_NAME}, {mode} {window_start}..{window_end}, basis {COST_BASIS}, page {PAGE_SIZE}, history from {HISTORY_START}")
     if COST_BASIS == "shipped":
         chunks, pages = fetch_shipped_orders(client, agg, start_utc, end_utc)
@@ -1175,7 +1367,6 @@ def main():
     agg.finalise()
 
     # merge with the copy already in the repo: days outside the fetched range are kept
-    previous = history_previous(OUTPUT_PATH)
     daily = history_merge(previous, agg.daily, window_start, window_end)
     daily_shipped = history_merge(previous, agg.daily_shipped, window_start, window_end, key="daily_shipped")
     hist = history_meta(previous, mode, window_start, window_end, daily, today_key)
@@ -1222,6 +1413,10 @@ def main():
             "counts": agg.counts,
             "warnings": sorted(agg.warnings),
             "not_in_api": ["storage fees", "receiving fees", "returns processing", "special projects", "account minimums - only on ShipMonk invoices"],
+            "packaging_inference": dict(agg.pack_stats, rules_learned_this_run=len(agg.pack_rules), rules_prior=len(agg.prior_rules),
+                                        bom_bundles_used=len(agg.bom_bundles),
+                                        note="orders with no packaging line in the API get the box inferred from orders of the same composition (warehouse first, then any), else one box per cave/donut; counted in packaging_units_est / packaging_orders_est"),
+            "packaging_rules": agg.packaging_rules_out(),
         },
     }
     # inventory snapshot: additive and non-fatal - everything above is written unchanged whatever happens here
@@ -1233,6 +1428,10 @@ def main():
     log(f"Wrote {OUTPUT_PATH}: {agg.counts['orders_counted']} orders ({agg.counts['orders_unshipped_counted']} not shipped yet) over {len(agg.daily)} fetched days, {len(daily)} days in file; "
         f"last 30d cost {t['total_cost']:.2f} (postage {t['shipping_cost']:.2f}, pick/pack {t['pick_pack_cost']:.2f}, packaging {t['packaging_cost']:.2f}); "
         f"{client.requests} API calls, {len(agg.warnings)} warning types.")
+    ps = agg.pack_stats
+    log(f"Boxes: {ps['orders_with_lines']} orders listed the box; {ps['orders_estimated']} inferred ({ps['boxes_estimated']} boxes: "
+        f"{ps['by_basis']['rule_warehouse']} by warehouse rule, {ps['by_basis']['rule_any']} by any-warehouse rule, {ps['by_basis']['fallback']} fallback); "
+        f"{ps['orders_no_box']} without a box; {len(agg.pack_rules)} rules learned, {len(agg.prior_rules)} carried over.")
     mi = out["meta"]["inventory"]
     log(f"Inventory: {'fetched' if mi.get('fetched') else 'NOT fetched'} - {mi.get('skus', 0)} SKUs, as of {mi.get('as_of')}, "
         f"{mi.get('api_requests', 0)} API calls" + (f", error: {mi['error']}" if mi.get("error") else ""))
