@@ -1,22 +1,22 @@
 {
  "schema": 1,
- "generated_at": "2026-10-20T06:05:33Z",
+ "generated_at": "2026-10-20T06:10:40Z",
  "meta": {
   "source": "Slash API (read-only key)",
-  "script_version": "1.1",
+  "script_version": "1.3",
   "from": "2026-04-01",
   "to": "2026-10-20",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 2742,
-  "charges": 641,
+  "transactions_read": 2743,
+  "charges": 649,
   "stats": {
    "status:posted": 2135,
    "rail:rtp": 6,
    "rail:ach": 747,
    "rail:fee": 90,
    "rail:wire": 29,
-   "status:failed": 600,
-   "rail:card": 1494,
+   "status:failed": 601,
+   "rail:card": 1495,
    "rail:other": 376,
    "status:pending": 7
   },
@@ -66,7 +66,8 @@
    "UPW": 1313.37
   },
   "2026-06": {
-   "ADS_CARD": 29108.54,
+   "ADS_CARD": 77997.13,
+   "AGENCY": 10000.0,
    "AI": 1878.59,
    "CRE": 11700.0,
    "EDU": 1728.95,
@@ -93,10 +94,10 @@
    "UPW": 1448.09
   },
   "2026-08": {
-   "ADS_CARD": 26566.39,
+   "ADS_CARD": 472168.27,
    "AGENCY": 10000.0,
    "AI": 2645.74,
-   "CRE": 3568.0,
+   "CRE": 13868.0,
    "KLV": 2200.0,
    "MC": 1487.26,
    "MT": 3074.61,
@@ -107,10 +108,10 @@
    "UPW": 1814.85
   },
   "2026-09": {
-   "ADS_CARD": 36501.24,
+   "ADS_CARD": 432326.89,
    "AGENCY": 0.0,
    "AI": 3553.83,
-   "CRE": 239.0,
+   "CRE": 13964.0,
    "EDU": 146.67,
    "KLV": 2430.0,
    "MC": 2087.35,
@@ -122,8 +123,9 @@
    "UPW": 1554.37
   },
   "2026-10": {
+   "AGENCY": 20000.0,
    "AI": 3567.49,
-   "CRE": 2500.0,
+   "CRE": 4100.0,
    "EDU": 247.0,
    "MC": 5920.09,
    "MT": 629.77,
@@ -1192,7 +1194,8 @@
    "a": 6563.88,
    "k": "ach",
    "memo": "Professional Service (Lawyer) - Oct 2025 & Dec 2025",
-   "desc": "ACH Withdrawal to Morris, Nichols, Arsht & Tunnell LLP"
+   "desc": "ACH Withdrawal to Morris, Nichols, Arsht & Tunnell LLP",
+   "payee": "M.N.A & T LLP"
   },
   {
    "d": "2026-05-21",
@@ -1844,6 +1847,16 @@
    "l": "UPW",
    "a": 310.45,
    "k": "card"
+  },
+  {
+   "d": "2026-06-16",
+   "v": "Goodo Studios",
+   "l": "AGENCY",
+   "a": 10000.0,
+   "k": "ach",
+   "memo": "Payment of Invoice No. INV-8-231 June 3 July 3 Performance Creative",
+   "desc": "payment of Invoice No. INV-8-231 June 3 July 3 Performance Creative",
+   "payee": "Goodo(Matthew Gattozzi, LLC)"
   },
   {
    "d": "2026-06-16",
@@ -2956,6 +2969,16 @@
   },
   {
    "d": "2026-08-10",
+   "v": "Tremendous (creator payouts)",
+   "l": "CRE",
+   "a": 10000.0,
+   "k": "ach",
+   "memo": "Account funding",
+   "desc": "Account funding",
+   "payee": "Tremendous, LLC"
+  },
+  {
+   "d": "2026-08-10",
    "v": "Upwork",
    "l": "UPW",
    "a": 354.38,
@@ -3080,6 +3103,16 @@
    "l": "AI",
    "a": 350.0,
    "k": "card"
+  },
+  {
+   "d": "2026-08-17",
+   "v": "Tremendous (creator payouts)",
+   "l": "CRE",
+   "a": 300.0,
+   "k": "ach",
+   "memo": "Account funding",
+   "desc": "Account funding",
+   "payee": "Tremendous, LLC"
   },
   {
    "d": "2026-08-17",
@@ -3445,6 +3478,16 @@
    "l": "UPW",
    "a": 386.29,
    "k": "card"
+  },
+  {
+   "d": "2026-09-08",
+   "v": "Tremendous (creator payouts)",
+   "l": "CRE",
+   "a": 10000.0,
+   "k": "ach",
+   "memo": "Account funding\n\n",
+   "desc": "Account funding ",
+   "payee": "Tremendous, LLC"
   },
   {
    "d": "2026-09-09",
@@ -3965,6 +4008,16 @@
    "k": "card"
   },
   {
+   "d": "2026-09-25",
+   "v": "Tremendous (creator payouts)",
+   "l": "CRE",
+   "a": 3725.0,
+   "k": "ach",
+   "memo": "Account funding Invoice number C9925E79-0011",
+   "desc": "Account funding Invoice number C9925E79-0011",
+   "payee": "Tremendous, LLC"
+  },
+  {
    "d": "2026-09-26",
    "v": "Firecrawl",
    "l": "AI",
@@ -4231,6 +4284,16 @@
   },
   {
    "d": "2026-10-06",
+   "v": "Adcrate",
+   "l": "AGENCY",
+   "a": 10000.0,
+   "k": "ach",
+   "memo": "For the period 01 August 2026 - 31 August 2026, minimum monthly commitment INV-1",
+   "desc": "For the period 01 August 2026 - 31 August 2026, minimum monthly commit",
+   "payee": "Adcrate Ltd"
+  },
+  {
+   "d": "2026-10-06",
    "v": "Grok / xAI",
    "l": "AI",
    "a": 20.0,
@@ -4468,7 +4531,8 @@
    "a": 2500.0,
    "k": "ach",
    "memo": "account funding tremendous inv C9925E79-0012",
-   "desc": "account funding tremendous inv C9925E79-0012"
+   "desc": "account funding tremendous inv C9925E79-0012",
+   "payee": "Tremendous, LLC"
   },
   {
    "d": "2026-10-12",
@@ -4476,6 +4540,16 @@
    "l": "UPW",
    "a": 426.25,
    "k": "card"
+  },
+  {
+   "d": "2026-10-13",
+   "v": "Goodo Studios",
+   "l": "AGENCY",
+   "a": 10000.0,
+   "k": "ach",
+   "memo": "Cattasaurus Payment for ads expense invoice number INV-8-243\n",
+   "desc": "Cattasaurus Payment for ads expense invoice number INV-8-243 ",
+   "payee": "Goodo(Matthew Gattozzi, LLC)"
   },
   {
    "d": "2026-10-13",
@@ -4717,6 +4791,16 @@
   },
   {
    "d": "2026-10-19",
+   "v": "Tremendous (creator payouts)",
+   "l": "CRE",
+   "a": 1600.0,
+   "k": "ach",
+   "memo": "Account funding",
+   "desc": "Account funding",
+   "payee": "Tremendous, LLC"
+  },
+  {
+   "d": "2026-10-19",
    "v": "Upwork",
    "l": "UPW",
    "a": 433.78,
@@ -4809,306 +4893,26 @@
    "n": 1
   }
  ],
- "unclassified_transfers": [
-  {
-   "d": "2026-04-26",
-   "name": "Fullfilment Service payment",
-   "a": 2405.3,
-   "rail": "ach"
+ "unclassified_transfers": {
+  "2026-06": {
+   "count": 1,
+   "total": 33409.48
   },
-  {
-   "d": "2026-05-26",
-   "name": "Payment for Invoice Cattasaurus-Fulfillment fee-1212.90",
-   "a": 1212.9,
-   "rail": "ach"
+  "2026-07": {
+   "count": 2,
+   "total": 43269.56
   },
-  {
-   "d": "2026-05-26",
-   "name": "Payment for Invoice_Cattasaurus_SSLB-16540.96",
-   "a": 16540.96,
-   "rail": "ach"
+  "2026-08": {
+   "count": 1,
+   "total": 52040.34
   },
-  {
-   "d": "2026-06-10",
-   "name": "SSWF Fulfillment Fee  May 18  June 5 Cont JHQ32601  QA Fee Cont JHQ326",
-   "a": 8394.59,
-   "rail": "ach"
+  "2026-09": {
+   "count": 3,
+   "total": 80377.96
   },
-  {
-   "d": "2026-06-16",
-   "name": "payment of Invoice No. INV-8-231 June 3 July 3 Performance Creative",
-   "a": 10000.0,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-06-16",
-   "name": "payment of invoice no. 7784202652 15.5 31.5",
-   "a": 92791.27,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-06-16",
-   "name": "Payment of invoice No. 253109142DPA26 May",
-   "a": 33409.48,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-06-25",
-   "name": "SSWF,WFQ326-SMPL-01 Freight Cost,WFQ326-1B QA Fee,JHQ326-04,JHQ326-03",
-   "a": 3866.47,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-06-25",
-   "name": "JHQ126-05 | 2nd Payment",
-   "a": 12051.04,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-06-25",
-   "name": "Payment for Meta ads May invoice number 26656799",
-   "a": 48888.59,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-06-29",
-   "name": "Cattasaurus pay invoice 2026-106",
-   "a": 39795.0,
-   "rail": "wire"
-  },
-  {
-   "d": "2026-07-12",
-   "name": "SSWF Fulfillment Fee June 21  July 5 Invoice No 20260705 PD",
-   "a": 5943.2,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-07-13",
-   "name": "Cattasaurus pay market research for new product development inv 2026-1",
-   "a": 81799.0,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-07-14",
-   "name": "ACH debit from NJ WEB PMT 04130",
-   "a": 2088.84,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-07-20",
-   "name": "payment of ads Invoice June Inv no. 311260852DPA26",
-   "a": 41180.72,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-07-27",
-   "name": "SSWF Fulfillment Fee | July 6 - July 20 invoice Number 20260720-PD",
-   "a": 3562.55,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-07-27",
-   "name": "Cont #HHQ126-5B | QA Fee, Cont #HHQ126-10 | QA Fee, Cont #HHQ126-09 | ",
-   "a": 740.08,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-08-03",
-   "name": "Product research and improvement and marketing campaign Invoice number",
-   "a": 69799.0,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-08-03",
-   "name": "JHQ326-01 | 2nd Payment Invoice number CATTASAURUS-20260720",
-   "a": 11734.52,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-08-10",
-   "name": "Account funding",
-   "a": 10000.0,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-08-12",
-   "name": "JHQ326-03 2nd payment, JHQ326-02 2nd Payment Inv CATTASAURUS-20260720",
-   "a": 24832.63,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-08-12",
-   "name": "SSWF Fulfillment Fee | July 21 - August 5 inv 20260805-PD",
-   "a": 1463.72,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-08-12",
-   "name": "Cont #HHQ326-03|QA Fee CCQ126-02|Inland TransportCont #HHQ326-02|QA Fe",
-   "a": 1298.17,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-08-13",
-   "name": "Budget planning and financial model for 2026 Inv number 2026-30",
-   "a": 39950.0,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-08-17",
-   "name": "Payment for Invoice number 26792168 meta ads 1st payment",
-   "a": 200000.0,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-08-17",
-   "name": "Payment for Invoice number 26792168 meta ads 2nd payment",
-   "a": 245601.88,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-08-17",
-   "name": "Payment of Invoice number 366949332DPA26 amazon ads",
-   "a": 52040.34,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-08-25",
-   "name": "fullfillment fee invoice 20260820-PD",
-   "a": 706.6,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-08-25",
-   "name": "HHQ326-SMPL-01 Freight Cost HHQ426-01 QA fee Invoice 20260820-PD",
-   "a": 528.67,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-08-27",
-   "name": "deposit for cont JHQ426",
-   "a": 12031.46,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-09-08",
-   "name": "Account funding ",
-   "a": 10000.0,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-09-08",
-   "name": "OEKO-TEX Testing Fee (2025)",
-   "a": 1000.0,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-09-10",
-   "name": "SSWF Fulfillment Fee | August 21 - September 5 Invoice number  2026090",
-   "a": 666.7,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-09-10",
-   "name": "QA fee,Inland Transport,Freight Cost,Labeling Fee Inv Number 20260905-",
-   "a": 7703.39,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-09-10",
-   "name": "JHQ326-04 | 2nd Payment Invoice number CATTASAURUS-20260820",
-   "a": 12482.65,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-09-11",
-   "name": "Ad account name:1042840_Cattasaurus 01 - Ecomdy_1786500365306  add fun",
-   "a": 1000.0,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-09-25",
-   "name": "cattasaurus payment for Meta ads invoice number 26817013 2nd payment",
-   "a": 145825.65,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-09-25",
-   "name": "payment for Meta ads Aug Invoice number 26817013 1st",
-   "a": 250000.0,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-09-25",
-   "name": "cattasaurus payment for amz ads Invoice number 420641292DPA26",
-   "a": 78377.96,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-09-25",
-   "name": "Account funding Invoice number C9925E79-0011",
-   "a": 3725.0,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-09-28",
-   "name": "QA fee invoice number 20260920-PD",
-   "a": 2669.62,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-09-30",
-   "name": "SSWF Fulfillment Fee | September 6 - September 20 inv number 20260920-",
-   "a": 5698.3,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-10-06",
-   "name": "For the period 01 August 2026 - 31 August 2026, minimum monthly commit",
-   "a": 10000.0,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-10-13",
-   "name": "Cattasaurus Payment for ads expense invoice number INV-8-243 ",
-   "a": 10000.0,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-10-13",
-   "name": "Fullfillment invoice 20261005-PD",
-   "a": 2158.3,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-10-13",
-   "name": "Freight Cost, QA fee",
-   "a": 1666.68,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-10-14",
-   "name": "ACH debit from NJ WEB PMT 04130",
-   "a": 3260.84,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-10-14",
-   "name": "OEKO-TEX STANDARD 100 testing fee service fee",
-   "a": 1650.0,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-10-14",
-   "name": "Oeko-Tex Quality assurance package Invoice number 2641052",
-   "a": 1500.0,
-   "rail": "ach"
-  },
-  {
-   "d": "2026-10-19",
-   "name": "Account funding",
-   "a": 1600.0,
-   "rail": "ach"
+  "2026-10": {
+   "count": 3,
+   "total": 6410.84
   }
- ]
+ }
 }
