@@ -37,7 +37,7 @@ from datetime import datetime, timedelta, timezone
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import fetch_amazon_pnl as base  # noqa: E402  (LWA token, rate limiter, SP-API GET/POST, report download, log)
 
-SCRIPT_VERSION = "1.3"
+SCRIPT_VERSION = "1.4"
 SCHEMA = 1
 OUTPUT_PATH = os.environ.get("OUTPUT_PATH", "data/amazon_storage.json")
 HISTORY_START = os.environ.get("HISTORY_START", "2025-01-01").strip() or "2025-01-01"
@@ -64,6 +64,11 @@ PNL_PATH = os.environ.get("PNL_PATH", "data/amazon_pnl.json")     # FBAStorageFe
 # Fallback list rates (USD per cubic foot per month, US) when no report of that season has been seen yet.
 # Learned rates from Amazon's own reports always win; these only bridge the first Oct-Dec before a Q4 report exists.
 FALLBACK_RATES = {"standard": {"jan_sep": 0.78, "oct_dec": 2.40}, "oversize": {"jan_sep": 0.56, "oct_dec": 1.40}}
+# v1.4: unit bases the back-test compares (the live estimate uses the best one, see choose_basis)
+BASES = ("ledger_plus_transit", "ledger_ending", "inventory_on_hand")
+CALIB_MONTHS = 6            # calibration = median(report / estimate) of the chosen basis over the last N billed months
+CALIB_BOUNDS = (0.85, 1.15)
+RECENT_MONTHS_UNCAPPED = 2  # the last N complete months are retried until Amazon publishes their report (no tries cap)
 
 log = base.log
 
@@ -259,7 +264,14 @@ def ingest_storage_report(text, mk, fnsku_to_sku):
     rate_eff = {t: round(eff_fee[t] / eff_cuft[t], 4) for t in eff_fee if eff_cuft.get(t)}
     for t, r in rate_eff.items():
         rate_med.setdefault(t, r)
-    return {"total": round(total, 2), "rows": n, "skus": len(by_sku), "by_sku": by_sku, "rates": rate_med, "rates_effective": rate_eff,
+    # v1.4: the rate Amazon actually applied = fee / estimated_total_item_volume (equals the list rate)
+    vol_fee, vol_cuft = {}, {}
+    for d in by_sku.values():
+        t = tier_class(d.get("tier"))
+        vol_fee[t] = vol_fee.get(t, 0.0) + d["fee"]
+        vol_cuft[t] = vol_cuft.get(t, 0.0) + d["volume"]
+    rate_vol = {t: round(vol_fee[t] / vol_cuft[t], 4) for t in vol_fee if vol_cuft.get(t)}
+    return {"total": round(total, 2), "rows": n, "skus": len(by_sku), "by_sku": by_sku, "rates": rate_med, "rates_effective": rate_eff, "rates_volume": rate_vol,
             "columns": list(rows[0].keys()) if rows else [],
             "months_in_report": sorted(charge_months), "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
 
@@ -286,14 +298,27 @@ def ingest_ltsf_report(text, fnsku_to_sku):
 
 
 # ---------------------------------------------------------------- estimate ----------------------------------------------------------------
+def report_rates_volume(rep):
+    """v1.4: {tier: fee / estimated_total_item_volume} of one report (= the list rate Amazon applied)."""
+    if rep.get("rates_volume"):
+        return dict(rep["rates_volume"])
+    fee, cuft = {}, {}
+    for d in (rep.get("by_sku") or {}).values():
+        t = tier_class(d.get("tier"))
+        fee[t] = fee.get(t, 0.0) + (d.get("fee") or 0.0)
+        cuft[t] = cuft.get(t, 0.0) + (d.get("volume") or 0.0)
+    return {t: round(fee[t] / cuft[t], 4) for t in fee if cuft.get(t) and cuft[t] >= 5}   # >= 5 cu ft: enough to read a rate
+
+
 def learned_rates(months):
-    """{season: {tier: rate}} from the most recent report of each season; None where nothing is known yet."""
+    """{season: {tier: rate}} from the most recent report of each season (v1.4: fee / billed volume = the exact list
+    rate; tiers a season has not shown yet fall back to FALLBACK_RATES in estimate_day)."""
     out = {"jan_sep": {}, "oct_dec": {}}
     for mk in sorted(months):
         rep = months[mk]
         if not rep or rep.get("empty"):
             continue
-        for tier, rate in (rep.get("rates") or {}).items():
+        for tier, rate in report_rates_volume(rep).items():
             out[season(mk)][tier] = rate     # later months overwrite -> most recent wins
     return out
 
@@ -306,15 +331,18 @@ def sku_volumes(months):
         if not rep or rep.get("empty"):
             continue
         for sku, d in (rep.get("by_sku") or {}).items():
-            if d.get("unit_volume"):
-                vol[sku] = (d["unit_volume"], tier_class(d.get("tier")))
-                seen.append(d["unit_volume"])
+            # v1.4: the volume Amazon billed per unit = estimated_total_item_volume / average units (item_volume is rounded)
+            uv = (d["volume"] / d["avg_qty"]) if (d.get("volume") and d.get("avg_qty") and d["avg_qty"] >= 0.5) else d.get("unit_volume")
+            if uv:
+                vol[sku] = (round(uv, 4), tier_class(d.get("tier")))
+                seen.append(uv)
     fallback = round(statistics.median(seen), 4) if seen else 0.0
     return vol, fallback
 
 
 def estimate_day(inv_row, vol, fallback_vol, rates, mk, warnings):
-    """USD storage accrual for one day from the per-SKU on-hand row {sku: [on_hand, ...]}."""
+    """USD storage accrual for one day from the per-SKU on-hand row {sku: [on_hand, ...]}
+    = sum of units x billed unit volume x list rate (tier, season) / days in the month (Amazon's own formula)."""
     dim = days_in_month(mk)
     s = season(mk)
     fee, units, cuft, unknown = 0.0, 0, 0.0, 0
@@ -335,9 +363,11 @@ def estimate_day(inv_row, vol, fallback_vol, rates, mk, warnings):
 
 
 def ingest_ledger_report(text, fnsku_to_sku):
-    """Inventory Ledger summary (daily): {iso: {sku: ending balance units (all dispositions, all locations)}}."""
+    """Inventory Ledger summary (daily): ({iso: {sku: ending balance units (all dispositions, all locations)}},
+    rows, v1.4: {iso: {sku: units in transit between warehouses}}, columns seen)."""
     rows = parse_tsv(text)
     out = {}
+    transit = {}
     n = 0
     for r in rows:
         raw = r.get("date") or ""
@@ -355,8 +385,82 @@ def ingest_ledger_report(text, fnsku_to_sku):
             continue
         d = out.setdefault(iso, {})
         d[sku] = int(round(d.get(sku, 0) + qty))
+        tq = num(r.get("in_transit_between_warehouses"))
+        if tq:
+            t = transit.setdefault(iso, {})
+            t[sku] = int(round(t.get(sku, 0) + tq))
         n += 1
-    return out, n
+    return out, n, transit, (list(rows[0].keys()) if rows else [])
+
+
+def basis_row(basis, k, ledger_daily, transit_daily, inv_daily):
+    """v1.4: per-SKU units of day k under one unit basis -> {sku: [units]} or None when that day has no data."""
+    if basis == "inventory_on_hand":
+        row = inv_daily.get(k)
+        return {sku: [arr[0] if isinstance(arr, list) else on_hand(arr)] for sku, arr in row.items()} if row else None
+    led = ledger_daily.get(k)
+    if led is None:
+        return None
+    if basis == "ledger_ending":
+        return {sku: [q] for sku, q in led.items()}
+    tr = transit_daily.get(k) or {}
+    return {sku: [led.get(sku, 0) + tr.get(sku, 0)] for sku in set(led) | set(tr)}
+
+
+def backtest_basis(mk, months, ledger_daily, transit_daily, inv_daily, basis, posted):
+    """v1.4: estimate month mk from one unit basis with (a) volumes/rates of EARLIER reports only (what the live
+    estimate knows = out-of-sample) and (b) the month's own report (in-sample: isolates the unit count); needs the
+    basis on >= 80% of the month's days."""
+    earlier = {m: v for m, v in months.items() if m < mk and v and not v.get("empty")}
+    rates_oos = learned_rates(earlier)
+    vol_oos, fb_oos = sku_volumes(earlier)
+    rates_in = learned_rates({mk: months[mk]})
+    vol_in, fb_in = sku_volumes({mk: months[mk]})
+    dim = days_in_month(mk)
+    days = [f"{mk}-{i+1:02d}" for i in range(dim)]
+    rows = {k: basis_row(basis, k, ledger_daily, transit_daily, inv_daily) for k in days}
+    have = [k for k in days if rows[k] is not None]
+    if len(have) < 0.8 * dim:
+        return None
+    w = {}
+    e_oos = e_in = 0.0
+    units = 0
+    for k in have:
+        f1, u, _, _ = estimate_day(rows[k], vol_oos, fb_oos, rates_oos, mk, w)
+        f2, _, _, _ = estimate_day(rows[k], vol_in, fb_in, rates_in, mk, {})
+        e_oos += f1; e_in += f2; units += u
+    scale = dim / len(have)
+    e_oos, e_in = round(e_oos * scale, 2), round(e_in * scale, 2)
+    tot = months[mk]["total"]
+    rep_units = sum(d.get("avg_qty", 0) for d in months[mk]["by_sku"].values())
+    return {"est_out_of_sample": e_oos, "est_in_sample": e_in,
+            "ratio_out_of_sample": round(e_oos / tot, 4) if tot else None, "ratio_in_sample": round(e_in / tot, 4) if tot else None,
+            "days": len(have), "avg_units": round(units / len(have), 1), "units_vs_report": round(units / len(have) / rep_units, 4) if rep_units else None,
+            "fallback_rate_used": sorted(w.get("fallback_rate_used", []))}
+
+
+def choose_basis(backtest, today_mk):
+    """v1.4: the unit basis with the smallest mean |out-of-sample error| over the last 12 billed months (>= 3 months
+    needed), and its calibration = median(report / estimate) over the last CALIB_MONTHS months, bounded."""
+    best = None
+    stats = {}
+    for b in BASES:
+        rs = [(mk, bt["bases"][b]["ratio_out_of_sample"]) for mk, bt in sorted(backtest.items())
+              if bt.get("bases", {}).get(b) and bt["bases"][b].get("ratio_out_of_sample")][-12:]
+        if not rs:
+            continue
+        mape = sum(abs(r - 1) for _, r in rs) / len(rs)
+        recent = [r for _, r in rs][-CALIB_MONTHS:]
+        srt = sorted(recent)
+        med = srt[len(srt) // 2] if len(srt) % 2 else (srt[len(srt) // 2 - 1] + srt[len(srt) // 2]) / 2
+        calib = min(CALIB_BOUNDS[1], max(CALIB_BOUNDS[0], 1 / med)) if med else 1.0
+        cal_err = sum(abs(r * calib - 1) for r in recent) / len(recent)
+        stats[b] = {"months": len(rs), "from": rs[0][0], "to": rs[-1][0], "mape_raw": round(mape, 4), "median_ratio_recent": round(med, 4),
+                    "calibration": round(calib, 4), "mape_calibrated_recent": round(cal_err, 4),
+                    "max_abs_err_calibrated_recent": round(max(abs(r * calib - 1) for r in recent), 4)}
+        if len(rs) >= 3 and (best is None or (stats[b]["mape_calibrated_recent"], stats[b]["mape_raw"]) < (stats[best]["mape_calibrated_recent"], stats[best]["mape_raw"])):
+            best = b
+    return best, stats
 
 
 def backtest_month(mk, months, ledger_daily, posted):
@@ -420,6 +524,8 @@ def main():
     fnsku_to_sku = dict((prev.get("meta") or {}).get("fnsku_to_sku") or {})
     ledger_months = dict((prev.get("ledger") or {}).get("months") or {})
     ledger_daily = dict((prev.get("ledger") or {}).get("daily") or {})
+    transit_daily = dict((prev.get("ledger") or {}).get("transit_daily") or {})   # v1.4
+    ledger_columns = list((prev.get("ledger") or {}).get("columns") or [])
     warnings = {}
 
     today = now_tz()
@@ -442,11 +548,13 @@ def main():
         wanted = month_range(HISTORY_START[:7], last_complete)
         nowts = time.time()
 
-        def due(entry):
+        recent_cut = month_range(HISTORY_START[:7], last_complete)[-RECENT_MONTHS_UNCAPPED:]
+
+        def due(entry, mk=None):
             if not entry:
                 return True
             if entry.get("empty"):
-                if entry.get("tries", 1) >= MAX_TRIES_PER_MONTH:
+                if entry.get("tries", 1) >= MAX_TRIES_PER_MONTH and mk not in recent_cut:   # v1.4: recent months keep retrying
                     return False          # Amazon does not publish that month (too old / no charge): stop asking
                 return nowts - entry.get("tried_ts", 0) > RETRY_MONTH_HOURS * 3600
             return False
@@ -458,7 +566,7 @@ def main():
         for mk in reversed(wanted):          # newest months first: the P&L needs them most
             if requested >= MAX_REPORTS_PER_RUN:
                 break
-            if due(months.get(mk)):
+            if due(months.get(mk), mk):
                 start = datetime(int(mk[:4]), int(mk[5:7]), 1, tzinfo=timezone.utc)
                 end = start + timedelta(days=days_in_month(mk)) - timedelta(seconds=1)
                 try:
@@ -484,7 +592,7 @@ def main():
                     months[mk] = empty_entry(months, mk, "cancelled" if txt == "" else "fatal/timeout")
             if requested >= MAX_REPORTS_PER_RUN:
                 break
-            if due(ltsf_months.get(mk)):
+            if due(ltsf_months.get(mk), mk):
                 start = datetime(int(mk[:4]), int(mk[5:7]), 1, tzinfo=timezone.utc)
                 end = start + timedelta(days=days_in_month(mk)) - timedelta(seconds=1)
                 try:
@@ -509,7 +617,8 @@ def main():
             ent = ledger_months.get(mk)
             # the current month is refreshed while it grows (days before the hourly snapshots began); past months once
             cur_due = mk == cur_mk and ent and not ent.get("empty") and ent.get("days", 0) < today.day - 1
-            if not (due(ent) or cur_due):
+            no_transit = bool(ent) and not ent.get("empty") and not ent.get("transit")   # v1.4: re-fetch once for the in-transit column
+            if not (due(ent, mk) or cur_due or no_transit):
                 continue
             start = datetime(int(mk[:4]), int(mk[5:7]), 1, tzinfo=timezone.utc)
             end = start + timedelta(days=days_in_month(mk)) - timedelta(seconds=1)
@@ -520,11 +629,18 @@ def main():
                 log(str(e)); warnings["quota_exceeded"] = str(e)[:200]; break
             requested += 1
             if txt:
-                got, n = ingest_ledger_report(txt, fnsku_to_sku)
+                got, n, tr, cols = ingest_ledger_report(txt, fnsku_to_sku)
                 got = {k: v for k, v in got.items() if k[:7] == mk}
                 if got:
                     ledger_daily.update(got)
-                    ledger_months[mk] = {"days": len(got), "rows": n, "skus": len({s for v in got.values() for s in v}),
+                    for k in list(transit_daily):
+                        if k[:7] == mk:
+                            del transit_daily[k]
+                    transit_daily.update({k: v for k, v in tr.items() if k[:7] == mk})
+                    if cols:
+                        ledger_columns = cols
+                    ledger_months[mk] = {"days": len(got), "rows": n, "skus": len({s for v in got.values() for s in v}), "transit": True,
+                                         "transit_units_avg": round(sum(sum(v.values()) for k, v in tr.items() if k[:7] == mk) / max(1, len(got)), 1),
                                          "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
                     log(f"ledger {mk}: {len(got)} days, {n} rows, {ledger_months[mk]['skus']} SKUs")
                 else:
@@ -535,6 +651,45 @@ def main():
     # 3. daily storage cost -------------------------------------------------------------------------
     rates = learned_rates(months)
     vol, fallback_vol = sku_volumes(months)
+    # v1.4: back-test first (per unit basis), then estimate with the best basis x its calibration
+    posted_by_month = {}
+    if os.path.exists(PNL_PATH):
+        try:
+            posted_by_month = (json.load(open(PNL_PATH, encoding="utf-8")).get("monthly_storage_fees") or {})
+        except Exception as e:  # noqa: BLE001
+            warnings["pnl_unreadable"] = str(e)
+    backtest = {}
+    for mk in sorted(m for m, v in months.items() if v and not v.get("empty")):
+        bt = backtest_month(mk, months, ledger_daily, posted_by_month.get(mk))
+        bases = {}
+        for b in BASES:
+            r = backtest_basis(mk, months, ledger_daily, transit_daily, inv_daily, b, posted_by_month.get(mk))
+            if r:
+                bases[b] = r
+        if "skipped" not in bt or bases:
+            if "skipped" in bt:
+                bt = {"report_total": months[mk]["total"], "posted": posted_by_month.get(mk)}
+            bt["bases"] = bases
+            backtest[mk] = bt
+    basis, basis_stats = choose_basis(backtest, month_key(today))
+    calib = basis_stats[basis]["calibration"] if basis else 1.0
+    # inventory API -> chosen basis scale for the last days the ledger does not have yet (median of the last 7 overlaps)
+    inv_scale = 1.0
+    if basis and basis != "inventory_on_hand":
+        ov = []
+        for k in sorted(inv_daily, reverse=True):
+            br = basis_row(basis, k, ledger_daily, transit_daily, inv_daily)
+            if br is None:
+                continue
+            f_b = estimate_day(br, vol, fallback_vol, rates, k[:7], {})[0]
+            f_i = estimate_day(inv_daily[k], vol, fallback_vol, rates, k[:7], {})[0]
+            if f_i > 0:
+                ov.append(f_b / f_i)
+            if len(ov) >= 7:
+                break
+        if ov:
+            ov.sort()
+            inv_scale = ov[len(ov) // 2]
     daily = {}
     d = datetime.strptime(HISTORY_START, "%Y-%m-%d").date()
     end_d = today.date()
@@ -546,8 +701,14 @@ def main():
         if rep and not rep.get("empty"):
             daily[k] = {"fee": round(rep["total"] / days_in_month(mk), 4), "est": False, "src": "report"}
         else:
-            row = inv_daily.get(k)
-            src = "inventory"
+            row, src, scale = None, None, calib
+            if basis and basis != "inventory_on_hand":
+                row = basis_row(basis, k, ledger_daily, transit_daily, inv_daily)
+                src = basis if row is not None else None
+            if row is None and k in inv_daily:
+                row = inv_daily[k]; src = "inventory"
+                if basis and basis != "inventory_on_hand":
+                    scale = calib * inv_scale; src = "inventory_scaled"
             if row is None and k in ledger_daily:
                 row = {sku: [q] for sku, q in ledger_daily[k].items()}; src = "ledger"
             if row is None:
@@ -561,7 +722,8 @@ def main():
                 daily[k] = {"fee": 0.0, "est": True, "src": "none"}
             else:
                 fee, units, cuft, unknown = estimate_day(row, vol, fallback_vol, rates, mk, warnings)
-                daily[k] = {"fee": fee, "est": True, "src": src, "units": units, "cuft": cuft, "unknown_units": unknown}
+                daily[k] = {"fee": round(fee * scale, 4), "est": True, "src": src, "units": units, "cuft": cuft, "unknown_units": unknown,
+                            "raw": fee, "scale": round(scale, 4)}
         d += timedelta(days=1)
 
     # ltsf per day: the month's surcharge spread over that month (Amazon charges it on the 15th for inventory aged at month end)
@@ -572,18 +734,7 @@ def main():
                 k = f"{mk}-{i+1:02d}"
                 ltsf_daily[k] = round(rep["total"] / days_in_month(mk), 4)
 
-    # 4. back-test: months with a report AND ledger days -> how close the live estimate would have been
-    posted_by_month = {}
-    if os.path.exists(PNL_PATH):
-        try:
-            posted_by_month = (json.load(open(PNL_PATH, encoding="utf-8")).get("monthly_storage_fees") or {})
-        except Exception as e:  # noqa: BLE001
-            warnings["pnl_unreadable"] = str(e)
-    backtest = {}
-    for mk in sorted(m for m, v in months.items() if v and not v.get("empty")):
-        bt = backtest_month(mk, months, ledger_daily, posted_by_month.get(mk))
-        if "skipped" not in bt:
-            backtest[mk] = bt
+    # 4. back-test: computed in step 3 (v1.4, per unit basis)
 
     # ---------------------------------------------------------------- output ----------------------------------------------------------------
     tot_on_hand = sum(on_hand(r) for r in inv.values())
@@ -603,9 +754,12 @@ def main():
             "daily_fields": ["on_hand", "fulfillable", "reserved", "inbound", "unfulfillable", "researching"],
         },
         "storage": {"months": months, "daily": daily, "rates_learned": rates, "fallback_rates": FALLBACK_RATES,
-                    "unit_volume_fallback": fallback_vol, "skus_with_volume": len(vol), "months_with_report": have_months},
+                    "unit_volume_fallback": fallback_vol, "skus_with_volume": len(vol), "months_with_report": have_months,
+                    "estimate": {"basis": basis, "calibration": round(calib, 4), "inventory_scale": round(inv_scale, 4), "bases": basis_stats,
+                                 "formula": "sum over SKUs of daily units (basis) x billed unit volume (report volume / avg units) x list rate (fee / billed volume per size tier & season) / days in month x calibration"}},
         "ltsf": {"months": ltsf_months, "daily": ltsf_daily},
-        "ledger": {"months": ledger_months, "daily": ledger_daily, "note": "Inventory Ledger summary, DAILY ending balance per SKU (all dispositions, all US locations) - historical on-hand units"},
+        "ledger": {"months": ledger_months, "daily": ledger_daily, "transit_daily": transit_daily, "columns": ledger_columns,
+                   "note": "Inventory Ledger summary, DAILY ending balance per SKU (all dispositions, all US locations) - historical on-hand units; transit_daily = units in transit between warehouses (v1.4)"},
         "backtest": backtest,
         "meta": {
             "history_start": HISTORY_START, "reports_requested_this_run": requested,
@@ -624,8 +778,10 @@ def main():
         f"({have_months[0] if have_months else '-'} -> {have_months[-1] if have_months else '-'}); daily {len(daily)} days, {est_days} estimated; "
         f"ledger days {len(ledger_daily)}; back-test months {len(backtest)}; reports requested {requested}; warnings {list(warnings)}")
     for mk, bt in sorted(backtest.items()):
-        log(f"backtest {mk}: report ${bt['report_total']:,.2f} | est out-of-sample ${bt['est_out_of_sample']:,.2f} ({(bt['ratio_out_of_sample'] or 0)*100:.1f}%) | "
-            f"in-sample ${bt['est_in_sample']:,.2f} ({(bt['ratio_in_sample'] or 0)*100:.1f}%) | posted {bt['posted']} | units ledger {bt['avg_units_ledger']} vs report {bt['avg_units_report']}")
+        parts = " | ".join(f"{b}: {(v.get('ratio_out_of_sample') or 0)*100:.1f}% (in {(v.get('ratio_in_sample') or 0)*100:.1f}%, units x{v.get('units_vs_report')})"
+                           for b, v in bt.get("bases", {}).items())
+        log(f"backtest {mk}: report ${bt['report_total']:,.2f} | {parts}")
+    log(f"estimate basis: {basis} x calibration {calib:.4f} (inventory scale {inv_scale:.4f}); stats {json.dumps(basis_stats)}")
 
 
 if __name__ == "__main__":
