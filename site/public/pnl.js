@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 6c56401af0).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 709edbb973).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -164,7 +164,7 @@
     'h.sensTitle':'Sensitivity — how much CM3 changes if…',
     'h.stmtTitle':'Profit &amp; loss (P&amp;L statement)',
     'h.stmtNote':'% of each column\'s net revenue · click a section row to collapse/expand · the 6 previous periods are added to compare the trend on most lines (a few detail lines whose structure changes by period — fee-type mix, warehouse breakdown by billing period, reconciliation lines — show for the selected period only)',
-    'h.stmtCaption':'Lines tagged <span class="tag gap" style="margin-left:0;"><span class="d"></span>Not connected ($0)</span> have no data source yet, so they stay at $0 (no estimate). Therefore <b>gross profit / contribution / EBITDA above are profit BEFORE</b> the items still carrying that tag (product cost, Walmart/TikTok marketplace fees, Afterpay fees, G&amp;A…) — they correct themselves as each source is connected. Lines tagged <span class="tag gap" style="margin-left:0;"><span class="d"></span>Not entered ($0)</span> are costs without an API (salaries, office, depreciation, interest, income tax): enter them per month in <code>data/opex_monthly.json</code> on GitHub; the table reads the file and spreads them evenly per day; a month not entered takes the latest entered month.',
+    'h.stmtCaption':'Lines tagged <span class="tag gap" style="margin-left:0;"><span class="d"></span>Not connected ($0)</span> have no data source yet, so they stay at $0 (no estimate). Therefore <b>gross profit / contribution / EBITDA above are profit BEFORE</b> the items still carrying that tag (product cost, Walmart/TikTok marketplace fees, Afterpay fees, G&amp;A…) — they correct themselves as each source is connected. Lines tagged <span class="tag gap" style="margin-left:0;"><span class="d"></span>Not entered ($0)</span> are costs without an API (salaries, office, depreciation, interest, income tax): enter them per month in <code>data/opex_monthly.json</code> on GitHub; the table reads the file and spreads them evenly per day; a month not closed yet is estimated (tagged <span class="tag info" style="margin-left:0;"><span class="d"></span>Includes estimate</span>): Vietnam costs = average of the last 6 closed months, software (Slash) &amp; Upwork = actual to date.',
     'h.takeTitle':'Cost to sell through each channel (take rate)',
     'h.takeNote':'Of each $1 of the channel\'s net revenue, how much the channel and its services take — before product cost and G&amp;A',
     'h.takeCaption':'Same figures as the P&amp;L table, regrouped by channel. <b>Marketplace commissions / payment processing</b> are a fixed % of every order (like a retailer\'s margin) — the standard D2C management P&amp;L puts them under <i>transaction selling fees</i> (before CM2); <b>ads &amp; affiliates</b> are discretionary demand-generation costs, under <i>marketing</i> (before CM3) — kept apart so ACOS/TACOS stay readable. The two together plus fulfillment and storage = the channel\'s <b>take rate</b> ("how many % Amazon takes"). Klaviyo and the Social Snowball plan sit under G&amp;A on the P&amp;L; here they count for the D2C channel because they only serve that channel.<span id="channelCostNote"></span>',
@@ -190,7 +190,7 @@
     'h.opexTitle':'Operating costs (OpEx) for the selected period',
     'h.opexNote2':'Warehousing (ShipMonk, FBA storage &amp; services) + G&amp;A (manual entry, Klaviyo, Snowball) · below contribution margin',
     'h.opexManTitle':'Manually entered costs (monthly OpEx)',
-    'h.opexManNote':'No API — enter per month in <code>data/opex_monthly.json</code> on GitHub; a month not entered takes the latest entered month',
+    'h.opexManNote':'No API — enter per month in <code>data/opex_monthly.json</code> on GitHub; the month not closed yet is estimated (≈): Vietnam costs = average of the last 6 closed months, software (Slash) &amp; Upwork = actual to date',
     'h.cashTitle':'Cash &amp; runway',
     'h.cashNote':'No source yet',
     'h.liveBanner':'Connecting live data…',
@@ -240,7 +240,7 @@
     'h.sensTitle':'Độ nhạy — CM3 đổi bao nhiêu nếu…',
     'h.stmtTitle':'Báo cáo lãi lỗ (P&amp;L statement)',
     'h.stmtNote':'% tính trên Doanh thu thuần của từng cột · bấm dòng nhóm để thu gọn/mở rộng · có thêm 6 kỳ liền trước để so xu hướng ở hầu hết các dòng (một vài dòng phụ có cấu trúc đổi theo kỳ — mix loại phí, breakdown kho theo kỳ hoá đơn, dòng đối chiếu — chỉ hiện cho kỳ đang xem)',
-    'h.stmtCaption':'Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa kết nối ($0)</span> chưa có nguồn dữ liệu nên để $0 (không ước tính). Vì vậy <b>Lợi nhuận gộp / đóng góp / EBITDA ở trên là lợi nhuận TRƯỚC</b> các khoản còn gắn nhãn đó (giá vốn sản phẩm, phí sàn Walmart/TikTok, phí Afterpay, G&amp;A…) — sẽ tự đúng dần khi từng nguồn được nối vào. Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa nhập ($0)</span> là chi phí không có API (lương, văn phòng, khấu hao, lãi vay, thuế TNDN): điền theo tháng vào file <code>data/opex_monthly.json</code> trên GitHub, bảng tự đọc và rải đều theo ngày; tháng chưa điền lấy theo tháng gần nhất đã điền.',
+    'h.stmtCaption':'Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa kết nối ($0)</span> chưa có nguồn dữ liệu nên để $0 (không ước tính). Vì vậy <b>Lợi nhuận gộp / đóng góp / EBITDA ở trên là lợi nhuận TRƯỚC</b> các khoản còn gắn nhãn đó (giá vốn sản phẩm, phí sàn Walmart/TikTok, phí Afterpay, G&amp;A…) — sẽ tự đúng dần khi từng nguồn được nối vào. Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa nhập ($0)</span> là chi phí không có API (lương, văn phòng, khấu hao, lãi vay, thuế TNDN): điền theo tháng vào file <code>data/opex_monthly.json</code> trên GitHub, bảng tự đọc và rải đều theo ngày; tháng chưa chốt sổ được tạm tính (nhãn <span class="tag info" style="margin-left:0;"><span class="d"></span>Có ước tính</span>): chi phí VN = TB 6 tháng đã chốt gần nhất, phần mềm (Slash) &amp; Upwork = số thực tế tới nay.',
     'h.takeTitle':'Chi phí để bán qua từng kênh (take rate)',
     'h.takeNote':'Mỗi $1 doanh thu thuần của kênh, kênh và dịch vụ đi kèm lấy bao nhiêu — trước giá vốn sản phẩm và G&amp;A',
     'h.takeCaption':'Cùng số với bảng P&amp;L, chỉ xếp lại theo kênh. <b>Hoa hồng &amp; phí sàn / cổng thanh toán</b> là % cố định trên mỗi đơn (như margin của nhà bán lẻ) — chuẩn P&amp;L quản trị D2C xếp vào <i>phí bán hàng theo giao dịch</i> (trước CM2); <b>quảng cáo &amp; affiliate</b> là chi phí tuỳ chọn để tạo nhu cầu, xếp vào <i>marketing</i> (trước CM3) — không gộp chung để còn đọc được ACOS/TACOS. Tổng của cả hai cộng fulfillment và lưu kho = <b>take rate</b> của kênh ("Amazon lấy bao nhiêu %"). Klaviyo và gói Social Snowball trên P&amp;L nằm ở G&amp;A, ở đây tính cho kênh D2C vì chỉ phục vụ kênh đó.<span id="channelCostNote"></span>',
@@ -266,7 +266,7 @@
     'h.opexTitle':'Chi phí hoạt động (OpEx) kỳ đang xem',
     'h.opexNote2':'Kho bãi (ShipMonk, FBA lưu kho &amp; dịch vụ) + G&amp;A (nhập tay, Klaviyo, Snowball) · dưới lợi nhuận đóng góp',
     'h.opexManTitle':'Chi phí nhập tay (OpEx theo tháng)',
-    'h.opexManNote':'Không có API — điền theo tháng vào <code>data/opex_monthly.json</code> trên GitHub; tháng chưa điền lấy theo tháng gần nhất đã điền',
+    'h.opexManNote':'Không có API — điền theo tháng vào <code>data/opex_monthly.json</code> trên GitHub; tháng chưa chốt sổ được tạm tính (≈): chi phí VN = TB 6 tháng đã chốt gần nhất, phần mềm (Slash) &amp; Upwork = số thực tế tới nay',
     'h.cashTitle':'Tiền mặt &amp; runway',
     'h.cashNote':'Chưa có nguồn',
     'h.liveBanner':'Đang kết nối dữ liệu thật…',
@@ -385,7 +385,8 @@
   let amazonStorageMeta = null;
   // Monthly OpEx entered by hand (no API): payroll, software, office, accounting, insurance, other (G&A, above EBITDA)
   // and depreciation, interest, income tax (below EBITDA) - data/opex_monthly.json in the repo, USD per month,
-  // spread evenly over the days of the month. A month with no entry takes the latest earlier month ("carried").
+  // spread evenly over the days of the month. V11.7: a month still open (status "open") or not entered yet is estimated —
+  // Vietnam costs = average of the last 6 closed months, software (Slash) & Upwork = actual to date (see applyOpexRows).
   const OPEX_MONTHLY_LIVE_DATA = (window.__LIVE && window.__LIVE["opex"]) || null; /*OPEX_MONTHLY_INJECT*/
   // Monthly plan + COGS estimate (data/targets_monthly.json, edited by hand on GitHub): the executive page compares
   // the period with its plan, and product cost = net revenue x cogs_estimate.rate until COGS per SKU exists.
@@ -491,6 +492,8 @@
   let opexMeta = null;
   const OPEX_GA_KEYS = ['salary','software','office','accounting','insurance','other'];
   const OPEX_BELOW_KEYS = ['depreciation','interest','income_tax'];
+  const OPEX_AVG_MONTHS = 6;   // V11.7: open / missing month = average of the last 6 closed months
+  const OPEX_EST_TITLE = () => tv('Month not closed yet — estimated until its actual figures are entered: Vietnam costs = average of the last 6 closed months; software (Slash card) and Upwork contractors = actual charges to date, spread per day. Replaced automatically once the month is entered in data/opex_monthly.json', 'Tháng chưa chốt sổ — tạm tính tới khi nhập số thật: chi phí VN = trung bình 6 tháng đã chốt gần nhất; phần mềm (thẻ Slash) và Upwork = số thực tế tới nay, rải theo ngày. Tự thay khi nhập tháng vào data/opex_monthly.json');
   // Amazon Ads spend per day (SP / SB / SD). Today: exported from Sellerboard (which pulls the Amazon Ads API);
   // later: data/amazon_ads.json from the Amazon Ads API workflow once Amazon approves access. Same shape either way.
   const AMAZON_ADS_LIVE_DATA = (window.__LIVE && window.__LIVE["amazon_ads"]) || null; /*AMAZON_ADS_DATA_INJECT*/
@@ -986,14 +989,22 @@
 
     // Manual monthly OpEx (data/opex_monthly.json) spread per day: G&A keys join the G&A items, the rest sit below EBITDA.
     const opexDays = rows.filter(r=>r.opex).length;
-    const opexCarriedDays = rows.filter(r=>r.opex && r.opex.carried).length;
+    const opexCarriedDays = 0;   // V11.7: months are no longer carried — open / missing months are estimated
+    const opexEstRows = rows.filter(r=>r.opex && r.opex.est);
+    const opexEstDays = opexEstRows.length;
+    const opexEstMonths = [...new Set(opexEstRows.map(r=>r.opex.month))].sort();
+    const opexEstAmount = sum(opexEstRows.map(r=> OPEX_GA_KEYS.reduce((s,k)=> s+(r.opex.vals[k]||0), 0))) * allocShare;
+    const opexEstFor = k => { const t = []; opexEstMonths.forEach(m=>{ const x = opexEstText(m,k); if(x && !t.includes(x)) t.push(x); }); return t.join('; '); };
     const opexSum = k => sum(rows.map(r=> r.opex ? (r.opex.vals[k]||0) : 0));
     const opexHas = k => rows.some(r=> r.opex && r.opex.has[k]);
-    const opexNote = (opexDays>0 && opexDays<n ? tv(` (${n-opexDays} days before the first entered month = $0)`, ` (${n-opexDays} ngày trước tháng đầu tiên đã nhập = $0)`) : '') + (opexCarriedDays>0 ? tv(` (${opexCarriedDays} days carried from the latest entered month)`, ` (${opexCarriedDays} ngày lấy theo tháng gần nhất đã nhập)`) : '');
+    const opexNote = (opexDays>0 && opexDays<n ? tv(` (${n-opexDays} days before the first entered month = $0)`, ` (${n-opexDays} ngày trước tháng đầu tiên đã nhập = $0)`) : '');
     const gaItems = GA_ITEMS.map(it=>{
       const manualKey = OPEX_GA_KEYS.includes(it.key);
       const entered = manualKey && opexHas(it.key);
-      return {...it, value: (it.monthly/30*n + (manualKey ? opexSum(it.key) : 0)) * allocShare, manual: entered, label: it.label + (entered ? tx('st.manualMonthly') + opexNote : '')};
+      const est = entered && opexEstRows.some(r=>r.opex.has[it.key]), allEst = est && opexEstDays>=opexDays;
+      const estT = est ? opexEstFor(it.key) : '';
+      return {...it, value: (it.monthly/30*n + (manualKey ? opexSum(it.key) : 0)) * allocShare, manual: entered, est, allEst,
+        label: it.label + (entered ? (allEst ? '' : tx('st.manualMonthly')) + (est ? (allEst ? tv(' — estimated',' — tạm tính') : tv(` — ${opexEstDays} days estimated`, ` — ${opexEstDays} ngày tạm tính`)) + (estT ? ': '+estT : '') : '') + opexNote : '')};
     });
     const salaryEntered = !!gaItems.find(it=>it.key==='salary' && it.manual);
     // Klaviyo: real invoices booked per billing cycle (data/klaviyo_invoices.json), spread per day
@@ -1072,7 +1083,7 @@
       smInvDays, smInv, smInvOther, smInvAdjCredits, smStorageOpen, smStorageOpenDays, smStorageCarryDays, smStorageReportDays, smInvShipCmp, smApiShipCmp, smCmpDays, smCmpMissingDays, smTrueUp, shipmonkInvoiceExtras, shipmonkLogistics, amazonLogistics, logisticsTotal, feesTotal, marketingTotal, cmBeforeMarketing,
       paymentFees, afterpayFees, afterpayAmount, afterpayOrders, paymentFeeDays, paymentFeeOrders, feesMissingOrders, gatewayMix, feeTypeMix, paypalDays, paypalFees, paypalPayments, paypalPaymentsCount, paypalCompare, paymentFeesAll, marketplaceFees, adSpend, otherVarTotal, contributionProfit,
       gaItems, gaTotal, inventoryHolding, fixedTotal, netProfit, klaviyoCost, klaviyoCostDays, klaviyoCostParts,
-      opexDays, opexCarriedDays, opexNote, salaryEntered, depreciation, interest, depreciationEntered, interestEntered, taxEntered, taxRate, ebit, ebt, incomeTax, incomeTaxEstimated, netIncome, belowEbitdaEntered,
+      opexDays, opexCarriedDays, opexEstDays, opexEstMonths, opexEstAmount, opexNote, salaryEntered, depreciation, interest, depreciationEntered, interestEntered, taxEntered, taxRate, ebit, ebt, incomeTax, incomeTaxEstimated, netIncome, belowEbitdaEntered,
       variableTotal, variableRatio, cmRatio, breakEvenRevenue, blendedAOV, breakEvenOrders,
       merValue, merSpend, attrRevenueSum,
       amazonOrdersReal, amazonReferralFeesReal, amazonServiceFeesReal, amazonInboundFreightReal, amazonOtherFeesReal, amazonOtherUnclassifiedCost, amazonMarketplaceFeesReal, amazonMarketplaceFeesEst, walmartFees, walmartDays, walmartFeesEst, walmartAds, walmartSettledOrders, walmartUnsettledOrders, tiktokFees,
@@ -1576,7 +1587,7 @@
     rows.push(stSection(tv('Operating costs (OpEx) — G&A (software, salaries, office…)', 'Chi phí hoạt động (OpEx) — G&A (phần mềm, lương, văn phòng…)'),'fixed'));
     a.gaItems.forEach(it=>{
       const known = it.real || it.manual;
-      rows.push({...stLine(it.label + (known ? '' : tx('st.notEntered')) + (it.key==='klaviyo' ? '' : alloc), -it.value, nr, 'fix', 'fixed'), neg:true, live: it.real ? 'real' : (it.manual ? 'manual' : false), gap: known ? false : 'manual', hget: x=>-((x.gaItems.find(g=>g.key===it.key)||{}).value||0)});
+      rows.push({...stLine(it.label + (known ? '' : tx('st.notEntered')) + (it.key==='klaviyo' ? '' : alloc), -it.value, nr, 'fix', 'fixed'), neg:true, live: it.real ? 'real' : (it.manual && !it.allEst ? 'manual' : false), gap: known ? false : 'manual', est: !!it.est, estTitle: OPEX_EST_TITLE(), hget: x=>-((x.gaItems.find(g=>g.key===it.key)||{}).value||0)});
     });
     rows.push({...stSub(tv('= Total G&A', '= Tổng G&A'), -a.gaTotal, nr, 'fixed_sub'), hget: x=>-x.gaTotal});
     rows.push({...stSub(tv('= Total operating costs (OpEx)', '= Tổng chi phí hoạt động (OpEx)'), -a.fixedTotal, nr, 'opex_sub'), hget: x=>-x.fixedTotal});
@@ -2180,9 +2191,15 @@
     const LABEL = {depreciation: tv('Depreciation & amortisation (D&A)', 'Khấu hao & phân bổ (D&A)'), interest: tv('Interest & finance costs', 'Lãi vay & chi phí tài chính'), income_tax: tv('Income tax', 'Thuế TNDN')};
     GA_ITEMS.forEach(it=>{ if(OPEX_GA_KEYS.includes(it.key)) LABEL[it.key] = it.label; });
     let html = `<thead><tr><th>${tv('Month', 'Tháng')}</th>${cols.map(k=>`<th class="num">${LABEL[k]||k}</th>`).join('')}</tr></thead><tbody>`;
-    opexMeta.entered.slice().reverse().forEach(m=>{
-      const row = months[m] || {};
-      html += `<tr><td class="name">${tv(MONTHS_EN[parseInt(m.slice(5,7),10)-1]+' '+m.slice(0,4), 'Tháng '+parseInt(m.slice(5,7),10)+'/'+m.slice(0,4))}</td>${cols.map(k=>{
+    const estM = opexMeta.est || {};
+    [...new Set(opexMeta.entered.concat(Object.keys(estM)))].sort().reverse().forEach(m=>{
+      const row = months[m] || {}, e = estM[m];
+      const mLabel = tv(MONTHS_EN[parseInt(m.slice(5,7),10)-1]+' '+m.slice(0,4), 'Tháng '+parseInt(m.slice(5,7),10)+'/'+m.slice(0,4));
+      html += `<tr><td class="name">${mLabel}${e ? ' <span class="tag info" title="'+OPEX_EST_TITLE()+'"><span class="d"></span>'+tv('estimated','tạm tính')+'</span>' : ''}</td>${cols.map(k=>{
+        if(e){
+          const v = e.perMonth[k];
+          return `<td class="num">${(v===undefined||v===null) ? '<span style="color:var(--ink-muted);">—</span>' : `<span title="${opexEstText(m,k)}" style="font-style:italic;">≈${money(v)}</span>`}</td>`;
+        }
         const v = row[k];
         return `<td class="num">${(v===undefined||v===null||v==='') ? '<span style="color:var(--ink-muted);">—</span>' : money(parseFloat(v)||0)}</td>`;
       }).join('')}</tr>`;
@@ -2238,13 +2255,22 @@
     else {
       const months = [...new Set(rows.map(r=>r.iso.slice(0,7)))].sort();
       const num = (m,k) => parseFloat(OM[m] && OM[m][k]) || 0;
-      const missing = months.filter(m=>!OM[m]);
-      const prov = months.filter(m=>OM[m] && /t[aạ]m l[aấ]y theo|provisional|carried/i.test(String(OM[m].note||'')));
-      const noVN = months.filter(m=>OM[m] && !(num(m,'office')>0));
-      if(prov.length) gaps.push({lvl:'w', name: tv('G&A ','G&A ')+span(prov)+tv(' is provisional (copied from the previous month)',' đang tạm tính (lấy theo tháng trước)'), note: tv('replace with the month\'s actual figures in data/opex_monthly.json once the books close','thay bằng số thật của tháng trong data/opex_monthly.json khi chốt sổ')});
-      if(missing.length) gaps.push({lvl:'w', name: tv('G&A ','G&A ')+span(missing)+tv(' not entered',' chưa nhập'), note: tv('uses the latest entered month until a row is added to data/opex_monthly.json','đang lấy theo tháng gần nhất đã nhập cho tới khi thêm dòng vào data/opex_monthly.json')});
+      const isOpenM = m => (opexMeta.open||[]).includes(m);
+      const prov = months.filter(m=>opexMeta.est && opexMeta.est[m]);
+      const missing = months.filter(m=>!OM[m] && !prov.includes(m));
+      const noVN = months.filter(m=>OM[m] && !isOpenM(m) && !(num(m,'office')>0));
+      if(prov.length){
+        const last = prov[prov.length-1];
+        const KN = {salary: tv('payroll','nhân sự'), office: tv('office','văn phòng'), other: tv('other','khác'), accounting: tv('accounting','kế toán'), software: tv('software','phần mềm')};
+        const grp = {};
+        ['salary','office','other','accounting','software'].forEach(k=>{ const t = opexEstText(last,k); if(t) (grp[t] = grp[t] || []).push(KN[k]); });
+        gaps.push({lvl:'w', amt: a ? a.opexEstAmount : 0,
+          name: tv('G&A ','G&A ')+span(prov)+tv(' estimated (month not closed)',' đang tạm tính (tháng chưa chốt)')+(a && a.opexEstAmount>0 ? ': '+money(a.opexEstAmount,{compact:true}) : ''),
+          note: Object.keys(grp).map(t=>grp[t].join(', ')+' = '+t).join(' · ')+tv(' — enter the actual month in data/opex_monthly.json once the books close',' — nhập số thật của tháng vào data/opex_monthly.json khi chốt sổ')});
+      }
+      if(missing.length) gaps.push({lvl:'w', name: tv('G&A ','G&A ')+span(missing)+tv(' not entered',' chưa nhập'), note: tv('no earlier closed month to estimate from — add the month to data/opex_monthly.json','chưa có tháng đã chốt để tạm tính — thêm tháng vào data/opex_monthly.json')});
       if(noVN.length) gaps.push({lvl:'w', name: tv('G&A ','G&A ')+span(noVN)+tv(': no Vietnam payroll / office yet',': chưa có lương & văn phòng VN'), note: tv('these months only have Upwork contractors, software and accounting — add the Vietnam cost file for them if there were costs','các tháng này mới có Upwork, phần mềm, kế toán — bổ sung file chi phí VN nếu có phát sinh')});
-      const entered = months.filter(m=>OM[m]);
+      const entered = months.filter(m=>OM[m] && !isOpenM(m));
       if(entered.length) done.push(tv('G&A entered monthly ','G&A nhập theo tháng ')+span(entered)+tv(' (salaries incl. Upwork, software, office, accounting, other)',' (lương gồm Upwork, phần mềm, văn phòng, kế toán, khác)'));
       if(entered.length && entered.every(m=>!(num(m,'depreciation')>0) && !(num(m,'interest')>0)))
         gaps.push({lvl:'w', name: tv('Depreciation & interest not entered','Khấu hao & lãi vay chưa nhập'), note: tv('below EBITDA only — enter per month in data/opex_monthly.json if there are any','chỉ ảnh hưởng dưới EBITDA — nhập theo tháng vào data/opex_monthly.json nếu có')});
@@ -2879,7 +2905,7 @@
         foot: (a.netRevenue>0 ? (a.contributionProfit/a.netRevenue*100).toFixed(1)+tv('% of net revenue','% doanh thu thuần') : '') + (a.productCostHasLots ? tv(' · product cost FIFO by receipt lot',' · giá vốn FIFO theo lô nhập')+(a.productCostEstAmount>0.5 ? tv(' + estimate',' + ước tính') : '') : a.productCostHasActual ? (a.productCostEst ? tv(' · product cost mostly from the ledger',' · giá vốn phần lớn theo sổ kho') : tv(' · product cost from the ledger',' · giá vốn theo sổ kho')) : (a.productCostEst ? tv(' · product cost estimated at ',' · giá vốn ước ')+(a.cogsEstRate*100).toFixed(0)+'%' : tv(' · product cost not deducted',' · chưa trừ giá vốn')))},
       {label:'EBITDA', value: money(a.netProfit, {compact:true}), title: money(a.netProfit),
         deltas: dl(deltaLine(lk, p && dAbs(a.netProfit, p.netProfit)), deltaLine(tx('u.lastYear'), ly && dAbs(a.netProfit, ly.netProfit)), deltaLine(tx('u.margin'), a.netRevenue>0 && p && p.netRevenue>0 ? (a.netProfit/a.netRevenue - p.netProfit/p.netRevenue)*100 : null, {pts:true})),
-        foot: (a.netRevenue>0 ? tv('Margin ','Biên ')+(a.netProfit/a.netRevenue*100).toFixed(1)+'%' : '') + (a.opexDays>0 ? tv(' · G&A entered manually',' · G&A nhập tay') : tv(' · no G&A yet',' · chưa có G&A')) + ((a.productCostEst||a.productCostHasActual||a.productCostHasLots) ? '' : tv(' · product cost not deducted',' · chưa trừ giá vốn'))},
+        foot: (a.netRevenue>0 ? tv('Margin ','Biên ')+(a.netProfit/a.netRevenue*100).toFixed(1)+'%' : '') + (a.opexDays>0 ? (a.opexEstDays>0 ? tv(' · G&A includes estimate (month not closed)',' · G&A có tạm tính (tháng chưa chốt)') : tv(' · G&A entered manually',' · G&A nhập tay')) : tv(' · no G&A yet',' · chưa có G&A')) + ((a.productCostEst||a.productCostHasActual||a.productCostHasLots) ? '' : tv(' · product cost not deducted',' · chưa trừ giá vốn'))},
       {label:'MER', value: merNow.value!==null ? merNow.value.toFixed(2)+'x' : '—',
         deltas: dl(deltaLine(lk, (merPrev && merPrev.value!==null && merNow.value!==null) ? dAbs(merNow.value, merPrev.value) : null), deltaLine(tx('u.lastYear'), (merLy && merLy.value!==null && merNow.value!==null) ? dAbs(merNow.value, merLy.value) : null), (()=>{ const be = breakEvenMer(a); return be ? `<div class="delta ${merNow.value!==null && merNow.value>=be ? 'up':'down'}"><span class="k">${tx('u.breakEven')}:</span> ${be.toFixed(2)}x</div>` : deltaLine(tx('u.breakEven'), null); })()),
         foot: merNow.days<merNow.of ? tv('Based on ','Tính trên ')+merNow.days+'/'+merNow.of+tv(' days with complete data (Amazon Ads arrives after ~18:00 VN)',' ngày đủ số (Amazon Ads về sau ~18h VN)') : tv('Every ad source reported','Đủ số mọi nguồn quảng cáo'), alert: merNow.value!==null && breakEvenMer(a) && merNow.value<breakEvenMer(a)},
@@ -3643,7 +3669,7 @@
     kp.innerHTML = `
       <div class="kpi"><div class="label">${tv('OpEx this period','OpEx kỳ này')}</div><div class="value">${money(opex,{compact:true})}</div><div class="foot">${a.netRevenue>0 ? (opex/a.netRevenue*100).toFixed(1)+tv('% of net revenue','% doanh thu thuần') : ''}</div></div>
       <div class="kpi"><div class="label">${tv('Warehousing & services','Kho bãi & dịch vụ')}</div><div class="value">${money(logi,{compact:true})}</div><div class="foot">${tv('ShipMonk storage/receiving/returns','ShipMonk lưu kho/receiving/hàng trả')} ${money(a.shipmonkLogistics,{compact:true})} · ${tv('Amazon storage & services','Amazon lưu kho & dịch vụ')} ${money(a.amazonLogistics,{compact:true})}</div></div>
-      <div class="kpi"><div class="label">G&A</div><div class="value">${money(ga,{compact:true})}</div><div class="foot">${a.opexDays>0 ? tx('u.manual')+(a.opexCarriedDays>0 ? ' ('+a.opexCarriedDays+tv(' days carried from the latest entered month)',' ngày lấy theo tháng gần nhất đã nhập)') : '') : tv('No G&A entered for this period','Chưa nhập G&A cho kỳ này')} · Klaviyo ${money(a.klaviyoCost,{compact:true})}</div></div>
+      <div class="kpi"><div class="label">G&A</div><div class="value">${money(ga,{compact:true})}</div><div class="foot">${a.opexDays>0 ? (a.opexEstDays>=a.opexDays ? tv('Estimated (month not closed)','Tạm tính (tháng chưa chốt)') : tx('u.manual')+(a.opexEstDays>0 ? ' ('+a.opexEstDays+tv(' days estimated)',' ngày tạm tính)') : '')) : tv('No G&A entered for this period','Chưa nhập G&A cho kỳ này')} · Klaviyo ${money(a.klaviyoCost,{compact:true})}</div></div>
       <div class="kpi"><div class="label">EBITDA</div><div class="value">${money(a.netProfit,{compact:true})}</div><div class="foot">${a.netRevenue>0 ? tv('Margin ','Biên ')+(a.netProfit/a.netRevenue*100).toFixed(1)+'%' : ''} · = CM3 ${money(a.contributionProfit,{compact:true})} − OpEx</div></div>`;
     const t = document.getElementById('opexMonthsTable');
     const ms = MONTHS.slice(-13);
@@ -3651,14 +3677,13 @@
       ms.slice().reverse().map(m=>{
         const x = aggregate(monthMap[m]);
         if(x.netRevenue<=0) return '';
-        const entered = x.opexDays>0 && x.opexCarriedDays<x.opexDays, carried = x.opexDays>0 && x.opexCarriedDays>0;
-        return `<tr><td>${MONTH_LABEL(m)}</td><td class="num">${money(x.netRevenue,{compact:true})}</td><td class="num">${money(x.contributionProfit,{compact:true})}</td><td class="num">${money(x.logisticsTotal,{compact:true})}</td><td class="num">${money(x.gaTotal,{compact:true})}</td><td class="num">${money(x.fixedTotal,{compact:true})}</td><td class="num">${(x.fixedTotal/x.netRevenue*100).toFixed(1)}%</td><td class="num ${x.netProfit<0?'d-down':''}">${money(x.netProfit,{compact:true})}</td><td class="num">${(x.netProfit/x.netRevenue*100).toFixed(1)}%</td><td>${entered ? '<span class="tag live"><span class="d"></span>'+tx('u.manualLc')+'</span>' : carried ? '<span class="tag info"><span class="d"></span>'+tv('carried from latest month','theo tháng gần nhất')+'</span>' : '<span class="tag gap"><span class="d"></span>'+tx('u.notEntered')+'</span>'}</td></tr>`;
+        const entered = x.opexDays>0 && x.opexEstDays<x.opexDays, carried = x.opexDays>0 && x.opexEstDays>0;
+        return `<tr><td>${MONTH_LABEL(m)}</td><td class="num">${money(x.netRevenue,{compact:true})}</td><td class="num">${money(x.contributionProfit,{compact:true})}</td><td class="num">${money(x.logisticsTotal,{compact:true})}</td><td class="num">${money(x.gaTotal,{compact:true})}</td><td class="num">${money(x.fixedTotal,{compact:true})}</td><td class="num">${(x.fixedTotal/x.netRevenue*100).toFixed(1)}%</td><td class="num ${x.netProfit<0?'d-down':''}">${money(x.netProfit,{compact:true})}</td><td class="num">${(x.netProfit/x.netRevenue*100).toFixed(1)}%</td><td>${entered ? '<span class="tag live"><span class="d"></span>'+tx('u.manualLc')+'</span>' : carried ? '<span class="tag info" title="'+OPEX_EST_TITLE()+'"><span class="d"></span>'+tv('estimated','tạm tính')+'</span>' : '<span class="tag gap"><span class="d"></span>'+tx('u.notEntered')+'</span>'}</td></tr>`;
       }).join('')+'</tbody>';
-    document.getElementById('opexMonthsCaption').textContent = tv('Manual G&A = Vietnam costs (salaries, social insurance, premises, office…) from data/opex_monthly.json + Klaviyo invoices + the Snowball plan; no US costs yet (software, accounting, insurance). Months not entered are carried from the latest entered month (tagged).','G&A nhập tay = chi phí VN (lương, BHXH, mặt bằng, văn phòng…) từ data/opex_monthly.json + Klaviyo hoá đơn + gói Snowball; chưa có chi phí Mỹ (phần mềm, kế toán, bảo hiểm). Tháng chưa nhập lấy theo tháng gần nhất đã nhập (gắn nhãn).');
+    document.getElementById('opexMonthsCaption').textContent = tv('G&A = data/opex_monthly.json (Vietnam payroll & office costs, Upwork contractors, software from the Mercury/Slash cards, Numeral accounting) + Klaviyo invoices + the Snowball plan. The month not closed yet is estimated (tagged): Vietnam costs = average of the last 6 closed months, software (Slash) & Upwork = actual charges to date, spread per day.','G&A = data/opex_monthly.json (lương & chi phí văn phòng VN, nhân sự Upwork, phần mềm từ thẻ Mercury/Slash, kế toán Numeral) + hoá đơn Klaviyo + gói Snowball. Tháng chưa chốt sổ được tạm tính (gắn nhãn): chi phí VN = TB 6 tháng đã chốt gần nhất, phần mềm (Slash) & Upwork = số thực tế tới nay, rải theo ngày.');
     document.getElementById('cashGaps').innerHTML = [
       {name:tv('Bank balance & runway','Số dư ngân hàng & runway'), note:tv('Bank/Mercury/QuickBooks not connected — enter by hand or connect the API when ready','Chưa nối ngân hàng/Mercury/QuickBooks — nhập tay hoặc nối API khi sẵn sàng')},
       {name:tv('Cash in transit (Amazon, Walmart, TikTok payouts)','Tiền đang trên đường về (Amazon, Walmart, TikTok payout)'), note:tv('Amazon Finances has settlement data — not yet built into a cash flow','Amazon Finances có số liệu quyết toán — chưa dựng thành dòng tiền')},
-      {name:tv('US costs (software, accounting, insurance, freelancers)','Chi phí Mỹ (phần mềm, kế toán, bảo hiểm, freelancer)'), note:tv('Add them to data/opex_monthly.json (software, accounting, insurance, other)','Điền thêm vào data/opex_monthly.json (software, accounting, insurance, other)')},
     ].map(g=>`<div class="gap-row"><span class="dot c"></span><span class="g-name">${g.name}</span><span class="g-note">${g.note}</span></div>`).join('');
   }
 
@@ -3823,7 +3848,8 @@
       const e = opexMeta.entered;
       const fmtM = m => m.slice(5,7)+'/'+m.slice(0,4);
       const anyNum = e.some(m => OPEX_GA_KEYS.concat(OPEX_BELOW_KEYS).some(k => parseFloat(OPEX_MONTHLY_LIVE_DATA.months[m][k])>0));
-      setSource('ga', anyNum ? 'g' : 'w', tv('entered by hand in data/opex_monthly.json · ','nhập tay data/opex_monthly.json · ') + (e.length===1 ? tv('month ','tháng ')+fmtM(e[0]) : fmtM(e[0])+' → '+fmtM(e[e.length-1])) + (anyNum ? '' : tv(' (all $0 — no figures entered)',' (toàn $0 — chưa điền số)')));
+      const ec = opexMeta.closed.length ? opexMeta.closed : e;
+      setSource('ga', anyNum ? 'g' : 'w', tv('entered by hand in data/opex_monthly.json · ','nhập tay data/opex_monthly.json · ') + (ec.length===1 ? tv('month ','tháng ')+fmtM(ec[0]) : fmtM(ec[0])+' → '+fmtM(ec[ec.length-1])) + (opexMeta.open.length ? tv(' · open month ',' · tháng đang mở ')+opexMeta.open.map(fmtM).join(', ')+tv(' estimated',' tạm tính') : '') + (anyNum ? '' : tv(' (all $0 — no figures entered)',' (toàn $0 — chưa điền số)')));
     }
     if(shopifyMatched){
       setSource('shopify',ageLevel(SHOPIFY_LIVE_DATA.generated_at), fmtAmazonAge(SHOPIFY_LIVE_DATA.generated_at)+fmtCoverage(SHOPIFY_LIVE_DATA));
@@ -4236,27 +4262,88 @@
     return matched>0;
   }
 
+  // V11.7: closed months = the entered figures. A month still open (status "open") or not entered yet is ESTIMATED:
+  //   - Vietnam costs (payroll, office, other, accounting…) = average of the last 6 closed months;
+  //   - software (Slash card) and Upwork contractors = actual charges to date ("actual_to_date"), as a daily run-rate;
+  //   - a figure written in the open month itself always wins.
+  // Replaced automatically once the month is entered without status "open".
   function applyOpexRows(data){
     if(!data || !data.months) return false;
     const months = {};
     Object.keys(data.months).forEach(m=>{ if(/^\d{4}-\d{2}$/.test(m) && data.months[m] && typeof data.months[m]==='object') months[m] = data.months[m]; });
     const entered = Object.keys(months).sort();
     if(!entered.length) return false;
-    opexMeta = {entered, tax_rate: parseFloat(data.tax_rate)||0, note: data.note||'', updated_at: data.updated_at||null};
+    const isOpen = m => !!months[m] && String(months[m].status||'').toLowerCase()==='open';
+    const closed = entered.filter(m=>!isOpen(m));
+    opexMeta = {entered, closed, open: entered.filter(isOpen), est:{}, tax_rate: parseFloat(data.tax_rate)||0, note: data.note||'', updated_at: data.updated_at||null};
     const num = v => (v===null || v===undefined || v==='') ? null : (isFinite(parseFloat(v)) ? parseFloat(v) : null);
+    const dimOf = m => new Date(Date.UTC(+m.slice(0,4), +m.slice(5,7), 0)).getUTCDate();   // days in that month
+    // value of one key in a closed month; payroll is split into Vietnam payroll and Upwork contractors
+    const valOf = (m,k) => {
+      const r = months[m];
+      if(k==='salary_vn'){ const v = num(r.salary_vn); if(v!==null) return v; const s = num(r.salary), u = num(r.upwork); return (s!==null && u!==null) ? s-u : null; }
+      return num(r[k]);
+    };
+    const estimate = m => {
+      if(opexMeta.est[m]) return opexMeta.est[m];
+      const prev = closed.filter(x=>x<m).slice(-OPEX_AVG_MONTHS);
+      const r = months[m] || {};
+      if(!prev.length && !months[m]) return null;
+      const dim = dimOf(m);
+      const atd = (r.actual_to_date && typeof r.actual_to_date==='object') ? r.actual_to_date : {};
+      const avg = k => { const xs = prev.map(x=>valOf(x,k)).filter(v=>v!==null); return xs.length ? xs.reduce((s,v)=>s+v,0)/xs.length : null; };
+      const e = {month:m, dim, perMonth:{}, basis:{}, actual:{}, avgN: prev.length, avgFrom: prev[0]||null, avgTo: prev[prev.length-1]||null};
+      const one = k => {
+        const x = num(r[k]);
+        if(x!==null){ e.basis[k] = 'entered'; return x; }
+        const a = atd[k], amt = a ? num(a.amount) : null;
+        if(a && amt!==null && a.from && a.to){
+          const d = Math.round((Date.parse(a.to+'T00:00:00Z')-Date.parse(a.from+'T00:00:00Z'))/86400000)+1;
+          if(d>0){ e.basis[k] = 'actual'; e.actual[k] = {amount:amt, from:a.from, to:a.to, days:d, source:a.source||''}; return amt/d*dim; }
+        }
+        const v = avg(k); if(v!==null) e.basis[k] = 'avg'; return v;
+      };
+      OPEX_GA_KEYS.concat(OPEX_BELOW_KEYS).forEach(k=>{
+        if(k==='salary' && num(r.salary)===null){
+          const vn = one('salary_vn'), up = one('upwork');
+          if(vn!==null || up!==null){ e.perMonth.salary = (vn||0)+(up||0); e.perMonth.salary_vn = vn; e.perMonth.upwork = up; e.basis.salary = 'split'; return; }
+        }
+        if(k==='income_tax' && num(r.income_tax)===null){ e.perMonth.income_tax = null; return; }   // left to the tax-rate estimate
+        e.perMonth[k] = one(k);
+      });
+      opexMeta.est[m] = e;
+      return e;
+    };
     let matched = 0;
     days.forEach(d=>{
       const m = d.iso.slice(0,7);
-      let src = months[m] ? m : null;
-      if(!src){ for(let i=entered.length-1;i>=0;i--){ if(entered[i]<m){ src = entered[i]; break; } } }
-      if(!src) return;
-      const dim = new Date(Date.UTC(+m.slice(0,4), +m.slice(5,7), 0)).getUTCDate();   // days in that month
-      const o = {month:m, from:src, carried: src!==m, vals:{}, has:{}, given:{}};
-      // has = a non-zero number was entered (drives the "Nhập tay" tag); given = any number incl. 0 (0 = "no such cost", null/absent = unknown)
-      OPEX_GA_KEYS.concat(OPEX_BELOW_KEYS).forEach(k=>{ const v = num(months[src][k]); o.given[k] = v!==null; o.has[k] = v!==null && v!==0; o.vals[k] = (v||0)/dim; });
+      const dim = dimOf(m);
+      // has = a non-zero number (drives the "Nhập tay" tag); given = any number incl. 0 (0 = "no such cost", null/absent = unknown)
+      const o = {month:m, from:m, carried:false, est:false, vals:{}, has:{}, given:{}};
+      if(months[m] && !isOpen(m)){
+        OPEX_GA_KEYS.concat(OPEX_BELOW_KEYS).forEach(k=>{ const v = num(months[m][k]); o.given[k] = v!==null; o.has[k] = v!==null && v!==0; o.vals[k] = (v||0)/dim; });
+      } else {
+        const e = estimate(m);
+        if(!e) return;
+        o.est = true;
+        OPEX_GA_KEYS.concat(OPEX_BELOW_KEYS).forEach(k=>{ const v = e.perMonth[k]; const g = v!==null && v!==undefined; o.given[k] = g; o.has[k] = g && v!==0; o.vals[k] = (g ? v : 0)/dim; });
+      }
       d.opex = o; matched++;
     });
     return matched>0;
+  }
+  // how an estimated month's figure was made, e.g. "avg of 6 months 04–09/2026" / "Slash actual to 17/10"
+  function opexEstText(m, k){
+    const e = opexMeta && opexMeta.est && opexMeta.est[m];
+    if(!e) return '';
+    const mm = x => x.slice(5,7)+'/'+x.slice(0,4);
+    const avgT = () => !e.avgN ? '' : e.avgN===1 ? tv('as ','theo ')+mm(e.avgFrom)
+      : (e.avgFrom.slice(0,4)===e.avgTo.slice(0,4) ? tv(`avg of ${e.avgN} months ${e.avgFrom.slice(5,7)}–${mm(e.avgTo)}`, `TB ${e.avgN} tháng ${e.avgFrom.slice(5,7)}–${mm(e.avgTo)}`)
+                                                    : tv(`avg of ${e.avgN} months ${mm(e.avgFrom)}–${mm(e.avgTo)}`, `TB ${e.avgN} tháng ${mm(e.avgFrom)}–${mm(e.avgTo)}`));
+    const actT = (a, src) => (src && a.source ? a.source+' ' : '')+tv('actual to ','thực tế tới ')+a.to.slice(8,10)+'/'+a.to.slice(5,7);
+    const one = (kk, src=true) => e.basis[kk]==='avg' ? avgT() : e.basis[kk]==='actual' ? actT(e.actual[kk], src) : e.basis[kk]==='entered' ? tv('entered','đã nhập') : '';
+    if(e.basis[k]==='split') return [e.basis.salary_vn ? tv('Vietnam payroll ','lương VN ')+one('salary_vn', false) : '', e.basis.upwork ? 'Upwork '+one('upwork', false) : ''].filter(Boolean).join(' + ');
+    return one(k);
   }
 
   // ---------- last-touch attribution: sums of the daily "attribution" blocks over the selected rows ----------

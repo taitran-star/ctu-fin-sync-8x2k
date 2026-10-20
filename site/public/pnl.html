@@ -1014,7 +1014,7 @@
       <div class="note" data-i18n="h.stmtNote">% tính trên Doanh thu thuần của từng cột · bấm dòng nhóm để thu gọn/mở rộng · có thêm 6 kỳ liền trước để so xu hướng ở hầu hết các dòng (một vài dòng phụ có cấu trúc đổi theo kỳ — mix loại phí, breakdown kho theo kỳ hoá đơn, dòng đối chiếu — chỉ hiện cho kỳ đang xem)</div>
     </div>
     <div class="stmt-wrap"><table class="stmt" id="stmtTable"></table></div>
-    <div class="caption" style="padding-left:2px;margin-top:8px;" data-i18n="h.stmtCaption">Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa kết nối ($0)</span> chưa có nguồn dữ liệu nên để $0 (không ước tính). Vì vậy <b>Lợi nhuận gộp / đóng góp / EBITDA ở trên là lợi nhuận TRƯỚC</b> các khoản còn gắn nhãn đó (giá vốn sản phẩm, phí sàn Walmart/TikTok, phí Afterpay, G&amp;A…) — sẽ tự đúng dần khi từng nguồn được nối vào. Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa nhập ($0)</span> là chi phí không có API (lương, văn phòng, khấu hao, lãi vay, thuế TNDN): điền theo tháng vào file <code>data/opex_monthly.json</code> trên GitHub, bảng tự đọc và rải đều theo ngày; tháng chưa điền lấy theo tháng gần nhất đã điền.</div>
+    <div class="caption" style="padding-left:2px;margin-top:8px;" data-i18n="h.stmtCaption">Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa kết nối ($0)</span> chưa có nguồn dữ liệu nên để $0 (không ước tính). Vì vậy <b>Lợi nhuận gộp / đóng góp / EBITDA ở trên là lợi nhuận TRƯỚC</b> các khoản còn gắn nhãn đó (giá vốn sản phẩm, phí sàn Walmart/TikTok, phí Afterpay, G&amp;A…) — sẽ tự đúng dần khi từng nguồn được nối vào. Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa nhập ($0)</span> là chi phí không có API (lương, văn phòng, khấu hao, lãi vay, thuế TNDN): điền theo tháng vào file <code>data/opex_monthly.json</code> trên GitHub, bảng tự đọc và rải đều theo ngày; tháng chưa chốt sổ được tạm tính: chi phí VN = TB 6 tháng đã chốt gần nhất, phần mềm (Slash) &amp; Upwork = số thực tế tới nay.</div>
   </div>
 
   <div class="card" id="channelCostCard">
@@ -1109,7 +1109,7 @@
     <div class="caption" id="opexMonthsCaption" style="padding-left:2px;margin-top:8px;"></div>
   </div>
   <div class="card">
-      <div class="card-head"><h2 data-i18n="h.opexManTitle">Chi phí nhập tay (OpEx theo tháng)</h2><div class="note" data-i18n="h.opexManNote">Không có API — điền theo tháng vào <code>data/opex_monthly.json</code> trên GitHub; tháng chưa điền lấy theo tháng gần nhất đã điền</div></div>
+      <div class="card-head"><h2 data-i18n="h.opexManTitle">Chi phí nhập tay (OpEx theo tháng)</h2><div class="note" data-i18n="h.opexManNote">Không có API — điền theo tháng vào <code>data/opex_monthly.json</code> trên GitHub; tháng chưa chốt sổ được tạm tính (≈): chi phí VN = TB 6 tháng đã chốt gần nhất, phần mềm (Slash) &amp; Upwork = số thực tế tới nay</div></div>
       <div style="overflow-x:auto;"><table class="simple" id="opexTable" style="min-width:760px;"></table></div>
     </div>
 
@@ -1195,7 +1195,7 @@
     return load(k, 1).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })); }).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=6c56401af0';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=709edbb973';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');
