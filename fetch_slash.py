@@ -39,7 +39,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "1.2"
+SCRIPT_VERSION = "1.3"
 SCHEMA = 1
 API_KEY = os.environ.get("SLASH_API_KEY", "").strip()
 BASE = os.environ.get("SLASH_BASE_URL", "https://api.slash.com").rstrip("/")
@@ -211,6 +211,22 @@ class Api:
         print("read via /transaction (v1)")
         return out
 
+    def payees(self, start, end):
+        """transaction id -> recipient display name, via /v2/transfers (transactionIds) + /v2/recipients.
+        Only used to classify; a payee name is written out only for marketing / legal lines."""
+        names, by_tx = {}, {}
+        try:
+            for r in self._pages("/v2/recipients", {"limit": "100", "includeArchived": "true"}):
+                names[r.get("id")] = r.get("name") or r.get("recipientLegalName") or ""
+            for t in self._pages("/v2/transfers", {"from": start.strftime("%Y-%m-%dT%H:%M:%SZ"), "to": end.strftime("%Y-%m-%dT%H:%M:%SZ"), "limit": "100"}):
+                nm = names.get(t.get("recipientId"), "")
+                for tx in t.get("transactionIds") or []:
+                    by_tx[tx] = nm
+        except SystemExit as e:
+            print("payee lookup unavailable:", str(e)[:120])
+        print("payees resolved for", len(by_tx), "transactions,", len(names), "recipients")
+        return by_tx
+
 
 def rail(t):
     cat = t.get("category")
@@ -233,6 +249,7 @@ def main():
     api = Api()
     raw = api.transactions(start, end)
     print("fetched", len(raw), "transactions")
+    payee = api.payees(start, end) if api.entity else {}
 
     charges, monthly = [], defaultdict(lambda: defaultdict(float))
     unk_card, unk_xfer, pending = defaultdict(lambda: [0.0, 0]), defaultdict(lambda: [0.0, 0]), defaultdict(float)
@@ -245,7 +262,8 @@ def main():
             continue
         amt = -cents / 100.0                      # positive = money out
         md = t.get("merchantData") or ((t.get("details") or {}).get("merchant")) or {}
-        text = " | ".join(str(x) for x in (t.get("description"), md.get("description"), t.get("memo")) if x)
+        who = payee.get(t.get("id"), "")
+        text = " | ".join(str(x) for x in (who, t.get("description"), md.get("description"), t.get("memo")) if x)
         day = local_day(t.get("date") or t.get("createdAt") or "")
         r = rail(t)
         if r == "book":
@@ -281,6 +299,8 @@ def main():
         if line in ("AGENCY", "CRE", "DSP", "LEGAL"):
             c["memo"] = (t.get("memo") or "")[:80]
             c["desc"] = (t.get("description") or "")[:70]
+            if who:
+                c["payee"] = who[:60]
         if t.get("originalCurrency") and (t["originalCurrency"].get("code") or "USD") != "USD":
             c["fx"] = t["originalCurrency"].get("code")
         charges.append(c)
