@@ -151,7 +151,8 @@ row inside the fetched window also carries
   sku_units {sku: units}, sku_sales {sku: pre-discount amount} - Order.lineItems of the same orders
             that make up `orders`, on the ORDER day (edit additions stay on the order day here);
             sku_refund_units {sku: units} - Refund.refundLineItems on the REFUND day, like refunded_total.
-            SKU = raw Shopify SKU, trimmed; empty -> "(no sku)". Tip lines are skipped (not sales).
+            SKU = raw Shopify SKU, trimmed; empty -> "(no sku) <line item name>" (v2.2; "(no sku)" alone when the
+            line has no name either). Tip lines are skipped (not sales).
   meta.schema_info {sku_units_since, statuses_since} = first day in the file that carries these keys;
   older history days simply lack them (the dashboard must treat a missing key as "no data yet").
   LINE_ITEMS_FIRST          line items per order in the orders query, default 50 (auto-halves on cost
@@ -188,8 +189,9 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "2.1"   # 2.0 = order funnel counters + per-SKU units / sales / refund units per day (additive)
+SCRIPT_VERSION = "2.2"   # 2.0 = order funnel counters + per-SKU units / sales / refund units per day (additive)
                          # 2.1 = per-market (country) split of every daily row (additive)
+                         # 2.2 = line items without a SKU keyed "(no sku) <line item name>" instead of one "(no sku)" bucket
 SCHEMA = 3   # 3 = daily "attribution" block (customer-journey last-touch channels). Kept at 3 on purpose: the
              # dashboard compares it numerically; the v2.0 / v2.1 keys are announced by meta.schema_info instead.
 
@@ -241,10 +243,15 @@ LINE_ITEMS_FIRST = max(1, int(os.environ.get("LINE_ITEMS_FIRST", "50")))
 LINE_ITEMS_MAX_PAGES = 50   # safety stop for the extra line-item pages of one order (50 x LINE_ITEMS_FIRST items)
 
 
-def sku_key(sku):
-    """Raw platform SKU, trimmed; empty / missing / non-string -> "(no sku)"."""
+def sku_key(sku, name=None):
+    """Raw platform SKU, trimmed. v2.2: empty / missing SKU -> "(no sku) <line item name>" (product - variant,
+    whitespace collapsed, max 90 chars) so the dashboard can map a SKU-less line to the product it ships
+    (or to no product at all); "(no sku)" alone when the line has no name either."""
     s = sku.strip() if isinstance(sku, str) else ""
-    return s or NO_SKU
+    if s:
+        return s
+    n = " ".join(name.split()) if isinstance(name, str) else ""
+    return (NO_SKU + " " + n[:90]) if n else NO_SKU
 
 
 def add_funnel_fields(d):
@@ -394,7 +401,7 @@ query Orders($first: Int!, $after: String, $q: String, $refundsFirst: Int!, $lin
       }
       lineItems(first: $lineItemsFirst) {
         pageInfo { hasNextPage endCursor }
-        nodes { sku quantity title requiresShipping originalUnitPriceSet { shopMoney { amount } } }
+        nodes { sku name quantity title requiresShipping originalUnitPriceSet { shopMoney { amount } } }
       }
       transactions(first: 8) {
         kind status gateway processedAt
@@ -413,7 +420,7 @@ query Orders($first: Int!, $after: String, $q: String, $refundsFirst: Int!, $lin
             quantity
             subtotalSet { shopMoney { amount } }
             totalTaxSet { shopMoney { amount } }
-            lineItem { title requiresShipping sku }
+            lineItem { name title requiresShipping sku }
           }
         }
         orderAdjustments(first: 20) {
@@ -490,7 +497,7 @@ query LineItemsPage($id: ID!, $first: Int!, $after: String) {
       id
       lineItems(first: $first, after: $after) {
         pageInfo { hasNextPage endCursor }
-        nodes { sku quantity title requiresShipping originalUnitPriceSet { shopMoney { amount } } }
+        nodes { sku name quantity title requiresShipping originalUnitPriceSet { shopMoney { amount } } }
       }
     }
   }
@@ -1551,7 +1558,8 @@ class Aggregator:
             for li in li_nodes:
                 q = line_quantity(li)
                 if q > 0:
-                    key = sku_key(((li.get("lineItem") or {}).get("sku")))
+                    li_item = li.get("lineItem") or {}
+                    key = sku_key(li_item.get("sku"), li_item.get("name") or li_item.get("title"))
                     d["sku_refund_units"][key] = d["sku_refund_units"].get(key, 0) + q
                     md["sku_refund_units"][key] = md["sku_refund_units"].get(key, 0) + q   # v2.1
                     self.counts["refund_line_units"] += q
@@ -1624,8 +1632,8 @@ class Aggregator:
             if qty <= 0:
                 self.counts["line_items_zero_qty"] += 1
                 continue
-            key = sku_key(li.get("sku"))
-            if key == NO_SKU:
+            key = sku_key(li.get("sku"), li.get("name") or li.get("title"))
+            if key.startswith(NO_SKU):
                 self.counts["line_items_without_sku"] += 1
             d["sku_units"][key] = d["sku_units"].get(key, 0) + qty
             # pre-discount, like gross_sales (= subtotal + discounts = sum of original line prices)
