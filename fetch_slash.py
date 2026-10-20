@@ -39,7 +39,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "1.0"
+SCRIPT_VERSION = "1.1"
 SCHEMA = 1
 API_KEY = os.environ.get("SLASH_API_KEY", "").strip()
 BASE = os.environ.get("SLASH_BASE_URL", "https://api.slash.com").rstrip("/")
@@ -170,31 +170,52 @@ class Api:
 
     def pick_entity(self):
         r = self.get("/legal-entity")
-        items = r.get("items") or r.get("data") or []
+        items = (r.get("items") or r.get("data") or []) if isinstance(r, dict) else (r or [])
         if not items:
             raise SystemExit("No legal entity visible to this key")
-        self.entity = items[0].get("id")
-        print("Using legal entity", (items[0].get("name") or "")[:40])
+        pick = next((x for x in items if "cattasaurus" in str(x.get("name", "")).lower()), items[0])
+        self.entity = pick.get("id")
+        print("Using legal entity", str(pick.get("name") or "")[:40], "(%d visible)" % len(items))
 
-    def transactions(self, start_ms, end_ms):
+    def _pages(self, path, base_params):
         out, cursor, pages = [], None, 0
         while True:
-            p = {"filter:from_date": str(start_ms), "filter:to_date": str(end_ms)}
+            p = dict(base_params)
             if cursor:
                 p["cursor"] = cursor
-            r = self.get("/transaction", p)
+            r = self.get(path, p)
             items = r.get("items") or []
             out.extend(items)
             pages += 1
             cursor = (r.get("metadata") or {}).get("nextCursor")
             if not cursor or not items:
                 break
-            if pages > 2000:
+            if pages > 3000:
                 raise SystemExit("too many pages")
+        return out
+
+    def transactions(self, start, end):
+        # v2 (user API keys from Settings > API keys): needs x-legal-entity, RFC 3339 bounds
+        self.pick_entity()
+        try:
+            out = self._pages("/v2/transactions", {"from": start.strftime("%Y-%m-%dT%H:%M:%SZ"), "to": end.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                                                   "limit": "100", "sort": "date", "sortDirection": "asc"})
+            print("read via /v2/transactions")
+            return out
+        except SystemExit as e:
+            if "user_api_key_required" not in str(e):
+                raise
+        # v1 (legal-entity keys)
+        self.entity = None
+        out = self._pages("/transaction", {"filter:from_date": str(int(start.timestamp() * 1000)), "filter:to_date": str(int(end.timestamp() * 1000))})
+        print("read via /transaction (v1)")
         return out
 
 
 def rail(t):
+    cat = t.get("category")
+    if cat:
+        return {"international_wire": "wire", "realtime": "rtp"}.get(cat, cat)
     if t.get("cardId") or t.get("merchantData"):
         return "card"
     for k, name in (("achInfo", "ach"), ("wireInfo", "wire"), ("rtpInfo", "rtp"), ("feeInfo", "fee")):
@@ -210,7 +231,7 @@ def main():
     start = datetime.fromisoformat(HISTORY_START).replace(tzinfo=timezone.utc)
     end = datetime.now(timezone.utc)
     api = Api()
-    raw = api.transactions(int(start.timestamp() * 1000), int(end.timestamp() * 1000))
+    raw = api.transactions(start, end)
     print("fetched", len(raw), "transactions")
 
     charges, monthly = [], defaultdict(lambda: defaultdict(float))
@@ -223,10 +244,12 @@ def main():
         if cents is None:
             continue
         amt = -cents / 100.0                      # positive = money out
-        md = t.get("merchantData") or {}
+        md = t.get("merchantData") or ((t.get("details") or {}).get("merchant")) or {}
         text = " | ".join(str(x) for x in (t.get("description"), md.get("description"), t.get("memo")) if x)
         day = local_day(t.get("date") or t.get("createdAt") or "")
         r = rail(t)
+        if r == "book":
+            continue                              # moves between own accounts (card repayments, sub-accounts)
         ds = str(t.get("detailedStatus") or "")
         if t.get("status") == "failed" or ds in ("declined", "canceled", "failed"):
             continue
