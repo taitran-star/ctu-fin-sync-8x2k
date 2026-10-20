@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 3c7e1a52d9).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 5d1e7b20c4).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -1057,6 +1057,7 @@
     // V12.2: Amazon DSP spend per day from Xnurta (paid orders; from book_from on it replaces the monthly top-up above)
     const dspLive = sum(rows.map(r=> r.dspReal ? r.dspReal.paid : 0)), dspBonus = sum(rows.map(r=> r.dspReal ? r.dspReal.bonus : 0)), dspLiveDays = rows.filter(r=> r.dspReal).length;
     const dspRecent = rows.some(r=> r.dspReal && dspMeta && dspMeta.recentFrom && r.iso >= dspMeta.recentFrom);   // the last 2 days Xnurta may still revise
+    const dspEstDays = rows.filter(r=> r.dspReal && r.dspReal.est).length, dspEstAmt = sum(rows.map(r=> (r.dspReal && r.dspReal.est) ? r.dspReal.paid : 0));   // V12.3
     const mktManual = mktAgency + mktCreator + mktDsp + dspLive;
     const feesTotal = paymentFeesAll + marketplaceFees;               // payment gateways + marketplace selling fees
     const marketingTotal = adSpend + snowballCommission + tiktokAffiliate + tiktokSmart + walmartAds + mktManual;   // paid ads + affiliate commissions + manual marketing (V11.8)
@@ -1160,7 +1161,7 @@
       smInvDays, smInv, smInvOther, smInvAdjCredits, smStorageOpen, smStorageOpenDays, smStorageCarryDays, smStorageReportDays, smInvShipCmp, smApiShipCmp, smCmpDays, smCmpMissingDays, smTrueUp, shipmonkInvoiceExtras, shipmonkLogistics, amazonLogistics, logisticsTotal, feesTotal, marketingTotal, cmBeforeMarketing,
       paymentFees, afterpayFees, afterpayAmount, afterpayOrders, paymentFeeDays, paymentFeeOrders, feesMissingOrders, gatewayMix, feeTypeMix, paypalDays, paypalFees, paypalPayments, paypalPaymentsCount, paypalCompare, paymentFeesAll, marketplaceFees, adSpend, otherVarTotal, contributionProfit,
       gaItems, gaTotal, inventoryHolding, fixedTotal, netProfit, klaviyoCost, klaviyoCostDays, klaviyoCostParts,
-      mktItems, mktAgency, mktCreator, mktDsp, mktManual, dspLive, dspBonus, dspLiveDays, dspRecent,
+      mktItems, mktAgency, mktCreator, mktDsp, mktManual, dspLive, dspBonus, dspLiveDays, dspRecent, dspEstDays, dspEstAmt,
       opexDays, opexCarriedDays, opexEstDays, opexEstMonths, opexEstAmount, opexNote, salaryEntered, depreciation, interest, depreciationEntered, interestEntered, taxEntered, taxRate, ebit, ebt, incomeTax, incomeTaxEstimated, netIncome, belowEbitdaEntered,
       variableTotal, variableRatio, cmRatio, breakEvenRevenue, blendedAOV, breakEvenOrders,
       merValue, merSpend, attrRevenueSum,
@@ -1631,8 +1632,12 @@
       rows.push({...stLine(label, -it.value, nr, it.key==='mkt_agency' ? 'fix' : 'var', 'mkt'), neg: it.value>=0, live: allEst ? false : 'manual', est: it.estDays>0, estTitle: tv('Month not closed yet — estimated on the basis written in the label; replaced once the month is entered in data/opex_monthly.json', 'Tháng chưa chốt sổ — tạm tính theo cơ sở ghi trong nhãn; tự thay khi nhập tháng vào data/opex_monthly.json'), hget: x=>-((x.mktItems.find(g=>g.key===it.key)||{}).value||0)});
     });
     if(a.dspLiveDays>0 && (Math.abs(a.dspLive)>=0.005 || a.dspBonus>=0.005)){   // V12.2
-      const lb = tv('Amazon DSP — daily spend from Xnurta (paid SparkX orders', 'Amazon DSP — chi phí theo ngày từ Xnurta (order SparkX trả phí') + (a.dspBonus>=0.005 ? tv('; Amazon bonus media ', '; không gồm media tặng của Amazon ') + money(a.dspBonus) + tv(' is free, not included', '') : '') + ')';
-      rows.push({...stLine(lb, -a.dspLive, nr, 'var', 'mkt'), neg: a.dspLive>=0, live:true, est: a.dspRecent && dspFresh(), estTitle: tv('Xnurta updates the last 1–2 days during the day; the scheduled read refreshes them', 'Xnurta còn cập nhật 1–2 ngày gần nhất trong ngày; lần đọc theo lịch sẽ làm mới'), hget: x=>-(x.dspLive||0)});
+      const lb = tv('Amazon DSP — daily spend from Xnurta (paid SparkX orders', 'Amazon DSP — chi phí theo ngày từ Xnurta (order SparkX trả phí') + (a.dspBonus>=0.005 ? tv('; Amazon bonus media ', '; không gồm media tặng của Amazon ') + money(a.dspBonus) + tv(' is free, not included', '') : '') + ')'
+        + (a.dspEstDays>0 ? tv(' — '+a.dspEstDays+' '+dayWord(a.dspEstDays)+' estimated '+money(a.dspEstAmt)+' at the last 7 days\' average ', ' — '+a.dspEstDays+' ngày tạm tính '+money(a.dspEstAmt)+' theo TB 7 ngày ')+money(dspMeta.avgPaid)+tx('u.perDay') : '');
+      const dspEst = a.dspEstDays>0 || (a.dspRecent && dspFresh());
+      rows.push({...stLine(lb, -a.dspLive, nr, 'var', 'mkt'), neg: a.dspLive>=0, live:true, est: dspEst, estTitle: a.dspEstDays>0
+        ? tv('Days after the last Xnurta read (data to '+(dspMeta.last||'')+') are estimated at the average paid spend of the last 7 complete days (today pro rata of the hours elapsed, Los Angeles); replaced when Claude reads Xnurta again', 'Các ngày sau lần đọc Xnurta gần nhất (số tới '+(dspMeta.last||'')+') tạm tính theo chi phí trả phí TB 7 ngày đủ gần nhất (hôm nay theo tỷ lệ giờ đã qua, giờ Los Angeles); tự thay khi Claude đọc lại Xnurta')
+        : tv('Xnurta still revises the last 1–2 days', 'Xnurta còn cập nhật 1–2 ngày gần nhất'), hget: x=>-(x.dspLive||0)});
     }
     rows.push({...stSub(tv('= Total marketing & selling', '= Tổng marketing & bán hàng'), -a.marketingTotal, nr, 'mkt_sub'), hget: x=>-x.marketingTotal});
     rows.push({...stSub(tv('= Contribution margin (CM3, after marketing)', '= Lợi nhuận đóng góp (Contribution Margin, sau marketing)'), a.contributionProfit, nr, 'cm'), hget: x=>x.contributionProfit});
@@ -4424,7 +4429,27 @@
       const paid = +(Array.isArray(x) ? x[0] : x.paid) || 0, bonus = +(Array.isArray(x) ? x[1] : x.bonus) || 0;
       d.dspReal = {paid, bonus}; matched++; last = d.iso;
     });
-    dspMeta = {from, last, generated_at: data.generated_at || null, recentFrom: last ? new Date(Date.parse(last+'T00:00:00Z') - 86400000).toISOString().slice(0,10) : null};
+    // V12.3: Xnurta is re-read by hand (no browser automation) -> the days after the last read are carried at the average
+    // paid spend of the last 7 complete days (today pro rata of the elapsed hours; the last read day too when it was read
+    // mid-day and is still below that run-rate), tagged as an estimate and replaced when the file is refreshed.
+    const keys = Object.keys(data.daily).sort(), lastKey = keys.length ? keys[keys.length-1] : null;
+    const genIso = data.generated_at ? String(data.generated_at).slice(0,10) : null;
+    const partial = !!(lastKey && genIso && lastKey >= genIso);
+    const ref = keys.filter(k=> !(partial && k===lastKey)).slice(-7);
+    const val = (x, i) => +(Array.isArray(x) ? x[i] : (i ? x.bonus : x.paid)) || 0;
+    const avgP = ref.length ? ref.reduce((s,k)=> s + val(data.daily[k], 0), 0)/ref.length : 0;
+    const avgB = ref.length ? ref.reduce((s,k)=> s + val(data.daily[k], 1), 0)/ref.length : 0;
+    const todayIso = days[days.length-1].iso, share = elapsedShareOfDay(REPORT_TZ);
+    let estDays = 0;
+    if(lastKey && ref.length) days.forEach(d=>{
+      if(d.iso < from || d.iso < lastKey || (d.iso===lastKey && !partial)) return;
+      const f = d.iso===todayIso ? share : 1, p = avgP*f, b = avgB*f;
+      if(d.iso===lastKey && d.dspReal && d.dspReal.paid >= p) return;   // the partial day already beats the run-rate
+      if(!d.dspReal) matched++;
+      d.dspReal = {paid: p, bonus: b, est: true}; estDays++;
+    });
+    dspMeta = {from, last, generated_at: data.generated_at || null, recentFrom: last ? new Date(Date.parse(last+'T00:00:00Z') - 86400000).toISOString().slice(0,10) : null,
+               avgPaid: avgP, refDays: ref.length, estDays};
     return matched>0;
   }
   // the DSP line carries the "estimate" tag while its last day may still move (Xnurta fills the last 1-2 days later)
