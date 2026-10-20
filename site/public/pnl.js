@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 5d1e7b20c4).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 9b7a23149d).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -540,12 +540,16 @@
     return any ? total : null;
   }
   let opexMeta = null;
-  const OPEX_GA_KEYS = ['salary','software','office','accounting','insurance','training','other'];   // V11.9: + training
+  const OPEX_GA_KEYS = ['salary','software','office','accounting','insurance','training','other','other_us','cashback'];   // V11.9: + training; V12.4: + other_us, cashback (bank statements)
   const OPEX_BELOW_KEYS = ['depreciation','interest','income_tax'];
   // V11.8: marketing entered monthly in the same file (no API): agency creative retainers, creator/UGC payouts, Amazon DSP top-ups
-  const OPEX_MKT_KEYS = ['mkt_agency','mkt_creator','mkt_dsp'];
-  const OPEX_MKT_CH = {mkt_agency:'shopify', mkt_creator:'shopify', mkt_dsp:'amazon'};   // channel each one belongs to (channel filter, take-rate card)
-  const OPEX_ALL_KEYS = OPEX_GA_KEYS.concat(OPEX_BELOW_KEYS, OPEX_MKT_KEYS);
+  const OPEX_MKT_KEYS = ['mkt_agency','mkt_creator','mkt_dsp','mkt_other'];   // V12.4: + mkt_other (Microsoft Ads, branding)
+  // V12.4: cost of goods entered monthly from the Mercury / Slash statements: other 3PL fulfilment (Big Sky 2025, Deliverr, Andejian SSWF)
+  // and cost adjustments (IEEPA tariff refund, negative)
+  const OPEX_COGS_KEYS = ['ful_other','cogs_adj'];
+  const OPEX_MKT_CH = {mkt_agency:'shopify', mkt_creator:'shopify', mkt_dsp:'amazon', mkt_other:'shopify', ful_other:'shopify'};   // channel each one belongs to (channel filter, take-rate card)
+  const OPEX_ALL_KEYS = OPEX_GA_KEYS.concat(OPEX_BELOW_KEYS, OPEX_MKT_KEYS, OPEX_COGS_KEYS);
+  const OPEX_HIDE_ZERO = ['other_us','cashback'];   // V12.4: these G&A rows only show when the period has an amount
   const OPEX_AVG_MONTHS = 1;   // V12.1 (user 20/10/2026): open / missing month = the last closed month (V11.7 used the average of the last 6)
   const SNOWBALL_PAYOUT_FEE = 0.04;   // V12.1: Snowball's 4% payout fee on the commissions, accrued with the commission (accountant's basis)
   const OPEX_EST_TITLE = () => tv('Month not closed yet — estimated until its actual figures are entered: Vietnam costs = the last closed month; software (Slash card) and Upwork contractors = actual charges to date, spread per day. Replaced automatically once the month is entered in data/opex_monthly.json', 'Tháng chưa chốt sổ — tạm tính tới khi nhập số thật: chi phí VN = tháng đã chốt gần nhất; phần mềm (thẻ Slash) và Upwork = số thực tế tới nay, rải theo ngày. Tự thay khi nhập tháng vào data/opex_monthly.json');
@@ -622,6 +626,8 @@
     {key:'insurance', get label(){ return tv('Insurance', 'Bảo hiểm'); }, monthly:0},
     {key:'training', get label(){ return tv('Training & communities (Daily Mentor, Skool, Whop) — prepaid programs spread over their term', 'Đào tạo & cộng đồng (Daily Mentor, Skool, Whop) — khoá trả trước chia đều theo thời gian học'); }, monthly:0},
     {key:'other', get label(){ return tv('Other', 'Khác'); }, monthly:0},
+    {key:'other_us', get label(){ return tv('Other US costs — travel, bank & FX fees, small items (Mercury / Slash statements)', 'Chi phí khác ở Mỹ — công tác, phí ngân hàng & ngoại tệ, khoản nhỏ (sao kê Mercury / Slash)'); }, monthly:0},
+    {key:'cashback', get label(){ return tv('Card cashback (Mercury IO Cashback) — reduces costs', 'Hoàn tiền thẻ Mercury (cashback) — giảm trừ chi phí'); }, monthly:0},
   ];
   const INVENTORY_MONTHLY = 0;   // holding cost: no source connected yet
   const META_ROAS_WARN = 1.5, META_CPA_WARN = 90;   // thresholds for the Meta campaign table
@@ -801,7 +807,7 @@
     ['shopifyReal','paypalReal','snowballReal','shopifyAttr','klaviyoReal','klaviyoCost','loopReal','metaReal','googleReal','applovinReal'].forEach(key=>{ m[key] = sc(r[key], F.shopify); });
     m.tiktokReal = sc(r.tiktokReal, F.tiktok); m.tiktokAdsReal = sc(r.tiktokAdsReal, F.tiktok);
     m.walmartReal = sc(r.walmartReal, F.walmart);
-    if(r.opex && OPEX_MKT_KEYS.some(k=> r.opex.vals[k] && F[OPEX_MKT_CH[k]]<1)){ const v = Object.assign({}, r.opex.vals); OPEX_MKT_KEYS.forEach(k=>{ v[k] = (v[k]||0)*F[OPEX_MKT_CH[k]]; }); m.opex = Object.assign({}, r.opex, {vals: v}); }   // V11.8
+    if(r.opex && Object.keys(OPEX_MKT_CH).some(k=> r.opex.vals[k] && F[OPEX_MKT_CH[k]]<1)){ const v = Object.assign({}, r.opex.vals); Object.keys(OPEX_MKT_CH).forEach(k=>{ v[k] = (v[k]||0)*F[OPEX_MKT_CH[k]]; }); m.opex = Object.assign({}, r.opex, {vals: v}); }   // V11.8; V12.4: + ful_other, mkt_other
     if(r.shipmonkReal){
       // per-order 3PL cost by store -> channel factor; a day without the store split follows the take-rate card (all D2C)
       const bs = r.shipmonkReal.byStore || {}, stores = Object.keys(bs);
@@ -983,7 +989,11 @@
     const shipmonkLogistics = smInv.storage + smInv.receiving + smInv.returns + smInvOther;
     // Inbound freight/duty into FBA is capitalised into inventory (landed cost -> product COGS per SKU),
     // so it is shown as a memo line only and NOT expensed here (user rule 2026-09-20).
-    const cogs = productCost + packaging + fulfillment + shipmonkPickPack + postage + shipmonkInvoiceExtras;
+    // V12.4: cost of goods entered monthly from the Mercury / Slash statements (data/opex_monthly.json): other 3PLs (Big Sky 2025,
+    // Deliverr, Andejian SSWF fulfilment) - scaled to the Shopify channel in maskRow - and adjustments (IEEPA tariff refund, negative), allocated.
+    const cogsOther = sum(rows.map(r=> r.opex ? (r.opex.vals.ful_other||0) : 0));
+    const cogsAdj = sum(rows.map(r=> r.opex ? (r.opex.vals.cogs_adj||0) : 0)) * allocShare;
+    const cogs = productCost + packaging + fulfillment + shipmonkPickPack + postage + shipmonkInvoiceExtras + cogsOther + cogsAdj;
     const grossProfit = netRevenue - cogs;
 
     // Shopify Payments processing fees (sync v1.7+): real per transaction, on the order day.
@@ -1053,12 +1063,12 @@
     // V11.8: marketing entered monthly in data/opex_monthly.json (agency creative, creators/UGC, Amazon DSP) — already scaled to the channel filter in maskRow
     const mktItems = OPEX_MKT_KEYS.map(k=>({key:k, value: sum(rows.map(r=> r.opex ? (r.opex.vals[k]||0) : 0)), has: rows.some(r=> r.opex && r.opex.has[k]), estDays: rows.filter(r=> r.opex && r.opex.est && r.opex.has[k]).length}));
     const mktOf = k => (mktItems.find(x=>x.key===k)||{}).value||0;
-    const mktAgency = mktOf('mkt_agency'), mktCreator = mktOf('mkt_creator'), mktDsp = mktOf('mkt_dsp');
+    const mktAgency = mktOf('mkt_agency'), mktCreator = mktOf('mkt_creator'), mktDsp = mktOf('mkt_dsp'), mktOther = mktOf('mkt_other');   // V12.4: + mkt_other
     // V12.2: Amazon DSP spend per day from Xnurta (paid orders; from book_from on it replaces the monthly top-up above)
     const dspLive = sum(rows.map(r=> r.dspReal ? r.dspReal.paid : 0)), dspBonus = sum(rows.map(r=> r.dspReal ? r.dspReal.bonus : 0)), dspLiveDays = rows.filter(r=> r.dspReal).length;
     const dspRecent = rows.some(r=> r.dspReal && dspMeta && dspMeta.recentFrom && r.iso >= dspMeta.recentFrom);   // the last 2 days Xnurta may still revise
     const dspEstDays = rows.filter(r=> r.dspReal && r.dspReal.est).length, dspEstAmt = sum(rows.map(r=> (r.dspReal && r.dspReal.est) ? r.dspReal.paid : 0));   // V12.3
-    const mktManual = mktAgency + mktCreator + mktDsp + dspLive;
+    const mktManual = mktAgency + mktCreator + mktDsp + mktOther + dspLive;
     const feesTotal = paymentFeesAll + marketplaceFees;               // payment gateways + marketplace selling fees
     const marketingTotal = adSpend + snowballCommission + tiktokAffiliate + tiktokSmart + walmartAds + mktManual;   // paid ads + affiliate commissions + manual marketing (V11.8)
     const otherVarTotal = feesTotal + marketingTotal;
@@ -1161,7 +1171,7 @@
       smInvDays, smInv, smInvOther, smInvAdjCredits, smStorageOpen, smStorageOpenDays, smStorageCarryDays, smStorageReportDays, smInvShipCmp, smApiShipCmp, smCmpDays, smCmpMissingDays, smTrueUp, shipmonkInvoiceExtras, shipmonkLogistics, amazonLogistics, logisticsTotal, feesTotal, marketingTotal, cmBeforeMarketing,
       paymentFees, afterpayFees, afterpayAmount, afterpayOrders, paymentFeeDays, paymentFeeOrders, feesMissingOrders, gatewayMix, feeTypeMix, paypalDays, paypalFees, paypalPayments, paypalPaymentsCount, paypalCompare, paymentFeesAll, marketplaceFees, adSpend, otherVarTotal, contributionProfit,
       gaItems, gaTotal, inventoryHolding, fixedTotal, netProfit, klaviyoCost, klaviyoCostDays, klaviyoCostParts,
-      mktItems, mktAgency, mktCreator, mktDsp, mktManual, dspLive, dspBonus, dspLiveDays, dspRecent, dspEstDays, dspEstAmt,
+      mktItems, mktAgency, mktCreator, mktDsp, mktManual, dspLive, dspBonus, dspLiveDays, dspRecent, dspEstDays, dspEstAmt, mktOther, cogsOther, cogsAdj,
       opexDays, opexCarriedDays, opexEstDays, opexEstMonths, opexEstAmount, opexNote, salaryEntered, depreciation, interest, depreciationEntered, interestEntered, taxEntered, taxRate, ebit, ebt, incomeTax, incomeTaxEstimated, netIncome, belowEbitdaEntered,
       variableTotal, variableRatio, cmRatio, breakEvenRevenue, blendedAOV, breakEvenOrders,
       merValue, merSpend, attrRevenueSum,
@@ -1491,6 +1501,8 @@
     if(a.amazonInboundFreightReal !== 0){
       rows.push({...stLine(tv('Memo — inbound freight & duty into FBA ', 'Memo — cước & thuế nhập hàng vào FBA ')+money(a.amazonInboundFreightReal)+tv(' (Amazon Global Logistics, invoice date): capitalised into inventory cost, NOT deducted here', ' (Amazon Global Logistics, ngày hoá đơn): tính vào giá vốn hàng nhập kho, KHÔNG trừ ở đây'), 0, nr, null, 'cogs'), detail:true, live:true});
     }
+    if(Math.abs(a.cogsOther)>=0.005) rows.push({...stLine(tv('Other 3PL fulfilment — Big Sky Fulfillment (second warehouse, 2025), Deliverr, Andejian SSWF fulfilment fees (incl. a little lot QA/freight), single parcels — Mercury / Slash statements, by payment date', 'Fulfillment 3PL khác — Big Sky Fulfillment (kho thứ 2, 2025), Deliverr, phí fulfillment SSWF trả Andejian (gồm ít phí QA/cước lô), cước gửi lẻ — sao kê Mercury / Slash, theo ngày trả')+tx('st.manualMonthly'), -a.cogsOther, nr, 'var', 'cogs'), neg: a.cogsOther>=0, live:'manual', hget: x=>-(x.cogsOther||0)});   // V12.4
+    if(Math.abs(a.cogsAdj)>=0.005) rows.push({...stLine(tv('Cost of goods adjustment — IEEPA import tariff refund from the US Treasury, booked in the month received', 'Điều chỉnh giá vốn — hoàn thuế nhập khẩu IEEPA (tariff) từ Bộ Tài chính Mỹ, ghi tháng nhận tiền')+tx('st.manualMonthly'), -a.cogsAdj, nr, 'var', 'cogs'), neg: a.cogsAdj>=0, live:'manual', hget: x=>-(x.cogsAdj||0)});   // V12.4
     rows.push({...stSub(tv('= Total COGS', '= Tổng COGS'), -a.cogs, nr, 'cogs_sub'), hget: x=>-x.cogs});
     rows.push({...stSub(tv('= Gross profit', '= Lợi nhuận gộp (Gross Profit)'), a.grossProfit, nr, 'gp'), hget: x=>x.grossProfit});
 
@@ -1623,7 +1635,8 @@
     // V11.8: marketing without an API, entered monthly in data/opex_monthly.json (US GAAP ASC 720-35: advertising & agency fees = selling & marketing expense)
     const MKT_LABEL = {mkt_agency: tv('Agency creative — Goodo, Adcrate (monthly retainer, by service month)', 'Agency creative — Goodo, Adcrate (phí retainer, theo tháng dịch vụ)'),
       mkt_creator: tv('Creators / UGC — Tremendous payouts, Insense, MossCreator, direct creator payments (by payment date)', 'Creator / UGC — Tremendous, Insense, MossCreator, trả creator trực tiếp (theo ngày trả)'),
-      mkt_dsp: tv('Amazon DSP — top-ups via SparkX incl. their fee (by top-up date; not in Sellerboard Amazon Ads)', 'Amazon DSP — nạp qua SparkX, gồm phí (theo ngày nạp; Amazon Ads của Sellerboard không gồm DSP)')};
+      mkt_dsp: tv('Amazon DSP — top-ups via SparkX incl. their fee (by top-up date; not in Sellerboard Amazon Ads)', 'Amazon DSP — nạp qua SparkX, gồm phí (theo ngày nạp; Amazon Ads của Sellerboard không gồm DSP)'),
+      mkt_other: tv('Other marketing — Microsoft Ads, branding (Ten Ten Ten Collective) — from the Mercury / Slash statements, by payment date', 'Marketing khác — Microsoft Ads, branding (Ten Ten Ten Collective) — từ sao kê Mercury / Slash, theo ngày trả')};
     a.mktItems.forEach(it=>{
       if(Math.abs(it.value)<0.005) return;
       const allEst = it.estDays>0 && it.estDays>=a.opexDays;
@@ -1687,8 +1700,9 @@
 
     rows.push(stSection(tv('Operating costs (OpEx) — G&A (software, salaries, office…)', 'Chi phí hoạt động (OpEx) — G&A (phần mềm, lương, văn phòng…)'),'fixed'));
     a.gaItems.forEach(it=>{
+      if(OPEX_HIDE_ZERO.includes(it.key) && Math.abs(it.value)<0.005) return;   // V12.4
       const known = it.real || it.manual;
-      rows.push({...stLine(it.label + (known ? '' : tx('st.notEntered')) + (it.key==='klaviyo' ? '' : alloc), -it.value, nr, 'fix', 'fixed'), neg:true, live: it.real ? 'real' : (it.manual && !it.allEst ? 'manual' : false), gap: known ? false : 'manual', est: !!it.est, estTitle: OPEX_EST_TITLE(), hget: x=>-((x.gaItems.find(g=>g.key===it.key)||{}).value||0)});
+      rows.push({...stLine(it.label + (known ? '' : tx('st.notEntered')) + (it.key==='klaviyo' ? '' : alloc), -it.value, nr, 'fix', 'fixed'), neg: it.value>=0, live: it.real ? 'real' : (it.manual && !it.allEst ? 'manual' : false), gap: known ? false : 'manual', est: !!it.est, estTitle: OPEX_EST_TITLE(), hget: x=>-((x.gaItems.find(g=>g.key===it.key)||{}).value||0)});
     });
     rows.push({...stSub(tv('= Total G&A', '= Tổng G&A'), -a.gaTotal, nr, 'fixed_sub'), hget: x=>-x.gaTotal});
     rows.push({...stSub(tv('= Total operating costs (OpEx)', '= Tổng chi phí hoạt động (OpEx)'), -a.fixedTotal, nr, 'opex_sub'), hget: x=>-x.fixedTotal});
@@ -1855,12 +1869,14 @@
       {label: tx('cc.fulfil'), rows:[
         {n: tv('ShipMonk per order (postage, pick & pack, packaging)', 'ShipMonk theo đơn (cước, pick & pack, bao bì)'), s: tv('including bulk packaging, credits and invoice differences', 'gồm bao bì mua sỉ, credit và chênh lệch hoá đơn'), v: smCh.shopify + a.shipmonkInvoiceExtras},
         {n: tv('ShipMonk warehousing (storage, receiving, returns, other fees)', 'Kho ShipMonk (lưu kho, receiving, hàng trả, phí khác)'), v: a.shipmonkLogistics},
+        ...(Math.abs(a.cogsOther)>0.005 ? [{n: tv('Other 3PLs (Big Sky, Deliverr, Andejian SSWF)', '3PL khác (Big Sky, Deliverr, Andejian SSWF)'), s: tv('entered monthly from the bank statements', 'nhập tay từ sao kê ngân hàng'), v: a.cogsOther}] : []),
       ]},
       {label:'Marketing', rows:[
         {n: tv('Ads (Meta, Google, TikTok, AppLovin)', 'Quảng cáo (Meta, Google, TikTok, AppLovin)'), v: d2cAds},
         {n: tv('Affiliate / creator commission (Snowball)', 'Hoa hồng affiliate / creator (Snowball)'), v: a.snowballCommission},
         ...(a.mktAgency>0.005 ? [{n: tv('Agency creative (Goodo, Adcrate)', 'Agency creative (Goodo, Adcrate)'), s: tv('entered monthly', 'nhập tay theo tháng'), v: a.mktAgency}] : []),
         ...(a.mktCreator>0.005 ? [{n: tv('Creators / UGC (Tremendous, Insense…)', 'Creator / UGC (Tremendous, Insense…)'), s: tv('entered monthly', 'nhập tay theo tháng'), v: a.mktCreator}] : []),
+        ...(a.mktOther>0.005 ? [{n: tv('Other marketing (Microsoft Ads, branding)', 'Marketing khác (Microsoft Ads, branding)'), s: tv('entered monthly', 'nhập tay theo tháng'), v: a.mktOther}] : []),
         {n: tv('D2C tools: Klaviyo + Social Snowball plan', 'Công cụ D2C: Klaviyo + gói Social Snowball'), s: tv('sits under G&A on the P&L', 'trên P&L nằm ở G&A'), v: a.klaviyoCost + snowballSub},
       ]},
     ]});
@@ -2305,8 +2321,8 @@
       return;
     }
     const months = OPEX_MONTHLY_LIVE_DATA.months;
-    const cols = OPEX_GA_KEYS.concat(OPEX_MKT_KEYS, OPEX_BELOW_KEYS);
-    const LABEL = {depreciation: tv('Depreciation & amortisation (D&A)', 'Khấu hao & phân bổ (D&A)'), interest: tv('Interest & finance costs', 'Lãi vay & chi phí tài chính'), income_tax: tv('Income tax', 'Thuế TNDN'), mkt_agency: tv('Marketing — agency', 'Marketing — agency'), mkt_creator: tv('Marketing — creators/UGC', 'Marketing — creator/UGC'), mkt_dsp: tv('Marketing — Amazon DSP', 'Marketing — Amazon DSP')};
+    const cols = OPEX_GA_KEYS.concat(OPEX_MKT_KEYS, OPEX_COGS_KEYS, OPEX_BELOW_KEYS);
+    const LABEL = {depreciation: tv('Depreciation & amortisation (D&A)', 'Khấu hao & phân bổ (D&A)'), interest: tv('Interest & finance costs', 'Lãi vay & chi phí tài chính'), income_tax: tv('Income tax', 'Thuế TNDN'), mkt_agency: tv('Marketing — agency', 'Marketing — agency'), mkt_creator: tv('Marketing — creators/UGC', 'Marketing — creator/UGC'), mkt_dsp: tv('Marketing — Amazon DSP', 'Marketing — Amazon DSP'), mkt_other: tv('Marketing — other (Microsoft Ads, branding)', 'Marketing — khác (Microsoft Ads, branding)'), ful_other: tv('COGS — other 3PL fulfilment', 'Giá vốn — fulfillment 3PL khác'), cogs_adj: tv('COGS — adjustment (tariff refund)', 'Giá vốn — điều chỉnh (hoàn tariff)')};
     GA_ITEMS.forEach(it=>{ if(OPEX_GA_KEYS.includes(it.key)) LABEL[it.key] = it.label; });
     let html = `<thead><tr><th>${tv('Month', 'Tháng')}</th>${cols.map(k=>`<th class="num">${LABEL[k]||k}</th>`).join('')}</tr></thead><tbody>`;
     const estM = opexMeta.est || {};
@@ -3157,7 +3173,7 @@
     const out = {};
     // same cost lines as the P&L down to CM3 (warehousing / storage stay below CM3 as OpEx, so the channel total = the CM3 tile)
     out.amazon = {net: netOf('amazon'), orders: a.orders.amazon, fees: a.amazonMarketplaceFeesReal + a.amazonMarketplaceFeesEst, fulfil: a.fulfillment + (smCh.amazon||0), ads: a.ads.amazonads + (a.mktDsp||0), aff: 0};
-    out.shopify = {net: netOf('shopify'), orders: a.orders.shopify, fees: a.paymentFeesAll, fulfil: (smCh.shopify||0) + a.shipmonkInvoiceExtras, ads: a.ads.meta + a.ads.google + a.ads.applovin + (a.mktAgency||0), aff: a.snowballCommission + (a.mktCreator||0)};
+    out.shopify = {net: netOf('shopify'), orders: a.orders.shopify, fees: a.paymentFeesAll, fulfil: (smCh.shopify||0) + a.shipmonkInvoiceExtras + (a.cogsOther||0), ads: a.ads.meta + a.ads.google + a.ads.applovin + (a.mktAgency||0) + (a.mktOther||0), aff: a.snowballCommission + (a.mktCreator||0)};
     out.walmart = {net: netOf('walmart'), orders: a.orders.walmart, fees: a.walmartFees, fulfil: smCh.walmart||0, ads: a.walmartAds, aff: 0};
     out.tiktok = {net: netOf('tiktok'), orders: a.orders.tiktok, fees: a.tiktokFees, fulfil: 0, ads: a.ads.tiktokads, aff: a.tiktokAffiliate + a.tiktokSmart};
     CH_KEYS.forEach(k=>{ const c = out[k]; c.cogs = cogsOf(k); c.cm = c.net - c.cogs - c.fees - c.fulfil - c.ads - c.aff; c.adsAll = c.ads + c.aff; });
