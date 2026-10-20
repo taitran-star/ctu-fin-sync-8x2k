@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build b36cf45808).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build ef6287755a).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -2448,7 +2448,10 @@
     const head = (p && fin(cmD))
       ? `CM3 ${cmD>=0 ? tv('up','tăng') : tv('down','giảm')} ${Math.abs(cmD).toFixed(0)}% ${tx('u.vs')} ${lk}: <b>${money(p.contributionProfit,{compact:true})} → ${money(a.contributionProfit,{compact:true})}</b>`
       : `CM3 <b>${money(a.contributionProfit,{compact:true})}</b>` + (cmPct!==null ? ` · ${cmPct.toFixed(1)}% ${tv('of net revenue','doanh thu thuần')}` : '');
-    const effShort = e => { const f = (v,k)=> ['dsc','rf','c','fe'].includes(k) ? (v*100).toFixed(1)+'%' : money(v,{compact:true}); return e.key.startsWith('O') ? intFmt(e.from)+' → '+intFmt(e.to)+' '+tx('u.orders') : f(e.from,e.key)+' → '+f(e.to,e.key); };
+    const RATE = {dsc:1, rf:1, c:1, fe:1, f:1, g:1};
+    // a rate can move the other way at company level than inside the channels (channel mix): say so instead of showing a contradiction
+    const within = e => { if(!(e.key in RATE) || !isFinite(e.from) || !isFinite(e.to) || e.from===e.to) return null; const up = e.key==='g' ? e.value>0 : e.value<0; return up !== (e.to>e.from) ? up : null; };
+    const effShort = e => { const f = (v,k)=> ['dsc','rf','c','fe'].includes(k) ? (v*100).toFixed(1)+'%' : money(v,{compact:true}); if(e.key.startsWith('O')) return intFmt(e.from)+' → '+intFmt(e.to)+' '+tx('u.orders'); const base = f(e.from,e.key)+' → '+f(e.to,e.key), w = within(e); return w===null ? base : (w ? tv('up within channels','tăng trong từng kênh') : tv('down within channels','giảm trong từng kênh'))+'; '+tv('overall ','chung ')+base; };
     const effTxt = e => `<b class="${e.value>=0?'up':'dn'}">${esc(e.label)} ${sgn(e.value)}${m(e.value)}</b> <span class="bf-dim">(${effShort(e)})</span>`;
     let why = '';
     if(bridge){
@@ -2501,8 +2504,8 @@
     dn.hidden = !dataNotes.length;
     dn.innerHTML = dataNotes.length ? `<span class="k">${tv('Numbers not final:','Số liệu chưa đủ:')}</span>` + dataNotes.map(i=>`<span class="bf-chip ${i.lvl}" title="${esc(i.name + (i.note ? ' — ' + i.note : ''))}">${esc(i.short || i.name)}</span>`).join('') : '';
     document.getElementById('briefCaption').textContent = tv(
-      'Priority: Urgent = a critical threshold is breached; This week = money is affected; Watch = no money yet. Money: revenue at risk = units that cannot be sold over the next 30 days at the current pace × price (incoming stock not counted); over the threshold = the part above the alert level, in money, for this period; short of plan = plan spread evenly to the last closed day − actual. "Why profit moved" comes from the Profit bridge card: the effects add up exactly to the change in CM3. Data notes: hover a chip for the detail.',
-      'Mức ưu tiên: Gấp = vượt ngưỡng nghiêm trọng; Tuần này = có tiền bị ảnh hưởng; Theo dõi = chưa ra tiền. Số tiền: DT có thể mất = số units không đủ hàng để bán trong 30 ngày tới theo tốc độ hiện tại × giá bán (chưa tính hàng đang về); vượt ngưỡng = phần vượt mức cảnh báo tính ra tiền trong kỳ; thiếu so kế hoạch = kế hoạch rải đều đến ngày đã chốt − thực tế. "Vì sao lợi nhuận đổi" lấy từ thẻ Cầu lợi nhuận: các yếu tố cộng đúng bằng thay đổi CM3. Lưu ý số liệu: rê chuột lên từng mục để xem chi tiết.');
+      'Priority: Urgent = a critical threshold is breached; This week = money is affected; Watch = no money yet. Money: revenue at risk = units that cannot be sold over the next 30 days at the current pace × price (incoming stock not counted); over the threshold = the part above the alert level, in money, for this period; short of plan = plan spread evenly to the last closed day − actual. "Why profit moved" comes from the Profit bridge card: the effects add up exactly to the change in CM3. A rate can move the other way overall than inside the channels when the channel mix changes; the effect is measured inside each channel, so such lines say "up/down within channels; overall x → y". Data notes: hover a chip for the detail.',
+      'Mức ưu tiên: Gấp = vượt ngưỡng nghiêm trọng; Tuần này = có tiền bị ảnh hưởng; Theo dõi = chưa ra tiền. Số tiền: DT có thể mất = số units không đủ hàng để bán trong 30 ngày tới theo tốc độ hiện tại × giá bán (chưa tính hàng đang về); vượt ngưỡng = phần vượt mức cảnh báo tính ra tiền trong kỳ; thiếu so kế hoạch = kế hoạch rải đều đến ngày đã chốt − thực tế. "Vì sao lợi nhuận đổi" lấy từ thẻ Cầu lợi nhuận: các yếu tố cộng đúng bằng thay đổi CM3. Một tỷ lệ có thể đi ngược chiều ở mức chung so với trong từng kênh khi tỷ trọng kênh thay đổi; hiệu ứng được tính trong từng kênh nên những dòng đó ghi "tăng/giảm trong từng kênh; chung x → y". Lưu ý số liệu: rê chuột lên từng mục để xem chi tiết.');
   }
   // ---- V7: unit economics (P&L page): what one average order earns, per channel ----
   function renderUnitEconomics(){
