@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build f682d7cf00).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 074e04927c).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -164,7 +164,7 @@
     'h.sensTitle':'Sensitivity — how much CM3 changes if…',
     'h.stmtTitle':'Profit &amp; loss (P&amp;L statement)',
     'h.stmtNote':'% of each column\'s net revenue · click a section row to collapse/expand · the 6 previous periods are added to compare the trend on most lines (a few detail lines whose structure changes by period — fee-type mix, warehouse breakdown by billing period, reconciliation lines — show for the selected period only)',
-    'h.stmtCaption':'Lines tagged <span class="tag gap" style="margin-left:0;"><span class="d"></span>Not connected ($0)</span> have no data source yet, so they stay at $0 (no estimate). Therefore <b>gross profit / contribution / EBITDA above are profit BEFORE</b> the items still carrying that tag (product cost, Walmart/TikTok marketplace fees, Afterpay fees, G&amp;A…) — they correct themselves as each source is connected. Lines tagged <span class="tag gap" style="margin-left:0;"><span class="d"></span>Not entered ($0)</span> are costs without an API (salaries, office, depreciation, interest, income tax): enter them per month in <code>data/opex_monthly.json</code> on GitHub; the table reads the file and spreads them evenly per day; a month not closed yet is estimated (tagged <span class="tag info" style="margin-left:0;"><span class="d"></span>Includes estimate</span>): Vietnam costs = average of the last 6 closed months, software (Slash) &amp; Upwork = actual to date.',
+    'h.stmtCaption':'Lines tagged <span class="tag gap" style="margin-left:0;"><span class="d"></span>Not connected ($0)</span> have no data source yet, so they stay at $0 (no estimate). Therefore <b>gross profit / contribution / EBITDA above are profit BEFORE</b> the items still carrying that tag (product cost, Walmart/TikTok marketplace fees, Afterpay fees, G&amp;A…) — they correct themselves as each source is connected. Lines tagged <span class="tag gap" style="margin-left:0;"><span class="d"></span>Not entered ($0)</span> are costs without an API (salaries, office, depreciation, interest, income tax): enter them per month in <code>data/opex_monthly.json</code> on GitHub; the table reads the file and spreads them evenly per day; a month not closed yet is estimated (tagged <span class="tag info" style="margin-left:0;"><span class="d"></span>Includes estimate</span>): Vietnam costs = the last closed month, software (Slash) &amp; Upwork = actual to date.',
     'h.takeTitle':'Cost to sell through each channel (take rate)',
     'h.takeNote':'Of each $1 of the channel\'s net revenue, how much the channel and its services take — before product cost and G&amp;A',
     'h.takeCaption':'Same figures as the P&amp;L table, regrouped by channel. <b>Marketplace commissions / payment processing</b> are a fixed % of every order (like a retailer\'s margin) — the standard D2C management P&amp;L puts them under <i>transaction selling fees</i> (before CM2); <b>ads &amp; affiliates</b> are discretionary demand-generation costs, under <i>marketing</i> (before CM3) — kept apart so ACOS/TACOS stay readable. The two together plus fulfillment and storage = the channel\'s <b>take rate</b> ("how many % Amazon takes"). Klaviyo and the Social Snowball plan sit under G&amp;A on the P&amp;L; here they count for the D2C channel because they only serve that channel.<span id="channelCostNote"></span>',
@@ -190,7 +190,7 @@
     'h.opexTitle':'Operating costs (OpEx) for the selected period',
     'h.opexNote2':'Warehousing (ShipMonk, FBA storage &amp; services) + G&amp;A (manual entry, Klaviyo, Snowball) · below contribution margin',
     'h.opexManTitle':'Manually entered costs (monthly OpEx)',
-    'h.opexManNote':'No API — enter per month in <code>data/opex_monthly.json</code> on GitHub; the month not closed yet is estimated (≈): Vietnam costs = average of the last 6 closed months, software (Slash) &amp; Upwork = actual to date',
+    'h.opexManNote':'No API — enter per month in <code>data/opex_monthly.json</code> on GitHub; the month not closed yet is estimated (≈): Vietnam costs = the last closed month, software (Slash) &amp; Upwork = actual to date',
     'h.cashTitle':'Cash &amp; runway',
     'h.cashNote':'No source yet',
     'h.liveBanner':'Connecting live data…',
@@ -240,7 +240,7 @@
     'h.sensTitle':'Độ nhạy — CM3 đổi bao nhiêu nếu…',
     'h.stmtTitle':'Báo cáo lãi lỗ (P&amp;L statement)',
     'h.stmtNote':'% tính trên Doanh thu thuần của từng cột · bấm dòng nhóm để thu gọn/mở rộng · có thêm 6 kỳ liền trước để so xu hướng ở hầu hết các dòng (một vài dòng phụ có cấu trúc đổi theo kỳ — mix loại phí, breakdown kho theo kỳ hoá đơn, dòng đối chiếu — chỉ hiện cho kỳ đang xem)',
-    'h.stmtCaption':'Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa kết nối ($0)</span> chưa có nguồn dữ liệu nên để $0 (không ước tính). Vì vậy <b>Lợi nhuận gộp / đóng góp / EBITDA ở trên là lợi nhuận TRƯỚC</b> các khoản còn gắn nhãn đó (giá vốn sản phẩm, phí sàn Walmart/TikTok, phí Afterpay, G&amp;A…) — sẽ tự đúng dần khi từng nguồn được nối vào. Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa nhập ($0)</span> là chi phí không có API (lương, văn phòng, khấu hao, lãi vay, thuế TNDN): điền theo tháng vào file <code>data/opex_monthly.json</code> trên GitHub, bảng tự đọc và rải đều theo ngày; tháng chưa chốt sổ được tạm tính (nhãn <span class="tag info" style="margin-left:0;"><span class="d"></span>Có ước tính</span>): chi phí VN = TB 6 tháng đã chốt gần nhất, phần mềm (Slash) &amp; Upwork = số thực tế tới nay.',
+    'h.stmtCaption':'Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa kết nối ($0)</span> chưa có nguồn dữ liệu nên để $0 (không ước tính). Vì vậy <b>Lợi nhuận gộp / đóng góp / EBITDA ở trên là lợi nhuận TRƯỚC</b> các khoản còn gắn nhãn đó (giá vốn sản phẩm, phí sàn Walmart/TikTok, phí Afterpay, G&amp;A…) — sẽ tự đúng dần khi từng nguồn được nối vào. Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa nhập ($0)</span> là chi phí không có API (lương, văn phòng, khấu hao, lãi vay, thuế TNDN): điền theo tháng vào file <code>data/opex_monthly.json</code> trên GitHub, bảng tự đọc và rải đều theo ngày; tháng chưa chốt sổ được tạm tính (nhãn <span class="tag info" style="margin-left:0;"><span class="d"></span>Có ước tính</span>): chi phí VN = tháng đã chốt gần nhất, phần mềm (Slash) &amp; Upwork = số thực tế tới nay.',
     'h.takeTitle':'Chi phí để bán qua từng kênh (take rate)',
     'h.takeNote':'Mỗi $1 doanh thu thuần của kênh, kênh và dịch vụ đi kèm lấy bao nhiêu — trước giá vốn sản phẩm và G&amp;A',
     'h.takeCaption':'Cùng số với bảng P&amp;L, chỉ xếp lại theo kênh. <b>Hoa hồng &amp; phí sàn / cổng thanh toán</b> là % cố định trên mỗi đơn (như margin của nhà bán lẻ) — chuẩn P&amp;L quản trị D2C xếp vào <i>phí bán hàng theo giao dịch</i> (trước CM2); <b>quảng cáo &amp; affiliate</b> là chi phí tuỳ chọn để tạo nhu cầu, xếp vào <i>marketing</i> (trước CM3) — không gộp chung để còn đọc được ACOS/TACOS. Tổng của cả hai cộng fulfillment và lưu kho = <b>take rate</b> của kênh ("Amazon lấy bao nhiêu %"). Klaviyo và gói Social Snowball trên P&amp;L nằm ở G&amp;A, ở đây tính cho kênh D2C vì chỉ phục vụ kênh đó.<span id="channelCostNote"></span>',
@@ -266,7 +266,7 @@
     'h.opexTitle':'Chi phí hoạt động (OpEx) kỳ đang xem',
     'h.opexNote2':'Kho bãi (ShipMonk, FBA lưu kho &amp; dịch vụ) + G&amp;A (nhập tay, Klaviyo, Snowball) · dưới lợi nhuận đóng góp',
     'h.opexManTitle':'Chi phí nhập tay (OpEx theo tháng)',
-    'h.opexManNote':'Không có API — điền theo tháng vào <code>data/opex_monthly.json</code> trên GitHub; tháng chưa chốt sổ được tạm tính (≈): chi phí VN = TB 6 tháng đã chốt gần nhất, phần mềm (Slash) &amp; Upwork = số thực tế tới nay',
+    'h.opexManNote':'Không có API — điền theo tháng vào <code>data/opex_monthly.json</code> trên GitHub; tháng chưa chốt sổ được tạm tính (≈): chi phí VN = tháng đã chốt gần nhất, phần mềm (Slash) &amp; Upwork = số thực tế tới nay',
     'h.cashTitle':'Tiền mặt &amp; runway',
     'h.cashNote':'Chưa có nguồn',
     'h.liveBanner':'Đang kết nối dữ liệu thật…',
@@ -386,7 +386,7 @@
   // Monthly OpEx entered by hand (no API): payroll, software, office, accounting, insurance, other (G&A, above EBITDA)
   // and depreciation, interest, income tax (below EBITDA) - data/opex_monthly.json in the repo, USD per month,
   // spread evenly over the days of the month. V11.7: a month still open (status "open") or not entered yet is estimated —
-  // Vietnam costs = average of the last 6 closed months, software (Slash) & Upwork = actual to date (see applyOpexRows).
+  // Vietnam costs = the last closed month, software (Slash) & Upwork = actual to date (see applyOpexRows).
   const OPEX_MONTHLY_LIVE_DATA = (window.__LIVE && window.__LIVE["opex"]) || null; /*OPEX_MONTHLY_INJECT*/
   // Monthly plan + COGS estimate (data/targets_monthly.json, edited by hand on GitHub): the executive page compares
   // the period with its plan, and product cost = net revenue x cogs_estimate.rate until COGS per SKU exists.
@@ -528,8 +528,9 @@
   const OPEX_MKT_KEYS = ['mkt_agency','mkt_creator','mkt_dsp'];
   const OPEX_MKT_CH = {mkt_agency:'shopify', mkt_creator:'shopify', mkt_dsp:'amazon'};   // channel each one belongs to (channel filter, take-rate card)
   const OPEX_ALL_KEYS = OPEX_GA_KEYS.concat(OPEX_BELOW_KEYS, OPEX_MKT_KEYS);
-  const OPEX_AVG_MONTHS = 6;   // V11.7: open / missing month = average of the last 6 closed months
-  const OPEX_EST_TITLE = () => tv('Month not closed yet — estimated until its actual figures are entered: Vietnam costs = average of the last 6 closed months; software (Slash card) and Upwork contractors = actual charges to date, spread per day. Replaced automatically once the month is entered in data/opex_monthly.json', 'Tháng chưa chốt sổ — tạm tính tới khi nhập số thật: chi phí VN = trung bình 6 tháng đã chốt gần nhất; phần mềm (thẻ Slash) và Upwork = số thực tế tới nay, rải theo ngày. Tự thay khi nhập tháng vào data/opex_monthly.json');
+  const OPEX_AVG_MONTHS = 1;   // V12.1 (user 20/10/2026): open / missing month = the last closed month (V11.7 used the average of the last 6)
+  const SNOWBALL_PAYOUT_FEE = 0.04;   // V12.1: Snowball's 4% payout fee on the commissions, accrued with the commission (accountant's basis)
+  const OPEX_EST_TITLE = () => tv('Month not closed yet — estimated until its actual figures are entered: Vietnam costs = the last closed month; software (Slash card) and Upwork contractors = actual charges to date, spread per day. Replaced automatically once the month is entered in data/opex_monthly.json', 'Tháng chưa chốt sổ — tạm tính tới khi nhập số thật: chi phí VN = tháng đã chốt gần nhất; phần mềm (thẻ Slash) và Upwork = số thực tế tới nay, rải theo ngày. Tự thay khi nhập tháng vào data/opex_monthly.json');
   // Amazon Ads spend per day (SP / SB / SD). Today: exported from Sellerboard (which pulls the Amazon Ads API);
   // later: data/amazon_ads.json from the Amazon Ads API workflow once Amazon approves access. Same shape either way.
   const AMAZON_ADS_LIVE_DATA = (window.__LIVE && window.__LIVE["amazon_ads"]) || null; /*AMAZON_ADS_DATA_INJECT*/
@@ -823,11 +824,14 @@
     const grossSales = sum(CH_KEYS.map(k=>gross[k]));
     const discount = sum(rows.map(r=>sum(CH_KEYS.map(k=>r.discounts[k]))));
     const refundsTotal = sum(CH_KEYS.map(k=>refund[k]));
-    const netRevenue = grossSales - discount - refundsTotal;
+    // V12.1: shipping the customer paid (Shopify), net of shipping refunded — real money collected, so revenue
+    // (Shopify Analytics keeps it out of gross / net sales and only inside "Total sales"; the P&L now counts it)
+    const shippingIncome = sum(rows.map(r=> r.shopifyReal ? ((r.shopifyReal.shipping||0) - (r.shopifyReal.refundedShipping||0)) : 0));
+    const netRevenue = grossSales - discount - refundsTotal + shippingIncome;
     const totalOrders = sum(CH_KEYS.map(k=>orders[k]));
     // V8 channel filter: the selected channels' share of the period's net revenue = allocation key for shared costs
     let allocShare = 1;
-    if(partial){ const fullNet = sum(rowsIn.map(r=> sum(CH_KEYS.map(k=> r.channels[k] - r.discounts[k] - r.refunds[k])))); allocShare = fullNet>0.005 ? Math.min(1, Math.max(0, netRevenue)/fullNet) : 0; }
+    if(partial){ const fullNet = sum(rowsIn.map(r=> sum(CH_KEYS.map(k=> r.channels[k] - r.discounts[k] - r.refunds[k])) + (r.shopifyReal ? ((r.shopifyReal.shipping||0) - (r.shopifyReal.refundedShipping||0)) : 0))); allocShare = fullNet>0.005 ? Math.min(1, Math.max(0, netRevenue)/fullNet) : 0; }
 
     // ---- Amazon: use real SP-API Finances fees on days we have them, estimate the rest ----
     let amazonOrdersReal=0, amazonOrdersEst=0, amazonRevenueEst=0;
@@ -926,6 +930,7 @@
     let boxCost = 0, boxLots = 0, boxFb = 0, boxUnits = 0, boxLotUnits = 0, boxFbUnits = 0, boxEstUnits = 0, boxDays = 0, smPackagingMemo = 0;
     const boxBySku = {};
     let boxEstDays = 0, boxEstBoxes = 0, boxEstCost = 0;   // V11.2: days where the boxes are an estimate (1 per package)
+    let boxInferred = 0;   // V12.1: boxes the sync inferred (order composition rules) because the order carried no packaging line
     rows.forEach(r=>{
       const sr = r.shipmonkReal; if(!sr) return;
       const bd = FX && FX.ok && FX.day[r.iso] && FX.day[r.iso].box;
@@ -935,6 +940,7 @@
       if(!bd) return;
       const f = (sr.boxShare===undefined || sr.boxShare===null) ? 1 : sr.boxShare;
       if(bd.est){ boxEstDays++; boxEstBoxes += bd.units*f; boxEstCost += (bd.lot+bd.fb)*f; }
+      boxInferred += (sr.packagingUnitsEst||0)*f;
       boxCost += (bd.lot+bd.fb)*f; boxLots += bd.lot*f; boxFb += bd.fb*f; boxUnits += bd.units*f; boxLotUnits += bd.lotU*f; boxFbUnits += bd.fbU*f; boxEstUnits += bd.estU*f;
       Object.keys(bd.c).forEach(x=>{ const t = boxBySku[x] = boxBySku[x] || {n:0, cost:0, est:0}; t.n += bd.c[x].n*f; t.cost += (bd.c[x].lot+bd.c[x].fb)*f; t.est += bd.c[x].estU*f; });
     });
@@ -1020,7 +1026,7 @@
     const snowballRealDays = rows.filter(r=>r.snowballReal).length;
     const snowballOrders = sum(rows.map(r=> r.snowballReal ? r.snowballReal.orders : 0));
     const snowballRevenue = sum(rows.map(r=> r.snowballReal ? r.snowballReal.revenue : 0));
-    const snowballCommission = sum(rows.map(r=> r.snowballReal ? r.snowballReal.commissionNet : 0));
+    const snowballCommission = sum(rows.map(r=> r.snowballReal ? r.snowballReal.commissionNet : 0)) * (1 + SNOWBALL_PAYOUT_FEE);   // V12.1: + 4% payout fee
     // V11.8: marketing entered monthly in data/opex_monthly.json (agency creative, creators/UGC, Amazon DSP) — already scaled to the channel filter in maskRow
     const mktItems = OPEX_MKT_KEYS.map(k=>({key:k, value: sum(rows.map(r=> r.opex ? (r.opex.vals[k]||0) : 0)), has: rows.some(r=> r.opex && r.opex.has[k]), estDays: rows.filter(r=> r.opex && r.opex.est && r.opex.has[k]).length}));
     const mktOf = k => (mktItems.find(x=>x.key===k)||{}).value||0;
@@ -1121,9 +1127,9 @@
     const shopifyRealDays = rows.filter(r=>r.shopifyReal).length;
     const amazonRealDays = rows.filter(r=>r.amazonReal).length;
 
-    return {n, gross, refund, discountBy, orders, ads, adsAttr, grossSales, discount, refundsTotal, netRevenue, totalOrders, allocShare, maskPartial: partial, unknownDays,
+    return {n, gross, refund, discountBy, orders, ads, adsAttr, grossSales, discount, refundsTotal, shippingIncome, netRevenue, totalOrders, allocShare, maskPartial: partial, unknownDays,
       productCost, productCostEst, cogsEstRate, productCostBy, productCostActual, productCostEstAmount, productCostHasActual, productCostLots, productCostFallback, productCostHasLots, productCostLotUnits, productCostFbUnits, productCostEstUnits, productCostUnits, packaging, fulfillment, postage, cogs, grossProfit, nonAmazonOrders, shopifyTax, shopifyRealDays, amazonRealDays,
-      boxCost, boxLots, boxFb, boxUnits, boxLotUnits, boxFbUnits, boxEstUnits, boxDays, boxMode, smPackagingMemo, boxBySku, boxEstDays, boxEstBoxes, boxEstCost,
+      boxCost, boxLots, boxFb, boxUnits, boxLotUnits, boxFbUnits, boxEstUnits, boxDays, boxMode, smPackagingMemo, boxBySku, boxEstDays, boxEstBoxes, boxEstCost, boxInferred,
       shipmonkRealDays, shipmonkOrders, shipmonkUnshipped, shipmonkUnits, shipmonkPickPack, shipmonkByStore, shipmonkByChannel,
       smInvDays, smInv, smInvOther, smInvAdjCredits, smStorageOpen, smStorageOpenDays, smStorageCarryDays, smStorageReportDays, smInvShipCmp, smApiShipCmp, smCmpDays, smCmpMissingDays, smTrueUp, shipmonkInvoiceExtras, shipmonkLogistics, amazonLogistics, logisticsTotal, feesTotal, marketingTotal, cmBeforeMarketing,
       paymentFees, afterpayFees, afterpayAmount, afterpayOrders, paymentFeeDays, paymentFeeOrders, feesMissingOrders, gatewayMix, feeTypeMix, paypalDays, paypalFees, paypalPayments, paypalPaymentsCount, paypalCompare, paymentFeesAll, marketplaceFees, adSpend, otherVarTotal, contributionProfit,
@@ -1359,7 +1365,7 @@
       unconnected: !!CH_UNCONNECTED[k] || (k==='shopify' && !shopifyMatched) || (k==='amazon' && !amazonMatched),
       liveDays: k==='shopify' ? a.shopifyRealDays : k==='amazon' ? a.amazonRealDays : 0,
     });
-    const netBy = k => a.gross[k] - a.discountBy[k] - a.refund[k];
+    const netBy = k => a.gross[k] - a.discountBy[k] - a.refund[k] + (k==='shopify' ? (a.shippingIncome||0) : 0);   // V12.1: Shopify's net includes the shipping customers paid
     [...CH_KEYS].sort((x,y)=>a.gross[y]-a.gross[x]).forEach(k=>{
       const {unconnected, liveDays} = chState(k);
       let label = CH_LABEL[k]+' · '+a.orders[k].toLocaleString('en-US')+' '+tx('u.orders');
@@ -1377,14 +1383,15 @@
       const note = k==='shopify' ? tv(' — returned goods + extra refunds, on the day Shopify processed the refund (= Returns in Shopify Analytics)', ' — hàng trả + tiền hoàn thêm, theo ngày Shopify xử lý hoàn (= Returns trên Shopify Analytics)') : k==='amazon' ? tv(' — booked on the day Amazon refunded', ' — ghi ngày Amazon hoàn tiền') : '';
       rows.push({...stLine(CH_LABEL[k]+note, -a.refund[k], nr, null, 'ref'), detail:true, neg: a.refund[k]>0, hget: x=>-x.refund[k]});
     });
+    if(a.shopifyRealDays>0 || Math.abs(a.shippingIncome)>0.005) rows.push({...stLine(tv('Shipping charged to customers — Shopify (what customers paid for shipping, net of shipping refunded; Shopify Analytics keeps it outside gross / net sales)', 'Phí ship khách trả — Shopify (khách trả phí vận chuyển, đã trừ phần hoàn lại; Shopify Analytics để ngoài gross / net sales)'), a.shippingIncome, nr, 'var', 'shipinc'), live: a.shopifyRealDays>0, hget: x=>x.shippingIncome});
     rows.push({...stSub(tv('= Net revenue', '= Doanh thu thuần (Net Revenue)'), nr, nr, 'nr'), hget: x=>x.netRevenue});
     // Same split as Gross Sales: each channel's net = its gross - its discounts - its refunds; the four add up to the subtotal.
     [...CH_KEYS].sort((x,y)=>netBy(y)-netBy(x)).forEach(k=>{
       const {unconnected, liveDays} = chState(k);
       let label = CH_LABEL[k]+tv(' — net (gross − discounts − refunds)', ' — thuần (gộp − giảm giá − hoàn tiền)');
-      if(k==='shopify' && !unconnected) label = tv('Shopify — net = Net sales in Shopify Analytics', 'Shopify — thuần = Net sales trên Shopify Analytics');
+      if(k==='shopify' && !unconnected) label = tv('Shopify — net = Net sales in Shopify Analytics + shipping charged to customers', 'Shopify — thuần = Net sales trên Shopify Analytics + phí ship khách trả');
       if(k==='amazon' && !unconnected) label = tv('Amazon — net (selling price − promotions − refunds)', 'Amazon — thuần (giá bán − promotions − hoàn tiền)');
-      rows.push({...stLine(label, netBy(k), nr, null, 'nr'), detail:true, gap: unconnected, live: !unconnected && liveDays>0, hget: x=>x.gross[k]-x.discountBy[k]-x.refund[k]});
+      rows.push({...stLine(label, netBy(k), nr, null, 'nr'), detail:true, gap: unconnected, live: !unconnected && liveDays>0, hget: x=>x.gross[k]-x.discountBy[k]-x.refund[k]+(k==='shopify' ? (x.shippingIncome||0) : 0)});
     });
 
     rows.push(stSection(tv('Cost of goods sold — COGS (product cost + fulfillment)', 'Giá vốn hàng bán — COGS (giá vốn sản phẩm + fulfillment)'),'cogs'));
@@ -1423,10 +1430,11 @@
       let bx = tv('Shipping boxes — one per package as ShipMonk picked it, FIFO over the Notion box lots (', 'Hộp đóng gói — theo kiện ShipMonk đã nhặt, FIFO theo lô hộp Notion (')+nb(a.boxUnits)+tv(' boxes', ' hộp');
       if(a.boxFbUnits>0.5) bx += ', '+nb(a.boxFbUnits)+tv(' at nearest-lot cost', ' theo giá lô gần nhất');
       if(a.boxEstUnits>0.5) bx += ', '+nb(a.boxEstUnits)+tv(' with no lot in Notion yet = $0', ' chưa có lô trong Notion = $0');
+      if(a.boxInferred>0.5) bx += tv('; of which ', '; trong đó ')+nb(a.boxInferred)+tv(' boxes inferred from orders of the same make-up — ShipMonk did not list the box on those orders (Nevada 3 from 01/10/2026)', ' hộp suy ra từ đơn cùng cơ cấu — ShipMonk không ghi hộp lên các đơn này (kho Nevada 3 từ 01/10/2026)');
       if(a.boxEstBoxes>0.5) bx += tv('; of which ', '; trong đó ')+nb(a.boxEstBoxes)+tv(' boxes ESTIMATED at one box per package for ', ' hộp ƯỚC TÍNH 1 hộp/kiện cho ')+a.boxEstDays+tv(' days before ShipMonk listed the box on the order (Large / Jumbo split by the caves sold that day, costed from the Notion box lots)', ' ngày trước khi ShipMonk ghi hộp lên đơn (chia Large / Jumbo theo cave bán trong ngày, giá theo lô hộp Notion)');
       if(a.boxDays<a.n) bx += '; '+(a.n-a.boxDays)+tv(' days without per-package box data', ' ngày chưa có dữ liệu hộp theo kiện')+(shipmonkBoxCoverage && shipmonkBoxCoverage.firstGood ? tv(' (ShipMonk lists the box on the order from ', ' (ShipMonk ghi hộp theo đơn từ ')+shipmonkBoxCoverage.firstGood+')' : '')+tv(' keep the purchase line', ' vẫn tính theo dòng mua');
       bx += ')';
-      rows.push({...stLine(bx, -a.boxCost, nr, 'var', 'cogs'), neg:true, live:true, est: a.boxEstUnits>0.5 || a.boxEstBoxes>0.5, estTitle: a.boxEstBoxes>0.5 ? tv('Before 10/2025 ShipMonk did not list the box on the order: one box per package shipped is assumed (user decision 19/10/2026), FIFO over the Notion box lots', 'Trước 10/2025 ShipMonk chưa ghi hộp lên đơn: giả định 1 hộp/kiện đã gửi (user chốt 19/10/2026), FIFO theo lô hộp Notion') : tv('Boxes with no receipt lot in Notion carry $0 until the lot is entered', 'Hộp chưa có lô nhập trong Notion tạm tính $0 tới khi nhập lô'), hget: x=>-x.boxCost});
+      rows.push({...stLine(bx, -a.boxCost, nr, 'var', 'cogs'), neg:true, live:true, est: a.boxEstUnits>0.5 || a.boxEstBoxes>0.5 || a.boxInferred>0.5, estTitle: a.boxInferred>0.5 && !(a.boxEstBoxes>0.5) ? tv('Since 01/10/2026 the Nevada 3 warehouse no longer lists the box on most orders in ShipMonk\'s API; the sync infers the box from orders of the same make-up (Large / Jumbo caves, Calming Donut…) that do list it — per warehouse, learned every run — and costs it by FIFO over the Notion box lots. ShipMonk\'s own packaging report for 05–11/10 showed 752 boxes vs 211 listed.', 'Từ 01/10/2026 kho Nevada 3 không còn ghi hộp lên phần lớn đơn trong API ShipMonk; đồng bộ suy ra hộp từ các đơn cùng cơ cấu (cave Large / Jumbo, Calming Donut…) có ghi hộp — theo từng kho, học lại mỗi lần chạy — và tính giá theo FIFO lô hộp Notion. Báo cáo hộp của ShipMonk tuần 05–11/10 ghi 752 hộp, API chỉ ghi 211.') : a.boxEstBoxes>0.5 ? tv('Before 10/2025 ShipMonk did not list the box on the order: one box per package shipped is assumed (user decision 19/10/2026), FIFO over the Notion box lots', 'Trước 10/2025 ShipMonk chưa ghi hộp lên đơn: giả định 1 hộp/kiện đã gửi (user chốt 19/10/2026), FIFO theo lô hộp Notion') : tv('Boxes with no receipt lot in Notion carry $0 until the lot is entered', 'Hộp chưa có lô nhập trong Notion tạm tính $0 tới khi nhập lô'), hget: x=>-x.boxCost});
       Object.entries(a.boxBySku||{}).sort((x,y)=>y[1].cost-x[1].cost).forEach(([sku,t])=>{
         rows.push({...stLine(sku+' — '+nb(t.n)+tv(' boxes', ' hộp')+(t.n>0 ? ' · '+money(t.cost/t.n)+tv('/box', '/hộp') : ''), -t.cost, nr, null, 'cogs'), detail:true, neg:true, live:true});
       });
@@ -1572,7 +1580,8 @@
     if(a.snowballRealDays>0){
       let label = tv('Influencer/affiliate commission — Snowball · ', 'Hoa hồng influencer/affiliate — Snowball · ')+a.snowballOrders.toLocaleString('en-US')+tv(' referral orders', ' đơn referral');
       if(a.snowballRealDays<a.n) label += tv(' ('+(a.n-a.snowballRealDays)+' days outside the sync window not counted)', ' ('+(a.n-a.snowballRealDays)+' ngày ngoài cửa sổ đồng bộ chưa tính)');
-      rows.push({...stLine(label, -a.snowballCommission, nr, 'var', 'mkt'), neg: a.snowballCommission>=0, live:true, hget: x=>-x.snowballCommission});
+      label += tv(' + 4% payout fee', ' + 4% phí chuyển tiền');
+      rows.push({...stLine(label, -a.snowballCommission, nr, 'var', 'mkt'), neg: a.snowballCommission>=0, live:true, est:true, estTitle: tv('Commission on referral orders (Shopify tag, net of reversals) plus Snowball\'s 4% payout fee, accrued on the order day — the fee is charged when the affiliate is paid', 'Hoa hồng đơn referral (tag Shopify, trừ đảo) cộng 4% phí chuyển tiền của Snowball, ghi cùng ngày đặt — phí thực thu khi trả affiliate'), hget: x=>-x.snowballCommission});
     } else if(shopifyMatched){
       rows.push({...stLine(tv('Influencer/affiliate commission — Snowball (this period is outside the Shopify sync window — no figures)', 'Hoa hồng influencer/affiliate — Snowball (khoảng này ngoài cửa sổ đồng bộ Shopify — chưa có số)'), 0, nr, 'var', 'mkt'), neg:true, gap:true, hget: x=>-x.snowballCommission});
     }
@@ -1783,7 +1792,7 @@
   function renderChannelCosts(){
     const grid = document.getElementById('channelCostGrid'); if(!grid) return;
     const a = aggregate(currentRows());
-    const netOf = ch => a.gross[ch] - a.discountBy[ch] - a.refund[ch];
+    const netOf = ch => a.gross[ch] - a.discountBy[ch] - a.refund[ch] + (ch==='shopify' ? (a.shippingIncome||0) : 0);   // V12.1
     const smCh = {...a.shipmonkByChannel};
     const smAll = a.postage + a.shipmonkPickPack + a.packaging;
     if(smCh.shopify + smCh.amazon + smCh.walmart < 0.01 && smAll > 0.01) smCh.shopify = smAll;   // ShipMonk JSON without by_store: all D2C
@@ -3108,7 +3117,7 @@
     const smCh = {...a.shipmonkByChannel};
     const smAll = a.postage + a.shipmonkPickPack + a.packaging;
     if((smCh.shopify||0) + (smCh.amazon||0) + (smCh.walmart||0) < 0.01 && smAll > 0.01) smCh.shopify = smAll;
-    const netOf = k => a.gross[k] - a.discountBy[k] - a.refund[k];
+    const netOf = k => a.gross[k] - a.discountBy[k] - a.refund[k] + (k==='shopify' ? (a.shippingIncome||0) : 0);   // V12.1
     const cogsOf = k => (a.productCostBy && a.productCostBy[k]) || 0;
     const out = {};
     // same cost lines as the P&L down to CM3 (warehousing / storage stay below CM3 as OpEx, so the channel total = the CM3 tile)
@@ -3778,7 +3787,7 @@
         const entered = x.opexDays>0 && x.opexEstDays<x.opexDays, carried = x.opexDays>0 && x.opexEstDays>0;
         return `<tr><td>${MONTH_LABEL(m)}</td><td class="num">${money(x.netRevenue,{compact:true})}</td><td class="num">${money(x.contributionProfit,{compact:true})}</td><td class="num">${money(x.logisticsTotal,{compact:true})}</td><td class="num">${money(x.gaTotal,{compact:true})}</td><td class="num">${money(x.fixedTotal,{compact:true})}</td><td class="num">${(x.fixedTotal/x.netRevenue*100).toFixed(1)}%</td><td class="num ${x.netProfit<0?'d-down':''}">${money(x.netProfit,{compact:true})}</td><td class="num">${(x.netProfit/x.netRevenue*100).toFixed(1)}%</td><td>${entered ? '<span class="tag live"><span class="d"></span>'+tx('u.manualLc')+'</span>' : carried ? '<span class="tag info" title="'+OPEX_EST_TITLE()+'"><span class="d"></span>'+tv('estimated','tạm tính')+'</span>' : '<span class="tag gap"><span class="d"></span>'+tx('u.notEntered')+'</span>'}</td></tr>`;
       }).join('')+'</tbody>';
-    document.getElementById('opexMonthsCaption').textContent = tv('G&A = data/opex_monthly.json (Vietnam payroll & office costs, Upwork contractors, software from the Mercury/Slash cards, Numeral accounting) + Klaviyo invoices + the Snowball plan. The month not closed yet is estimated (tagged): Vietnam costs = average of the last 6 closed months, software (Slash) & Upwork = actual charges to date, spread per day.','G&A = data/opex_monthly.json (lương & chi phí văn phòng VN, nhân sự Upwork, phần mềm từ thẻ Mercury/Slash, kế toán Numeral) + hoá đơn Klaviyo + gói Snowball. Tháng chưa chốt sổ được tạm tính (gắn nhãn): chi phí VN = TB 6 tháng đã chốt gần nhất, phần mềm (Slash) & Upwork = số thực tế tới nay, rải theo ngày.');
+    document.getElementById('opexMonthsCaption').textContent = tv('G&A = data/opex_monthly.json (Vietnam payroll & office costs, Upwork contractors, software from the Mercury/Slash cards, Numeral accounting) + Klaviyo invoices + the Snowball plan. The month not closed yet is estimated (tagged): Vietnam costs = the last closed month, software (Slash) & Upwork = actual charges to date, spread per day.','G&A = data/opex_monthly.json (lương & chi phí văn phòng VN, nhân sự Upwork, phần mềm từ thẻ Mercury/Slash, kế toán Numeral) + hoá đơn Klaviyo + gói Snowball. Tháng chưa chốt sổ được tạm tính (gắn nhãn): chi phí VN = tháng đã chốt gần nhất, phần mềm (Slash) & Upwork = số thực tế tới nay, rải theo ngày.');
     document.getElementById('cashGaps').innerHTML = [
       {name:tv('Bank balance & runway','Số dư ngân hàng & runway'), note:tv('Bank/Mercury/QuickBooks not connected — enter by hand or connect the API when ready','Chưa nối ngân hàng/Mercury/QuickBooks — nhập tay hoặc nối API khi sẵn sàng')},
       {name:tv('Cash in transit (Amazon, Walmart, TikTok payouts)','Tiền đang trên đường về (Amazon, Walmart, TikTok payout)'), note:tv('Amazon Finances has settlement data — not yet built into a cash flow','Amazon Finances có số liệu quyết toán — chưa dựng thành dòng tiền')},
@@ -4157,6 +4166,7 @@
         byStore: r.by_store || {}, byType: r.by_type || {}, byCarrier: r.by_carrier || {},
         packagingItems: (r.packaging_items && typeof r.packaging_items==='object') ? r.packaging_items : null,   // sync v1.5+: {box_sku: boxes picked} -> box cost by FIFO over the box lots
         packagingUnits: Math.round(parseFloat(r.packaging_units)||0),
+        packagingUnitsEst: Math.round(parseFloat(r.packaging_units_est)||0),   // sync v1.6+: boxes inferred for orders ShipMonk did not list the box on
       };
       matched++;
     });
@@ -4361,7 +4371,7 @@
   }
 
   // V11.7: closed months = the entered figures. A month still open (status "open") or not entered yet is ESTIMATED:
-  //   - Vietnam costs (payroll, office, other, accounting…) = average of the last 6 closed months;
+  //   - Vietnam costs (payroll, office, other, accounting…) = the last closed month;
   //   - software (Slash card) and Upwork contractors = actual charges to date ("actual_to_date"), as a daily run-rate;
   //   - a figure written in the open month itself always wins.
   // Replaced automatically once the month is entered without status "open".
