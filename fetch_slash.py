@@ -39,7 +39,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "1.1"
+SCRIPT_VERSION = "1.2"
 SCHEMA = 1
 API_KEY = os.environ.get("SLASH_API_KEY", "").strip()
 BASE = os.environ.get("SLASH_BASE_URL", "https://api.slash.com").rstrip("/")
@@ -235,7 +235,7 @@ def main():
     print("fetched", len(raw), "transactions")
 
     charges, monthly = [], defaultdict(lambda: defaultdict(float))
-    unk_card, unk_xfer, pending = defaultdict(lambda: [0.0, 0]), [], defaultdict(float)
+    unk_card, unk_xfer, pending = defaultdict(lambda: [0.0, 0]), defaultdict(lambda: [0.0, 0]), defaultdict(float)
     stats = defaultdict(int)
     for t in raw:
         stats["status:" + str(t.get("status"))] += 1
@@ -266,7 +266,8 @@ def main():
                 unk_card[k][0] += amt
                 unk_card[k][1] += 1
             elif amt >= 500:
-                unk_xfer.append({"d": day, "name": (t.get("description") or "")[:70], "a": round(amt, 2), "rail": r})
+                unk_xfer[day[:7]][0] += amt      # count + total only: transfer descriptions can name suppliers / invoices
+                unk_xfer[day[:7]][1] += 1
             continue
         if line == "TAX" and r != "card" and "numeral" in text.lower():
             continue                              # Numeral by transfer = sales tax remitted for the company (pass-through)
@@ -298,7 +299,7 @@ def main():
         "charges": charges,
         "unclassified_card": sorted([{"v": k[0], "m": k[1], "a": round(v[0], 2), "n": v[1]} for k, v in unk_card.items()],
                                     key=lambda x: (x["m"], -x["a"])),
-        "unclassified_transfers": sorted(unk_xfer, key=lambda x: x["d"]),
+        "unclassified_transfers": {m: {"count": v[1], "total": round(v[0], 2)} for m, v in sorted(unk_xfer.items())},
     }
     os.makedirs(os.path.dirname(OUTPUT) or ".", exist_ok=True)
     with open(OUTPUT, "w") as f:
