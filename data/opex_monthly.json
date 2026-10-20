@@ -2,7 +2,7 @@
   "schema": 1,
   "currency": "USD",
   "updated_at": "2026-10-20",
-  "note": "Chi phi nhap tay theo thang (USD/thang), bang P&L tu rai deu theo ngay trong thang. Muc G&A (tren EBITDA): salary = luong & nhan su gian tiep (van hanh, quan ly) = luong VN (CP VN - 2026.xlsx) + nhan su thue ngoai qua Upwork (CSKH, fulfillment/logistics, copywriter; ghi theo tuan hoa don Upwork, da gom phi Upwork + VAT, phi dang tin) - xem Upwork_theo_hop_dong_2025-2026.xlsx; software = phan mem & cong cu: Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI, tu sao ke the Mercury (2025-04/2026) + Slash (04/2026->) - xem Phan_mem_Mercury_Slash_2025-2026.xlsx (KHONG gom Snowball $350 va Klaviyo - da co san); office = van phong & van hanh; accounting = ke toan, thue & phap ly (GAAP: professional fees) = phi dich vu Numeral khai sales tax ($75/to khai + dang ky bang) ghi theo THANG LAM TO KHAI (phi tru cuoi thang / dau thang sau; lan tru bi tu choi khong tinh) - KHONG gom tien thue sales tax nop cho cac bang (thu ho, khong vao P&L); ke toan VN da nam trong chi phi VN; insurance = bao hiem; other = khac. Muc duoi EBITDA: depreciation = khau hao & phan bo (khuon, thiet bi, phan mem mua dut); interest = lai vay & chi phi tai chinh (am neu lai tien gui > lai vay); income_tax = thue TNDN theo thang (bo trong/null de bang uoc tinh theo tax_rate x loi nhuan truoc thue duong; 0 = khong co thue). salary_vn + upwork = tach cua salary (luong VN / nhan su Upwork), dung de tam tinh thang dang mo. Thang dang mo (\"status\": \"open\") hoac chua co dong: bang tu tam tinh - chi phi VN = trung binh 6 thang da chot gan nhat; software / upwork = actual_to_date (so thuc te toi nay {amount, from, to}, rai theo ngay); so ghi truc tiep trong thang dang mo luon duoc uu tien. mkt_agency / mkt_creator / mkt_dsp = Marketing nhap tay (duoi CM3 nhu quang cao, US GAAP ASC 720-35): agency creative (Goodo, Adcrate) theo thang dich vu; creator/UGC (Tremendous, Insense, Billo, MossCreator, tra creator truc tiep) theo ngay tra; Amazon DSP (nap qua SparkX, gom phi) theo ngay nap. software tu V11.8 ghi theo ky thanh toan: goi nam/6 thang/quy chia deu cho so thang cua goi. Them thang moi = them mot dong \"YYYY-MM\": {...}.",
+  "note": "Chi phi nhap tay theo thang (USD/thang), bang P&L tu rai deu theo ngay trong thang. Muc G&A (tren EBITDA): salary = luong & nhan su gian tiep (van hanh, quan ly) = luong VN (CP VN - 2026.xlsx) + nhan su thue ngoai qua Upwork (CSKH, fulfillment/logistics, copywriter; ghi theo tuan hoa don Upwork, da gom phi Upwork + VAT, phi dang tin) - xem Upwork_theo_hop_dong_2025-2026.xlsx; software = phan mem & cong cu: Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI, tu sao ke the Mercury (2025-04/2026) + Slash (04/2026->) - xem Phan_mem_Mercury_Slash_2025-2026.xlsx (KHONG gom Snowball $350 va Klaviyo - da co san); office = van phong & van hanh; accounting = ke toan, thue & phap ly (GAAP: professional fees) = phi dich vu Numeral khai sales tax ($75/to khai + dang ky bang) ghi theo THANG LAM TO KHAI (phi tru cuoi thang / dau thang sau; lan tru bi tu choi khong tinh) - KHONG gom tien thue sales tax nop cho cac bang (thu ho, khong vao P&L); ke toan VN da nam trong chi phi VN; insurance = bao hiem; other = khac. Muc duoi EBITDA: depreciation = khau hao & phan bo (khuon, thiet bi, phan mem mua dut); interest = lai vay & chi phi tai chinh (am neu lai tien gui > lai vay); income_tax = thue TNDN theo thang (bo trong/null de bang uoc tinh theo tax_rate x loi nhuan truoc thue duong; 0 = khong co thue). salary_vn + upwork = tach cua salary (luong VN / nhan su Upwork), dung de tam tinh thang dang mo. Thang dang mo (\"status\": \"open\") hoac chua co dong: bang tu tam tinh - chi phi VN = trung binh 6 thang da chot gan nhat; software / upwork = actual_to_date (so thuc te toi nay {amount, from, to}, rai theo ngay); so ghi truc tiep trong thang dang mo luon duoc uu tien. mkt_agency / mkt_creator / mkt_dsp = Marketing nhap tay (duoi CM3 nhu quang cao, US GAAP ASC 720-35): agency creative (Goodo, Adcrate) theo thang dich vu; creator/UGC (Tremendous, Insense, Billo, MossCreator, tra creator truc tiep) theo ngay tra; Amazon DSP (nap qua SparkX, gom phi) theo ngay nap. software tu V11.8 ghi theo ky thanh toan: goi nam/6 thang/quy chia deu cho so thang cua goi. training = dao tao & cong dong (Daily Mentor, Skool, Whop, Disrupter School): GAAP chi phi khi nhan dich vu, khoa tra truoc chia deu theo thoi gian hoc (Daily Mentor 7 thang). accounting gom them phi luat su Morris Nichols ghi theo thang phat sinh dich vu (2025). Them thang moi = them mot dong \"YYYY-MM\": {...}.",
   "tax_rate": 0,
   "months": {
     "2025-01": {
@@ -11,6 +11,7 @@
       "office": null,
       "accounting": 2475,
       "insurance": null,
+      "training": 1790.0,
       "other": null,
       "depreciation": null,
       "interest": null,
@@ -18,7 +19,7 @@
       "mkt_agency": 0,
       "mkt_creator": 0.0,
       "mkt_dsp": 10300.0,
-      "note": "salary = nhan su thue ngoai Upwork $1,802 (CSKH $1,061, van hanh/fulfillment $741; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $2,475 (the Mercury 28/01). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $4,079 (theo ngay tru the: $7,193). mkt_dsp = nap Amazon DSP qua SparkX (gom phi, theo ngay nap)."
+      "note": "salary = nhan su thue ngoai Upwork $1,802 (CSKH $1,061, van hanh/fulfillment $741; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $2,475 (the Mercury 28/01). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $4,079 (theo ngay tru the: $7,193). mkt_dsp = nap Amazon DSP qua SparkX (gom phi, theo ngay nap). training (dao tao, GAAP: ghi khi nhan dich vu, khoa tra truoc chia deu) = Daily Mentor $1,790 (02/01/2025) = $1,790.00."
     },
     "2025-02": {
       "salary": 1733,
@@ -26,6 +27,7 @@
       "office": null,
       "accounting": 4125,
       "insurance": null,
+      "training": 1457.57,
       "other": null,
       "depreciation": null,
       "interest": null,
@@ -33,7 +35,7 @@
       "mkt_agency": 0,
       "mkt_creator": 4111.0,
       "mkt_dsp": 0.0,
-      "note": "salary = nhan su thue ngoai Upwork $1,733 (CSKH $883, van hanh/fulfillment $850; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $4,125 (the Mercury 27/02). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $7,794 (theo ngay tru the: $7,062). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra)."
+      "note": "salary = nhan su thue ngoai Upwork $1,733 (CSKH $883, van hanh/fulfillment $850; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $4,125 (the Mercury 27/02). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $7,794 (theo ngay tru the: $7,062). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra). training (dao tao, GAAP: ghi khi nhan dich vu, khoa tra truoc chia deu) = Daily Mentor $1,457.57 (1/7 khoa 7 thang 01/02-30/08/2025, tra $10,203 ngay 07/02/2025) = $1,457.57."
     },
     "2025-03": {
       "salary": 2314,
@@ -41,6 +43,7 @@
       "office": null,
       "accounting": 2400,
       "insurance": null,
+      "training": 1457.57,
       "other": null,
       "depreciation": null,
       "interest": null,
@@ -48,7 +51,7 @@
       "mkt_agency": 0,
       "mkt_creator": 1607.0,
       "mkt_dsp": 0.0,
-      "note": "salary = nhan su thue ngoai Upwork $2,314 (CSKH $1,188, van hanh/fulfillment $1,126; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $2,400 (the Mercury 27/03). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $8,450 (theo ngay tru the: $7,302). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra)."
+      "note": "salary = nhan su thue ngoai Upwork $2,314 (CSKH $1,188, van hanh/fulfillment $1,126; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $2,400 (the Mercury 27/03). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $8,450 (theo ngay tru the: $7,302). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra). training (dao tao, GAAP: ghi khi nhan dich vu, khoa tra truoc chia deu) = Daily Mentor $1,457.57 (1/7 khoa 7 thang 01/02-30/08/2025, tra $10,203 ngay 07/02/2025) = $1,457.57."
     },
     "2025-04": {
       "salary": 1986,
@@ -56,6 +59,7 @@
       "office": null,
       "accounting": 2625,
       "insurance": null,
+      "training": 1457.57,
       "other": null,
       "depreciation": null,
       "interest": null,
@@ -63,7 +67,7 @@
       "mkt_agency": 0,
       "mkt_creator": 0.0,
       "mkt_dsp": 600.0,
-      "note": "salary = nhan su thue ngoai Upwork $1,986 (CSKH $900, van hanh/fulfillment $1,087; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $2,625 (the Mercury 29/04). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $7,271 (theo ngay tru the: $7,028). mkt_dsp = nap Amazon DSP qua SparkX (gom phi, theo ngay nap)."
+      "note": "salary = nhan su thue ngoai Upwork $1,986 (CSKH $900, van hanh/fulfillment $1,087; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $2,625 (the Mercury 29/04). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $7,271 (theo ngay tru the: $7,028). mkt_dsp = nap Amazon DSP qua SparkX (gom phi, theo ngay nap). training (dao tao, GAAP: ghi khi nhan dich vu, khoa tra truoc chia deu) = Daily Mentor $1,457.57 (1/7 khoa 7 thang 01/02-30/08/2025, tra $10,203 ngay 07/02/2025) = $1,457.57."
     },
     "2025-05": {
       "salary": 1703,
@@ -71,6 +75,7 @@
       "office": null,
       "accounting": 2025,
       "insurance": null,
+      "training": 1457.57,
       "other": null,
       "depreciation": null,
       "interest": null,
@@ -78,7 +83,7 @@
       "mkt_agency": 0,
       "mkt_creator": 0.0,
       "mkt_dsp": 5300.0,
-      "note": "salary = nhan su thue ngoai Upwork $1,703 (CSKH $891, van hanh/fulfillment $813; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $2,025 (the Mercury 28/05). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $8,732 (theo ngay tru the: $8,488). mkt_dsp = nap Amazon DSP qua SparkX (gom phi, theo ngay nap)."
+      "note": "salary = nhan su thue ngoai Upwork $1,703 (CSKH $891, van hanh/fulfillment $813; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $2,025 (the Mercury 28/05). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $8,732 (theo ngay tru the: $8,488). mkt_dsp = nap Amazon DSP qua SparkX (gom phi, theo ngay nap). training (dao tao, GAAP: ghi khi nhan dich vu, khoa tra truoc chia deu) = Daily Mentor $1,457.57 (1/7 khoa 7 thang 01/02-30/08/2025, tra $10,203 ngay 07/02/2025) = $1,457.57."
     },
     "2025-06": {
       "salary": 2092,
@@ -86,6 +91,7 @@
       "office": null,
       "accounting": 1950,
       "insurance": null,
+      "training": 1475.57,
       "other": null,
       "depreciation": null,
       "interest": null,
@@ -93,14 +99,15 @@
       "mkt_agency": 0,
       "mkt_creator": 1000.0,
       "mkt_dsp": 0.0,
-      "note": "salary = nhan su thue ngoai Upwork $2,092 (CSKH $1,198, van hanh/fulfillment $894; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $1,950 (the Mercury 01/07). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $6,316 (theo ngay tru the: $6,073). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra)."
+      "note": "salary = nhan su thue ngoai Upwork $2,092 (CSKH $1,198, van hanh/fulfillment $894; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $1,950 (the Mercury 01/07). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $6,316 (theo ngay tru the: $6,073). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra). training (dao tao, GAAP: ghi khi nhan dich vu, khoa tra truoc chia deu) = Daily Mentor $1,457.57 (1/7 khoa 7 thang 01/02-30/08/2025, tra $10,203 ngay 07/02/2025) + Create Without Limits $18 = $1,475.57."
     },
     "2025-07": {
       "salary": 1734,
       "software": 7198,
       "office": null,
-      "accounting": 2475,
+      "accounting": 12475.0,
       "insurance": null,
+      "training": 1457.57,
       "other": null,
       "depreciation": null,
       "interest": null,
@@ -108,7 +115,7 @@
       "mkt_agency": 0,
       "mkt_creator": 0,
       "mkt_dsp": 0,
-      "note": "salary = nhan su thue ngoai Upwork $1,734 (CSKH $1,057, van hanh/fulfillment $677; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $2,475 (the Mercury 31/07). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $7,198 (theo ngay tru the: $7,968)."
+      "note": "salary = nhan su thue ngoai Upwork $1,734 (CSKH $1,057, van hanh/fulfillment $677; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $2,475 (the Mercury 31/07). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $7,198 (theo ngay tru the: $7,968). training (dao tao, GAAP: ghi khi nhan dich vu, khoa tra truoc chia deu) = Daily Mentor $1,457.57 (1/7 khoa 7 thang 01/02-30/08/2025, tra $10,203 ngay 07/02/2025) = $1,457.57. accounting + Morris Nichols (luat su) $10,000 retainer dai dien phap ly (chuyen 25/07/2025 vao tai khoan ky quy cua luat su - ghi vao 07/2025)."
     },
     "2025-08": {
       "salary": 2278,
@@ -116,6 +123,7 @@
       "office": null,
       "accounting": 1800,
       "insurance": null,
+      "training": 1457.57,
       "other": null,
       "depreciation": null,
       "interest": null,
@@ -123,7 +131,7 @@
       "mkt_agency": 0,
       "mkt_creator": 7049.0,
       "mkt_dsp": 0.0,
-      "note": "salary = nhan su thue ngoai Upwork $2,278 (CSKH $1,440, van hanh/fulfillment $838; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $1,800 (the Mercury 30/08). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $8,537 (theo ngay tru the: $8,294). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra)."
+      "note": "salary = nhan su thue ngoai Upwork $2,278 (CSKH $1,440, van hanh/fulfillment $838; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $1,800 (the Mercury 30/08). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $8,537 (theo ngay tru the: $8,294). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra). training (dao tao, GAAP: ghi khi nhan dich vu, khoa tra truoc chia deu) = Daily Mentor $1,457.57 (1/7 khoa 7 thang 01/02-30/08/2025, tra $10,203 ngay 07/02/2025) = $1,457.57."
     },
     "2025-09": {
       "salary": 1856,
@@ -131,6 +139,7 @@
       "office": null,
       "accounting": 2400,
       "insurance": null,
+      "training": 0,
       "other": null,
       "depreciation": null,
       "interest": null,
@@ -144,8 +153,9 @@
       "salary": 1892,
       "software": 8301,
       "office": null,
-      "accounting": 2625,
+      "accounting": 5906.94,
       "insurance": null,
+      "training": 0,
       "other": null,
       "depreciation": null,
       "interest": null,
@@ -153,7 +163,7 @@
       "mkt_agency": 0,
       "mkt_creator": 9500.0,
       "mkt_dsp": 11350.0,
-      "note": "salary = nhan su thue ngoai Upwork $1,892 (CSKH $1,181, van hanh/fulfillment $710; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $2,625 (the Mercury 05/11). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $8,301 (theo ngay tru the: $9,439). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra). mkt_dsp = nap Amazon DSP qua SparkX (gom phi, theo ngay nap)."
+      "note": "salary = nhan su thue ngoai Upwork $1,892 (CSKH $1,181, van hanh/fulfillment $710; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $2,625 (the Mercury 05/11). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $8,301 (theo ngay tru the: $9,439). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra). mkt_dsp = nap Amazon DSP qua SparkX (gom phi, theo ngay nap). accounting + Morris Nichols (luat su) $3,281.94 = 1/2 hoa don $6,563.88 cho dich vu 10/2025 & 12/2025 (tra 20/05/2026; GAAP ghi vao thang phat sinh dich vu, chia doi vi hoa don khong tach)."
     },
     "2025-11": {
       "salary": 1758,
@@ -161,6 +171,7 @@
       "office": null,
       "accounting": 2025,
       "insurance": null,
+      "training": 195.85,
       "other": null,
       "depreciation": null,
       "interest": null,
@@ -168,14 +179,15 @@
       "mkt_agency": 0,
       "mkt_creator": 16300.0,
       "mkt_dsp": 0.0,
-      "note": "salary = nhan su thue ngoai Upwork $1,758 (CSKH $1,579, van hanh/fulfillment $179; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $2,025 (the Mercury 04/12). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $11,864 (theo ngay tru the: $11,459). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra)."
+      "note": "salary = nhan su thue ngoai Upwork $1,758 (CSKH $1,579, van hanh/fulfillment $179; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $2,025 (the Mercury 04/12). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $11,864 (theo ngay tru the: $11,459). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra). training (dao tao, GAAP: ghi khi nhan dich vu, khoa tra truoc chia deu) = Skool $94 + Whop $101.85 = $195.85."
     },
     "2025-12": {
       "salary": 1305,
       "software": 14214,
       "office": null,
-      "accounting": 2112,
+      "accounting": 5393.94,
       "insurance": null,
+      "training": 195.85,
       "other": null,
       "depreciation": null,
       "interest": null,
@@ -183,12 +195,13 @@
       "mkt_agency": 0,
       "mkt_creator": 11000.0,
       "mkt_dsp": 0.0,
-      "note": "salary = nhan su thue ngoai Upwork $1,305 (CSKH $1,305; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $2,112 (the Mercury 02/02/2026 (3 lan tru thang 1 bi tu choi)). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $14,214 (theo ngay tru the: $14,140). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra)."
+      "note": "salary = nhan su thue ngoai Upwork $1,305 (CSKH $1,305; da gom phi Upwork+VAT); luong VN 2025 chua co so (chi moi co tu 01/2026). Chi phi phan mem (software) tu sao ke the Mercury 2025 (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). Cac muc khac chua co so (null = chua nhap). accounting = Numeral $2,112 (the Mercury 02/02/2026 (3 lan tru thang 1 bi tu choi)). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $14,214 (theo ngay tru the: $14,140). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra). training (dao tao, GAAP: ghi khi nhan dich vu, khoa tra truoc chia deu) = Skool $94 + Whop $101.85 = $195.85. accounting + Morris Nichols (luat su) $3,281.94 = 1/2 hoa don $6,563.88 cho dich vu 10/2025 & 12/2025 (tra 20/05/2026)."
     },
     "2026-01": {
       "software": 9336,
       "accounting": 3075,
       "insurance": 0,
+      "training": 0,
       "depreciation": 0,
       "interest": 0,
       "income_tax": null,
@@ -206,6 +219,7 @@
       "software": 10102,
       "accounting": 2175,
       "insurance": 0,
+      "training": 0,
       "depreciation": 0,
       "interest": 0,
       "income_tax": null,
@@ -223,6 +237,7 @@
       "software": 11381,
       "accounting": 2250,
       "insurance": 0,
+      "training": 146.0,
       "depreciation": 0,
       "interest": 0,
       "income_tax": null,
@@ -234,12 +249,13 @@
       "mkt_agency": 0,
       "mkt_creator": 1000.0,
       "mkt_dsp": 5900.0,
-      "note": "salary = luong VN $25,073 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $2,659 (CSKH $1,301, copywriter/marketing $1,358; da gom phi Upwork+VAT) = $27,732. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). accounting = Numeral $2,250 (the Mercury 05/04). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $11,381 (theo ngay tru the: $10,997). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra). mkt_dsp = nap Amazon DSP qua SparkX (gom phi, theo ngay nap)."
+      "note": "salary = luong VN $25,073 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $2,659 (CSKH $1,301, copywriter/marketing $1,358; da gom phi Upwork+VAT) = $27,732. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). accounting = Numeral $2,250 (the Mercury 05/04). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $11,381 (theo ngay tru the: $10,997). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra). mkt_dsp = nap Amazon DSP qua SparkX (gom phi, theo ngay nap). training (dao tao, GAAP: ghi khi nhan dich vu, khoa tra truoc chia deu) = Disrupter School $99 + Whop $47 = $146.00."
     },
     "2026-04": {
       "software": 12860,
       "accounting": 2700,
       "insurance": 0,
+      "training": 2987.52,
       "depreciation": 0,
       "interest": 0,
       "income_tax": null,
@@ -251,7 +267,7 @@
       "mkt_agency": 0,
       "mkt_creator": 5500.0,
       "mkt_dsp": 0.0,
-      "note": "salary = luong VN $26,740 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,249 (CSKH $1,104, copywriter/marketing $145; da gom phi Upwork+VAT) = $27,989. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). accounting = Numeral $2,700 (the Slash T5). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $12,860 (theo ngay tru the: $13,180). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra)."
+      "note": "salary = luong VN $26,740 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,249 (CSKH $1,104, copywriter/marketing $145; da gom phi Upwork+VAT) = $27,989. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). accounting = Numeral $2,700 (the Slash T5). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $12,860 (theo ngay tru the: $13,180). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra). training (dao tao, GAAP: ghi khi nhan dich vu, khoa tra truoc chia deu) = Daily Mentor $1,457.57 (1/7 khoa $10,203 tra 03/04/2026, gia dinh 7 thang 04-10/2026 nhu khoa truoc) + Skool $1,500 + Whop $29.95 = $2,987.52."
     },
     "2026-05": {
       "salary": 28649,
@@ -261,6 +277,7 @@
       "office": 9737,
       "accounting": 2250,
       "insurance": 0,
+      "training": 3186.52,
       "other": 2216,
       "depreciation": 0,
       "interest": 0,
@@ -268,7 +285,7 @@
       "mkt_agency": 0,
       "mkt_creator": 8800.0,
       "mkt_dsp": 0.0,
-      "note": "salary = luong VN $26,989 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,660 (CSKH $1,660; da gom phi Upwork+VAT) = $28,649. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). accounting = Numeral $2,250 (the Slash T6). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $19,913 (theo ngay tru the: $19,680). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra)."
+      "note": "salary = luong VN $26,989 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,660 (CSKH $1,660; da gom phi Upwork+VAT) = $28,649. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). accounting = Numeral $2,250 (the Slash T6). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $19,913 (theo ngay tru the: $19,680). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra). training (dao tao, GAAP: ghi khi nhan dich vu, khoa tra truoc chia deu) = Daily Mentor $1,457.57 (1/7 khoa $10,203 tra 03/04/2026, gia dinh 7 thang 04-10/2026 nhu khoa truoc) + Skool $1,500 + $199 + Whop $29.95 = $3,186.52."
     },
     "2026-06": {
       "salary": 31268,
@@ -278,6 +295,7 @@
       "office": 9344,
       "accounting": 4275,
       "insurance": 0,
+      "training": 3186.52,
       "other": 4052,
       "depreciation": 0,
       "interest": 0,
@@ -285,7 +303,7 @@
       "mkt_agency": 10000,
       "mkt_creator": 11700.0,
       "mkt_dsp": 0.0,
-      "note": "salary = luong VN $30,058 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,210 (CSKH $1,210; da gom phi Upwork+VAT) = $31,268. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). accounting = Numeral $4,275 (the Slash T7). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $17,413 (theo ngay tru the: $16,945). mkt_agency: Goodo $10.000 (INV-8-231, ky 03/06-03/07, tra 16/06). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra)."
+      "note": "salary = luong VN $30,058 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,210 (CSKH $1,210; da gom phi Upwork+VAT) = $31,268. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). accounting = Numeral $4,275 (the Slash T7). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $17,413 (theo ngay tru the: $16,945). mkt_agency: Goodo $10.000 (INV-8-231, ky 03/06-03/07, tra 16/06). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra). training (dao tao, GAAP: ghi khi nhan dich vu, khoa tra truoc chia deu) = Daily Mentor $1,457.57 (1/7 khoa $10,203 tra 03/04/2026, gia dinh 7 thang 04-10/2026 nhu khoa truoc) + Skool $1,500 + $199 + Whop $29.95 = $3,186.52."
     },
     "2026-07": {
       "salary": 35354,
@@ -295,6 +313,7 @@
       "office": 9807,
       "accounting": 1650,
       "insurance": 0,
+      "training": 1656.57,
       "other": 2268,
       "depreciation": 0,
       "interest": 0,
@@ -302,7 +321,7 @@
       "mkt_agency": 10000,
       "mkt_creator": 6500.0,
       "mkt_dsp": 0.0,
-      "note": "salary = luong VN $33,906 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,448 (CSKH $1,448; da gom phi Upwork+VAT) = $35,354. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). accounting = Numeral $1,650 (the Slash T8). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $19,142 (theo ngay tru the: $18,674). mkt_agency: Goodo $10.000 (thang dich vu 2 cua SOW 3 thang; tra 10/08 sau 2 lan ACH bi tra lai). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra)."
+      "note": "salary = luong VN $33,906 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,448 (CSKH $1,448; da gom phi Upwork+VAT) = $35,354. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). accounting = Numeral $1,650 (the Slash T8). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $19,142 (theo ngay tru the: $18,674). mkt_agency: Goodo $10.000 (thang dich vu 2 cua SOW 3 thang; tra 10/08 sau 2 lan ACH bi tra lai). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra). training (dao tao, GAAP: ghi khi nhan dich vu, khoa tra truoc chia deu) = Daily Mentor $1,457.57 (1/7 khoa $10,203 tra 03/04/2026, gia dinh 7 thang 04-10/2026 nhu khoa truoc) + Skool $199 = $1,656.57."
     },
     "2026-08": {
       "salary": 40556,
@@ -312,6 +331,7 @@
       "office": 8356,
       "accounting": 2100,
       "insurance": 0,
+      "training": 1457.57,
       "other": 3175,
       "depreciation": 0,
       "interest": 0,
@@ -319,7 +339,7 @@
       "mkt_agency": 20000,
       "mkt_creator": 14368.0,
       "mkt_dsp": 0.0,
-      "note": "salary = luong VN $38,741 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,815 (CSKH $1,815; da gom phi Upwork+VAT) = $40,556. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). accounting = Numeral $2,100 (the Slash T9). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $17,033 (theo ngay tru the: $18,577). mkt_agency: Goodo $10.000 (thang 3, INV-8-243 tra 13/10) + Adcrate $10.000 (cam ket toi thieu thang 8, tra 06/10). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra)."
+      "note": "salary = luong VN $38,741 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,815 (CSKH $1,815; da gom phi Upwork+VAT) = $40,556. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). accounting = Numeral $2,100 (the Slash T9). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $17,033 (theo ngay tru the: $18,577). mkt_agency: Goodo $10.000 (thang 3, INV-8-243 tra 13/10) + Adcrate $10.000 (cam ket toi thieu thang 8, tra 06/10). mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra). training (dao tao, GAAP: ghi khi nhan dich vu, khoa tra truoc chia deu) = Daily Mentor $1,457.57 (1/7 khoa $10,203 tra 03/04/2026, gia dinh 7 thang 04-10/2026 nhu khoa truoc) = $1,457.57."
     },
     "2026-09": {
       "salary": 33283,
@@ -329,6 +349,7 @@
       "office": 7903,
       "accounting": 2400,
       "insurance": 0,
+      "training": 1604.24,
       "other": 1392,
       "depreciation": 0,
       "interest": 0,
@@ -336,7 +357,7 @@
       "mkt_agency": 10000,
       "mkt_creator": 14464.0,
       "mkt_dsp": 0.0,
-      "note": "salary = luong VN $31,729 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,554 (CSKH $1,554; da gom phi Upwork+VAT) = $33,283. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). accounting = Numeral $2,400 (the Slash T10 (08/10)). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $17,762 (theo ngay tru the: $18,564). mkt_agency: Adcrate $10.000 = cam ket toi thieu thang 9 (CHUA co hoa don - ghi theo hop dong); Goodo da het SOW 3 thang. mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra)."
+      "note": "salary = luong VN $31,729 (CP VN - 2026.xlsx: luong+BHXH+cong doan+phuc loi) + nhan su thue ngoai Upwork $1,554 (CSKH $1,554; da gom phi Upwork+VAT) = $33,283. Chi phi VN tu file CP VN - 2026.xlsx (sheet CP-VIETNAM, ty gia 22.000): office=mat bang+phan bo VP+van phong+studio; other=thuc an meo+thu y+khac+ngan hang. Chua co chi phi My (ke toan, bao hiem). Software = the Mercury + Slash (Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI; khong gom Klaviyo/quang cao/Upwork/thue). accounting = Numeral $2,400 (the Slash T10 (08/10)). | V11.8 (20/10/2026): software ghi theo ky thanh toan (goi nam / 6 thang / quy chia deu so thang cua goi; gop Mercury + Slash API) = $17,762 (theo ngay tru the: $18,564). mkt_agency: Adcrate $10.000 = cam ket toi thieu thang 9 (CHUA co hoa don - ghi theo hop dong); Goodo da het SOW 3 thang. mkt_creator = Tremendous + Insense/Billo/MossCreator + tra creator truc tiep (theo ngay tra). training (dao tao, GAAP: ghi khi nhan dich vu, khoa tra truoc chia deu) = Daily Mentor $1,457.57 (1/7 khoa $10,203 tra 03/04/2026, gia dinh 7 thang 04-10/2026 nhu khoa truoc) + Whop $146.67 = $1,604.24."
     },
     "2026-10": {
       "status": "open",
@@ -359,6 +380,13 @@
           "from": "2026-10-01",
           "to": "2026-10-19",
           "source": "Tremendous"
+        },
+        "training": {
+          "amount": 0.0,
+          "from": "2026-10-01",
+          "to": "2026-10-19",
+          "fixed": 1704.57,
+          "source": "Slash"
         }
       },
       "mkt_agency": 10000,
@@ -369,7 +397,7 @@
         }
       },
       "income_tax": null,
-      "note": "T10/2026 DANG MO (chua chot so) - bang P&L tu tam tinh: luong VN, van phong, khac, ke toan = TB 6 thang da chot gan nhat (04-09/2026); software = Slash API: phan co dinh $11,999.99/thang (goi thang da/sap tru: Shopify, Adobe, Elevar, Replo... + phan bo goi nam/6 thang: Helium 10, Intelligems, AdsPower, Hostinger...) + phan theo muc dung (Higgsfield, OpenRouter, Anthropic, Grok, DigitalOcean) thuc te $8,805.81 tu 01-19/10 rai theo ngay; Upwork = 3 hoa don tuan $1,276.40 (28/09-18/10); mkt_agency = Adcrate cam ket toi thieu $10.000; mkt_creator = Tremendous thuc te $4.100 tu 01-19/10 rai theo ngay. Khi chot so: xoa \"status\": \"open\" va dien so that."
+      "note": "T10/2026 DANG MO (chua chot so) - bang P&L tu tam tinh: luong VN, van phong, khac, ke toan = TB 6 thang da chot gan nhat (04-09/2026); software = Slash API: phan co dinh $11,999.99/thang (goi thang da/sap tru: Shopify, Adobe, Elevar, Replo... + phan bo goi nam/6 thang: Helium 10, Intelligems, AdsPower, Hostinger...) + phan theo muc dung (Higgsfield, OpenRouter, Anthropic, Grok, DigitalOcean) thuc te $8,805.81 tu 01-19/10 rai theo ngay; Upwork = 3 hoa don tuan $1,276.40 (28/09-18/10); mkt_agency = Adcrate cam ket toi thieu $10.000; mkt_creator = Tremendous thuc te $4.100 tu 01-19/10 rai theo ngay. training = Daily Mentor $1,457.57 (thang cuoi khoa 04-10/2026, gia dinh) + Skool $247 (07/10). Khi chot so: xoa \"status\": \"open\" va dien so that."
     }
   }
 }
