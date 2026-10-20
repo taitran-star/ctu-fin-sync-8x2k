@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 709edbb973).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 7b7f04a024).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -492,6 +492,10 @@
   let opexMeta = null;
   const OPEX_GA_KEYS = ['salary','software','office','accounting','insurance','other'];
   const OPEX_BELOW_KEYS = ['depreciation','interest','income_tax'];
+  // V11.8: marketing entered monthly in the same file (no API): agency creative retainers, creator/UGC payouts, Amazon DSP top-ups
+  const OPEX_MKT_KEYS = ['mkt_agency','mkt_creator','mkt_dsp'];
+  const OPEX_MKT_CH = {mkt_agency:'shopify', mkt_creator:'shopify', mkt_dsp:'amazon'};   // channel each one belongs to (channel filter, take-rate card)
+  const OPEX_ALL_KEYS = OPEX_GA_KEYS.concat(OPEX_BELOW_KEYS, OPEX_MKT_KEYS);
   const OPEX_AVG_MONTHS = 6;   // V11.7: open / missing month = average of the last 6 closed months
   const OPEX_EST_TITLE = () => tv('Month not closed yet — estimated until its actual figures are entered: Vietnam costs = average of the last 6 closed months; software (Slash card) and Upwork contractors = actual charges to date, spread per day. Replaced automatically once the month is entered in data/opex_monthly.json', 'Tháng chưa chốt sổ — tạm tính tới khi nhập số thật: chi phí VN = trung bình 6 tháng đã chốt gần nhất; phần mềm (thẻ Slash) và Upwork = số thực tế tới nay, rải theo ngày. Tự thay khi nhập tháng vào data/opex_monthly.json');
   // Amazon Ads spend per day (SP / SB / SD). Today: exported from Sellerboard (which pulls the Amazon Ads API);
@@ -738,6 +742,7 @@
     ['shopifyReal','paypalReal','snowballReal','shopifyAttr','klaviyoReal','klaviyoCost','loopReal','metaReal','googleReal','applovinReal'].forEach(key=>{ m[key] = sc(r[key], F.shopify); });
     m.tiktokReal = sc(r.tiktokReal, F.tiktok); m.tiktokAdsReal = sc(r.tiktokAdsReal, F.tiktok);
     m.walmartReal = sc(r.walmartReal, F.walmart);
+    if(r.opex && OPEX_MKT_KEYS.some(k=> r.opex.vals[k] && F[OPEX_MKT_CH[k]]<1)){ const v = Object.assign({}, r.opex.vals); OPEX_MKT_KEYS.forEach(k=>{ v[k] = (v[k]||0)*F[OPEX_MKT_CH[k]]; }); m.opex = Object.assign({}, r.opex, {vals: v}); }   // V11.8
     if(r.shipmonkReal){
       // per-order 3PL cost by store -> channel factor; a day without the store split follows the take-rate card (all D2C)
       const bs = r.shipmonkReal.byStore || {}, stores = Object.keys(bs);
@@ -981,8 +986,13 @@
     const snowballOrders = sum(rows.map(r=> r.snowballReal ? r.snowballReal.orders : 0));
     const snowballRevenue = sum(rows.map(r=> r.snowballReal ? r.snowballReal.revenue : 0));
     const snowballCommission = sum(rows.map(r=> r.snowballReal ? r.snowballReal.commissionNet : 0));
+    // V11.8: marketing entered monthly in data/opex_monthly.json (agency creative, creators/UGC, Amazon DSP) — already scaled to the channel filter in maskRow
+    const mktItems = OPEX_MKT_KEYS.map(k=>({key:k, value: sum(rows.map(r=> r.opex ? (r.opex.vals[k]||0) : 0)), has: rows.some(r=> r.opex && r.opex.has[k]), estDays: rows.filter(r=> r.opex && r.opex.est && r.opex.has[k]).length}));
+    const mktOf = k => (mktItems.find(x=>x.key===k)||{}).value||0;
+    const mktAgency = mktOf('mkt_agency'), mktCreator = mktOf('mkt_creator'), mktDsp = mktOf('mkt_dsp');
+    const mktManual = mktAgency + mktCreator + mktDsp;
     const feesTotal = paymentFeesAll + marketplaceFees;               // payment gateways + marketplace selling fees
-    const marketingTotal = adSpend + snowballCommission + tiktokAffiliate + tiktokSmart + walmartAds;               // paid ads + affiliate commissions
+    const marketingTotal = adSpend + snowballCommission + tiktokAffiliate + tiktokSmart + walmartAds + mktManual;   // paid ads + affiliate commissions + manual marketing (V11.8)
     const otherVarTotal = feesTotal + marketingTotal;
     const cmBeforeMarketing = grossProfit - feesTotal;                 // CM2: what is left to pay for marketing
     const contributionProfit = cmBeforeMarketing - marketingTotal;     // CM3: after marketing
@@ -1083,6 +1093,7 @@
       smInvDays, smInv, smInvOther, smInvAdjCredits, smStorageOpen, smStorageOpenDays, smStorageCarryDays, smStorageReportDays, smInvShipCmp, smApiShipCmp, smCmpDays, smCmpMissingDays, smTrueUp, shipmonkInvoiceExtras, shipmonkLogistics, amazonLogistics, logisticsTotal, feesTotal, marketingTotal, cmBeforeMarketing,
       paymentFees, afterpayFees, afterpayAmount, afterpayOrders, paymentFeeDays, paymentFeeOrders, feesMissingOrders, gatewayMix, feeTypeMix, paypalDays, paypalFees, paypalPayments, paypalPaymentsCount, paypalCompare, paymentFeesAll, marketplaceFees, adSpend, otherVarTotal, contributionProfit,
       gaItems, gaTotal, inventoryHolding, fixedTotal, netProfit, klaviyoCost, klaviyoCostDays, klaviyoCostParts,
+      mktItems, mktAgency, mktCreator, mktDsp, mktManual,
       opexDays, opexCarriedDays, opexEstDays, opexEstMonths, opexEstAmount, opexNote, salaryEntered, depreciation, interest, depreciationEntered, interestEntered, taxEntered, taxRate, ebit, ebt, incomeTax, incomeTaxEstimated, netIncome, belowEbitdaEntered,
       variableTotal, variableRatio, cmRatio, breakEvenRevenue, blendedAOV, breakEvenOrders,
       merValue, merSpend, attrRevenueSum,
@@ -1483,7 +1494,7 @@
     rows.push({...stSub(tv('= Total transaction selling fees (marketplace commissions + payment processing)', '= Tổng phí bán hàng theo giao dịch (hoa hồng sàn + cổng thanh toán)'), -a.feesTotal, nr, 'opvar_sub'), hget: x=>-x.feesTotal});
     rows.push({...stSub(tv('= Contribution margin before marketing (CM2 — after transaction fees, before ads)', '= Lợi nhuận đóng góp trước marketing (CM2 — sau phí giao dịch, trước quảng cáo)'), a.cmBeforeMarketing, nr, 'cm2'), hget: x=>x.cmBeforeMarketing});
 
-    rows.push(stSection(tv('Marketing & selling (ads + affiliate commissions)', 'Marketing & bán hàng (quảng cáo + hoa hồng affiliate)'),'mkt'));
+    rows.push(stSection(tv('Marketing & selling (ads, affiliate commissions, agency, creators)', 'Marketing & bán hàng (quảng cáo, hoa hồng affiliate, agency, creator)'),'mkt'));
     AD_KEYS.forEach(k=>{
       let label = tv('Ads — ', 'Quảng cáo — ')+AD_LABEL[k];
       let live = false, gap = false;
@@ -1538,6 +1549,17 @@
     if(a.walmartDays>0 && a.walmartAds>0.005){
       rows.push({...stLine(tv('Walmart Connect ads (deducted in the reconciliation report)', 'Quảng cáo Walmart Connect (khoản trừ trong báo cáo đối soát)'), -a.walmartAds, nr, 'var', 'mkt'), neg:true, live:true, hget: x=>-x.walmartAds});
     }
+    // V11.8: marketing without an API, entered monthly in data/opex_monthly.json (US GAAP ASC 720-35: advertising & agency fees = selling & marketing expense)
+    const MKT_LABEL = {mkt_agency: tv('Agency creative — Goodo, Adcrate (monthly retainer, by service month)', 'Agency creative — Goodo, Adcrate (phí retainer, theo tháng dịch vụ)'),
+      mkt_creator: tv('Creators / UGC — Tremendous payouts, Insense, MossCreator, direct creator payments (by payment date)', 'Creator / UGC — Tremendous, Insense, MossCreator, trả creator trực tiếp (theo ngày trả)'),
+      mkt_dsp: tv('Amazon DSP — top-ups via SparkX incl. their fee (by top-up date; not in Sellerboard Amazon Ads)', 'Amazon DSP — nạp qua SparkX, gồm phí (theo ngày nạp; Amazon Ads của Sellerboard không gồm DSP)')};
+    a.mktItems.forEach(it=>{
+      if(Math.abs(it.value)<0.005) return;
+      const allEst = it.estDays>0 && it.estDays>=a.opexDays;
+      const estT = it.estDays>0 ? a.opexEstMonths.map(m=>opexEstText(m,it.key)).filter(Boolean).join('; ') : '';
+      const label = MKT_LABEL[it.key] + (allEst ? '' : tx('st.manualMonthly')) + (it.estDays>0 ? (allEst ? tv(' — estimated',' — tạm tính') : tv(` — ${it.estDays} days estimated`, ` — ${it.estDays} ngày tạm tính`)) + (estT ? ': '+estT : '') : '');
+      rows.push({...stLine(label, -it.value, nr, it.key==='mkt_agency' ? 'fix' : 'var', 'mkt'), neg: it.value>=0, live: allEst ? false : 'manual', est: it.estDays>0, estTitle: tv('Month not closed yet — estimated on the basis written in the label; replaced once the month is entered in data/opex_monthly.json', 'Tháng chưa chốt sổ — tạm tính theo cơ sở ghi trong nhãn; tự thay khi nhập tháng vào data/opex_monthly.json'), hget: x=>-((x.mktItems.find(g=>g.key===it.key)||{}).value||0)});
+    });
     rows.push({...stSub(tv('= Total marketing & selling', '= Tổng marketing & bán hàng'), -a.marketingTotal, nr, 'mkt_sub'), hget: x=>-x.marketingTotal});
     rows.push({...stSub(tv('= Contribution margin (CM3, after marketing)', '= Lợi nhuận đóng góp (Contribution Margin, sau marketing)'), a.contributionProfit, nr, 'cm'), hget: x=>x.contributionProfit});
 
@@ -1744,6 +1766,7 @@
       ]},
       {label: tx('cc.mktOn'), rows:[
         {n:'Amazon Ads (SP · SB · SD)', s: a.amazonAdsProvisionalDays>0 ? a.amazonAdsProvisionalDays+tv(' days after the Sellerboard export: provisional (partial day), updates automatically', ' ngày sau export Sellerboard: số tạm (một phần ngày), tự cập nhật') : '', v: a.ads.amazonads, gap: !amazonAdsMatched, est: a.amazonAdsProvisionalDays>0},
+        ...(a.mktDsp>0.005 ? [{n: tv('Amazon DSP (top-ups via SparkX)', 'Amazon DSP (nạp qua SparkX)'), s: tv('entered monthly', 'nhập tay theo tháng'), v: a.mktDsp}] : []),
       ]},
     ]});
     chans.push({key:'shopify', name:'Shopify (D2C)', sub: tv('payment gateways, ShipMonk, ads, affiliates, D2C tools', 'cổng thanh toán, ShipMonk, quảng cáo, affiliate, công cụ D2C'), net: netOf('shopify'), orders: a.orders.shopify, groups:[
@@ -1757,6 +1780,8 @@
       {label:'Marketing', rows:[
         {n: tv('Ads (Meta, Google, TikTok, AppLovin)', 'Quảng cáo (Meta, Google, TikTok, AppLovin)'), v: d2cAds},
         {n: tv('Affiliate / creator commission (Snowball)', 'Hoa hồng affiliate / creator (Snowball)'), v: a.snowballCommission},
+        ...(a.mktAgency>0.005 ? [{n: tv('Agency creative (Goodo, Adcrate)', 'Agency creative (Goodo, Adcrate)'), s: tv('entered monthly', 'nhập tay theo tháng'), v: a.mktAgency}] : []),
+        ...(a.mktCreator>0.005 ? [{n: tv('Creators / UGC (Tremendous, Insense…)', 'Creator / UGC (Tremendous, Insense…)'), s: tv('entered monthly', 'nhập tay theo tháng'), v: a.mktCreator}] : []),
         {n: tv('D2C tools: Klaviyo + Social Snowball plan', 'Công cụ D2C: Klaviyo + gói Social Snowball'), s: tv('sits under G&A on the P&L', 'trên P&L nằm ở G&A'), v: a.klaviyoCost + snowballSub},
       ]},
     ]});
@@ -2187,8 +2212,8 @@
       return;
     }
     const months = OPEX_MONTHLY_LIVE_DATA.months;
-    const cols = OPEX_GA_KEYS.concat(OPEX_BELOW_KEYS);
-    const LABEL = {depreciation: tv('Depreciation & amortisation (D&A)', 'Khấu hao & phân bổ (D&A)'), interest: tv('Interest & finance costs', 'Lãi vay & chi phí tài chính'), income_tax: tv('Income tax', 'Thuế TNDN')};
+    const cols = OPEX_GA_KEYS.concat(OPEX_MKT_KEYS, OPEX_BELOW_KEYS);
+    const LABEL = {depreciation: tv('Depreciation & amortisation (D&A)', 'Khấu hao & phân bổ (D&A)'), interest: tv('Interest & finance costs', 'Lãi vay & chi phí tài chính'), income_tax: tv('Income tax', 'Thuế TNDN'), mkt_agency: tv('Marketing — agency', 'Marketing — agency'), mkt_creator: tv('Marketing — creators/UGC', 'Marketing — creator/UGC'), mkt_dsp: tv('Marketing — Amazon DSP', 'Marketing — Amazon DSP')};
     GA_ITEMS.forEach(it=>{ if(OPEX_GA_KEYS.includes(it.key)) LABEL[it.key] = it.label; });
     let html = `<thead><tr><th>${tv('Month', 'Tháng')}</th>${cols.map(k=>`<th class="num">${LABEL[k]||k}</th>`).join('')}</tr></thead><tbody>`;
     const estM = opexMeta.est || {};
@@ -2263,7 +2288,8 @@
         const last = prov[prov.length-1];
         const KN = {salary: tv('payroll','nhân sự'), office: tv('office','văn phòng'), other: tv('other','khác'), accounting: tv('accounting','kế toán'), software: tv('software','phần mềm')};
         const grp = {};
-        ['salary','office','other','accounting','software'].forEach(k=>{ const t = opexEstText(last,k); if(t) (grp[t] = grp[t] || []).push(KN[k]); });
+        Object.assign(KN, {mkt_agency: tv('agency','agency'), mkt_creator: tv('creators','creator'), mkt_dsp: 'Amazon DSP'});
+        ['salary','office','other','accounting','software','mkt_agency','mkt_creator','mkt_dsp'].forEach(k=>{ if(OPEX_MKT_KEYS.includes(k) && !((((opexMeta.est[last]||{}).perMonth)||{})[k]>0)) return; const t = opexEstText(last,k); if(t) (grp[t] = grp[t] || []).push(KN[k]); });
         gaps.push({lvl:'w', amt: a ? a.opexEstAmount : 0,
           name: tv('G&A ','G&A ')+span(prov)+tv(' estimated (month not closed)',' đang tạm tính (tháng chưa chốt)')+(a && a.opexEstAmount>0 ? ': '+money(a.opexEstAmount,{compact:true}) : ''),
           note: Object.keys(grp).map(t=>grp[t].join(', ')+' = '+t).join(' · ')+tv(' — enter the actual month in data/opex_monthly.json once the books close',' — nhập số thật của tháng vào data/opex_monthly.json khi chốt sổ')});
@@ -2617,7 +2643,7 @@
     const box = document.getElementById('scenBox'), out = document.getElementById('scenOut');
     if(net<=0 || O<=0){ t.innerHTML=''; box.innerHTML=''; out.innerHTML=''; setNote('sensNote',tv('No revenue in this period','Chưa có doanh thu trong kỳ')); setNote('sensCaption',''); return; }
     const feeRate = a.feesTotal/net;                                  // marketplace + payment fees move with revenue
-    const aff = a.marketingTotal - a.merSpend, affRate = aff/net;      // affiliate / creator commissions move with revenue
+    const aff = a.marketingTotal - a.merSpend - (a.mktManual||0), affRate = aff/net;      // affiliate / creator commissions move with revenue (manual agency/creator/DSP stay fixed)
     const fulfil = a.fulfillment + a.shipmonkPickPack + a.postage + a.packaging + a.shipmonkInvoiceExtras;
     const cmVar = a.cmBeforeMarketing - aff;                          // what one more dollar of revenue keeps before paid ads
     const cmVarRate = cmVar/net;
@@ -2648,7 +2674,7 @@
       const gross = a.grossSales*vol*pr, disc = a.discount*vol*pr*dd, ref = a.refundsTotal*vol*pr*rr;
       const net2 = gross - disc - ref;
       const cogs2 = a.productCost*vol*cc, ful2 = fulfil*vol*ff, fees2 = net2*feeRate, aff2 = net2*affRate, ads2 = a.merSpend*ad;
-      const cm3 = net2 - cogs2 - ful2 - fees2 - aff2 - ads2;
+      const cm3 = net2 - cogs2 - ful2 - fees2 - aff2 - ads2 - (a.mktManual||0);
       return {net: net2, cm3, ebitda: cm3 - a.fixedTotal, mer: ads2>0 ? net2/ads2 : null, orders: O*vol};
     };
     const paint = () => {
@@ -3014,8 +3040,8 @@
     const cogsOf = k => (a.productCostBy && a.productCostBy[k]) || 0;
     const out = {};
     // same cost lines as the P&L down to CM3 (warehousing / storage stay below CM3 as OpEx, so the channel total = the CM3 tile)
-    out.amazon = {net: netOf('amazon'), orders: a.orders.amazon, fees: a.amazonMarketplaceFeesReal + a.amazonMarketplaceFeesEst, fulfil: a.fulfillment + (smCh.amazon||0), ads: a.ads.amazonads, aff: 0};
-    out.shopify = {net: netOf('shopify'), orders: a.orders.shopify, fees: a.paymentFeesAll, fulfil: (smCh.shopify||0) + a.shipmonkInvoiceExtras, ads: a.ads.meta + a.ads.google + a.ads.applovin, aff: a.snowballCommission};
+    out.amazon = {net: netOf('amazon'), orders: a.orders.amazon, fees: a.amazonMarketplaceFeesReal + a.amazonMarketplaceFeesEst, fulfil: a.fulfillment + (smCh.amazon||0), ads: a.ads.amazonads + (a.mktDsp||0), aff: 0};
+    out.shopify = {net: netOf('shopify'), orders: a.orders.shopify, fees: a.paymentFeesAll, fulfil: (smCh.shopify||0) + a.shipmonkInvoiceExtras, ads: a.ads.meta + a.ads.google + a.ads.applovin + (a.mktAgency||0), aff: a.snowballCommission + (a.mktCreator||0)};
     out.walmart = {net: netOf('walmart'), orders: a.orders.walmart, fees: a.walmartFees, fulfil: smCh.walmart||0, ads: a.walmartAds, aff: 0};
     out.tiktok = {net: netOf('tiktok'), orders: a.orders.tiktok, fees: a.tiktokFees, fulfil: 0, ads: a.ads.tiktokads, aff: a.tiktokAffiliate + a.tiktokSmart};
     CH_KEYS.forEach(k=>{ const c = out[k]; c.cogs = cogsOf(k); c.cm = c.net - c.cogs - c.fees - c.fulfil - c.ads - c.aff; c.adsAll = c.ads + c.aff; });
@@ -4292,18 +4318,18 @@
       const dim = dimOf(m);
       const atd = (r.actual_to_date && typeof r.actual_to_date==='object') ? r.actual_to_date : {};
       const avg = k => { const xs = prev.map(x=>valOf(x,k)).filter(v=>v!==null); return xs.length ? xs.reduce((s,v)=>s+v,0)/xs.length : null; };
-      const e = {month:m, dim, perMonth:{}, basis:{}, actual:{}, avgN: prev.length, avgFrom: prev[0]||null, avgTo: prev[prev.length-1]||null};
+      const e = {month:m, dim, perMonth:{}, basis:{}, actual:{}, avgN: prev.length, avgFrom: prev[0]||null, avgTo: prev[prev.length-1]||null, notes: (r.basis_notes && typeof r.basis_notes==='object') ? r.basis_notes : {}};
       const one = k => {
         const x = num(r[k]);
         if(x!==null){ e.basis[k] = 'entered'; return x; }
         const a = atd[k], amt = a ? num(a.amount) : null;
         if(a && amt!==null && a.from && a.to){
           const d = Math.round((Date.parse(a.to+'T00:00:00Z')-Date.parse(a.from+'T00:00:00Z'))/86400000)+1;
-          if(d>0){ e.basis[k] = 'actual'; e.actual[k] = {amount:amt, from:a.from, to:a.to, days:d, source:a.source||''}; return amt/d*dim; }
+          if(d>0){ const fx = num(a.fixed)||0; e.basis[k] = 'actual'; e.actual[k] = {amount:amt, from:a.from, to:a.to, days:d, source:a.source||'', fixed:fx}; return fx + amt/d*dim; }
         }
         const v = avg(k); if(v!==null) e.basis[k] = 'avg'; return v;
       };
-      OPEX_GA_KEYS.concat(OPEX_BELOW_KEYS).forEach(k=>{
+      OPEX_ALL_KEYS.forEach(k=>{
         if(k==='salary' && num(r.salary)===null){
           const vn = one('salary_vn'), up = one('upwork');
           if(vn!==null || up!==null){ e.perMonth.salary = (vn||0)+(up||0); e.perMonth.salary_vn = vn; e.perMonth.upwork = up; e.basis.salary = 'split'; return; }
@@ -4321,12 +4347,12 @@
       // has = a non-zero number (drives the "Nhập tay" tag); given = any number incl. 0 (0 = "no such cost", null/absent = unknown)
       const o = {month:m, from:m, carried:false, est:false, vals:{}, has:{}, given:{}};
       if(months[m] && !isOpen(m)){
-        OPEX_GA_KEYS.concat(OPEX_BELOW_KEYS).forEach(k=>{ const v = num(months[m][k]); o.given[k] = v!==null; o.has[k] = v!==null && v!==0; o.vals[k] = (v||0)/dim; });
+        OPEX_ALL_KEYS.forEach(k=>{ const v = num(months[m][k]); o.given[k] = v!==null; o.has[k] = v!==null && v!==0; o.vals[k] = (v||0)/dim; });
       } else {
         const e = estimate(m);
         if(!e) return;
         o.est = true;
-        OPEX_GA_KEYS.concat(OPEX_BELOW_KEYS).forEach(k=>{ const v = e.perMonth[k]; const g = v!==null && v!==undefined; o.given[k] = g; o.has[k] = g && v!==0; o.vals[k] = (g ? v : 0)/dim; });
+        OPEX_ALL_KEYS.forEach(k=>{ const v = e.perMonth[k]; const g = v!==null && v!==undefined; o.given[k] = g; o.has[k] = g && v!==0; o.vals[k] = (g ? v : 0)/dim; });
       }
       d.opex = o; matched++;
     });
@@ -4340,8 +4366,10 @@
     const avgT = () => !e.avgN ? '' : e.avgN===1 ? tv('as ','theo ')+mm(e.avgFrom)
       : (e.avgFrom.slice(0,4)===e.avgTo.slice(0,4) ? tv(`avg of ${e.avgN} months ${e.avgFrom.slice(5,7)}–${mm(e.avgTo)}`, `TB ${e.avgN} tháng ${e.avgFrom.slice(5,7)}–${mm(e.avgTo)}`)
                                                     : tv(`avg of ${e.avgN} months ${mm(e.avgFrom)}–${mm(e.avgTo)}`, `TB ${e.avgN} tháng ${mm(e.avgFrom)}–${mm(e.avgTo)}`));
-    const actT = (a, src) => (src && a.source ? a.source+' ' : '')+tv('actual to ','thực tế tới ')+a.to.slice(8,10)+'/'+a.to.slice(5,7);
-    const one = (kk, src=true) => e.basis[kk]==='avg' ? avgT() : e.basis[kk]==='actual' ? actT(e.actual[kk], src) : e.basis[kk]==='entered' ? tv('entered','đã nhập') : '';
+    const actT = (a, src) => a.fixed>0
+      ? (src && a.source ? a.source+': ' : '')+tv('plans ','gói tháng/năm ')+money(a.fixed,{compact:true})+tv('/month + usage to ','/tháng + phát sinh thực tế tới ')+a.to.slice(8,10)+'/'+a.to.slice(5,7)
+      : (src && a.source ? a.source+' ' : '')+tv('actual to ','thực tế tới ')+a.to.slice(8,10)+'/'+a.to.slice(5,7);
+    const one = (kk, src=true) => e.basis[kk]==='avg' ? avgT() : e.basis[kk]==='actual' ? actT(e.actual[kk], src) : e.basis[kk]==='entered' ? ((n => n ? (typeof n==='object' ? tv(n.en||n.vi||'', n.vi||n.en||'') : String(n)) : tv('entered','đã nhập'))((e.notes||{})[kk])) : '';
     if(e.basis[k]==='split') return [e.basis.salary_vn ? tv('Vietnam payroll ','lương VN ')+one('salary_vn', false) : '', e.basis.upwork ? 'Upwork '+one('upwork', false) : ''].filter(Boolean).join(' + ');
     return one(k);
   }
