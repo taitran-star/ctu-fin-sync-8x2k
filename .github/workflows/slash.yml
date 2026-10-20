@@ -1,0 +1,68 @@
+name: Cattasaurus Slash card & transfers sync
+
+on:
+  schedule:
+    # Once a day (card charges and transfers settle daily; GitHub may start it a few hours late).
+    - cron: "47 13 * * *"
+  workflow_dispatch:   # "Run workflow" by hand
+    inputs:
+      history_start:
+        description: "Read from (YYYY-MM-DD). Empty = 2026-04-01 (Slash replaced the Mercury card)."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: slash-sync
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Sync to the latest main
+        run: |
+          git fetch --depth=1 origin main
+          git reset --hard origin/main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch Slash charges (read-only API key)
+        env:
+          REPORT_TIMEZONE: America/Los_Angeles
+          HISTORY_START: ${{ github.event.inputs.history_start || '2026-04-01' }}
+          # Read-only key from Slash > Settings > API Management, stored as a repository secret.
+          SLASH_API_KEY: ${{ secrets.SLASH_API_KEY }}
+        run: |
+          if [ -z "$SLASH_API_KEY" ]; then
+            echo "::notice::SLASH_API_KEY secret not set yet - create a read-only key in Slash (Settings > API Management) and add it as a repository secret. Skipping."
+            exit 0
+          fi
+          python fetch_slash.py
+
+      - name: Commit updated data file if changed
+        run: |
+          git config user.name "cattasaurus-slash-bot"
+          git config user.email "actions@users.noreply.github.com"
+          [ -f data/slash_pnl.json ] && git add data/slash_pnl.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Update Slash data ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            git rebase --abort 2>/dev/null || true
+            echo "Push attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "Could not push after 5 attempts." && exit 1
