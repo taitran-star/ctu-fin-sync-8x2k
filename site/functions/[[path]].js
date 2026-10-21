@@ -36,10 +36,10 @@ const EPOCH_KEY = 'meta:session_epoch';   // ms; sessions issued before it are r
 const EPOCH_CACHE_MS = 30 * 1000;         // per-isolate cache of the epoch (KV itself can lag up to ~60 s)
 
 // Pages a user can be given. The first eight are tabs of /pnl, 'sns' is the /sns page.
-const VIEWS = ['exec', 'sales', 'marketing', 'pnl', 'inventory', 'opex', 'reports', 'data', 'sns'];   // 'reports' = V12.8 Reports tab
+const VIEWS = ['exec', 'sales', 'marketing', 'pnl', 'inventory', 'opex', 'cs', 'reports', 'data', 'sns'];   // 'reports' = V12.8 Reports tab; 'cs' = V12.11 Customer service tab
 const VIEW_LABELS = {
   exec: 'Tổng quan (Điều hành)', sales: 'Bán hàng & khách hàng', marketing: 'Marketing', pnl: 'P&L (lãi lỗ đầy đủ)',
-  inventory: 'Sản phẩm & tồn kho', opex: 'Tài chính (CFO): P&L tháng, OpEx, vốn lưu động, tiền mặt', reports: 'Báo cáo (bảng số, tải CSV)', data: 'Dữ liệu (sức khoẻ nguồn)', sns: 'Amazon Subscribe & Save (/sns)',
+  inventory: 'Sản phẩm & tồn kho', opex: 'Tài chính (CFO): P&L tháng, OpEx, vốn lưu động, tiền mặt', cs: 'Chăm sóc khách hàng (ticket Re:amaze, tốc độ, CSAT, hoàn / huỷ, đơn chưa gửi)', reports: 'Báo cáo (bảng số, tải CSV)', data: 'Dữ liệu (sức khoẻ nguồn)', sns: 'Amazon Subscribe & Save (/sns)',
 };
 
 const RAW_BASE = 'https://raw.githubusercontent.com/taitran-star/ctu-fin-sync-8x2k/main/data/';
@@ -56,6 +56,7 @@ const REPO_FILES = new Set([
   'amazon_sns.json',   // bảng /sns (Subscribe & Save) — đừng bỏ dòng này khi sửa danh sách
   'amazon_dsp.json',   // V12.2: Amazon DSP theo ngày từ Xnurta (task đọc bằng trình duyệt của Claude)
   'slash_pnl.json',    // V12.9: khoản app / công cụ marketing / creator trên thẻ Slash (tab Marketing — công cụ & AI content)
+  'reamaze.json',      // V12.11: Re:amaze helpdesk — chỉ số đếm (hội thoại, lý do, phản hồi, CSAT), không có dữ liệu khách
 ]);
 const STATIC_FILES = new Set(['shipmonk_invoices.json', 'shipmonk_storage_daily.json', 'klaviyo_invoices.json']);   // in public/ (read by Claude's browser); amazon_ads.json now comes from the repo (sellerboard_ads.yml)
 const ALL_FILES = new Set([...REPO_FILES, ...STATIC_FILES]);
@@ -65,6 +66,7 @@ const VIEW_FILES = {
   exec: '*', pnl: '*', opex: '*', data: '*', reports: '*',   // Reports = the full P&L by month/day/channel/SKU
   sales: ['shopify_pnl.json', 'amazon_pnl.json', 'walmart.json', 'tiktok_shop.json', 'loop_subscriptions.json', 'paypal.json', 'klaviyo.json', 'meta_ads.json', 'google_ads.json', 'targets_monthly.json', 'products.json'],
   marketing: ['meta_ads.json', 'google_ads.json', 'applovin.json', 'tiktok_ads.json', 'amazon_ads.json', 'amazon_dsp.json', 'klaviyo.json', 'klaviyo_invoices.json', 'shopify_pnl.json', 'amazon_pnl.json', 'targets_monthly.json', 'products.json', 'slash_pnl.json'],
+  cs: ['reamaze.json', 'shopify_pnl.json', 'amazon_pnl.json', 'walmart.json', 'tiktok_shop.json', 'shipmonk.json', 'shipmonk_invoices.json', 'amazon_storage.json', 'cogs_skus.json', 'products.json', 'targets_monthly.json'],   // V12.11
   inventory: ['shopify_pnl.json', 'amazon_pnl.json', 'walmart.json', 'tiktok_shop.json', 'amazon_storage.json', 'shipmonk.json', 'shipmonk_invoices.json', 'shipmonk_storage_daily.json', 'cogs_skus.json', 'cogs_lots.json', 'cogs_monthly.json', 'purchase_orders.json', 'products.json', 'targets_monthly.json'],
   sns: ['amazon_sns.json'],
 };
@@ -793,7 +795,7 @@ function setupPage() {
 // ---------- /users — admin page (server shell + fetches /api/users) ----------
 // Same look as the dashboard: Pine top bar, page on the light/dark surface, one invite card and one list.
 // Editing happens inline under a row; destructive buttons ask for a second click instead of a native dialog.
-const VIEW_SHORT = { exec: 'Tổng quan', sales: 'Bán hàng', marketing: 'Marketing', pnl: 'P&L', inventory: 'Tồn kho', opex: 'Tài chính', reports: 'Báo cáo', data: 'Dữ liệu', sns: 'S&S' };
+const VIEW_SHORT = { exec: 'Tổng quan', sales: 'Bán hàng', marketing: 'Marketing', pnl: 'P&L', inventory: 'Tồn kho', opex: 'Tài chính', cs: 'CSKH', reports: 'Báo cáo', data: 'Dữ liệu', sns: 'S&S' };
 
 const USERS_CSS = `
   :root{--a-pine:#05372E;--a-pistachio:#C9E595;--a-page:#f4f6f0;--a-card:#ffffff;--a-card-2:#f5f8ee;--a-ink:#05372E;--a-ink-2:#33544a;--a-ink-3:#6c857a;--a-line:rgba(5,55,46,.10);--a-line-2:rgba(5,55,46,.22);--a-accent:#285D18;--a-solid:#05372E;--a-solid-ink:#C9E595;--a-chip-on:#eaf2da;--a-good:#3f8a1e;--a-warn:#c28a00;--a-bad:#b3261e;--a-focus:#285D18;--a-shadow:0 1px 2px rgba(5,55,46,.05),0 8px 24px rgba(5,55,46,.05);}
