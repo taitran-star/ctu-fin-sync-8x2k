@@ -1034,6 +1034,50 @@
   .rng-io .rng-dash{color:var(--ink-muted);}
   .rng-io .btn{height:32px;box-sizing:border-box;padding:0 14px;}
   @media (max-width:640px){#modeSeg{height:auto;} .rng-io{margin-left:0;width:100%;} .rng-io input[type=date]{flex:1 1 0;min-width:0;}}
+  /* ---- V12.9: Marketing hub ---- */
+  .pill.neutral{color:var(--ink-secondary);background:var(--surface-card-3);}
+  .pill.bad{color:var(--status-critical);background:color-mix(in srgb, var(--status-critical) 14%, transparent);}
+  #mkRoot{display:flex;flex-direction:column;gap:var(--gap, 16px);}
+  #mkRoot > .mk-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--gap, 16px);}
+  #mkRoot > .mk-two > .card{min-width:0;}
+  @media (max-width:1250px){#mkRoot > .mk-two{grid-template-columns:minmax(0,1fr);}}
+  #viewMarketing.mk-compact > .card{display:none!important;}
+  #viewMarketing > #mkRoot + .card{margin-top:var(--gap, 16px);}
+  .mk-detail-row{display:flex;justify-content:center;padding:2px 0 0;}
+  .mk-detail{font-size:12.5px;}
+  .mk-muted{color:var(--ink-muted);}
+  .mk-bad{color:var(--status-critical);} .mk-good{color:var(--success-text);}
+  .mk-table{font-size:12.5px;}
+  .mk-table th{cursor:default;}
+  .mk-table th:hover{color:var(--ink-secondary);}
+  .mk-table td.num,.mk-table th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .mk-table td{white-space:nowrap;}
+  .mk-table td.mk-lab{white-space:normal;min-width:150px;max-width:360px;}
+  .mk-table td.mk-lab small{display:block;font-size:11px;color:var(--ink-muted);margin-top:1px;white-space:normal;}
+  .mk-table .pill{font-weight:600;}
+  .mk-dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:7px;vertical-align:middle;}
+  .mk-bar{display:flex;height:12px;border-radius:6px;overflow:hidden;gap:1px;margin:2px 0 12px;background:var(--surface-card-2);}
+  .mk-seg{display:block;min-width:2px;}
+  .mk-d{display:inline-block;font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .mk-d.good{color:var(--success-text);} .mk-d.bad{color:var(--status-critical);} .mk-d.flat{color:var(--ink-muted);font-weight:500;}
+  .mk-acts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;}
+  .mk-act{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:start;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface-card);}
+  .mk-act > .pill{margin-top:1px;min-width:72px;justify-content:center;}
+  .mk-act b{display:inline;font-size:13px;font-weight:600;color:var(--ink-primary);overflow-wrap:anywhere;}
+  .mk-act .mk-src{display:inline-block;margin-left:8px;font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-muted);}
+  .mk-act .mk-why{font-size:12.5px;color:var(--ink-secondary);line-height:1.45;margin-top:3px;}
+  .mk-act .mk-w{font-family:var(--font-display);font-size:16px;font-variant-numeric:tabular-nums;color:var(--ink-primary);white-space:nowrap;padding-top:2px;text-align:right;}
+  .mk-act .mk-w small{display:block;font-family:var(--font-body);font-size:10.5px;color:var(--ink-muted);margin-top:2px;}
+  .mk-act.mk-none{display:block;color:var(--ink-muted);text-align:center;}
+  .mk-mini{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+  .mk-m{background:var(--surface-card-2);border-radius:10px;padding:10px 12px;min-width:0;}
+  .mk-m span{display:block;font-size:11px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .mk-m b{display:block;font-family:var(--font-display);font-size:22px;font-weight:500;font-variant-numeric:tabular-nums;margin-top:3px;line-height:1.1;}
+  .mk-m small{display:block;font-size:11.5px;color:var(--ink-secondary);margin-top:4px;line-height:1.4;}
+  .mk-svg{width:100%;height:auto;display:block;aspect-ratio:1000/274;}
+  .mk-kpis.exec-kpis.v126{grid-template-columns:repeat(6,minmax(0,1fr));}
+  @media (max-width:1100px){.mk-kpis.exec-kpis.v126{grid-template-columns:repeat(3,minmax(0,1fr));}}
+  @media (max-width:640px){.mk-kpis.exec-kpis.v126{grid-template-columns:repeat(2,minmax(0,1fr));} .mk-mini{grid-template-columns:minmax(0,1fr);} .mk-act{grid-template-columns:auto minmax(0,1fr);} .mk-act .mk-w{grid-column:2;padding-top:0;}}
   /* ---- V12.8.1: chart controls — compact segmented toggles on one row, right-aligned (no full-width dark bars) ---- */
   :root{--tgl-on:var(--surface-card);--tgl-shadow:0 1px 2px rgba(5,55,46,.14),0 0 0 .5px rgba(5,55,46,.10);}
   @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--tgl-on:var(--surface-card-3);--tgl-shadow:0 1px 2px rgba(0,0,0,.45);}}
@@ -1253,7 +1297,8 @@
   </div><!-- /viewSales -->
 
   <div id="viewMarketing" class="view" hidden>
-  <div class="card">
+  <div id="mkRoot"></div>
+  <div class="card" id="roasCard">
     <div class="card-head"><h2 data-i18n="h.roasTitle">ROAS theo kênh &amp; MER toàn marketing</h2><div class="note" id="roasFinding"></div><div class="note" style="flex-basis:100%;" data-i18n="h.roasNote">ROAS = doanh thu quy về kênh ÷ chi phí kênh đó (có thể trùng lặp do đa chạm)</div></div>
     <div class="roas-grid" id="roasGrid"></div>
     <div class="mer-band">
@@ -1471,7 +1516,7 @@
   var VI = false; try{ VI = localStorage.getItem('ctu_lang') === 'vi'; }catch(e){}
   function T(en, vi){ return VI ? vi : en; }
   if(VI){ var fun = document.querySelector('#siteLoad .fun'); if(fun) fun.textContent = 'meow… đang đếm tiền'; var m0 = document.getElementById('siteLoadMsg'); if(m0) m0.textContent = 'Đang tải số liệu…'; }
-  var SOURCES = {"amazon": "amazon_pnl.json", "meta": "meta_ads.json", "shopify": "shopify_pnl.json", "google": "google_ads.json", "shipmonk": "shipmonk.json", "shipmonk_invoices": "shipmonk_invoices.json", "shipmonk_storage": "shipmonk_storage_daily.json", "paypal": "paypal.json", "klaviyo": "klaviyo.json", "klaviyo_invoices": "klaviyo_invoices.json", "amazon_ads": "amazon_ads.json", "amazon_dsp": "amazon_dsp.json", "opex": "opex_monthly.json", "amazon_storage": "amazon_storage.json", "loop_subscriptions": "loop_subscriptions.json", "tiktok_shop": "tiktok_shop.json", "walmart": "walmart.json", "applovin": "applovin.json", "tiktok_ads": "tiktok_ads.json", "targets": "targets_monthly.json", "cogs": "cogs_monthly.json", "purchase_orders": "purchase_orders.json", "cogs_skus": "cogs_skus.json", "cogs_lots": "cogs_lots.json", "products": "products.json"};
+  var SOURCES = {"amazon": "amazon_pnl.json", "meta": "meta_ads.json", "shopify": "shopify_pnl.json", "google": "google_ads.json", "shipmonk": "shipmonk.json", "shipmonk_invoices": "shipmonk_invoices.json", "shipmonk_storage": "shipmonk_storage_daily.json", "paypal": "paypal.json", "klaviyo": "klaviyo.json", "klaviyo_invoices": "klaviyo_invoices.json", "amazon_ads": "amazon_ads.json", "amazon_dsp": "amazon_dsp.json", "opex": "opex_monthly.json", "amazon_storage": "amazon_storage.json", "loop_subscriptions": "loop_subscriptions.json", "tiktok_shop": "tiktok_shop.json", "walmart": "walmart.json", "applovin": "applovin.json", "tiktok_ads": "tiktok_ads.json", "targets": "targets_monthly.json", "cogs": "cogs_monthly.json", "purchase_orders": "purchase_orders.json", "cogs_skus": "cogs_skus.json", "cogs_lots": "cogs_lots.json", "products": "products.json", "slash": "slash_pnl.json"};
   var keys = Object.keys(SOURCES), done = 0;
   window.__LIVE = {}; window.__LIVE_ERR = {}; window.__LOADED_AT = 0; window.__SAVED_AT = 0;
   // V11.2.1 — who is signed in (/api/me): pages (tabs) and /data files this user may see. Owner or an old server = everything.
@@ -1523,7 +1568,7 @@
     return load(k, 1).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })); }).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=1e018fe91d';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=7ce2b46742';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');

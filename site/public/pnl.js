@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 1e018fe91d).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 7ce2b46742).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -4416,10 +4416,300 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
     root.addEventListener('input', e=>{ if(e.target.id==='rpQ'){ RP.q = e.target.value; rpTable(); } });
     root.addEventListener('change', e=>{ if(e.target.id==='rpXg'){ RP.xg = e.target.value; RP.open.clear(); _rpDef = RP_DEFS[RP.id](); rpTable(); } });
   }
+  // ---------- V12.9: Marketing hub — one page for the head of marketing: what the department spends, what it earns,
+  // what to scale, what to review and what to cut. Rules: break-even ROAS per sales channel from the P&L (net revenue ÷
+  // contribution before marketing), or the channel's own target from data/targets_monthly.json (ad_targets). ----------
+  const SLASH_LIVE_DATA = (window.__LIVE && window.__LIVE["slash"]) || null;
+  const MK = {sort: {}, detail: false};
+  const MK_SALES_CH = {meta:'shopify', google:'shopify', applovin:'shopify', tiktokads:'tiktok', amazonads:'amazon', dsp:'amazon', walmart:'walmart'};
+  const MK_COLOR = {meta:'var(--series-1)', google:'var(--series-2)', amazonads:'var(--series-4)', tiktokads:'var(--series-3)', applovin:'var(--series-5)', dsp:'var(--series-6)', walmart:'var(--series-5)', aff:'var(--series-2)', agency:'var(--series-6)', creator:'var(--series-6)', tools:'var(--ink-muted)', ai:'var(--ink-muted)', email:'var(--series-4)', other:'var(--ink-muted)'};
+  const MK_TOOL_GROUP = {   // same-purpose tools: more than one in the same group is worth a look
+    'Northbeam': 'attribution', 'Elevar': 'attribution', 'Foreplay': 'ad research', 'AdSpy': 'ad research', 'Adnova.ai': 'ad research', 'Scrape Creators': 'ad research', 'AdsPower': 'ad research',
+    'Intelligems': 'CRO / testing', 'Replo': 'CRO / testing', 'Higgsfield': 'AI video', 'CapCut': 'AI video', 'Twelve Labs': 'AI video', 'Suno': 'AI audio', 'Kling': 'AI video', 'Midjourney': 'AI image',
+  };
+  const mkEsc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const mk$ = v => (v<0 ? '-' : '')+'$'+Math.round(Math.abs(v)).toLocaleString('en-US');
+  const mkK = v => money(v, {compact:true});
+  const mkX = v => (v===null || v===undefined || !isFinite(v)) ? '—' : v.toFixed(2)+'x';
+  const mkPct = (v, b) => b>0 ? (v/b*100).toFixed(1)+'%' : '—';
+  const mkNum = (v, okHigh) => (v===null || v===undefined || !isFinite(v)) ? null : v;
+  function mkTargets(){   // per ad channel: {roas, cpa, ncac} — month block first, then the file-level default
+    const T = TARGETS_LIVE_DATA; if(!T || typeof T!=='object') return {};
+    const rows = currentRows(); const m = rows.length ? rows[rows.length-1].iso.slice(0,7) : TODAY_ISO.slice(0,7);
+    const num = v => (v===null || v===undefined || v==='') ? null : (isFinite(parseFloat(v)) ? parseFloat(v) : null);
+    const out = {};
+    const take = src => { Object.keys(src||{}).forEach(k=>{ const v = src[k]; if(!v || typeof v!=='object') return; out[k] = {...(out[k]||{}), roas: num(v.roas)!==null ? num(v.roas) : (out[k]||{}).roas, cpa: num(v.cpa)!==null ? num(v.cpa) : (out[k]||{}).cpa, ncac: num(v.ncac)!==null ? num(v.ncac) : (out[k]||{}).ncac}; }); };
+    take(T.ad_targets); take(T.months && T.months[m] && T.months[m].ad_targets);
+    return out;
+  }
+  function mkBreakEven(a){   // per sales channel: ROAS and CPA at which an ad dollar neither earns nor loses (contribution before marketing)
+    const ce = channelEcon(a), out = {};
+    CH_KEYS.forEach(k=>{ const c = ce[k]; const cm2 = c.net - c.cogs - c.fees - c.fulfil; out[k] = {roas: (c.net>0 && cm2>0) ? c.net/cm2 : null, cpa: (c.orders>0 && cm2>0) ? cm2/c.orders : null, margin: c.net>0 ? cm2/c.net : null, cm2}; });
+    out.blended = {roas: breakEvenMer(a), cpa: (a.totalOrders>0 && a.cmBeforeMarketing>0) ? a.cmBeforeMarketing/a.totalOrders : null, margin: a.netRevenue>0 ? a.cmBeforeMarketing/a.netRevenue : null};
+    return out;
+  }
+  function mkRule(k, be, tg){   // the yardstick for channel k: target ROAS / CPA cap and where it comes from
+    const ch = MK_SALES_CH[k] || 'blended', b = be[ch] && be[ch].roas ? be[ch] : be.blended, t = tg[k] || {};
+    return {roas: t.roas || b.roas || null, cpa: t.cpa || b.cpa || null, ncac: t.ncac || null, src: (t.roas || t.cpa) ? 'target' : 'pnl', ch, margin: b.margin};
+  }
+  // status: scale / keep / review / cut / check (spend, no purchases) / minor / none
+  function mkStatus(spend, roas, purchases, rule, totalSpend){
+    if(!(spend>0.005)) return {k:'none', l:'—', cls:''};
+    if(spend < Math.max(200, totalSpend*0.01)) return {k:'minor', l:tv('Minor', 'Nhỏ'), cls:'neutral'};
+    if(!(purchases>0)) return {k:'check', l:tv('Check', 'Kiểm tra'), cls:'warn'};
+    if(roas===null || roas===undefined || !isFinite(roas)) return {k:'wait', l:tv('Waiting', 'Chờ số'), cls:'neutral'};
+    if(!rule.roas) return {k:'keep', l:tv('Keep', 'Giữ'), cls:'neutral'};
+    const r = roas/rule.roas;
+    if(r>=1.3) return {k:'scale', l:tv('Scale', 'Mở rộng'), cls:'ok'};
+    if(r>=1) return {k:'keep', l:tv('Keep', 'Giữ'), cls:'neutral'};
+    if(r>=0.8) return {k:'review', l:tv('Review', 'Xem lại'), cls:'warn'};
+    return {k:'cut', l:tv('Cut / fix', 'Cắt / sửa'), cls:'bad'};
+  }
+  const mkPill = s => s.k==='none' ? '<span class="mk-muted">—</span>' : `<span class="pill ${s.cls}">${s.l}</span>`;
+  // Slash card charges (data/slash_pnl.json): tools and AI content the department pays for; by payment date
+  function mkSlash(from, to){
+    const S = SLASH_LIVE_DATA; const list = S && Array.isArray(S.charges) ? S.charges : [];
+    const inP = list.filter(c=> c.d>=from && c.d<=to);
+    const sumL = (arr, l) => sum(arr.filter(c=>c.l===l).map(c=>+c.a||0));
+    return {ok: !!S, all: list, inP, tools: sumL(inP, 'MT'), ai: sumL(inP, 'MC'), agency: sumL(inP, 'AGENCY'), creator: sumL(inP, 'CRE'), lines: S && S.meta && S.meta.lines || {}, to: S && S.meta && S.meta.to || null};
+  }
+  // Meta / Google campaigns summed over the period (same maths as the detail tables)
+  function mkCampaigns(rows){
+    const isoSet = new Set(rows.map(r=>r.iso)), out = [];
+    const meta = (META_ADS_LIVE_DATA && META_ADS_LIVE_DATA.campaigns) || {};
+    Object.keys(meta).forEach(id=>{ const c = meta[id]; let s=0, p=0, v=0, cl=0; Object.keys(c.daily||{}).forEach(iso=>{ if(!isoSet.has(iso)) return; const d = c.daily[iso]; s += +d.spend||0; p += +d.purchases||0; v += +d.purchase_value||0; cl += +d.link_clicks||0; }); if(s>0.005) out.push({id, src:'meta', srcL:'Meta', name:c.name, product:c.product||tx('u.other'), market:c.market||'', stage:c.stage||'', spend:s, purchases:p, value:v, clicks:cl, status:c.status||''}); });
+    const g = (GOOGLE_ADS_LIVE_DATA && GOOGLE_ADS_LIVE_DATA.campaigns) || {};
+    Object.keys(g).forEach(id=>{ const c = g[id]; let s=0, p=0, v=0, cl=0; Object.keys(c.daily||{}).forEach(iso=>{ if(!isoSet.has(iso)) return; const d = c.daily[iso]; s += +(d.spend!==undefined ? d.spend : d.cost)||0; p += +d.conversions||0; v += +d.conversion_value||0; cl += +d.clicks||0; }); if(s>0.005) out.push({id, src:'google', srcL:'Google', name:c.name, product:c.product||tx('u.other'), market:c.market||'', stage:c.channel||'', spend:s, purchases:p, value:v, clicks:cl, status:c.status||''}); });
+    out.forEach(c=>{ c.roas = c.spend>0 ? c.value/c.spend : 0; c.cpa = c.purchases>0 ? c.spend/c.purchases : null; });
+    return out;
+  }
+  // Klaviyo sends in the period: volume, engagement, list erosion
+  function mkEmail(rows){
+    const K = KLAVIYO_LIVE_DATA; if(!K || !rows.length) return null;
+    const from = rows[0].iso, to = rows[rows.length-1].iso;
+    const camps = (Array.isArray(K.campaigns) ? K.campaigns : Object.values(K.campaigns||{})).filter(c=> c.send_time && c.send_time.slice(0,10)>=from && c.send_time.slice(0,10)<=to);
+    const S = f => sum(camps.map(c=>+c[f]||0));
+    const rec = S('recipients'), big = camps.filter(c=> (+c.recipients||0) >= 20000);
+    const bigRec = sum(big.map(c=>+c.recipients||0)), bigUnsub = sum(big.map(c=>+c.unsubscribes||0)), bigSpam = sum(big.map(c=>+c.spam_complaints||0));
+    const kl = klaviyoAggregate(rows), at = attrAggregate(maskPartial() ? rows.map(maskRow) : rows);
+    const lastTouch = (at.last.email ? at.last.email.sales : 0) + (at.last.email_other ? at.last.email_other.sales : 0), ltOrders = (at.last.email ? at.last.email.orders : 0) + (at.last.email_other ? at.last.email_other.orders : 0);
+    const flows = (Array.isArray(K.flows) ? K.flows : Object.values(K.flows||{}));
+    return {sends: camps.length, recipients: rec, opens: S('opens_unique'), clicks: S('clicks_unique'), unsub: S('unsubscribes'), spam: S('spam_complaints'), delivered: S('delivered'),
+      big: big.length, bigRec, bigUnsub, bigSpam, listSize: big.length ? bigRec/big.length : null, churn: bigRec>0 ? bigUnsub/bigRec : null,
+      self: kl.attributedRevenue, selfOrders: kl.attributedOrders, flowRev: kl.flowRevenue, campRev: kl.campaignRevenue, lastTouch, ltOrders, days: rows.length, flows: flows.length, camps};
+  }
+  function mkDelta(v, pv, lower){   // small comparison chip
+    if(pv===null || pv===undefined || !isFinite(pv) || v===null || v===undefined) return '';
+    if(Math.abs(pv)<0.005) return `<span class="mk-d flat">${tv('new', 'mới')}</span>`;
+    const d = (v-pv)/Math.abs(pv)*100; if(!isFinite(d)) return '';
+    const flat = Math.abs(d)<0.5, good = lower ? d<=0 : d>=0;
+    return `<span class="mk-d ${flat?'flat':(good?'good':'bad')}" title="${tv('vs ', 'so với ')+likeLabel()+': '+mk$(pv)}">${flat ? '•' : (d>0 ? '↑' : '↓')} ${Math.abs(d).toFixed(0)}%</span>`;
+  }
+  function renderMarketingHub(){
+    const root = document.getElementById('mkRoot'); if(!root) return;
+    const rows = currentRows(); if(!rows.length){ root.innerHTML = ''; return; }
+    const a = aggregate(rows), cmp = EXEC_STATE.cmp;
+    const pRows = cmp==='year' ? yearAgoRows() : (cmp==='none' ? null : prevLikeRows()), p = pRows && pRows.length ? aggregate(pRows) : null;
+    const from = rows[0].iso, to = rows[rows.length-1].iso, nDays = rows.length;
+    const be = mkBreakEven(a), tg = mkTargets(), rule = {}; AD_KEYS.concat(['dsp','walmart']).forEach(k=> rule[k] = mkRule(k, be, tg));
+    const sl = mkSlash(from, to), pSl = p ? mkSlash(pRows[0].iso, pRows[pRows.length-1].iso) : null;
+    const amzSpend = x => x.amazonAdsConsoleSpend>0 ? x.amazonAdsConsoleSpend : x.ads.amazonads;
+    const dspOf = x => (x.mktDsp||0) + (x.dspLive||0);
+    const allIn = x => x.marketingTotal + (x.klaviyoCost||0);
+    const toolsAll = sl.tools + sl.ai, pToolsAll = pSl ? pSl.tools + pSl.ai : null;
+    const total = allIn(a) + toolsAll, pTotal = p ? allIn(p) + (pToolsAll||0) : null;
+    const mer = merComplete(rows), pMer = pRows ? merComplete(pRows) : null;
+    const newC = newCustomersOf(rows), pNewC = pRows ? newCustomersOf(pRows) : null;
+    const ncac = (newC && newC>0) ? d2cAdsOf(a)/newC : null, pNcac = (p && pNewC>0) ? d2cAdsOf(p)/pNewC : null;
+    const lk = cmp==='year' ? tx('u.lastYear') : likeLabel();
+    // ---- 1. KPI strip ----
+    const okN = v => v!==null && v!==undefined && isFinite(v);
+    const kp = (c) => {
+      let cmpH = '';
+      if(c.cmpTxt) cmpH = `<div class="cmp flat"><b>—</b><span>${c.cmpTxt}</span></div>`;
+      else if(cmp!=='none'){
+        if(!okN(c.v) || !okN(c.pv)) cmpH = `<div class="cmp flat"><b>—</b><span>${tv('no comparison', 'chưa có số so sánh')}</span></div>`;
+        else { const pts = c.pts, absD = !pts && c.money && (c.pv<=0); const d = (pts || absD) ? c.v-c.pv : (c.pv!==0 ? (c.v-c.pv)/Math.abs(c.pv)*100 : null);
+          if(d===null || !isFinite(d)) cmpH = `<div class="cmp flat"><b>—</b><span>${tv('vs ', 'so với ')}${c.f(c.pv)}</span></div>`;
+          else { const flat = absD ? Math.abs(d)<0.5 : Math.abs(d)<0.05, good = c.lower ? d<=0 : d>=0; const txt = (flat ? '' : (d>0 ? '↑ ' : '↓ '))+(absD ? mk$(Math.abs(d)) : Math.abs(d).toFixed(1)+(pts ? (c.ptsUnit||' '+tx('u.pts')) : '%'));
+            cmpH = `<div class="cmp ${flat ? 'flat' : (good ? 'good' : 'bad')}"><b>${txt}</b><span>${tv('vs ', 'so với ')}${c.f(c.pv)}</span></div>`; } }
+      }
+      const tip = [c.label+': '+(c.exact||c.f(c.v)), c.def, c.foot, (cmp!=='none' && okN(c.pv)) ? tv('vs ', 'so với ')+lk+': '+c.f(c.pv) : '', c.eye ? '→ '+tv('Click to see every marketing cost line, day by day', 'Bấm để xem từng khoản chi marketing theo ngày') : ''].filter(Boolean).join('\n');
+      return `<div class="kpi${c.alert ? ' alert' : ''}${c.eye ? ' act' : ''}" data-tip="${mkEsc(tip)}"${c.eye ? ` data-eye="${c.eye}" role="button" tabindex="0"` : ''}><div class="kh"><span class="label">${c.label}</span>${c.eye ? '<span class="kpi-eye"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/></svg></span>' : ''}</div><div class="value">${c.f(c.v)}</div>${cmpH}</div>`;
+    };
+    const beB = be.blended.roas;
+    // budget pace: paid ads this calendar month vs the plan in targets_monthly.json
+    const mNow = to.slice(0,7), mRows = (monthMap[mNow]||[]).filter(r=> r.iso<=to), mA = mRows.length ? aggregate(mRows) : null;
+    const plan = PLAN.months[mNow] && PLAN.months[mNow].marketing || null, domN = mRows.length ? mRows[mRows.length-1].date.getDate() : 0, domT = new Date(+mNow.slice(0,4), +mNow.slice(5,7), 0).getDate();
+    const pace = plan && mA ? mA.merSpend/plan : null, timeShare = domT ? domN/domT : null;
+    const kpis = [
+      {label: tv('Marketing, all-in', 'Tổng chi marketing'), v: total, pv: pTotal, f: mk$, money:true, lower:true, exact: money(total), eye:'exp:mkt',
+        def: tv('Paid ads + affiliate commissions + agency + creators + Amazon DSP + email platform + marketing tools & AI content charged on the card', 'Quảng cáo trả phí + hoa hồng affiliate + agency + creator + Amazon DSP + nền tảng email + công cụ marketing & AI làm content trên thẻ'),
+        foot: tv('On the P&L: marketing line ', 'Trên P&L: dòng Marketing ')+mk$(a.marketingTotal)+tv(' · under G&A (email, tools, AI) ', ' · nằm ở G&A (email, công cụ, AI) ')+mk$((a.klaviyoCost||0)+toolsAll)},
+      {label: tv('% of net revenue', '% doanh thu thuần'), v: a.netRevenue>0 ? total/a.netRevenue*100 : null, pv: p && p.netRevenue>0 ? pTotal/p.netRevenue*100 : null, pts:true, lower:true, f: v => okN(v) ? v.toFixed(1)+'%' : '—',
+        def: tv('All-in marketing ÷ net revenue', 'Tổng chi marketing ÷ doanh thu thuần'), foot: tv('Net revenue ', 'Doanh thu thuần ')+mk$(a.netRevenue)},
+      {label: 'MER', v: mer.value, pv: pMer ? pMer.value : null, f: mkX, alert: okN(mer.value) && beB && mer.value<beB,
+        def: tv('Net revenue ÷ paid ad spend (every ads source), complete days only', 'Doanh thu thuần ÷ chi quảng cáo trả phí (mọi nguồn), chỉ những ngày đủ số'),
+        foot: (beB ? tv('Break-even ', 'Hoà vốn ')+beB.toFixed(2)+'x' : '')+(mer.days<mer.of ? tv(' · based on ', ' · tính trên ')+mer.days+'/'+mer.of+tv(' days', ' ngày') : '')},
+      {label: 'nCAC', v: ncac, pv: pNcac, f: v => okN(v) ? money(v) : '—', money:true, lower:true, alert: okN(ncac) && rule.meta.cpa && ncac>rule.meta.cpa,
+        def: tv('Shopify ad spend (Meta + Google + AppLovin) ÷ new Shopify customers (customer journeys)', 'Chi quảng cáo Shopify (Meta + Google + AppLovin) ÷ khách Shopify mới (theo hành trình khách)'),
+        foot: (newC!==null ? intFmt(newC)+tv(' new customers', ' khách mới') : tv('new customers not available for these days', 'chưa có số khách mới cho các ngày này'))+(rule.meta.cpa ? tv(' · contribution per Shopify order before marketing ', ' · lợi nhuận trước marketing mỗi đơn Shopify ')+money(rule.meta.cpa) : '')},
+      {label: tv('Profit after marketing (CM3)', 'Lợi nhuận sau marketing (CM3)'), v: a.contributionProfit, pv: p ? p.contributionProfit : null, f: mk$, money:true, exact: money(a.contributionProfit),
+        def: tv('Net revenue − order costs − marketing line (before warehousing and G&A)', 'Doanh thu thuần − chi phí đơn hàng − dòng Marketing (trước kho bãi và G&A)'),
+        foot: tv('CM3 margin ', 'Biên CM3 ')+mkPct(a.contributionProfit, a.netRevenue)+tv(' · before marketing (CM2) ', ' · trước marketing (CM2) ')+mk$(a.cmBeforeMarketing)},
+      {label: tv('Ad budget · ', 'Ngân sách QC · ')+MONTH_LABEL(mNow).replace(/\s*\(.*$/, ''), v: pace!==null ? pace*100 : null, pv: null, pts:true, f: v => okN(v) ? Math.round(v)+'%' : '—', cmpTxt: plan ? '' : tv('no plan for this month', 'tháng này chưa có kế hoạch'), alert: pace!==null && timeShare!==null && pace > timeShare+0.08,
+        def: tv('Paid ad spend this calendar month ÷ the month\'s ad plan (targets_monthly.json → marketing)', 'Chi quảng cáo trả phí tháng này ÷ kế hoạch quảng cáo của tháng (targets_monthly.json → marketing)'),
+        foot: plan ? tv('Spent ', 'Đã chi ')+mk$(mA ? mA.merSpend : 0)+tv(' of ', ' / ')+mk$(plan)+(timeShare!==null ? tv(' · ', ' · ')+Math.round(timeShare*100)+tv('% of the month elapsed', '% thời gian tháng đã qua') : '') : tv('Add "marketing" for this month in data/targets_monthly.json to track pace', 'Thêm "marketing" cho tháng này vào data/targets_monthly.json để theo dõi nhịp chi')},
+    ];
+    // ---- 2. where the money goes ----
+    const B = [
+      {k:'meta', l:'Meta Ads', v:a.ads.meta, pv:p&&p.ads.meta, rev:a.adsAttr.meta, roas: a.ads.meta>0 ? a.adsAttr.meta/a.ads.meta : null, orders:a.metaAdsPurchases, line:'mkt', ad:'meta'},
+      {k:'google', l:'Google Ads', v:a.ads.google, pv:p&&p.ads.google, rev:a.adsAttr.google, roas: a.ads.google>0 ? a.adsAttr.google/a.ads.google : null, orders:a.googleAdsPurchases, line:'mkt', ad:'google'},
+      {k:'amazonads', l:'Amazon Ads (SP/SB/SD)', v:amzSpend(a), pv:p&&amzSpend(p), rev:a.adsAttr.amazonads, roas: a.amazonAdsConsoleSpend>0 ? (a.amazonAdsSalesDays>0 ? a.amazonRoas : null) : (a.ads.amazonads>0 ? a.adsAttr.amazonads/a.ads.amazonads : null), orders:a.amazonAdsPurchases, line:'mkt', ad:'amazonads'},
+      {k:'dsp', l:'Amazon DSP (SparkX)', v:dspOf(a), pv:p&&dspOf(p), rev:null, roas:null, orders:null, line:'mkt', note: a.dspBonus>0.005 ? tv('+ bonus media ', '+ media tặng ')+mk$(a.dspBonus)+tv(' not charged', ' không tính tiền') : ''},
+      {k:'tiktokads', l:'TikTok Ads (GMV Max)', v:a.ads.tiktokads, pv:p&&p.ads.tiktokads, rev:a.adsAttr.tiktokads, roas: a.ads.tiktokads>0 ? a.adsAttr.tiktokads/a.ads.tiktokads : null, orders:a.tiktokAdsOrders, line:'mkt', ad:'tiktokads'},
+      {k:'applovin', l:'AppLovin', v:a.ads.applovin, pv:p&&p.ads.applovin, rev:a.adsAttr.applovin, roas: a.ads.applovin>0 ? a.adsAttr.applovin/a.ads.applovin : null, orders:a.applovinPurchases, line:'mkt', ad:'applovin'},
+      {k:'walmart', l:'Walmart Connect', v:a.walmartAds, pv:p&&p.walmartAds, rev:null, roas:null, orders:null, line:'mkt'},
+      {k:'aff', l:tv('Affiliates (Snowball + TikTok affiliate)', 'Affiliate (Snowball + TikTok affiliate)'), v:a.snowballCommission + a.tiktokAffiliate + a.tiktokSmart, pv:p&&(p.snowballCommission + p.tiktokAffiliate + p.tiktokSmart), rev:a.snowballRevenue, roas: null, orders:a.snowballOrders, line:'mkt', note: tv('commission on referred orders', 'hoa hồng trên đơn giới thiệu')},
+      {k:'agency', l:tv('Agency (Goodo, Adcrate)', 'Agency (Goodo, Adcrate)'), v:a.mktAgency, pv:p&&p.mktAgency, line:'mkt', note: tv('fixed retainer, entered monthly', 'phí cố định, nhập theo tháng')},
+      {k:'creator', l:tv('Creators / UGC (Tremendous, Insense…)', 'Creator / UGC (Tremendous, Insense…)'), v:a.mktCreator, pv:p&&p.mktCreator, line:'mkt', note: sl.ok && sl.creator>0.005 ? tv('card/ACH in the period ', 'thẻ/ACH trong kỳ ')+mk$(sl.creator) : tv('entered monthly', 'nhập theo tháng')},
+      {k:'other', l:tv('Other marketing', 'Marketing khác'), v:a.mktOther, pv:p&&p.mktOther, line:'mkt'},
+      {k:'email', l:tv('Email platform (Klaviyo)', 'Nền tảng email (Klaviyo)'), v:a.klaviyoCost||0, pv:p&&(p.klaviyoCost||0), line:'ga', note: tv('invoices', 'theo hoá đơn')},
+      {k:'tools', l:tv('Marketing tools (tracking, attribution, ad research)', 'Công cụ marketing (tracking, attribution, nghiên cứu QC)'), v:sl.tools, pv:pSl&&pSl.tools, line:'ga', note: sl.ok ? tv('card charges by payment date', 'trừ thẻ theo ngày trả') : tv('needs data/slash_pnl.json', 'cần data/slash_pnl.json')},
+      {k:'ai', l:tv('AI content production (video / image / audio)', 'AI làm content (video / ảnh / audio)'), v:sl.ai, pv:pSl&&pSl.ai, line:'ga', note: sl.ok ? tv('card charges by payment date', 'trừ thẻ theo ngày trả') : ''},
+    ].filter(b=> b.v>0.005 || (b.pv||0)>0.005);
+    const bTot = sum(B.map(b=>b.v));
+    const barH = B.filter(b=>b.v>0.005).map(b=>`<span class="mk-seg" style="flex:${b.v.toFixed(2)};background:${MK_COLOR[b.k]||'var(--ink-muted)'}" title="${mkEsc(b.l+' '+money(b.v)+' · '+mkPct(b.v, bTot))}"></span>`).join('');
+    const lineL = l => l==='mkt' ? tv('Marketing', 'Marketing') : tv('G&A · software', 'G&A · phần mềm');
+    const bRows = B.sort((x,y)=>y.v-x.v).map(b=>{ const st = b.ad ? mkStatus(b.v, b.roas, b.orders, rule[b.ad], a.merSpend) : {k:'none'}; const r = b.ad ? rule[b.ad] : null;
+      return `<tr><td class="mk-lab"><span class="mk-dot" style="background:${MK_COLOR[b.k]||'var(--ink-muted)'}"></span>${b.l}${b.note ? `<small>${b.note}</small>` : ''}</td><td class="num">${money(b.v)}</td><td class="num mk-muted">${mkPct(b.v, bTot)}</td><td class="num">${cmp==='none' ? '' : mkDelta(b.v, b.pv, true)}</td><td class="num">${b.rev!==null && b.rev!==undefined && b.v>0 ? money(b.rev) : '<span class="mk-muted">—</span>'}</td><td class="num">${b.roas!==null && b.roas!==undefined && b.v>0 ? `<b>${mkX(b.roas)}</b>${r && r.roas ? `<small class="mk-muted"> / ${r.roas.toFixed(2)}x</small>` : ''}` : '<span class="mk-muted">—</span>'}</td><td class="mk-muted">${lineL(b.line)}</td><td>${mkPill(st)}</td></tr>`; }).join('');
+    // ---- 3. channel decision table ----
+    const atAll = attrAggregate(maskPartial() ? rows.map(maskRow) : rows);
+    const chRows = AD_KEYS.map(k=>{
+      const spend = k==='amazonads' ? amzSpend(a) : a.ads[k], rev = a.adsAttr[k], roas = k==='amazonads' ? (a.amazonAdsConsoleSpend>0 ? (a.amazonAdsSalesDays>0 ? a.amazonRoas : null) : (spend>0 ? rev/spend : null)) : (spend>0 ? rev/spend : null);
+      const orders = k==='meta' ? a.metaAdsPurchases : k==='google' ? a.googleAdsPurchases : k==='amazonads' ? a.amazonAdsPurchases : k==='applovin' ? a.applovinPurchases : a.tiktokAdsOrders;
+      const pSpend = p ? (k==='amazonads' ? amzSpend(p) : p.ads[k]) : null, pRoas = p && pSpend>0 ? (k==='amazonads' ? (p.amazonAdsConsoleSpend>0 ? p.amazonRoas : p.adsAttr[k]/pSpend) : p.adsAttr[k]/pSpend) : null;
+      const unconnected = !!AD_UNCONNECTED[k] || !adMatched(k), last = adLastDay(k), pend = last ? rows.filter(r=> r.iso>last).length : 0;
+      const r = rule[k], st = unconnected ? {k:'none', l:'—', cls:''} : mkStatus(spend, roas, orders, r, a.merSpend);
+      const cpa = orders>0 ? spend/orders : null;
+      const lt = k==='meta' ? atAll.last.meta_paid : k==='google' ? atAll.last.google_ads : k==='applovin' ? atAll.last.applovin : null;
+      const newCk = lt ? lt.newC : null, nc = newCk>0 ? spend/newCk : null;
+      const gap = (st.k==='cut' || st.k==='review') && r.roas ? spend - rev/ r.roas*1 : null;   // revenue short of break-even, in spend terms
+      return {k, l:AD_LABEL[k], spend, rev, roas, pRoas, orders, cpa, newC:newCk, nc, st, r, unconnected, pend, last, gap, pSpend};
+    });
+    const chHtml = chRows.map(c=>{
+      const tag = c.unconnected ? `<span class="tag gap"><span class="d"></span>${tx('u.notConnected')}</span>` : (c.pend>0 ? `<span class="tag info" title="${mkEsc(tv('The source has not reported the last ', 'Nguồn chưa có số ')+c.pend+tv(' day(s) of the period', ' ngày cuối kỳ'))}"><span class="d"></span>${tv('to ', 'đến ')+dmShort(c.last)}</span>` : (c.spend>0.005 ? '' : `<span class="tag info"><span class="d"></span>${tv('Not running', 'Không chạy')}</span>`));
+      const ruleTxt = c.r.roas ? (c.r.src==='target' ? tv('target', 'mục tiêu') : tv('break-even', 'hoà vốn'))+' '+c.r.roas.toFixed(2)+'x' : '—';
+      return `<tr><td class="mk-lab"><span class="mk-dot" style="background:${MK_COLOR[c.k]}"></span>${c.l}${tag}</td><td class="num">${c.spend>0.005 ? money(c.spend) : '<span class="mk-muted">—</span>'}</td><td class="num mk-muted">${mkPct(c.spend, a.merSpend)}</td><td class="num">${c.spend>0.005 && c.rev!==null ? money(c.rev) : '<span class="mk-muted">—</span>'}</td><td class="num"><b class="${c.st.k==='cut' ? 'mk-bad' : c.st.k==='scale' ? 'mk-good' : ''}">${c.spend>0.005 ? mkX(c.roas) : '—'}</b>${cmp!=='none' && c.pRoas ? `<small class="mk-muted"> ${tv('was', 'trước')} ${c.pRoas.toFixed(2)}x</small>` : ''}</td><td class="num mk-muted">${ruleTxt}</td><td class="num">${c.orders>0 ? intFmt(c.orders) : '—'}</td><td class="num">${c.cpa ? money(c.cpa) : '—'}${c.r.cpa && c.cpa ? `<small class="mk-muted"> / ${money(c.r.cpa)}</small>` : ''}</td><td class="num">${c.newC!==null && c.newC!==undefined ? intFmt(c.newC) : '<span class="mk-muted">—</span>'}</td><td class="num">${c.nc ? money(c.nc) : '<span class="mk-muted">—</span>'}</td><td>${mkPill(c.st)}</td></tr>`;
+    }).join('');
+    // ---- 4. actions ----
+    const camps = mkCampaigns(rows), acts = [];
+    const adTot = a.merSpend;
+    camps.forEach(c=>{ const r = rule[c.src]; const st = mkStatus(c.spend, c.roas, c.purchases, r, adTot); if(c.spend < 300) return;
+      if(st.k==='cut' || st.k==='review'){ const short = r.roas ? c.spend - c.value/r.roas : 0; acts.push({w: short, amt: short, amtL: tv('short of break-even', 'thiếu so với hoà vốn'), cls: st.cls, l: st.l, src: c.srcL, t: c.name, d: tv(`ROAS ${c.roas.toFixed(2)}x vs ${r.src==='target' ? 'target' : 'break-even'} ${r.roas.toFixed(2)}x · spend ${mk$(c.spend)} · ${intFmt(c.purchases)} orders · needs ${mk$(short)} more revenue-at-break-even`, `ROAS ${c.roas.toFixed(2)}x so với ${r.src==='target' ? 'mục tiêu' : 'hoà vốn'} ${r.roas.toFixed(2)}x · chi ${mk$(c.spend)} · ${intFmt(c.purchases)} đơn · thiếu ${mk$(short)} chi tiêu so với mức hoà vốn`)}); }
+      else if(st.k==='check') acts.push({w: c.spend*0.8, amt: c.spend, amtL: tv('spent', 'đã chi'), cls:'warn', l: st.l, src: c.srcL, t: c.name, d: tv(`Spend ${mk$(c.spend)} with no attributed purchase — awareness / lead objective? Confirm what it is for.`, `Chi ${mk$(c.spend)} mà không có đơn quy về — mục tiêu awareness / lead? Xác nhận lại mục đích.`)});
+      else if(st.k==='scale' && c.spend>=1000) acts.push({w: c.spend*0.3, amt: c.spend, amtL: tv('spent', 'đã chi'), cls:'ok', l: st.l, src: c.srcL, t: c.name, d: tv(`ROAS ${c.roas.toFixed(2)}x, ${(c.roas/r.roas).toFixed(1)}× break-even · spend ${mk$(c.spend)} · CPA ${c.cpa ? money(c.cpa) : '—'} — room to add budget while ROAS holds`, `ROAS ${c.roas.toFixed(2)}x, gấp ${(c.roas/r.roas).toFixed(1)} lần hoà vốn · chi ${mk$(c.spend)} · CPA ${c.cpa ? money(c.cpa) : '—'} — có thể thêm ngân sách khi ROAS còn giữ`)});
+    });
+    chRows.forEach(c=>{ if(c.unconnected || c.spend<300) return; if((c.st.k==='cut' || c.st.k==='review') && c.k!=='meta' && c.k!=='google') acts.push({w: c.gap||c.spend*0.5, amt: c.gap||null, amtL: tv('short of break-even', 'thiếu so với hoà vốn'), cls:c.st.cls, l:c.st.l, src:tv('Channel', 'Kênh'), t:c.l, d: tv(`ROAS ${mkX(c.roas)} vs ${c.r.src==='target' ? 'target' : 'break-even'} ${c.r.roas ? c.r.roas.toFixed(2)+'x' : '—'} · spend ${mk$(c.spend)}`, `ROAS ${mkX(c.roas)} so với ${c.r.src==='target' ? 'mục tiêu' : 'hoà vốn'} ${c.r.roas ? c.r.roas.toFixed(2)+'x' : '—'} · chi ${mk$(c.spend)}`)}); });
+    if(okN(mer.value) && beB && mer.value<beB) acts.push({w: a.merSpend*(1-mer.value/beB), amt: a.merSpend*(1-mer.value/beB), amtL: tv('over break-even spend', 'chi quá mức hoà vốn'), cls:'bad', l:tv('Below break-even', 'Dưới hoà vốn'), src:'MER', t: tv('Blended MER ', 'MER toàn bộ ')+mer.value.toFixed(2)+'x', d: tv(`Break-even ${beB.toFixed(2)}x: every ad dollar of the period lost money after product, fees and fulfillment. Total marketing exceeds what it earns by about ${mk$(a.merSpend*(1-mer.value/beB))}.`, `Hoà vốn ${beB.toFixed(2)}x: mỗi đồng quảng cáo trong kỳ đang lỗ sau giá vốn, phí và fulfillment. Marketing đang chi quá mức hoà vốn khoảng ${mk$(a.merSpend*(1-mer.value/beB))}.`)});
+    if(pace!==null && timeShare!==null && pace > timeShare+0.08) acts.push({w: (pace-timeShare)*plan, amt: (pace-timeShare)*plan, amtL: tv('ahead of plan', 'vượt nhịp kế hoạch'), cls:'warn', l:tv('Ahead of plan', 'Vượt nhịp'), src:tv('Budget', 'Ngân sách'), t: tv('Ad budget ', 'Ngân sách QC ')+MONTH_LABEL(mNow).replace(/\s*\(.*$/, ''), d: tv(`${Math.round(pace*100)}% of the month's ad plan spent with ${Math.round(timeShare*100)}% of the month gone — at this pace the month ends at ${mk$(mA.merSpend/Math.max(1,domN)*domT)} vs plan ${mk$(plan)}.`, `Đã chi ${Math.round(pace*100)}% kế hoạch QC khi mới qua ${Math.round(timeShare*100)}% tháng — giữ nhịp này cả tháng sẽ là ${mk$(mA.merSpend/Math.max(1,domN)*domT)} so với kế hoạch ${mk$(plan)}.`)});
+    const em = mkEmail(rows);
+    if(em && em.big>=3 && em.churn!==null && em.churn*em.big > 0.02) acts.push({w: 1500, amt: null, cls:'warn', l:tv('Review', 'Xem lại'), src:'Email', t: tv('List erosion from blasts', 'Danh sách email đang mòn vì gửi dày'), d: tv(`${em.big} full-list sends in ${nDays} days · ${intFmt(em.bigUnsub)} unsubscribes (${(em.churn*100).toFixed(2)}% per send, ≈${(em.churn*em.big*100).toFixed(1)}% of the list in the period)${em.bigSpam ? ' · '+intFmt(em.bigSpam)+' spam complaints' : ''} — fewer, more targeted sends keep the list.`, `${em.big} lần gửi toàn danh sách trong ${nDays} ngày · ${intFmt(em.bigUnsub)} người huỷ nhận (${(em.churn*100).toFixed(2)}% mỗi lần gửi, ≈${(em.churn*em.big*100).toFixed(1)}% danh sách trong kỳ)${em.bigSpam ? ' · '+intFmt(em.bigSpam)+' báo spam' : ''} — gửi ít hơn, đúng nhóm hơn để giữ danh sách.`)});
+    // tools: rising usage-based bills and overlapping tools
+    const tools = mkTools(sl, from, to, nDays);
+    tools.rows.forEach(t=>{ if(t.flag==='rising') acts.push({w: t.v - t.base, amt: t.v - t.base, amtL: tv('more than before', 'tăng so với trước'), cls:'warn', l:tv('Check', 'Kiểm tra'), src:tv('Tools', 'Công cụ'), t: t.v_, d: tv(`${mk$(t.v)} in the period vs ≈${mk$(t.base)} for the same number of days before — usage-based, ${t.n} charges. Is the volume intended?`, `${mk$(t.v)} trong kỳ so với ≈${mk$(t.base)} cùng số ngày trước đó — trả theo mức dùng, ${t.n} lần trừ. Mức dùng này có đúng ý không?`)}); });
+    Object.keys(tools.groups).forEach(g=>{ const names = tools.groups[g]; if(names.length>=2) acts.push({w: sum(names.map(n=> tools.byName[n].v))*0.3, amt: sum(names.map(n=> tools.byName[n].v)), amtL: tv('in the period', 'trong kỳ'), cls:'warn', l:tv('Review', 'Xem lại'), src:tv('Tools', 'Công cụ'), t: tv(`${names.length} tools for ${g}`, `${names.length} công cụ cùng nhóm ${g}`), d: names.map(n=> n+' '+mk$(tools.byName[n].v)).join(' · ')+tv(' — keep the one the team actually uses.', ' — giữ cái team thực sự dùng.')}); });
+    tools.rows.forEach(t=>{ if(t.flag==='dormant') acts.push({w: t.base*0.5, amt: t.base, amtL: tv('before, same length', 'trước đó, cùng số ngày'), cls:'neutral', l:tv('Confirm cancelled', 'Xác nhận đã huỷ'), src:tv('Tools', 'Công cụ'), t: t.v_, d: tv(`No charge since ${dmShort(t.last)} after ≈${mk$(t.base)} per period before — cancelled? If yes, drop it from the budget.`, `Không trừ tiền từ ${dmShort(t.last)} dù trước đó ≈${mk$(t.base)} mỗi kỳ — đã huỷ? Nếu đúng thì bỏ khỏi ngân sách.`)}); });
+    acts.sort((x,y)=> (y.w||0)-(x.w||0));
+    const actHtml = acts.length ? acts.slice(0, 16).map(x=>`<li class="mk-act"><span class="pill ${x.cls}">${x.l}</span><div><b>${mkEsc(x.t)}</b><span class="mk-src">${mkEsc(x.src)}</span><div class="mk-why">${mkEsc(x.d)}</div></div><span class="mk-w">${x.amt>0 ? mk$(x.amt)+`<small>${x.amtL||''}</small>` : ''}</span></li>`).join('') : `<li class="mk-act mk-none">${tv('Nothing to act on — every channel and campaign with spend is at or above its yardstick.', 'Không có việc cần làm — mọi kênh và campaign có chi đều đạt hoặc vượt mức chuẩn.')}</li>`;
+    // ---- 5. product × channel ----
+    const prod = {}; camps.forEach(c=>{ const pr = prod[c.product] = prod[c.product] || {meta:{s:0,p:0,v:0}, google:{s:0,p:0,v:0}, s:0, p:0, v:0, n:0}; pr[c.src].s += c.spend; pr[c.src].p += c.purchases; pr[c.src].v += c.value; pr.s += c.spend; pr.p += c.purchases; pr.v += c.value; pr.n++; });
+    const prodRows = Object.keys(prod).sort((x,y)=>prod[y].s-prod[x].s).map(k=>{ const r = prod[k], roas = r.s>0 ? r.v/r.s : 0, st = mkStatus(r.s, roas, r.p, rule.meta, adTot); const cell = x => x.s>0.005 ? `${money(x.s)}<small class="mk-muted"> · ${mkX(x.s>0 ? x.v/x.s : null)}</small>` : '<span class="mk-muted">—</span>';
+      return `<tr><td class="mk-lab">${mkEsc(k)}<small>${r.n} campaign</small></td><td class="num">${cell(r.meta)}</td><td class="num">${cell(r.google)}</td><td class="num"><b>${money(r.s)}</b><small class="mk-muted"> ${mkPct(r.s, adTot)}</small></td><td class="num">${intFmt(r.p)}</td><td class="num">${r.p>0 ? money(r.s/r.p) : '—'}</td><td class="num"><b class="${st.k==='cut' ? 'mk-bad' : st.k==='scale' ? 'mk-good' : ''}">${mkX(roas)}</b></td><td>${mkPill(st)}</td></tr>`; }).join('');
+    // ---- 6. daily chart data ----
+    const chart = mkChart(rows, beB);
+    // ---- 7. email & affiliate cards ----
+    const emH = em ? `<div class="mk-mini"><div class="mk-m"><span>${tv('Klaviyo-attributed revenue', 'Doanh thu Klaviyo tự tính')}</span><b>${mk$(em.self)}</b><small>${intFmt(em.selfOrders)} ${tv('orders', 'đơn')} · flow ${mkPct(em.flowRev, em.self)} / campaign ${mkPct(em.campRev, em.self)}</small></div><div class="mk-m"><span>${tv('Last touch = email (Shopify)', 'Chạm cuối = email (Shopify)')}</span><b>${mk$(em.lastTouch)}</b><small>${intFmt(em.ltOrders)} ${tv('orders', 'đơn')} · ${mkPct(em.lastTouch, a.netRevenue)} ${tv('of net revenue', 'doanh thu thuần')}</small></div><div class="mk-m"><span>${tv('Cost & return', 'Chi phí & hiệu quả')}</span><b>${mk$(a.klaviyoCost||0)}</b><small>${a.klaviyoCost>0 ? tv('last-touch revenue ÷ cost ', 'DT chạm cuối ÷ chi phí ')+(em.lastTouch/a.klaviyoCost).toFixed(1)+'x' : tv('no invoice in the period', 'chưa có hoá đơn trong kỳ')}</small></div><div class="mk-m"><span>${tv('Sends & list health', 'Gửi & sức khoẻ danh sách')}</span><b>${em.sends}</b><small>${tv('campaigns · ', 'campaign · ')}${em.delivered>0 ? tv('open ', 'mở ')+mkPct(em.opens, em.delivered)+tv(' · click ', ' · click ')+mkPct(em.clicks, em.delivered) : ''}${em.churn!==null ? tv(' · unsub ', ' · huỷ nhận ')+(em.churn*100).toFixed(2)+tv('%/send', '%/lần gửi') : ''}</small></div></div>` : `<div class="mk-muted">${tv('Klaviyo not synced for these days', 'Klaviyo chưa có số cho các ngày này')}</div>`;
+    const creAll = a.mktCreator + a.snowballCommission + a.tiktokAffiliate + a.tiktokSmart;
+    const affH = `<div class="mk-mini"><div class="mk-m"><span>Snowball</span><b>${mk$(a.snowballCommission)}</b><small>${intFmt(a.snowballOrders)} ${tv('referral orders · revenue ', 'đơn giới thiệu · DT ')}${mk$(a.snowballRevenue)}${a.snowballRevenue>0 ? tv(' · effective rate ', ' · tỷ lệ thực ')+mkPct(a.snowballCommission, a.snowballRevenue) : ''}</small></div><div class="mk-m"><span>${tv('Creators / UGC', 'Creator / UGC')}</span><b>${mk$(a.mktCreator)}</b><small>${sl.ok && sl.creator>0.005 ? tv('paid in the period (card/ACH) ', 'trả trong kỳ (thẻ/ACH) ')+mk$(sl.creator) : tv('entered monthly, spread per day', 'nhập theo tháng, rải theo ngày')}</small></div><div class="mk-m"><span>${tv('TikTok affiliate + Smart', 'TikTok affiliate + Smart')}</span><b>${mk$(a.tiktokAffiliate + a.tiktokSmart)}</b><small>${tv('commission on TikTok Shop orders', 'hoa hồng trên đơn TikTok Shop')}</small></div><div class="mk-m"><span>${tv('Creators & affiliates, all-in', 'Creator & affiliate, tổng')}</span><b>${mk$(creAll)}</b><small>${a.netRevenue>0 ? mkPct(creAll, a.netRevenue)+tv(' of net revenue', ' doanh thu thuần') : ''}${a.snowballRevenue>0 && creAll>0 ? tv(' · Snowball revenue ÷ all-in ', ' · DT Snowball ÷ tổng ')+(a.snowballRevenue/creAll).toFixed(1)+'x' : ''}</small></div></div>`;
+    // ---- 8. tools table ----
+    const toolsH = sl.ok ? (tools.rows.length ? `<table class="rp-table mk-table"><thead><tr><th>${tv('Tool', 'Công cụ')}</th><th class="num">${tv('In period', 'Trong kỳ')}</th><th class="num">${tv('Before, same length', 'Trước đó')}</th><th>${tv('Billing', 'Kiểu trả')}</th><th>${tv('Note', 'Ghi chú')}</th></tr></thead><tbody>${tools.rows.map(t=>`<tr><td class="mk-lab">${mkEsc(t.v_)}<small>${mkEsc(t.g)} · ${t.n} ${tv('charges', 'lần trừ')}${t.last ? tv(' · last ', ' · gần nhất ')+dmShort(t.last) : ''}</small></td><td class="num"><b>${money(t.v)}</b></td><td class="num mk-muted">${t.base>0.005 ? money(t.base) : '—'}</td><td class="mk-muted">${t.kind}</td><td>${t.flag==='rising' ? `<span class="pill warn">${tv('Rising', 'Tăng mạnh')}</span>` : t.flag==='dormant' ? `<span class="pill neutral">${tv('No charge lately', 'Lâu không trừ')}</span>` : t.flag==='overlap' ? `<span class="pill warn">${tv('Overlaps', 'Trùng nhóm')}</span>` : ''}</td></tr>`).join('')}<tr class="rp-tot"><td>${tv('Total', 'Tổng')}</td><td class="num">${money(sum(tools.rows.map(t=>t.v)))}</td><td class="num">${money(sum(tools.rows.map(t=>t.base)))}</td><td colspan="2"></td></tr></tbody></table>` : `<div class="mk-muted">${tv('No marketing tool or AI content charge in the period.', 'Không có khoản công cụ marketing / AI content nào trong kỳ.')}</div>`) : `<div class="mk-muted">${tv('The dashboard is not reading data/slash_pnl.json yet (card charges).', 'Dashboard chưa đọc data/slash_pnl.json (giao dịch thẻ).')}</div>`;
+    const ruleNote = tv(`Yardstick: break-even ROAS per sales channel = net revenue ÷ contribution before marketing (Shopify ${be.shopify.roas ? be.shopify.roas.toFixed(2)+'x' : '—'}, Amazon ${be.amazon.roas ? be.amazon.roas.toFixed(2)+'x' : '—'}, TikTok ${be.tiktok.roas ? be.tiktok.roas.toFixed(2)+'x' : '—'}); a channel's own target in targets_monthly.json (ad_targets) replaces it. Scale ≥ 1.3× · Keep ≥ 1× · Review ≥ 0.8× · Cut / fix below. Platform ROAS undercounts (view-through, halo): use it to rank, use MER to judge the whole.`,
+      `Thước đo: ROAS hoà vốn theo kênh bán = doanh thu thuần ÷ lợi nhuận trước marketing (Shopify ${be.shopify.roas ? be.shopify.roas.toFixed(2)+'x' : '—'}, Amazon ${be.amazon.roas ? be.amazon.roas.toFixed(2)+'x' : '—'}, TikTok ${be.tiktok.roas ? be.tiktok.roas.toFixed(2)+'x' : '—'}); kênh nào có mục tiêu riêng trong targets_monthly.json (ad_targets) thì dùng mục tiêu. Mở rộng ≥ 1,3× · Giữ ≥ 1× · Xem lại ≥ 0,8× · Cắt / sửa dưới mức đó. ROAS nền tảng thường thấp hơn thực (view-through, halo): dùng để xếp hạng, còn MER để đánh giá toàn bộ.`);
+    const detailBtn = `<button type="button" class="fb-btn mk-detail" id="mkDetail" aria-expanded="${MK.detail}">${MK.detail ? tv('Hide source tables', 'Ẩn bảng chi tiết') : tv('Show source tables (Meta, Google, Klaviyo, Snowball)', 'Xem bảng chi tiết (Meta, Google, Klaviyo, Snowball)')}</button>`;
+    root.innerHTML = `
+      <div class="card mk-card" id="mkKpiCard"><div class="card-head"><h2>${tv('Marketing at a glance', 'Marketing nhìn nhanh')}</h2><div class="note">${tv('What the department spends and what it earns in the period', 'Phòng đang tiêu bao nhiêu và mang về bao nhiêu trong kỳ')}</div></div><div class="exec-kpis v126 mk-kpis" id="mkKpis">${kpis.map(kp).join('')}</div></div>
+      <div class="card mk-card" id="mkActCard"><div class="card-head"><h2>${tv('Decisions this period', 'Việc cần quyết định kỳ này')}</h2><div class="note">${tv('Ranked by money at stake · generated from the rules below', 'Xếp theo số tiền liên quan · sinh tự động từ luật bên dưới')}</div></div><ul class="mk-acts">${actHtml}</ul><div class="caption">${ruleNote}</div></div>
+      <div class="card mk-card" id="mkBudgetCard"><div class="card-head"><h2>${tv('Where the money goes', 'Tiền đang đi đâu')}</h2><div class="note">${tv('All-in ', 'Tổng ')+money(total)+(cmp!=='none' && pTotal!==null ? ' · '+tv('vs ', 'so với ')+lk+' '+money(pTotal) : '')}</div></div><div class="mk-bar">${barH}</div><div class="rp-wrap"><table class="rp-table mk-table"><thead><tr><th>${tv('Line', 'Khoản')}</th><th class="num">${tv('Spend', 'Chi')}</th><th class="num">%</th><th class="num">${cmp==='none' ? '' : tv('vs ', 'so với ')+lk}</th><th class="num">${tv('Attributed revenue', 'DT quy về')}</th><th class="num">ROAS / ${tv('yardstick', 'chuẩn')}</th><th>${tv('P&L line', 'Dòng P&L')}</th><th>${tv('Status', 'Nhãn')}</th></tr></thead><tbody>${bRows}<tr class="rp-tot"><td>${tv('Total', 'Tổng')}</td><td class="num">${money(bTot)}</td><td class="num">100%</td><td class="num">${cmp==='none' ? '' : mkDelta(bTot, pTotal, true)}</td><td colspan="4"></td></tr></tbody></table></div></div>
+      <div class="card mk-card" id="mkChCard"><div class="card-head"><h2>${tv('Paid channels — decision table', 'Kênh quảng cáo — bảng quyết định')}</h2><div class="note">${tv('Attributed by each platform · yardstick = break-even or the channel target · new customers from Shopify journeys', 'Quy về theo từng nền tảng · chuẩn = hoà vốn hoặc mục tiêu kênh · khách mới theo hành trình Shopify')}</div></div><div class="rp-wrap"><table class="rp-table mk-table"><thead><tr><th>${tv('Channel', 'Kênh')}</th><th class="num">${tv('Spend', 'Chi')}</th><th class="num">%</th><th class="num">${tv('Attributed rev.', 'DT quy về')}</th><th class="num">ROAS</th><th class="num">${tv('Yardstick', 'Chuẩn')}</th><th class="num">${tv('Orders', 'Đơn')}</th><th class="num">CPA / ${tv('cap', 'tối đa')}</th><th class="num">${tv('New customers', 'Khách mới')}</th><th class="num">nCAC</th><th>${tv('Status', 'Nhãn')}</th></tr></thead><tbody>${chHtml}</tbody></table></div></div>
+      <div class="card mk-card" id="mkChartCard"><div class="card-head"><h2>${tv('Ad spend & MER by day', 'Chi quảng cáo & MER theo ngày')}</h2><div class="note">${tv('Bars = paid spend by channel · line = MER on complete days · dashed = break-even', 'Cột = chi theo kênh · đường = MER những ngày đủ số · nét đứt = hoà vốn')}</div></div>${chart}</div>
+      <div class="mk-two">
+        <div class="card mk-card" id="mkProdCard"><div class="card-head"><h2>${tv('Product × channel (Meta + Google)', 'Sản phẩm × kênh (Meta + Google)')}</h2><div class="note">${tv('Product read from the campaign name · Amazon Ads has no product split yet', 'Sản phẩm tách từ tên campaign · Amazon Ads chưa tách theo sản phẩm')}</div></div><div class="rp-wrap"><table class="rp-table mk-table"><thead><tr><th>${tv('Product', 'Sản phẩm')}</th><th class="num">Meta</th><th class="num">Google</th><th class="num">${tv('Spend', 'Chi')}</th><th class="num">${tv('Orders', 'Đơn')}</th><th class="num">CPA</th><th class="num">ROAS</th><th></th></tr></thead><tbody>${prodRows || `<tr><td colspan="8" class="rp-empty">${tv('No campaign spend in the period', 'Không có chi campaign trong kỳ')}</td></tr>`}</tbody></table></div></div>
+        <div class="card mk-card" id="mkEmailCard"><div class="card-head"><h2>${tv('Email & SMS (Klaviyo)', 'Email & SMS (Klaviyo)')}</h2></div>${emH}</div>
+      </div>
+      <div class="mk-two">
+        <div class="card mk-card" id="mkAffCard"><div class="card-head"><h2>${tv('Creators & affiliates', 'Creator & affiliate')}</h2></div>${affH}</div>
+        <div class="card mk-card" id="mkToolsCard"><div class="card-head"><h2>${tv('Tools & AI content on the card', 'Công cụ & AI content trên thẻ')}</h2><div class="note">${sl.ok ? tv('Slash charges by payment date · sit under G&A software on the P&L', 'Giao dịch Slash theo ngày trả · trên P&L nằm ở G&A phần mềm')+(sl.to ? ' · '+tv('to ', 'đến ')+dmShort(sl.to) : '') : ''}</div></div><div class="rp-wrap">${toolsH}</div></div>
+      </div>
+      <div class="mk-detail-row">${detailBtn}</div>`;
+    const kEl = document.getElementById('mkKpis');
+    if(kEl && !kEl._eyeWired){ kEl._eyeWired = true; const go = e=>{ const c = e.target.closest('[data-eye]'); if(!c || !kEl.contains(c)) return; if(e.type==='keydown' && e.key!=='Enter' && e.key!==' ') return; e.preventDefault(); openEye(c.dataset.eye); }; kEl.addEventListener('click', go); kEl.addEventListener('keydown', go); }
+    const db = document.getElementById('mkDetail'); if(db) db.addEventListener('click', ()=>{ MK.detail = !MK.detail; mkDetailSync(); renderMarketingHub(); });
+    mkDetailSync();
+  }
+  function mkDetailSync(){ const v = document.getElementById('viewMarketing'); if(!v) return; v.classList.toggle('mk-compact', !MK.detail); }
+  function mkTools(sl, from, to, nDays){
+    const out = {rows: [], groups: {}, byName: {}}; if(!sl.ok) return out;
+    const prevFrom = shiftIso(from, nDays), prevTo = shiftIso(from, 1);
+    const by = {};
+    sl.all.forEach(c=>{ if(c.l!=='MT' && c.l!=='MC') return; const t = by[c.v] = by[c.v] || {v_: c.v, l: c.l, v:0, n:0, base:0, bn:0, last:null, all:[]}; t.all.push(c); if(c.d>=from && c.d<=to){ t.v += +c.a||0; t.n++; } if(c.d>=prevFrom && c.d<=prevTo){ t.base += +c.a||0; t.bn++; } if(!t.last || c.d>t.last) t.last = c.d; });
+    Object.values(by).forEach(t=>{
+      if(t.v<0.005 && t.base<0.005) return;
+      const amts = t.all.map(c=>+c.a||0), big = amts.filter(x=>x>=200).length, perMonth = t.all.length / Math.max(1, (Date.parse(sl.to||TODAY_ISO) - Date.parse(t.all[0].d))/2592000000);
+      t.kind = perMonth>=3 ? tv('usage-based', 'theo mức dùng') : (amts.length<=2 && Math.max(...amts)>=600 ? tv('annual / prepaid', 'năm / trả trước') : tv('monthly', 'tháng'));
+      t.g = MK_TOOL_GROUP[t.v_] || (t.l==='MC' ? tv('AI content', 'AI content') : tv('marketing tool', 'công cụ marketing'));
+      const dormant = t.v<0.005 && t.base>50 && t.last && Date.parse(to) - Date.parse(t.last) > 45*86400000;
+      t.flag = dormant ? 'dormant' : (t.n>=3 && t.base>100 && t.v > t.base*1.5 && t.v-t.base>200) ? 'rising' : '';
+      out.rows.push(t); out.byName[t.v_] = t;
+      if(t.v>=50 && MK_TOOL_GROUP[t.v_]) (out.groups[MK_TOOL_GROUP[t.v_]] = out.groups[MK_TOOL_GROUP[t.v_]] || []).push(t.v_);
+    });
+    Object.keys(out.groups).forEach(g=>{ if(out.groups[g].length>=2) out.groups[g].forEach(n=>{ if(!out.byName[n].flag) out.byName[n].flag = 'overlap'; }); else delete out.groups[g]; });
+    out.rows.sort((x,y)=> (y.v||0)-(x.v||0));
+    return out;
+  }
+  // stacked daily ad spend (by channel) and the MER line, two panels on one time axis
+  function mkChart(rows, beB){
+    const n = rows.length; if(n<2) return `<div class="mk-muted" style="padding:6px 2px;">${tv('Pick at least two days to see the trend', 'Chọn ít nhất 2 ngày để xem xu hướng')}</div>`;
+    const keys = AD_KEYS.filter(k=> rows.some(r=> (k==='amazonads' ? (r.amazonAdsReal ? r.ads.amazonads : 0) : r.ads[k])>0.005));
+    const spend = rows.map(r=> keys.map(k=> Math.max(0, r.ads[k]||0)));
+    const tot = spend.map(s=> sum(s)), maxS = Math.max(1, ...tot);
+    const mer = rows.map(r=>{ const pend = adPendingKeys(r).length>0; const s = sum(keys.map(k=>r.ads[k]||0)); return (!pend && s>0) ? aggregate([r]).netRevenue/s : null; });
+    const merVals = mer.filter(v=>v!==null), maxM = Math.max(beB||0, ...merVals, 0.5)*1.15;
+    const W = 1000, padL = 46, padR = 8, h1 = 120, h2 = 96, gap = 26, padT = 10, padB = 22, H = padT + h1 + gap + h2 + padB;
+    const plotW = W - padL - padR, slot = plotW/n, bw = Math.max(2, slot*0.7);
+    const x = i => padL + i*slot + (slot-bw)/2;
+    const y1 = v => padT + h1 - v/maxS*h1, y2 = v => padT + h1 + gap + h2 - Math.min(v, maxM)/maxM*h2;
+    let s = '';
+    // grid + y labels panel 1
+    [0, .5, 1].forEach(f=>{ const yy = padT + h1 - f*h1; s += `<line x1="${padL}" x2="${W-padR}" y1="${yy.toFixed(1)}" y2="${yy.toFixed(1)}" stroke="var(--gridline)" stroke-width="1"/><text x="${padL-6}" y="${(yy+4).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--ink-muted)">${money(maxS*f, {compact:true})}</text>`; });
+    spend.forEach((sv, i)=>{ let acc = 0; sv.forEach((v, j)=>{ if(v<=0) return; const yTop = y1(acc+v), yBot = y1(acc); s += `<rect x="${x(i).toFixed(1)}" y="${yTop.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0.5, yBot-yTop).toFixed(1)}" fill="${MK_COLOR[keys[j]]}" ${acc>0 ? 'stroke="var(--surface-card)" stroke-width="1"' : ''}><title>${mkEsc(dmShort(rows[i].iso)+' · '+AD_LABEL[keys[j]]+' '+money(v)+' · '+tv('total', 'tổng')+' '+money(tot[i]))}</title></rect>`; acc += v; }); });
+    // panel 2: MER line
+    [0, .5, 1].forEach(f=>{ const yy = padT + h1 + gap + h2 - f*h2; s += `<line x1="${padL}" x2="${W-padR}" y1="${yy.toFixed(1)}" y2="${yy.toFixed(1)}" stroke="var(--gridline)" stroke-width="1"/><text x="${padL-6}" y="${(yy+4).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--ink-muted)">${(maxM*f).toFixed(1)}x</text>`; });
+    if(beB){ const yb = y2(beB); s += `<line x1="${padL}" x2="${W-padR}" y1="${yb.toFixed(1)}" y2="${yb.toFixed(1)}" stroke="var(--status-serious)" stroke-width="1.2" stroke-dasharray="5 4"/><text x="${padL+4}" y="${(yb-5).toFixed(1)}" text-anchor="start" font-size="10" fill="var(--status-serious)">${tv('break-even ', 'hoà vốn ')+beB.toFixed(2)}x</text>`; }
+    let path = '', open = false;
+    mer.forEach((v, i)=>{ if(v===null){ open = false; return; } const px = (x(i)+bw/2).toFixed(1), py = y2(v).toFixed(1); path += (open ? ' L' : ' M')+px+' '+py; open = true; });
+    s += `<path d="${path.trim()}" fill="none" stroke="var(--brand-forest, var(--series-1))" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    mer.forEach((v, i)=>{ if(v===null) return; const below = beB && v<beB; s += `<circle cx="${(x(i)+bw/2).toFixed(1)}" cy="${y2(v).toFixed(1)}" r="3" fill="${below ? 'var(--status-critical)' : 'var(--surface-card)'}" stroke="${below ? 'var(--status-critical)' : 'var(--brand-forest, var(--series-1))'}" stroke-width="1.6"><title>${mkEsc(dmShort(rows[i].iso)+' · MER '+v.toFixed(2)+'x')}</title></circle>`; });
+    // x labels
+    const step = n<=14 ? 1 : n<=35 ? 3 : n<=70 ? 7 : Math.ceil(n/10);
+    rows.forEach((r, i)=>{ if(i%step!==0 && i!==n-1) return; s += `<text x="${(x(i)+bw/2).toFixed(1)}" y="${H-6}" text-anchor="middle" font-size="10" fill="var(--ink-muted)">${dmShort(r.iso)}</text>`; });
+    const leg = keys.map(k=>`<span class="li"><span class="sw" style="background:${MK_COLOR[k]}"></span>${AD_LABEL[k]}</span>`).join('')+`<span class="li"><span class="sw" style="background:var(--brand-forest, var(--series-1));border-radius:50%"></span>MER</span>`;
+    return `<div class="legend" style="margin-bottom:6px;">${leg}</div><svg class="mk-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${tv('Daily ad spend and MER', 'Chi quảng cáo và MER theo ngày')}">${s}</svg>`;
+  }
   function renderAll(){
     applySourceAges();   // V10: source "age" lines in the active language
     renderSubCtl(); renderKpis(); renderTrend(); renderStatement(); renderChannelCosts(); renderBreakeven(); renderRoas(); renderAttribution(); renderKlaviyo(); renderLoopSubscriptions(); renderTax(); renderSources(); renderOpexTable(); renderGaps(); renderAmazonGaps(); renderShipmonk(); renderShopifyRecon(); renderSnowball(); renderMetaCampaigns(); renderGoogleCampaigns();
-    renderExec(); renderRev(); renderChannels(); renderProductLines(); renderInventory(); renderShipmonkInventory(); renderOpexPage(); renderUnitEconomics(); renderSensitivity(); renderFunnel(); renderReturnsBySku(); renderProductPnl(); renderLots(); renderFindings(); renderReports(); renderPageHead();
+    renderExec(); renderRev(); renderChannels(); renderProductLines(); renderInventory(); renderShipmonkInventory(); renderOpexPage(); renderUnitEconomics(); renderSensitivity(); renderFunnel(); renderReturnsBySku(); renderProductPnl(); renderLots(); renderFindings(); renderReports(); renderMarketingHub(); renderPageHead();
     if(_bannerPaint) _bannerPaint();
   }
   function renderPageHead(){
