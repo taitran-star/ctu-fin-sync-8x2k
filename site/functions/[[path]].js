@@ -39,7 +39,7 @@ const EPOCH_CACHE_MS = 30 * 1000;         // per-isolate cache of the epoch (KV 
 const VIEWS = ['exec', 'sales', 'marketing', 'pnl', 'inventory', 'opex', 'reports', 'data', 'sns'];   // 'reports' = V12.8 Reports tab
 const VIEW_LABELS = {
   exec: 'Tổng quan (Điều hành)', sales: 'Bán hàng & khách hàng', marketing: 'Marketing', pnl: 'P&L (lãi lỗ đầy đủ)',
-  inventory: 'Sản phẩm & tồn kho', opex: 'Chi phí cố định & tiền mặt', reports: 'Báo cáo (bảng số, tải CSV)', data: 'Dữ liệu (sức khoẻ nguồn)', sns: 'Amazon Subscribe & Save (/sns)',
+  inventory: 'Sản phẩm & tồn kho', opex: 'Tài chính (CFO): P&L tháng, OpEx, vốn lưu động, tiền mặt', reports: 'Báo cáo (bảng số, tải CSV)', data: 'Dữ liệu (sức khoẻ nguồn)', sns: 'Amazon Subscribe & Save (/sns)',
 };
 
 const RAW_BASE = 'https://raw.githubusercontent.com/taitran-star/ctu-fin-sync-8x2k/main/data/';
@@ -98,6 +98,7 @@ export async function onRequest(context) {
   if (path === '/logout') return logout(url);
   if (path === '/invite') return request.method === 'POST' ? handleInviteAccept(request, env, url) : invitePage(request, env, url, null);
 
+  if (path === '/api/cash' && request.method === 'POST') return cashWrite(request, env);   // V12.10: the cash workflow (shared secret), no session
   const me = await currentUser(request, env);
   if (!me) {
     if (path.startsWith('/data/') || path.startsWith('/api/')) return json({ error: 'unauthorized' }, 401);
@@ -514,6 +515,7 @@ async function handleInviteAccept(request, env, url) {
 async function handleApi(path, request, env, url, me) {
   if (request.headers.get('X-Requested-With') !== 'ctu') return json({ error: 'bad request' }, 400);
   if (path === '/api/me') return json({ me: publicMe(me), users_enabled: !!kv(env), mail_enabled: mailEnabled(env) }, 200);
+  if (path === '/api/cash') return cashRead(env, me);   // V12.10
   if (!me.admin) return json({ error: 'forbidden' }, 403);
   if (path === '/api/sessions/revoke') {
     if (request.method !== 'POST') return json({ error: 'method' }, 405);
@@ -585,6 +587,40 @@ async function handleApi(path, request, env, url, me) {
   return json({ error: 'method' }, 405);
 }
 function cleanViews(v) { return Array.isArray(v) ? VIEWS.filter((x) => v.includes(x)) : []; }
+
+// ---------- V12.10: cash balances (private, KV key meta:cash) ----------
+// Written once a day by .github/workflows/cash.yml (Slash read-only key -> POST here with X-Cash-Key = CASH_WRITE_KEY,
+// a Pages secret). Never stored in the public repo. Read by users who can open the Finance page (opex) or admins.
+const CASH_KEY = 'meta:cash';
+async function cashRead(env, me) {
+  if (!(me.admin || me.views.includes('opex'))) return json({ error: 'forbidden' }, 403);
+  const store = kv(env);
+  if (!store) return json({ cash: null, note: 'no KV' }, 200);
+  let v = null;
+  try { v = await store.get(CASH_KEY, 'json'); } catch (e) { v = null; }
+  return json({ cash: v }, 200);
+}
+async function cashWrite(request, env) {
+  const key = env.CASH_WRITE_KEY;
+  if (!key) return json({ error: 'CASH_WRITE_KEY not configured' }, 503);
+  const given = request.headers.get('X-Cash-Key') || '';
+  if (!(await safeEqual(key, given, key))) return json({ error: 'forbidden' }, 403);
+  const store = kv(env);
+  if (!store) return json({ error: 'no KV' }, 503);
+  let body = {};
+  try { body = await request.json(); } catch (e) { return json({ error: 'bad json' }, 400); }
+  const num = (x) => (typeof x === 'number' && isFinite(x)) ? Math.round(x * 100) / 100 : null;
+  const accounts = (Array.isArray(body.accounts) ? body.accounts : []).slice(0, 20).map((a) => ({ name: String((a && a.name) || 'Account').slice(0, 60), balance: num(a && a.balance) || 0, currency: String((a && a.currency) || 'USD').slice(0, 3) }));
+  const total = num(body.total) !== null ? num(body.total) : accounts.reduce((s, a) => s + a.balance, 0);
+  const asOf = /^\d{4}-\d{2}-\d{2}T/.test(String(body.as_of || '')) ? String(body.as_of).slice(0, 19) + 'Z' : new Date().toISOString().slice(0, 19) + 'Z';
+  let prev = null;
+  try { prev = await store.get(CASH_KEY, 'json'); } catch (e) { prev = null; }
+  const day = asOf.slice(0, 10);
+  const history = ((prev && Array.isArray(prev.history)) ? prev.history : []).filter((h) => h && h.d !== day).concat([{ d: day, total }]).sort((a, b) => (a.d < b.d ? -1 : 1)).slice(-400);
+  const doc = { as_of: asOf, source: String(body.source || 'slash').slice(0, 30), accounts, total, history, updated_at: new Date().toISOString() };
+  await store.put(CASH_KEY, JSON.stringify(doc));
+  return json({ ok: true, as_of: asOf, accounts: accounts.length, history: history.length }, 200);
+}
 
 // ---------- invite e-mail (optional) ----------
 // Provider = whichever secret exists: RESEND_API_KEY (https://resend.com, domain verified in DNS) or BREVO_API_KEY
@@ -757,7 +793,7 @@ function setupPage() {
 // ---------- /users — admin page (server shell + fetches /api/users) ----------
 // Same look as the dashboard: Pine top bar, page on the light/dark surface, one invite card and one list.
 // Editing happens inline under a row; destructive buttons ask for a second click instead of a native dialog.
-const VIEW_SHORT = { exec: 'Tổng quan', sales: 'Bán hàng', marketing: 'Marketing', pnl: 'P&L', inventory: 'Tồn kho', opex: 'Chi phí', reports: 'Báo cáo', data: 'Dữ liệu', sns: 'S&S' };
+const VIEW_SHORT = { exec: 'Tổng quan', sales: 'Bán hàng', marketing: 'Marketing', pnl: 'P&L', inventory: 'Tồn kho', opex: 'Tài chính', reports: 'Báo cáo', data: 'Dữ liệu', sns: 'S&S' };
 
 const USERS_CSS = `
   :root{--a-pine:#05372E;--a-pistachio:#C9E595;--a-page:#f4f6f0;--a-card:#ffffff;--a-card-2:#f5f8ee;--a-ink:#05372E;--a-ink-2:#33544a;--a-ink-3:#6c857a;--a-line:rgba(5,55,46,.10);--a-line-2:rgba(5,55,46,.22);--a-accent:#285D18;--a-solid:#05372E;--a-solid-ink:#C9E595;--a-chip-on:#eaf2da;--a-good:#3f8a1e;--a-warn:#c28a00;--a-bad:#b3261e;--a-focus:#285D18;--a-shadow:0 1px 2px rgba(5,55,46,.05),0 8px 24px rgba(5,55,46,.05);}
