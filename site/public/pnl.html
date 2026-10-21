@@ -1064,6 +1064,8 @@
   .fin-setup{font-size:12.5px;color:var(--ink-secondary);line-height:1.5;background:var(--surface-card-2);border-radius:10px;padding:10px 14px;}
   .fin-setup p{margin:0 0 6px;} .fin-setup ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;}
   .fin-setup code{font-size:12px;background:var(--surface-card);padding:1px 5px;border-radius:5px;}
+  /* ---- V12.10.1 ---- */
+  .mk-outside{margin-top:10px;font-size:12px;line-height:1.5;color:var(--ink-secondary);}
   /* ---- V12.9: Marketing hub ---- */
   .pill.neutral{color:var(--ink-secondary);background:var(--surface-card-3);}
   .pill.bad{color:var(--status-critical);background:color-mix(in srgb, var(--status-critical) 14%, transparent);}
@@ -1599,7 +1601,7 @@
     return load(k, 1).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })); }).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=bc84dd97f6';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=efe1cc9059';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');
