@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 9cf20934bf).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 0193f28219).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -177,8 +177,8 @@
     'h.taxRemitted':'Remitted',
     'h.taxOwed':'Owed',
     'h.taxStatus':'Status',
-    'h.amzGapTitle':'Amazon — costs not fully captured yet',
-    'h.amzGapNote':'From the latest SP-API sync log · does not change the figures shown above except where stated',
+    'h.amzGapTitle':'Amazon fees → P&L lines',
+    'h.amzGapNote':'Where each Amazon fee sits on the P&L, and whether that follows GAAP',
     'h.invTitle':'Amazon FBA inventory by SKU',
     'h.prodTitle':'Profit by product — CM3 per SKU',
     'h.poTitle':'Purchase orders (PO) — manual entry',
@@ -253,8 +253,8 @@
     'h.taxRemitted':'Đã nộp',
     'h.taxOwed':'Còn nợ',
     'h.taxStatus':'Trạng thái',
-    'h.amzGapTitle':'Amazon — chi phí chưa capture đầy đủ',
-    'h.amzGapNote':'Từ log lần đồng bộ SP-API gần nhất · không đổi số đã hiển thị ở trên ngoài phần được ghi rõ',
+    'h.amzGapTitle':'Phí Amazon → dòng P&L',
+    'h.amzGapNote':'Mỗi loại phí Amazon nằm ở dòng nào trên P&L và đã đúng GAAP chưa',
     'h.invTitle':'Tồn kho Amazon FBA theo SKU',
     'h.prodTitle':'Lãi theo sản phẩm — CM3 từng SKU',
     'h.poTitle':'Hàng đang đặt (PO) — nhập tay',
@@ -719,7 +719,13 @@
   try{ const m0 = JSON.parse(localStorage.getItem('ctu_ch')||'null'); if(m0 && typeof m0==='object'){ CH_KEYS.forEach(k=>{ CH_MASK[k] = m0[k]!==false; }); } }catch(e){}
   if(!CH_KEYS.some(k=>CH_MASK[k])) CH_KEYS.forEach(k=>CH_MASK[k]=true);
   const FILTER = {market:'all', product:'all'};
-  try{ const f0 = JSON.parse(localStorage.getItem('ctu_filter')||'null'); if(f0 && typeof f0==='object'){ if(typeof f0.market==='string') FILTER.market = f0.market; if(typeof f0.product==='string') FILTER.product = f0.product; } }catch(e){}
+  try{ const f0 = JSON.parse(localStorage.getItem('ctu_filter')||'null'); if(f0 && typeof f0==='object'){ const norm = v => Array.isArray(v) ? (v.filter(x=>typeof x==='string').length ? v.filter(x=>typeof x==='string') : 'all') : (typeof v==='string' ? v : 'all'); FILTER.market = norm(f0.market); FILTER.product = norm(f0.product); } }catch(e){}
+  // V12.7: market / product hold 'all' or a list of the ticked values (an older saved single value still works)
+  const fSel = v => v==='all' ? [] : (Array.isArray(v) ? v : [v]);
+  const mkHas = cc => FILTER.market==='all' || fSel(FILTER.market).includes(cc);
+  const plHas = id => FILTER.product==='all' || fSel(FILTER.product).includes(id);
+  const mkSelLabel = () => fSel(FILTER.market).map(cc=>marketLabel(cc)).join(' + ');
+  const plSelLabel = () => fSel(FILTER.product).map(id=>productLineName(id)).join(' + ');
   const chPartial = () => CH_KEYS.some(k=>!CH_MASK[k]);
   const maskPartial = () => chPartial() || FILTER.market!=='all' || FILTER.product!=='all';
   const AD_CHANNEL = {meta:'shopify', google:'shopify', applovin:'shopify', tiktokads:'tiktok', amazonads:'amazon'};
@@ -775,18 +781,18 @@
     if(!CH_MASK[k]) return 0;
     const mk = FILTER.market, pl = FILTER.product;
     if(mk==='all' && pl==='all') return 1;
-    if(US_ONLY_CH[k]){ if(pl!=='all') return null; return mk==='US' ? 1 : 0; }
+    if(US_ONLY_CH[k]){ if(pl!=='all') return null; return mkHas('US') ? 1 : 0; }
     const mks = r.markets && r.markets[k], sd = r.sku && r.sku[k];
     if(pl==='all'){
       if(!mks) return null;
-      let tot = 0, sel = 0; Object.keys(mks).forEach(cc=>{ const g = marketGross(k, mks[cc]); tot += g; if(cc===mk) sel += g; });
+      let tot = 0, sel = 0; Object.keys(mks).forEach(cc=>{ const g = marketGross(k, mks[cc]); tot += g; if(mkHas(cc)) sel += g; });
       return tot>0.005 ? Math.min(1, Math.max(0, sel/tot)) : 0;
     }
     if(!sd) return null;
     let tot = 0; Object.values(sd.sales||{}).forEach(v=>{ tot += +v||0; });
     let src = sd.sales;
-    if(mk!=='all'){ if(!mks) return null; const b = mks[mk]; src = b ? (b.sku_sales||{}) : {}; }
-    let sel = 0; Object.entries(src||{}).forEach(([s,v])=>{ if(productLineOf(s)===pl) sel += +v||0; });
+    if(mk!=='all'){ if(!mks) return null; src = {}; Object.keys(mks).forEach(cc=>{ if(!mkHas(cc)) return; Object.entries(mks[cc].sku_sales||{}).forEach(([s,v])=>{ src[s] = (src[s]||0) + (+v||0); }); }); }
+    let sel = 0; Object.entries(src||{}).forEach(([s,v])=>{ if(plHas(productLineOf(s))) sel += +v||0; });
     return tot>0.005 ? Math.min(1, Math.max(0, sel/tot)) : 0;
   }
   function scaleDeep(o, f){
@@ -829,8 +835,8 @@
     if(r.sku){
       m.sku = {};
       CH_KEYS.forEach(k=>{ const d = r.sku[k]; if(!d || F[k]<=0) return; let src = d;
-        if(FILTER.market!=='all'){ const b = r.markets && r.markets[k] && r.markets[k][FILTER.market]; src = b ? {units: b.sku_units||{}, sales: b.sku_sales||{}, refunds: b.sku_refund_units||{}} : {units:{}, sales:{}, refunds:{}}; }
-        if(FILTER.product!=='all'){ const pick = o => { const out = {}; Object.entries(o||{}).forEach(([s,v])=>{ if(productLineOf(s)===FILTER.product) out[s] = v; }); return out; }; src = {units: pick(src.units), sales: pick(src.sales), refunds: pick(src.refunds)}; }
+        if(FILTER.market!=='all'){ const mk2 = (r.markets && r.markets[k]) || {}, acc = {units:{}, sales:{}, refunds:{}}; const addTo = (o, from) => Object.entries(from||{}).forEach(([s,v])=>{ o[s] = (o[s]||0) + (+v||0); }); Object.keys(mk2).forEach(cc=>{ if(!mkHas(cc)) return; const b = mk2[cc]; addTo(acc.units, b.sku_units); addTo(acc.sales, b.sku_sales); addTo(acc.refunds, b.sku_refund_units); }); src = acc; }   // V12.7: several markets
+        if(FILTER.product!=='all'){ const pick = o => { const out = {}; Object.entries(o||{}).forEach(([s,v])=>{ if(plHas(productLineOf(s))) out[s] = v; }); return out; }; src = {units: pick(src.units), sales: pick(src.sales), refunds: pick(src.refunds)}; }
         m.sku[k] = src; });
     }
     if(r.funnel){ m.funnel = {}; CH_KEYS.forEach(k=>{ const f = r.funnel[k]; if(!f || F[k]<=0) return; m.funnel[k] = F[k]>=1 ? f : scaleDeep(f, F[k]); }); }
@@ -839,7 +845,7 @@
   }
   // human label of the active selection (channel · market · product)
   const chMaskLabel = () => CH_KEYS.filter(k=> CH_MASK[k] && (!_chAvail || _chAvail.includes(k))).map(k=>CH_LABEL[k]).join(' + ');   // V11.3: channels listed one by one
-  const maskLabel = (o) => { const p = []; if(chPartial()) p.push(chMaskLabel()); if(o && o.chOnly) return p.join(''); if(FILTER.market!=='all') p.push(marketLabel(FILTER.market)); if(FILTER.product!=='all') p.push(productLineName(FILTER.product)); return p.join(' · '); };
+  const maskLabel = (o) => { const p = []; if(chPartial()) p.push(chMaskLabel()); if(o && o.chOnly) return p.join(''); if(FILTER.market!=='all') p.push(mkSelLabel()); if(FILTER.product!=='all') p.push(plSelLabel()); return p.join(' · '); };
 
   // ---------- aggregate ----------
   function aggregate(rowsIn){
@@ -1269,26 +1275,51 @@
   // V10: Market · Product · Channel dropdowns (every page) + the "filtered" banner
   let _chAvail = null;
   function renderFilterBar(){
+    // V12.7: Market · Product · Channel — tick as many as needed, then Apply. Nothing re-renders until Apply;
+    // Cancel, Esc or a click outside drops the unapplied ticks. "only" keeps just that one item.
     const el = document.getElementById('filterBar'); if(!el) return;
     if(!_chAvail) _chAvail = CH_KEYS.filter(k=> days.some(r=> r.channels[k]>0));
-    const chTxt = chPartial() ? maskLabel({chOnly:true}) : tx('f.allChannels');
-    const dd = (id, label, value, items, extra) => `<div class="dd fdd" id="${id}"><button class="ddbtn" type="button"><span class="k">${label}</span><span class="v">${value}</span><span class="caret">▾</span></button><div class="ddpanel"><div class="ddlist one">${items}</div>${extra||''}</div></div>`;
-    const mkItems = ['all'].concat(marketsAvailable()).map(cc=>`<div class="dditem ${FILTER.market===cc?'active':''}" data-market="${cc}">${marketLabel(cc)}${cc!=='all' && cc!=='US' ? '' : ''}</div>`).join('');
-    const plItems = ['all'].concat(productLinesAvailable()).map(id=>`<div class="dditem ${FILTER.product===id?'active':''}" data-product="${id}">${productLineName(id)}</div>`).join('');
-    // V11.3: one entry per channel (Shopify, TikTok Shop, Amazon, Walmart); the reporting groups are only used for plans / pacing
-    const chItems = `<div class="dditem ${chPartial()?'':'active'}" data-ch="all">${tx('f.allChannels')}</div>` + CH_KEYS.filter(k=>_chAvail.includes(k)).map(k=>`<div class="dditem chk ${CH_MASK[k]?'on':''}" data-ch="${k}"><span class="box">${CH_MASK[k]?'✓':''}</span>${CH_LABEL[k]}</div>`).join('');
-    el.innerHTML = dd('ddMarket', tx('f.market'), marketLabel(FILTER.market), mkItems) + dd('ddProduct', tx('f.product'), productLineName(FILTER.product), plItems) + dd('ddChannel', tx('f.channel'), chTxt, chItems);
-    const closeAll = () => document.querySelectorAll('.dd.open').forEach(d=>d.classList.remove('open'));
-    el.querySelectorAll('.dd > .ddbtn').forEach(b=>b.addEventListener('click', (e)=>{ e.stopPropagation(); const d = b.parentElement, open = d.classList.contains('open'); closeAll(); if(!open) d.classList.add('open'); }));
-    el.querySelectorAll('.ddpanel').forEach(pn=>pn.addEventListener('click', e=>e.stopPropagation()));
-    el.querySelectorAll('[data-market]').forEach(i=>i.addEventListener('click', ()=>{ setFilter({market: i.dataset.market}); closeAll(); renderAll(); }));
-    el.querySelectorAll('[data-product]').forEach(i=>i.addEventListener('click', ()=>{ setFilter({product: i.dataset.product}); closeAll(); renderAll(); }));
-    el.querySelectorAll('[data-ch]').forEach(i=>i.addEventListener('click', ()=>{
-      const k = i.dataset.ch, next = {...CH_MASK};
-      if(k==='all') CH_KEYS.forEach(x=>next[x]=true);
-      else { next[k] = !next[k]; if(!CH_KEYS.some(x=>next[x])) CH_KEYS.forEach(x=>next[x]=true); }
-      setChannelMask(next); renderAll();
-    }));
+    const G = {
+      ddMarket: {label: tx('f.market'), all: tx('f.allMarkets'), keys: marketsAvailable(), name: marketLabel, cur: ()=> FILTER.market==='all' ? null : fSel(FILTER.market)},
+      ddProduct: {label: tx('f.product'), all: tx('f.allProducts'), keys: productLinesAvailable(), name: productLineName, cur: ()=> FILTER.product==='all' ? null : fSel(FILTER.product)},
+      ddChannel: {label: tx('f.channel'), all: tx('f.allChannels'), keys: CH_KEYS.filter(k=>_chAvail.includes(k)), name: k=>CH_LABEL[k], cur: ()=> chPartial() ? CH_KEYS.filter(k=>CH_MASK[k] && _chAvail.includes(k)) : null},
+    };
+    const valueOf = g => { const c = g.cur(); if(!c || !c.length) return g.all; const n = c.map(g.name); return n.length<=2 ? n.join(' + ') : n[0]+' +'+(n.length-1); };
+    const box = on => `<span class="box">${on ? '✓' : ''}</span>`;
+    const panelHtml = (g, sel) => {
+      const allOn = g.keys.every(k=>sel.has(k)), part = sel.size>0 && sel.size<g.keys.length;
+      return `<div class="dditem chk fb-all ${allOn ? 'on' : ''}" data-all="1" role="checkbox" aria-checked="${allOn}">${box(allOn)}<span class="fb-nm">${tv('Select all', 'Chọn tất cả')}</span><span class="fb-n">${sel.size}/${g.keys.length}</span></div>`
+        + `<div class="ddlist one fb-list">` + g.keys.map(k=>`<div class="dditem chk ${sel.has(k) ? 'on' : ''}" data-k="${k}" role="checkbox" aria-checked="${sel.has(k)}">${box(sel.has(k))}<span class="fb-nm">${g.name(k)}</span><button type="button" class="fb-only" data-only="${k}">${tv('only', 'chỉ mục này')}</button></div>`).join('') + `</div>`
+        + `<div class="fb-foot"><button type="button" class="fb-btn fb-cancel">${tv('Cancel', 'Huỷ')}</button><button type="button" class="fb-btn fb-apply" ${sel.size ? '' : 'disabled'}>${tv('Apply', 'Áp dụng')}${part ? ' ('+sel.size+')' : ''}</button></div>`;
+    };
+    el.innerHTML = Object.keys(G).map(id=>`<div class="dd fdd" id="${id}"><button class="ddbtn" type="button" aria-haspopup="true" aria-expanded="false"><span class="k">${G[id].label}</span><span class="v">${valueOf(G[id])}</span><span class="caret">▾</span></button><div class="ddpanel fb-panel"></div></div>`).join('');
+    const closeAll = () => document.querySelectorAll('.dd.open').forEach(d=>{ d.classList.remove('open'); d._sel = null; const b = d.querySelector('.ddbtn'); if(b) b.setAttribute('aria-expanded', 'false'); });
+    const paint = d => { d.querySelector('.fb-panel').innerHTML = panelHtml(G[d.id], d._sel); };
+    el.querySelectorAll('.dd').forEach(d=>{
+      const g = G[d.id];
+      d.querySelector('.ddbtn').addEventListener('click', e=>{ e.stopPropagation(); const was = d.classList.contains('open'); closeAll(); if(was) return; const c = g.cur(); d._sel = new Set(c && c.length ? c : g.keys); d.classList.add('open'); e.currentTarget.setAttribute('aria-expanded', 'true'); paint(d); });
+      d.querySelector('.fb-panel').addEventListener('click', e=>{
+        e.stopPropagation();
+        const t = e.target; if(!d._sel) return;
+        const only = t.closest('[data-only]'), it = t.closest('[data-k]'), all = t.closest('[data-all]');
+        if(t.closest('.fb-cancel')){ closeAll(); return; }
+        if(t.closest('.fb-apply')){
+          const sel = g.keys.filter(k=>d._sel.has(k)); if(!sel.length) return;
+          const full = sel.length===g.keys.length;
+          closeAll();
+          if(d.id==='ddMarket') setFilter({market: full ? 'all' : sel});
+          else if(d.id==='ddProduct') setFilter({product: full ? 'all' : sel});
+          else { const next = {}; CH_KEYS.forEach(k=>{ next[k] = full || sel.includes(k); }); setChannelMask(next); }
+          renderAll(); return;
+        }
+        if(only){ d._sel = new Set([only.dataset.only]); }
+        else if(all){ d._sel = g.keys.every(k=>d._sel.has(k)) ? new Set() : new Set(g.keys); }
+        else if(it){ const k = it.dataset.k; if(d._sel.has(k)) d._sel.delete(k); else d._sel.add(k); }
+        else return;
+        paint(d);
+      });
+    });
+    if(!window._fbEsc){ window._fbEsc = true; document.addEventListener('keydown', e=>{ if(e.key==='Escape') document.querySelectorAll('#filterBar .dd.open').forEach(d=>{ d.classList.remove('open'); d._sel = null; }); }); }
     renderFilterBanner();
   }
   function renderFilterBanner(){
@@ -1297,8 +1328,8 @@
     const a = aggregate(currentRows());
     const parts = [];
     if(chPartial()) parts.push(tx('f.bn.channel', {ch: chMaskLabel()}));
-    if(FILTER.market!=='all') parts.push(tx('f.bn.market', {m: marketLabel(FILTER.market)}));
-    if(FILTER.product!=='all') parts.push(tx('f.bn.product', {p: productLineName(FILTER.product)}));
+    if(FILTER.market!=='all') parts.push(tx('f.bn.market', {m: mkSelLabel()}));
+    if(FILTER.product!=='all') parts.push(tx('f.bn.product', {p: plSelLabel()}));
     let note = tx('f.bn.alloc', {pct: (a.allocShare*100).toFixed(0)});
     if(a.unknownDays>0) note += ' ' + tx('f.bn.unknown', {n: a.unknownDays, of: a.n});
     if(FILTER.product!=='all') note += ' ' + tx('f.bn.productNote');
@@ -2455,57 +2486,99 @@
   }
 
   // ---------- Amazon data-quality gaps (service fees / ad spend not yet captured) ----------
+  // V12.7: "Amazon fees → P&L line" — every fee / adjustment type Amazon sent in the latest sync window, in plain words,
+  // with the P&L line it lands on and a GAAP note. The raw event codes moved to the Data tab (technical details).
+  const AMZ_FEE_MAP = [
+    // [regex on the type key, name en, name vi, line key, gaap key]
+    [/^FBAStorageFee/, 'FBA monthly storage', 'Lưu kho FBA hàng tháng', 'logi_storage', 'ok_period'],
+    [/^FBALongTermStorageFee/, 'FBA long-term storage', 'Lưu kho FBA dài hạn', 'logi', 'ok_period'],
+    [/^Subscription/, 'Professional selling plan', 'Gói bán hàng Professional', 'logi', 'ok_selling'],
+    [/^(FBARemovalFee|FBADisposalFee|RemovalShipment:)/, 'Removal, disposal & liquidation of FBA stock', 'Rút, huỷ & thanh lý hàng FBA', 'logi', 'ok_period'],
+    [/^CustomerReturnHRRUnitFee/, 'FBA customer-returns processing', 'Xử lý hàng khách trả (FBA)', 'logi', 'ok_period'],
+    [/^ReCommerceGradingAndListingFee/, 'Grade & Resell', 'Grade & Resell (bán lại hàng trả)', 'logi', 'ok_period'],
+    [/^(VineFee|Coupon|Deal|LightningDeal)/, 'Vine, coupon & deal fees', 'Phí Vine, coupon & deal', 'promo', 'promo'],
+    [/^(FBAInternationalInbound|FBAInboundTransportation|FBAInboundConvenienceFee)/, 'Inbound freight, duty & placement', 'Cước, thuế, placement nhập FBA', 'inventory', 'inventory'],
+    [/^ItemFeeList:(Commission|GiftwrapCommission|DigitalServicesFee|VariableClosingFee|FixedClosingFee|SharedFixedFee|GiftwrapChargeback)/, 'Referral fees', 'Phí giới thiệu (referral)', 'fees', 'ok_fee'],
+    [/^RefundFeeList:(Commission|GiftwrapCommission|DigitalServicesFee|VariableClosingFee|FixedClosingFee)/, 'Referral fees returned on refunds', 'Phí giới thiệu trả lại khi hoàn', 'fees', 'ok_fee'],
+    [/^(ItemFeeList|RefundFeeList):(RefundCommission|RefundAdministrationFee|ShippingChargeback|ShippingHB|SalesTaxCollectionFee)/, 'Other Amazon selling fees', 'Phí Amazon khác', 'fees', 'ok_fee'],
+    [/^(ItemFeeList|RefundFeeList):FBA/, 'FBA fulfillment fees', 'Phí fulfillment FBA', 'cogs', 'ok_cogs'],
+    [/^(ReturnPostageBilling|PostageBilling)/, 'Return labels & postage adjustments', 'Nhãn trả hàng & điều chỉnh cước', 'fees', 'ok_fee'],
+    [/^(WAREHOUSE_|REVERSAL_REIMBURSEMENT|MISSING_FROM_INBOUND|FREE_REPLACEMENT|COMPENSATED_CLAWBACK|REMOVAL_ORDER_LOST|RemovalShipmentRevenue)/, 'Reimbursements & liquidation', 'Bồi hoàn & tiền thanh lý', 'adj', 'ok_adj'],
+    [/^Reserve(Credit|Debit)/, 'Funds Amazon held and released', 'Tiền Amazon tạm giữ rồi trả', 'none', 'none'],
+  ];
+  const AMZ_LINES = {
+    cogs: ['COGS · FBA fulfillment', 'Giá vốn · fulfillment FBA'],
+    fees: ['Transaction fees', 'Phí giao dịch'],
+    adj: ['Transaction fees · adjustments', 'Phí giao dịch · điều chỉnh'],
+    promo: ['OpEx · Amazon service fees', 'OpEx · phí dịch vụ Amazon'],
+    promo_mkt: ['Marketing', 'Marketing'],
+    logi: ['OpEx · Amazon service fees', 'OpEx · phí dịch vụ Amazon'],
+    logi_storage: ['OpEx · FBA storage', 'OpEx · lưu kho FBA'],
+    inventory: ['Lot cost (not on the P&L)', 'Giá vốn lô (không trừ P&L)'],
+    none: ['Not P&L', 'Không thuộc P&L'],
+    other: ['Not mapped yet', 'Chưa phân loại'],
+  };
+  // [short, explanation on hover]
+  const AMZ_GAAP = {
+    ok_period: [['✓ Period cost', '✓ Chi phí kỳ'], ['ASC 330: storage and disposal after the goods are ready for sale are expensed in the period', 'ASC 330: lưu kho, huỷ hàng sau khi hàng sẵn sàng bán là chi phí trong kỳ']],
+    ok_selling: [['✓ Selling expense', '✓ Chi phí bán hàng'], ['Fixed monthly selling plan', 'Phí gói bán hàng cố định hàng tháng']],
+    ok_fee: [['✓ Selling fee', '✓ Phí bán hàng'], ['Charged per order or per refund', 'Thu theo từng đơn hoặc từng lần hoàn']],
+    ok_cogs: [['✓ Fulfillment cost', '✓ Chi phí giao hàng'], ['Pick, pack and ship of each order', 'Nhặt, đóng gói, giao từng đơn']],
+    ok_adj: [['✓ Cost recovery', '✓ Thu hồi chi phí'], ['Amazon paying back for lost or damaged stock, and liquidation proceeds', 'Amazon bồi hoàn hàng mất/hỏng và tiền thanh lý hàng']],
+    promo: [['⚠ Belongs in Marketing', '⚠ Nên ở Marketing'], ['ASC 720: fees paid to Amazon to run a promotion are marketing; the discount the customer gets already reduces revenue (ASC 606)', 'ASC 720: phí trả Amazon để chạy khuyến mãi là chi phí marketing; phần giảm giá cho khách đã trừ vào doanh thu (ASC 606)']],
+    promo_ok: [['✓ Marketing', '✓ Marketing'], ['ASC 720', 'ASC 720']],
+    inventory: [['✓ Inventory cost', '✓ Giá vốn hàng tồn'], ['ASC 330: freight, duty and placement to bring the goods into FBA are part of the inventory cost, expensed as COGS when sold — confirm the placement fee is in the lot cost', 'ASC 330: cước, thuế, phí placement đưa hàng vào FBA là giá vốn hàng tồn, vào giá vốn khi bán — cần xác nhận phí placement đã cộng vào giá lô']],
+    none: [['— Not an expense', '— Không phải chi phí'], ['Money Amazon held and released', 'Tiền Amazon tạm giữ rồi trả']],
+    other: [['? Map it', '? Cần phân loại'], ['', '']],
+  };
   function renderAmazonGaps(){
     const card = document.getElementById('amazonGapsCard');
+    if(!card) return;
     if(!amazonMatched){ card.style.display='none'; return; }
     card.style.display = '';
-    const warnings = (amazonMeta && Array.isArray(amazonMeta.warnings)) ? amazonMeta.warnings : [];
-    const schema2 = !!(amazonMeta && amazonMeta.schema >= 2);
-    const diag = (schema2 && amazonMeta.diagnostics) || null;
-    // Total service fees over the whole loaded window - tells us whether the API sent ANY.
-    const svcTotal = days.reduce((s,d)=> s + (d.amazonReal ? d.amazonReal.serviceFees : 0), 0);
-    let html = '<div style="display:flex;flex-direction:column;gap:10px;font-size:12.5px;color:var(--ink-secondary);">';
-    if(amazonOrderBasisDays>0){
-      const sel = currentRows().filter(r=>r.amazonReal && r.amazonReal.orderBasis);
-      const ordered = sum(sel.map(r=>r.channels.amazon)), posted = sum(sel.map(r=>r.amazonReal.postedGross));
-      const mcfU = sum(sel.map(r=>r.amazonReal.mcfUnits)), mcfO = sum(sel.map(r=>r.amazonReal.mcfOrders)), pend = sum(sel.map(r=>r.amazonReal.pendingUnits));
-      html += tv(`<div><span class="tag live"><span class="d"></span>By order date</span> <b>Amazon revenue</b> in the selected period: <b>${money(ordered)}</b> by the day the customer ordered (All Orders report — the way Seller Central/Sellerboard count it) vs ${money(posted)} by the day Amazon shipped &amp; posted the money (Finances). Fees and refunds stay on their posting date.${mcfU?` MCF orders (Shopify orders shipped by FBA) are kept separate: ${mcfO.toLocaleString('en-US')} orders / ${mcfU.toLocaleString('en-US')} units — not counted in Amazon revenue.`:''}${pend?` ${pend.toLocaleString('en-US')} units still Pending have no price yet (Amazon has not released it) → not in revenue yet.`:''}</div>`,
-        `<div><span class="tag live"><span class="d"></span>Theo ngày đặt</span> <b>Doanh thu Amazon</b> trong khoảng đang xem: <b>${money(ordered)}</b> theo ngày khách đặt (All Orders report — cách Seller Central/Sellerboard tính) so với ${money(posted)} theo ngày Amazon ship &amp; ghi nhận tiền (Finances). Phí, hoàn tiền vẫn theo ngày ghi nhận.${mcfU?` Đơn MCF (Shopify do FBA ship) tách riêng: ${mcfO.toLocaleString('en-US')} đơn / ${mcfU.toLocaleString('en-US')} units — không tính vào doanh thu Amazon.`:''}${pend?` ${pend.toLocaleString('en-US')} units đang Pending chưa có giá (Amazon chưa công bố) → chưa vào doanh thu.`:''}</div>`);
+    const diag = (amazonMeta && amazonMeta.schema >= 2 && amazonMeta.diagnostics) || null;
+    const body = document.getElementById('amazonGapsBody');
+    const promoMoved = !!(amazonMeta && amazonMeta.promo_fees_bucket);   // set by the sync once Vine / coupon / deal fees have their own field
+    const L2 = p => p[LANG==='vi' ? 1 : 0];
+    const fetched = amazonMeta && amazonMeta.history && amazonMeta.history.fetched;
+    const win = fetched ? fmtDate(new Date(+fetched.start.slice(0,4), +fetched.start.slice(5,7)-1, +fetched.start.slice(8,10)))+' – '+fmtDateLong(new Date(+fetched.end.slice(0,4), +fetched.end.slice(5,7)-1, +fetched.end.slice(8,10))) : '';
+    if(!diag){ body.innerHTML = `<div class="caption">${tv('No fee log in the latest Amazon sync.', 'Lần đồng bộ Amazon gần nhất không có log phí.')}</div>`; return; }
+    const rows = {};
+    const addType = (key, v) => {
+      if(!v || Math.abs(v)<0.005) return;
+      const short = key.replace(/\s*\(.*$/, '');
+      const m = AMZ_FEE_MAP.find(x=>x[0].test(short));
+      const name = m ? (LANG==='vi' ? m[2] : m[1]) : short;
+      let line = m ? m[3] : 'other', gaap = m ? m[4] : 'other';
+      if(line==='promo' && promoMoved){ line = 'promo_mkt'; gaap = 'promo_ok'; }
+      const id = line+'|'+name;
+      const r = rows[id] = rows[id] || {line, gaap, name, amt:0, codes:[]};
+      r.amt += v; r.codes.push(short);
+    };
+    Object.entries(diag.service_fee_types||{}).forEach(([k,v])=>addType(k, +v||0));
+    Object.entries(diag.fee_types||{}).forEach(([k,v])=>addType(k, +v||0));
+    Object.entries(diag.adjustment_types||{}).forEach(([k,v])=>addType(k, +v||0));
+    const order = ['cogs','fees','adj','promo','promo_mkt','logi_storage','logi','other','inventory','none'];
+    const list = Object.values(rows).sort((a,b)=> order.indexOf(a.line)-order.indexOf(b.line) || Math.abs(b.amt)-Math.abs(a.amt));
+    const amt = v => `<span class="${v>0 ? 'd-up' : ''}">${v>0 ? '+' : '−'}${money(Math.abs(v)).replace('-','')}</span>`;
+    let h = `<div class="caption" style="padding-left:0;margin:0 0 8px;">${tv('Amounts Amazon posted in the latest sync window', 'Số Amazon ghi nhận trong cửa sổ đồng bộ gần nhất')}${win ? ' ('+win+')' : ''} · ${tv('minus = cost, plus = money back', 'âm = chi phí, dương = tiền trả lại')}</div>`;
+    h += `<div style="overflow-x:auto;"><table class="simple amz-map"><thead><tr><th>${tv('Fee', 'Loại phí')}</th><th class="num">${tv('Amount', 'Số tiền')}</th><th>${tv('Where it is on the P&L', 'Nằm ở đâu trên P&L')}</th><th>GAAP</th></tr></thead><tbody>`;
+    list.filter(r=>Math.abs(r.amt)>=0.005).forEach(r=>{ const gp = AMZ_GAAP[r.gaap]||AMZ_GAAP.other; h += `<tr${r.gaap==='promo' || r.gaap==='other' ? ' class="amz-flag"' : ''}><td class="name" title="${r.codes.join(', ')}">${r.name}</td><td class="num">${amt(r.amt)}</td><td>${L2(AMZ_LINES[r.line]||AMZ_LINES.other)}</td><td title="${L2(gp[1])}">${L2(gp[0])}</td></tr>`; });
+    h += `</tbody></table></div>`;
+    h += `<div class="caption" style="padding-left:0;margin-top:8px;">${tv('⚠ = to fix. Ask the accountant to confirm the FBA placement fee is included in the lot cost. Revenue lines (sales, shipping credits, refunds) are not listed. Hover a fee to see Amazon\'s codes; the full event log is on the Data tab.', '⚠ = cần chỉnh. Cần kế toán xác nhận phí placement FBA đã cộng vào giá lô. Không liệt kê các dòng doanh thu (bán hàng, phí ship khách trả, hoàn tiền). Rê chuột lên tên phí để xem mã của Amazon; log sự kiện đầy đủ ở tab Dữ liệu.')}</div>`;
+    body.innerHTML = h;
+    // Data tab: raw codes for troubleshooting, folded
+    const raw = document.getElementById('amzRawBody');
+    if(raw){
+      const fmtMap = (obj, moneyVals) => Object.keys(obj||{}).length ? Object.keys(obj).map(k=>`<span class="pill ok" style="font-weight:500;">${k}: ${moneyVals ? money(obj[k]) : obj[k]}</span>`).join('') : '<span class="pill warn">'+tv('none', 'không có')+'</span>';
+      const warns = (amazonMeta && Array.isArray(amazonMeta.warnings)) ? amazonMeta.warnings : [];
+      raw.innerHTML = `<details class="amz-raw"><summary>${tv('Show Amazon event codes (for troubleshooting the sync)', 'Xem mã sự kiện Amazon (dùng khi kiểm tra đồng bộ)')}</summary>`
+        + (warns.length ? `<div class="caption" style="padding-left:0;margin:8px 0 4px;">${tv('Sync warnings', 'Cảnh báo của script')}</div><div class="pills">${warns.map(w=>`<span class="pill warn">${w}</span>`).join('')}</div>` : '')
+        + `<div class="caption" style="padding-left:0;margin:8px 0 4px;">${tv('Service fee types', 'Loại phí dịch vụ')}</div><div class="pills">${fmtMap(diag.service_fee_types, true)}</div>`
+        + `<div class="caption" style="padding-left:0;margin:8px 0 4px;">${tv('Per-order fee types', 'Loại phí theo đơn')}</div><div class="pills">${fmtMap(diag.fee_types, true)}</div>`
+        + `<div class="caption" style="padding-left:0;margin:8px 0 4px;">${tv('Adjustment types', 'Loại điều chỉnh')}</div><div class="pills">${fmtMap(diag.adjustment_types, true)}</div>`
+        + `<div class="caption" style="padding-left:0;margin:8px 0 4px;">${tv('Events per list', 'Số sự kiện theo danh sách')}</div><div class="pills">${fmtMap(diag.event_lists, false)}</div></details>`;
     }
-    if(svcTotal===0){
-      const svcNote = schema2
-        ? tv('Script v2 handles ServiceFeeEventList + removal fees, but SP-API Finances still returns nothing in the sync window — see the event-type log below; if it stays empty after a few syncs, these must come from the Reports API (monthly FBA storage fee report) instead of Finances.', 'Script v2 đã xử lý ServiceFeeEventList + removal fees nhưng SP-API Finances vẫn không trả về khoản nào trong cửa sổ đồng bộ — xem log loại sự kiện bên dưới; nếu vẫn trống sau vài lần sync, cần lấy từ Reports API (báo cáo phí lưu kho FBA hàng tháng) thay vì Finances.')
-        : tv('SP-API Finances returns $0 for this account although Cattasaurus does pay storage fees; script v2 (waiting to replace the file in the ctu-fin-sync-8x2k repo) will log details to find where this amount lands.', 'SP-API Finances trả về $0 cho tài khoản này dù Cattasaurus đang trả phí lưu kho thật; script v2 (chờ thay file trong repo ctu-fin-sync-8x2k) sẽ log chi tiết để tìm chỗ khoản này nằm.');
-      html += `<div><span class="tag gap"><span class="d"></span>${tv('Not captured ($0)', 'Chưa capture ($0)')}</span> <b>${tv('Amazon service fees', 'Phí dịch vụ Amazon')}</b> ${tv('(subscription + FBA storage)', '(subscription + lưu kho FBA)')} — ${svcNote}</div>`;
-    } else {
-      html += `<div><span class="tag live"><span class="d"></span>${tv('Captured', 'Đã capture')}</span> <b>${tv('Amazon service fees', 'Phí dịch vụ Amazon')}</b> ${tv('(subscription + FBA storage/removal)', '(subscription + lưu kho/removal FBA)')} — ${money(svcTotal)} ${tv('in the current sync window.', 'trong cửa sổ đồng bộ hiện tại.')}</div>`;
-    }
-    if(amazonAdsMatched){
-      html += `<div><span class="tag live"><span class="d"></span>${tv('Data available', 'Đã có số')}</span> <b>Amazon Ads</b> (Sponsored Products/Brands/Display) — ${tv('daily spend ', 'chi phí theo ngày ')}${AMAZON_ADS_LIVE_DATA.source==='sellerboard' ? tv('via Sellerboard (Sellerboard pulls the Amazon Ads API); will switch to the Amazon Ads API directly once Amazon approves access', 'lấy qua Sellerboard (Sellerboard kéo Amazon Ads API); sẽ chuyển sang Amazon Ads API trực tiếp khi Amazon duyệt quyền') : tv('from the Amazon Ads API', 'từ Amazon Ads API')}.</div>`;
-    } else html += `<div><span class="tag gap"><span class="d"></span>${tx('tag.gap')}</span> <b>Amazon Ads</b> (Sponsored Products/Brands/Display) — ${tv('SP-API Finances does not return ad spend; shown as $0 until Amazon approves Advertising API access (application submitted, pending).', 'SP-API Finances không trả về ad spend; hiển thị $0 cho tới khi Amazon duyệt quyền Advertising API (đã nộp hồ sơ, đang chờ).')}</div>`;
-    if(schema2){
-      html += `<div><span class="tag live"><span class="d"></span>${tv('Classified', 'Đã phân loại')}</span> ${tv('Gift wrap (revenue), gift wrap commission (referral fee), sales tax collection / shipping chargeback / holdback / refund administration fee / return-label postage ("Other Amazon fees" line), return shipping & restocking fees (folded into refunds), removal/liquidation (service fees + adjustments), SAFE-T & inventory reimbursements (adjustments). <b>Inbound freight &amp; duty into FBA</b> is a separate line in COGS (inventory cost; Amazon invoices per shipment, so invoice days dip sharply — read it by month). Deliberately ignored because they are not P&amp;L: debt recovery, tax retrocharges, and Reserve credit/debit (money Amazon holds temporarily and returns).', 'Gift wrap (doanh thu), hoa hồng gift wrap (phí giới thiệu), phí thu hộ sales tax / shipping chargeback / holdback / phí xử lý hoàn tiền / postage nhãn trả hàng (dòng "Phí Amazon khác"), phí ship hàng trả & restocking (gộp vào hoàn tiền), removal/liquidation (phí dịch vụ + điều chỉnh), SAFE-T & bồi hoàn kho (điều chỉnh). <b>Cước &amp; thuế nhập hàng vào FBA</b> tách thành dòng riêng trong COGS (giá vốn tồn kho, Amazon xuất hoá đơn theo lô nên ngày có hoá đơn sẽ lõm sâu — đọc theo tháng). Bỏ qua có chủ đích vì không thuộc P&amp;L: debt recovery, retrocharge thuế, và Reserve credit/debit (tiền Amazon tạm giữ rồi trả).')}</div>`;
-    }
-    html += '</div>';
-    if(warnings.length){
-      const cap = schema2
-        ? tv('Fee/event types script v2 still could not map in the latest sync (currently in the "Adjustments & unclassified" or "Service fees" line — add them to the mapping table):', 'Loại phí/sự kiện script v2 vẫn chưa map được ở lần đồng bộ gần nhất (đang nằm ở dòng "Điều chỉnh & chưa phân loại" hoặc "Phí dịch vụ" — cần bổ sung vào bảng map):')
-        : tv('"Unclassified" fee/event types the script met in the latest sync (folded into the "Other / unclassified Amazon fees" line above for now — script v2 maps all of them, waiting to replace the file in the repo):', 'Loại phí/sự kiện "chưa phân loại" script gặp phải ở lần đồng bộ gần nhất (tạm gộp vào dòng "Phí Amazon khác/chưa phân loại" ở trên — script v2 đã map toàn bộ các loại này, chờ thay file trong repo):');
-      html += `<div class="caption" style="padding-left:0;margin:10px 0 6px;">${cap}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;">${warnings.map(w=>`<span class="pill warn">${w}</span>`).join('')}</div>`;
-    }
-    if(diag){
-      const fmtMap = (obj, moneyVals) => Object.keys(obj||{}).length
-        ? Object.keys(obj).map(k=>`<span class="pill ok" style="font-weight:500;">${k}: ${moneyVals ? money(obj[k]) : obj[k]}</span>`).join('')
-        : '<span class="pill warn">'+tv('none', 'không có')+'</span>';
-      html += `<div class="caption" style="padding-left:0;margin:12px 0 6px;">${tv('Latest sync log — service fee types Amazon sent (where subscription/storage fees should appear):', 'Log lần đồng bộ gần nhất — loại phí dịch vụ Amazon gửi về (nơi phí subscription/lưu kho phải xuất hiện):')}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;">${fmtMap(diag.service_fee_types, true)}</div>
-        <div class="caption" style="padding-left:0;margin:10px 0 6px;">${tv('Adjustment types by total amount:', 'Loại điều chỉnh (adjustment) theo tổng tiền:')}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;">${fmtMap(diag.adjustment_types, true)}</div>
-        <div class="caption" style="padding-left:0;margin:10px 0 6px;">${tv('Event counts per list (including empty lists) · deliberately ignored: ', 'Số sự kiện theo danh sách (kể cả danh sách trống) · bỏ qua có chủ đích: ')}${fmtMap(diag.ignored_event_lists, false)}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;">${fmtMap(diag.event_lists, false)}</div>`;
-    }
-    document.getElementById('amazonGapsBody').innerHTML = html;
   }
 
   // =====================================================================================
@@ -2727,16 +2800,17 @@
     const titleOf = i => (i.key==='stock' && i.skus && i.skus.length>1) ? tv('Place or expedite POs for the ','Đặt hoặc đẩy nhanh PO cho ') + i.skus.length + tv(' SKUs at most risk',' SKU rủi ro nhất') : (i.todo || i.action || i.name);
     const skuTags = i => (i.key==='stock' && i.skus && i.skus.length>1) ? '<div class="bf-skus">' + i.skus.map(k=>'<span class="bf-sku">'+esc(k)+'</span>').join('') + '</div>' : '';
     const pri = i => i.lvl==='crit' ? ['crit', tv('Urgent','Gấp')] : (i.stake>0 ? ['warn', tv('This week','Tuần này')] : ['watch', tv('Watch','Theo dõi')]);
-    const shown = acts.slice(0, 4);
+    const shown = acts;   // V12.7: every action; the ones after the 4th open in place (the Alerts card is gone)
     document.getElementById('briefActsN').textContent = acts.length ? String(acts.length) : '';
     document.getElementById('briefActs').innerHTML = shown.length ? shown.map((i, n) => {
       const [cls, lbl] = pri(i);
       const go = i.go && can(i.go[0]) ? `<button type="button" class="bf-go" data-go="${i.go[0]}|${i.go[1]||''}">${goLbl[i.go[0]] || tv('Details','Chi tiết')} →</button>` : '';
-      return `<li class="bf-act ${cls}${n===0?' top':''}"><span class="bf-pri ${cls}">${lbl}</span>`
+      return `<li class="bf-act ${cls}${n===0?' top':''}"${n>=4 ? ' hidden' : ''}><span class="bf-pri ${cls}">${lbl}</span>`
         + `<div class="bf-act-b"><div class="bf-act-t">${titleOf(i)}</div>${skuTags(i)}<div class="bf-act-w">${whyOf(i)}</div>${go}</div>`
         + `<div class="bf-act-v">${i.stake>0 ? `<b>${m(i.stake)}</b><small>${i.stakeLbl || tv('money affected','tiền bị ảnh hưởng')}</small>` : ''}</div></li>`;
-    }).join('') + (acts.length>shown.length ? `<li class="bf-more"><button type="button" class="bf-go" data-go="exec|alertCard">${tv('+ ','+ ')}${acts.length-shown.length}${tv(' more in Alerts',' việc khác ở thẻ Cảnh báo')} →</button></li>` : '')
+    }).join('') + (acts.length>4 ? `<li class="bf-more"><button type="button" class="bf-go bf-showall">${tv('+ ','+ ')}${acts.length-4}${tv(' more actions',' việc khác')} ↓</button></li>` : '')
       : `<li class="bf-none">${tv('Nothing urgent this period — no threshold breached.','Kỳ này không có việc gấp — chưa vượt ngưỡng nào.')}</li>`;
+    { const ul = document.getElementById('briefActs'); if(ul && !ul._more){ ul._more = true; ul.addEventListener('click', e=>{ const b = e.target.closest('.bf-showall'); if(!b) return; e.stopPropagation(); ul.querySelectorAll('li[hidden]').forEach(li=>{ li.hidden = false; }); b.closest('li').remove(); }); } }
     // ---- 3. drivers ----
     const dr = document.getElementById('briefDrivers');
     if(bridge){
@@ -5880,6 +5954,71 @@
     }
     const titleOf = box => box.querySelector(box.classList.contains('card') ? '.card-head h2' : ':scope > h3, :scope > .ch-title > h3');
     function hasContent(card){ const s = sourcesOf(card); return s.notes.some(n => txt(n)) || s.caps.some(c => txt(c) && shown(c)); }
+    // V12.7: short, structured explanations for the main cards (lead = what the card answers; bullets = how to read it).
+    // Cards not listed here show their own notes, split into bullets.
+    const TAG = (cls, t) => '<span class="tag ' + cls + '" style="margin-left:0;"><span class="d"></span>' + t + '</span>';
+    const INFO_HELP = {
+      stmtCard: {
+        vi: {lead: 'Lãi lỗ của kỳ đang xem: từ doanh thu xuống tới lợi nhuận ròng.', items: [
+          '<b>%</b> = tỷ lệ trên doanh thu thuần của cột đó.',
+          '<b>Thu gọn</b> chỉ hiện các dòng tổng · <b>Chi tiết</b> mở hết. Bấm tên nhóm để mở một nhóm, bấm dòng có ▸ để xem phân rã.',
+          '6 cột bên trái = 6 kỳ liền trước, để so xu hướng.',
+          TAG('gap', 'Chưa kết nối') + ' chưa có nguồn, đang tính $0 · ' + TAG('gap', 'Chưa nhập') + ' chi phí nhập tay theo tháng chưa điền · ' + TAG('info', 'Có ước tính') + ' tháng chưa chốt, đang tạm tính.',
+          'Chi phí không có API (lương, văn phòng, khấu hao…) nhập theo tháng ở trang <b>Chi phí cố định & tiền</b>, rải đều theo ngày.']},
+        en: {lead: 'Profit and loss for the selected period, from revenue down to net profit.', items: [
+          '<b>%</b> = share of that column\'s net revenue.',
+          '<b>Compact</b> shows the totals only · <b>Detail</b> opens everything. Click a group to open it, a line with ▸ to see its breakdown.',
+          'The 6 columns on the left are the 6 previous periods, for the trend.',
+          TAG('gap', 'Not connected') + ' no source yet, counted as $0 · ' + TAG('gap', 'Not entered') + ' a monthly manual cost not filled in · ' + TAG('info', 'Estimate') + ' month not closed, provisional figure.',
+          'Costs without an API (salaries, office, depreciation…) are entered per month on the <b>Fixed costs & cash</b> page and spread evenly per day.']},
+      },
+      revCard: {
+        vi: {lead: 'Doanh thu và từng nhóm chi phí theo ngày / tuần / tháng — cùng số với P&L.', items: [
+          '<b>Doanh thu thuần</b> = gộp − giảm giá − hoàn tiền, theo ngày đặt hàng (giờ Los Angeles).',
+          '<b>Chi phí đơn hàng</b> = giá vốn (sản phẩm, bao bì, fulfillment, cước) + phí sàn & thanh toán.',
+          '<b>Marketing</b> = quảng cáo, affiliate, agency, creator · <b>Chi phí vận hành</b> = kho bãi + G&A.',
+          '<b>Lợi nhuận</b> = EBITDA = doanh thu thuần − 3 nhóm chi phí trên.',
+          'Bấm chú thích để ẩn/hiện; số cạnh chú thích là tổng cả kỳ.']},
+        en: {lead: 'Revenue and each cost group by day / week / month — the same figures as the P&L.', items: [
+          '<b>Net revenue</b> = gross − discounts − refunds, by order date (Los Angeles time).',
+          '<b>Order costs</b> = cost of goods (product, packaging, fulfillment, postage) + marketplace & payment fees.',
+          '<b>Marketing</b> = ads, affiliates, agency, creators · <b>Operating costs</b> = warehousing + G&A.',
+          '<b>Profit</b> = EBITDA = net revenue − the three cost groups.',
+          'Click a legend item to hide/show it; the amount next to it is the period total.']},
+      },
+      chanCard: {
+        vi: {lead: 'Doanh thu thuần chia theo kênh bán.', items: ['Phần trăm = phần của kênh trong tổng doanh thu thuần.', 'Bên dưới: doanh thu trung bình mỗi ngày và giá trị trung bình mỗi đơn (AOV).']},
+        en: {lead: 'Net revenue by sales channel.', items: ['Percent = the channel\'s share of total net revenue.', 'Below: average revenue per day and average order value (AOV).']},
+      },
+      plCard: {
+        vi: {lead: 'Mỗi dòng sản phẩm bán được bao nhiêu, còn lãi bao nhiêu — và mỗi $100 doanh thu đi đâu.', items: [
+          '<b>Chính xác theo SKU:</b> doanh thu, units, giá vốn sản phẩm (FIFO theo lô nhập).',
+          '<b>Phân bổ:</b> phí sàn, thanh toán, quảng cáo theo tỷ trọng doanh thu của dòng trong từng kênh; fulfillment theo units.',
+          '<b>Mỗi $100</b>: tách $100 doanh thu thuần thành giá vốn, fulfillment, phí, marketing, chi phí hoạt động và phần EBITDA còn lại.',
+          '<b>Ngày còn hàng</b> = tồn FBA + ShipMonk ÷ units bán mỗi ngày (30 ngày gần nhất).']},
+        en: {lead: 'What each product line sells and keeps — and where each $100 of revenue goes.', items: [
+          '<b>Exact per SKU:</b> revenue, units, product cost (FIFO by receipt lot).',
+          '<b>Allocated:</b> marketplace & payment fees and ads by the line\'s revenue share in each channel; fulfillment by units.',
+          '<b>Each $100</b>: splits $100 of net revenue into product cost, fulfillment, fees, marketing, operating costs and the EBITDA kept.',
+          '<b>Days of stock</b> = FBA + ShipMonk stock ÷ units sold per day (last 30 days).']},
+      },
+      channelCostCard: {
+        vi: {lead: 'Mỗi $1 doanh thu của một kênh, kênh đó và dịch vụ đi kèm lấy bao nhiêu.', items: ['Gồm phí sàn/thanh toán, fulfillment & lưu kho, marketing của kênh.', 'Chưa trừ giá vốn sản phẩm và G&A.', 'Cùng số với P&L, chỉ xếp lại theo kênh.']},
+        en: {lead: 'For each $1 a channel sells, how much the channel and its services take.', items: ['Marketplace/payment fees, fulfillment & storage, and the channel\'s marketing.', 'Before product cost and G&A.', 'Same figures as the P&L, regrouped by channel.']},
+      },
+      amazonGapsCard: {
+        vi: {lead: 'Mỗi loại phí Amazon nằm ở dòng nào trên P&L, và đã đúng GAAP chưa.', items: ['Số liệu = các khoản Amazon ghi nhận trong cửa sổ đồng bộ gần nhất.', '⚠ = cần chỉnh: phí Vine/coupon/deal nên nằm ở Marketing.', 'Cước, thuế, phí placement nhập FBA không trừ trên P&L vì đã nằm trong giá vốn lô hàng.', 'Mã sự kiện gốc của Amazon ở tab Dữ liệu.']},
+        en: {lead: 'Where each Amazon fee sits on the P&L, and whether that follows GAAP.', items: ['Amounts = what Amazon posted in the latest sync window.', '⚠ = needs a fix: Vine/coupon/deal fees belong in Marketing.', 'Inbound freight, duty and placement are not deducted on the P&L — they are part of the lot\'s landed cost.', 'Amazon\'s raw event codes are on the Data tab.']},
+      },
+    };
+    // V12.7: long notes read as a short lead + bullet points (split on " · " or, for plain text, on sentence ends)
+    function fmtNote(html, isNote){
+      const plain = !/<(?!\/?(b|i|code)\b)[a-z]/i.test(html);
+      let segs = html.split(/\s+·\s+/).map(s=>s.trim()).filter(Boolean);
+      if(segs.length===1 && plain && html.length>180) segs = html.replace(/([.;])\s+(?=[\p{Lu}"(])/gu, '$1\u0001').split('\u0001').map(s=>s.trim()).filter(Boolean);
+      if(segs.length<=1) return '<p class="' + (isNote ? 'ip-lead' : 'ip-cap') + '">' + html + '</p>';
+      return isNote ? '<p class="ip-lead">' + segs[0] + '</p><ul class="ip-list">' + segs.slice(1).map(x=>'<li>' + x + '</li>').join('') + '</ul>' : '<ul class="ip-list">' + segs.map(x=>'<li>' + x + '</li>').join('') + '</ul>';
+    }
     let pop = null, openBtn = null;
     // V12: mouse users get the explanation on hover (short delay); clicking keeps it open; touch keeps tap-to-open
     const FINE_N = !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
@@ -5903,9 +6042,14 @@
     function open(btn, card, viaHover){
       close();
       const s = sourcesOf(card), parts = [];
-      s.notes.filter(n => txt(n)).forEach(n => parts.push('<p class="ip-lead">' + n.innerHTML + '</p>'));
-      s.caps.filter(c => txt(c) && shown(c)).forEach(c => parts.push('<div class="ip-cap">' + c.innerHTML + '</div>'));
       const h2 = titleOf(card);
+      const hk = (card.id && INFO_HELP[card.id]) ? card.id : ((h2 && h2.dataset && h2.dataset.i18n) || '');
+      const help = INFO_HELP[hk];
+      if(help){ const H = help[LANG] || help.en; parts.push('<p class="ip-lead">' + H.lead + '</p>'); parts.push('<ul class="ip-list">' + H.items.map(i => '<li>' + i + '</li>').join('') + '</ul>'); }   // V12.7
+      else {
+        s.notes.filter(n => txt(n)).forEach(n => parts.push(fmtNote(n.innerHTML, true)));
+        s.caps.filter(c => txt(c) && shown(c)).forEach(c => parts.push(fmtNote(c.innerHTML, false)));
+      }
       pop = document.createElement('div');
       pop.className = 'info-pop'; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', h2 ? txt(h2) : tv('Notes', 'Ghi chú'));
       pop.innerHTML = '<div class="ip-head"><span class="ip-title">' + escH(h2 ? txt(h2) : '') + '</span><button type="button" class="ip-x" aria-label="' + tv('Close', 'Đóng') + '">&times;</button></div>' +

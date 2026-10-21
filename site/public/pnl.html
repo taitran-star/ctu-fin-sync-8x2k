@@ -833,6 +833,37 @@
   .v12tip[hidden]{display:none;}
   @media print{.v12tip{display:none!important} tr.v12-hid{display:table-row!important} tr.v12-more-row{display:none!important} .lc > .lt{white-space:normal;}}
   @media (max-width:640px){.lc{--lc-max:62vw;} table.stmt .lc{--lc-max:56vw;}}
+  /* ---- V12.7: filter dropdowns (tick several, then Apply), structured notes, Amazon fee map ---- */
+  .fb-panel{min-width:260px;padding:6px;}
+  .fb-panel .dditem.chk{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:7px 10px;border-radius:8px;cursor:pointer;color:var(--ink-secondary);}
+  .fb-panel .dditem.chk:hover{background:var(--surface-card-2);color:var(--ink-primary);}
+  .fb-panel .dditem.chk.on{color:var(--ink-primary);}
+  .fb-panel .box{width:15px;height:15px;border:1px solid var(--border);border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;line-height:1;color:var(--accent-solid-ink);background:var(--surface-card-2);flex:none;}
+  .fb-panel .on > .box{background:var(--accent-solid);border-color:var(--accent-solid);}
+  .fb-panel .fb-all{font-weight:600;border-bottom:1px solid var(--gridline);border-radius:8px 8px 0 0;margin-bottom:4px;}
+  .fb-panel .fb-n{margin-left:auto;font-size:11px;font-weight:500;color:var(--ink-muted);font-variant-numeric:tabular-nums;}
+  .fb-panel .fb-list{max-height:min(320px, 50vh);overflow:auto;}
+  .fb-panel .fb-nm{flex:1 1 auto;min-width:0;}
+  .fb-only{flex:none;border:0;background:none;font:inherit;font-size:11px;font-weight:600;color:var(--accent);padding:2px 6px;border-radius:6px;cursor:pointer;opacity:0;}
+  .fb-panel .dditem:hover .fb-only,.fb-only:focus-visible{opacity:1;}
+  .fb-only:hover{background:color-mix(in srgb, var(--accent) 12%, transparent);}
+  @media (hover:none){.fb-only{opacity:1;}}
+  .fb-foot{display:flex;justify-content:flex-end;gap:8px;border-top:1px solid var(--gridline);margin-top:6px;padding:8px 4px 2px;}
+  .fb-btn{font:inherit;font-size:12.5px;font-weight:600;border-radius:8px;padding:6px 14px;cursor:pointer;border:1px solid var(--border);background:var(--surface-card);color:var(--ink-primary);}
+  .fb-btn:hover{border-color:color-mix(in srgb, var(--ink-primary) 30%, var(--border));}
+  .fb-btn.fb-apply{background:var(--accent-solid);border-color:var(--accent-solid);color:var(--accent-solid-ink);}
+  .fb-btn:disabled{opacity:.45;cursor:not-allowed;}
+  .info-pop .ip-lead{font-weight:600;}
+  .info-pop .ip-list{margin:0 0 8px;padding-left:18px;display:flex;flex-direction:column;gap:5px;}
+  .info-pop .ip-list:last-child{margin-bottom:0;}
+  .info-pop .ip-list li{line-height:1.45;}
+  .info-pop .ip-list li::marker{color:var(--ink-muted);}
+  .info-pop .ip-list b{color:var(--ink-primary);font-weight:600;}
+  table.amz-map td{vertical-align:top;}
+  table.amz-map td:nth-child(3),table.amz-map td:nth-child(4){font-size:12px;color:var(--ink-secondary);}
+  table.amz-map tr.amz-flag td{background:color-mix(in srgb, var(--status-warning) 9%, transparent);}
+  .amz-raw summary{cursor:pointer;font-size:12.5px;font-weight:600;color:var(--ink-secondary);}
+  .amz-raw .pills{display:flex;flex-wrap:wrap;gap:6px;}
   /* ---- V12.6: overview cards (value + change; the eye opens the P&L or the expenses table), revenue chart as columns or lines, expenses dialog ---- */
   .exec-kpis.v126{grid-template-columns:repeat(4,minmax(0,1fr));}
   @media (max-width:1100px){.exec-kpis.v126{grid-template-columns:repeat(2,minmax(0,1fr));}}
@@ -1011,7 +1042,7 @@
     <div class="caption" id="bridgeCaption" style="padding-left:2px;margin-top:8px;"></div>
   </div>
 
-  <div class="card" id="alertCard">
+  <div class="card" id="alertCard" hidden>
     <div class="card-head"><h2 data-i18n="h.alertTitle">Cảnh báo</h2><div class="note" data-i18n="h.alertNote">Tự tính từ kỳ đang xem · ngưỡng ghi cạnh mỗi dòng</div></div>
     <div id="alertList" class="gapslist"></div>
   </div>
@@ -1143,6 +1174,18 @@
   </div><!-- /viewMarketing -->
 
   <div id="viewPnl" class="view" hidden>
+  <div class="card" id="stmtCard">
+    <div class="card-head">
+      <h2 data-i18n="h.stmtTitle">Báo cáo lãi lỗ (P&amp;L statement)</h2>
+      <div class="note" id="stmtFinding"></div>
+      <button class="btn mini" type="button" data-export="stmtTable" data-name="pnl">CSV</button>
+      <div class="seg two" id="stmtMode" role="group"><button type="button" data-m="compact" class="active" aria-pressed="true" data-i18n="stmt.compact">Thu gọn</button><button type="button" data-m="full" aria-pressed="false" data-i18n="stmt.full">Chi tiết</button></div>
+      <div class="note" data-i18n="h.stmtNote">% tính trên Doanh thu thuần của từng cột · bấm dòng nhóm để thu gọn/mở rộng · có thêm 6 kỳ liền trước để so xu hướng ở hầu hết các dòng (một vài dòng phụ có cấu trúc đổi theo kỳ — mix loại phí, breakdown kho theo kỳ hoá đơn, dòng đối chiếu — chỉ hiện cho kỳ đang xem)</div>
+    </div>
+    <div class="stmt-wrap"><table class="stmt" id="stmtTable"></table></div>
+    <div class="caption" style="padding-left:2px;margin-top:8px;" data-i18n="h.stmtCaption">Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa kết nối ($0)</span> chưa có nguồn dữ liệu nên để $0 (không ước tính). Vì vậy <b>Lợi nhuận gộp / đóng góp / EBITDA ở trên là lợi nhuận TRƯỚC</b> các khoản còn gắn nhãn đó (giá vốn sản phẩm, phí sàn Walmart/TikTok, phí Afterpay, G&amp;A…) — sẽ tự đúng dần khi từng nguồn được nối vào. Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa nhập ($0)</span> là chi phí không có API (lương, văn phòng, khấu hao, lãi vay, thuế TNDN): điền theo tháng vào file <code>data/opex_monthly.json</code> trên GitHub, bảng tự đọc và rải đều theo ngày; tháng chưa chốt sổ được tạm tính: chi phí VN = TB 6 tháng đã chốt gần nhất, phần mềm (Slash) &amp; Upwork = số thực tế tới nay.</div>
+  </div>
+
   <div class="kpis" id="kpiRow"></div>
 
   <div class="card" id="ueCard">
@@ -1157,18 +1200,6 @@
     <div class="scen" id="scenBox"></div>
     <div class="scen-out" id="scenOut"></div>
     <div class="caption" id="sensCaption" style="padding-left:2px;margin-top:8px;"></div>
-  </div>
-
-  <div class="card">
-    <div class="card-head">
-      <h2 data-i18n="h.stmtTitle">Báo cáo lãi lỗ (P&amp;L statement)</h2>
-      <div class="note" id="stmtFinding"></div>
-      <button class="btn mini" type="button" data-export="stmtTable" data-name="pnl">CSV</button>
-      <div class="seg two" id="stmtMode" role="group"><button type="button" data-m="compact" class="active" aria-pressed="true" data-i18n="stmt.compact">Thu gọn</button><button type="button" data-m="full" aria-pressed="false" data-i18n="stmt.full">Chi tiết</button></div>
-      <div class="note" data-i18n="h.stmtNote">% tính trên Doanh thu thuần của từng cột · bấm dòng nhóm để thu gọn/mở rộng · có thêm 6 kỳ liền trước để so xu hướng ở hầu hết các dòng (một vài dòng phụ có cấu trúc đổi theo kỳ — mix loại phí, breakdown kho theo kỳ hoá đơn, dòng đối chiếu — chỉ hiện cho kỳ đang xem)</div>
-    </div>
-    <div class="stmt-wrap"><table class="stmt" id="stmtTable"></table></div>
-    <div class="caption" style="padding-left:2px;margin-top:8px;" data-i18n="h.stmtCaption">Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa kết nối ($0)</span> chưa có nguồn dữ liệu nên để $0 (không ước tính). Vì vậy <b>Lợi nhuận gộp / đóng góp / EBITDA ở trên là lợi nhuận TRƯỚC</b> các khoản còn gắn nhãn đó (giá vốn sản phẩm, phí sàn Walmart/TikTok, phí Afterpay, G&amp;A…) — sẽ tự đúng dần khi từng nguồn được nối vào. Dòng gắn nhãn <span class="tag gap" style="margin-left:0;"><span class="d"></span>Chưa nhập ($0)</span> là chi phí không có API (lương, văn phòng, khấu hao, lãi vay, thuế TNDN): điền theo tháng vào file <code>data/opex_monthly.json</code> trên GitHub, bảng tự đọc và rải đều theo ngày; tháng chưa chốt sổ được tạm tính: chi phí VN = TB 6 tháng đã chốt gần nhất, phần mềm (Slash) &amp; Upwork = số thực tế tới nay.</div>
   </div>
 
   <div class="card" id="channelCostCard">
@@ -1201,8 +1232,8 @@
 
   <div class="card" id="amazonGapsCard" style="display:none;">
     <div class="card-head">
-      <h2 data-i18n="h.amzGapTitle">Amazon — chi phí chưa capture đầy đủ</h2>
-      <div class="note" data-i18n="h.amzGapNote">Từ log lần đồng bộ SP-API gần nhất · không đổi số đã hiển thị ở trên ngoài phần được ghi rõ</div>
+      <h2 data-i18n="h.amzGapTitle">Phí Amazon → dòng P&amp;L</h2>
+      <div class="note" data-i18n="h.amzGapNote">Mỗi loại phí Amazon nằm ở dòng nào trên P&amp;L và đã đúng GAAP chưa</div>
     </div>
     <div id="amazonGapsBody"></div>
   </div>
@@ -1290,6 +1321,10 @@
       <div class="card-head"><h2 data-i18n="h.gapsTitle">Còn thiếu gì trên P&amp;L</h2><div class="note" data-i18n="h.gapsNote">Gom lại từ các dòng "Chưa kết nối/Chưa nhập ($0)" đang rải rác trong bảng P&amp;L và ROAS — để biết cần nối gì tiếp theo</div></div>
       <div id="gapsList" class="gapslist"></div>
     </div>
+    <div class="card" id="amzRawCard">
+      <div class="card-head"><h2>Amazon — mã sự kiện (kỹ thuật)</h2><div class="note">Log lần đồng bộ SP-API gần nhất, dùng khi kiểm tra script</div></div>
+      <div id="amzRawBody"></div>
+    </div>
   </div><!-- /viewData -->
 
 
@@ -1354,7 +1389,7 @@
     return load(k, 1).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })); }).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=9cf20934bf';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=0193f28219';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');
