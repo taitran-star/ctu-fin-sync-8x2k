@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 0193f28219).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build fd0c397d3e).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -37,11 +37,11 @@
     document.querySelectorAll('[data-lang]').forEach(b=>{ b.classList.toggle('active', b.dataset.lang===LANG); b.setAttribute('aria-pressed', b.dataset.lang===LANG ? 'true' : 'false'); });
   }
   Object.assign(L.en, {
-    'nav.exec':'Overview', 'nav.sales':'Sales &amp; customers', 'nav.marketing':'Marketing', 'nav.pnl':'P&amp;L', 'nav.inventory':'Products &amp; inventory', 'nav.opex':'Fixed costs &amp; cash', 'nav.data':'Data',
+    'nav.exec':'Overview', 'nav.sales':'Sales &amp; customers', 'nav.marketing':'Marketing', 'nav.pnl':'P&amp;L', 'nav.inventory':'Products &amp; inventory', 'nav.opex':'Fixed costs &amp; cash', 'nav.data':'Data', 'nav.reports':'Reports', 'page.reports':'Reports',
     'mode.day':'Day', 'mode.week':'Week', 'mode.month':'Month', 'mode.range':'Custom',
     'tb.loadedAt':'When the numbers were loaded (your clock)', 'tb.reload':'Reload the latest numbers', 'tb.install':'Install', 'tb.installTitle':'Install as an app', 'tb.theme':'Light / dark', 'tb.signout':'Sign out',
     'brief.summary':'In brief', 'brief.moved':'What moved profit', 'brief.risks':'Biggest risks', 'brief.decide':'Decide this week', 'brief.title':'Brief & actions', 'brief.todo':'What to do', 'brief.why':'Why profit moved',
-    'rev.title':'Revenue, costs & profit', 'rev.daily':'Daily', 'rev.weekly':'Weekly', 'rev.monthly':'Monthly', 'rev.peak':'Peak', 'rev.bar':'Columns', 'rev.line':'Line', 'stmt.compact':'Compact', 'stmt.full':'Detail', 'rev.note':'Best {day}: {best}', 'rev.caption':'Same figures as the P&L, by order date (Los Angeles). Net revenue = gross − discounts − refunds. Order costs = COGS (product cost, packaging, fulfillment, postage) + transaction fees. Marketing & ads = ads, affiliates, agency, creators. Operating costs = warehousing & logistics + G&A. Profit = EBITDA = net revenue − all of these. Click a legend item to hide or show it; the amounts next to it are the period totals.',
+    'rev.title':'Revenue, costs & profit', 'rev.daily':'Daily', 'rev.weekly':'Weekly', 'rev.monthly':'Monthly', 'rev.peak':'Peak', 'rev.bar':'Column chart', 'rev.line':'Line chart', 'stmt.compact':'Compact', 'stmt.full':'Detail', 'rev.note':'Best {day}: {best}', 'rev.caption':'Same figures as the P&L, by order date (Los Angeles). Net revenue = gross − discounts − refunds. Order costs = COGS (product cost, packaging, fulfillment, postage) + transaction fees. Marketing & ads = ads, affiliates, agency, creators. Operating costs = warehousing & logistics + G&A. Profit = EBITDA = net revenue − all of these. Click a legend item to hide or show it; the amounts next to it are the period totals.',
     'chan.title':'Sales channels', 'chan.note':'{total} across {n} channels', 'chan.avgDay':'Average day', 'chan.perOrder':'Revenue per order',
     'pl.title':'Product lines', 'pl.line':'Product line', 'pl.share':'Share', 'pl.vsPrior':'vs prior', 'pl.cover':'Days of cover', 'pl.dollar':'Where each $100 of net revenue goes',
     'pl.note':'{n} lines on {ch}{cov}', 'pl.caption':'Revenue, fees and ads are allocated to a line by its share of gross sales in each channel; fulfillment by units. Days of cover = FBA fulfillable + ShipMonk available ÷ units sold per day (last 30 days). Lines come from data/products.json.',
@@ -55,11 +55,11 @@
     'ctx.vs':'vs {cmp}', 'ctx.today':'includes today (not final)',
   });
   Object.assign(L.vi, {
-    'nav.exec':'Điều hành', 'nav.sales':'Bán hàng &amp; khách', 'nav.marketing':'Marketing', 'nav.pnl':'Lãi lỗ (P&amp;L)', 'nav.inventory':'Sản phẩm &amp; tồn kho', 'nav.opex':'Chi phí cố định &amp; tiền', 'nav.data':'Dữ liệu',
+    'nav.exec':'Điều hành', 'nav.sales':'Bán hàng &amp; khách', 'nav.marketing':'Marketing', 'nav.pnl':'Lãi lỗ (P&amp;L)', 'nav.inventory':'Sản phẩm &amp; tồn kho', 'nav.opex':'Chi phí cố định &amp; tiền', 'nav.data':'Dữ liệu', 'nav.reports':'Báo cáo', 'page.reports':'Báo cáo',
     'mode.day':'Ngày', 'mode.week':'Tuần', 'mode.month':'Tháng', 'mode.range':'Tuỳ chọn',
     'tb.loadedAt':'Giờ tải số liệu (giờ trên máy bạn)', 'tb.reload':'Tải lại số liệu mới nhất', 'tb.install':'Cài app', 'tb.installTitle':'Cài như app lên máy / điện thoại', 'tb.theme':'Sáng / tối', 'tb.signout':'Đăng xuất',
     'brief.summary':'Tóm tắt kỳ này', 'brief.moved':'Điều gì làm lợi nhuận đổi', 'brief.risks':'Rủi ro lớn nhất', 'brief.decide':'Cần quyết tuần này', 'brief.title':'Tóm tắt & việc cần làm', 'brief.todo':'Việc cần làm', 'brief.why':'Vì sao lợi nhuận đổi',
-    'rev.title':'Doanh thu, chi phí & lợi nhuận', 'rev.daily':'Ngày', 'rev.weekly':'Tuần', 'rev.monthly':'Tháng', 'rev.peak':'Đỉnh', 'rev.bar':'Cột', 'rev.line':'Đường', 'stmt.compact':'Thu gọn', 'stmt.full':'Chi tiết', 'rev.note':'Cao nhất {day}: {best}', 'rev.caption':'Cùng số với báo cáo P&L, theo ngày đặt hàng (giờ Los Angeles). Doanh thu thuần = gộp − giảm giá − hoàn tiền. Chi phí đơn hàng = giá vốn COGS (sản phẩm, bao bì, fulfillment, cước) + phí giao dịch. Marketing & quảng cáo = quảng cáo, affiliate, agency, creator. Chi phí vận hành = kho bãi & logistics + G&A. Lợi nhuận = EBITDA = doanh thu thuần − tất cả các khoản trên. Bấm vào chú thích để ẩn/hiện từng cột; số cạnh chú thích là tổng cả kỳ.',
+    'rev.title':'Doanh thu, chi phí & lợi nhuận', 'rev.daily':'Ngày', 'rev.weekly':'Tuần', 'rev.monthly':'Tháng', 'rev.peak':'Đỉnh', 'rev.bar':'Biểu đồ cột', 'rev.line':'Biểu đồ đường', 'stmt.compact':'Thu gọn', 'stmt.full':'Chi tiết', 'rev.note':'Cao nhất {day}: {best}', 'rev.caption':'Cùng số với báo cáo P&L, theo ngày đặt hàng (giờ Los Angeles). Doanh thu thuần = gộp − giảm giá − hoàn tiền. Chi phí đơn hàng = giá vốn COGS (sản phẩm, bao bì, fulfillment, cước) + phí giao dịch. Marketing & quảng cáo = quảng cáo, affiliate, agency, creator. Chi phí vận hành = kho bãi & logistics + G&A. Lợi nhuận = EBITDA = doanh thu thuần − tất cả các khoản trên. Bấm vào chú thích để ẩn/hiện từng cột; số cạnh chú thích là tổng cả kỳ.',
     'chan.title':'Kênh bán', 'chan.note':'{total} trên {n} kênh', 'chan.avgDay':'Trung bình mỗi ngày', 'chan.perOrder':'Doanh thu mỗi đơn',
     'pl.title':'Dòng sản phẩm', 'pl.line':'Dòng sản phẩm', 'pl.share':'Tỷ trọng', 'pl.vsPrior':'so kỳ trước', 'pl.cover':'Ngày còn hàng', 'pl.dollar':'Mỗi $100 doanh thu thuần đi đâu',
     'pl.note':'{n} dòng trên {ch}{cov}', 'pl.caption':'Doanh thu, phí và quảng cáo phân bổ cho dòng theo tỷ trọng doanh thu gộp của từng kênh; fulfillment theo units. Ngày còn hàng = FBA bán được + ShipMonk sẵn bán ÷ units bán mỗi ngày (30 ngày gần nhất). Dòng sản phẩm lấy từ data/products.json.',
@@ -2980,14 +2980,15 @@
     const svg = document.getElementById('revChart'); if(!svg) return;
     const rows = currentRows();
     const seg = document.getElementById('revSeg'), tseg = document.getElementById('revType'), lg = document.getElementById('revLegend');
-    if(seg && !seg._wired){ seg._wired = true; seg.addEventListener('click', e=>{ const b = e.target.closest('button'); if(!b) return; REV_STATE.g = b.dataset.g; renderRev(); }); }
+    if(seg && !seg._wired){ seg._wired = true; seg.addEventListener('click', e=>{ const b = e.target.closest('button'); if(!b || b.getAttribute('aria-disabled')==='true') return; REV_STATE.g = b.dataset.g; renderRev(); }); }
     if(tseg && !tseg._wired){ tseg._wired = true; tseg.addEventListener('click', e=>{ const b = e.target.closest('button'); if(!b) return; REV_STATE.type = b.dataset.t==='line' ? 'line' : 'bar'; try{ localStorage.setItem('ctu_rev_type', REV_STATE.type); }catch(_){} renderRev(); }); }
     if(lg && !lg._wired){ lg._wired = true; lg.addEventListener('click', e=>{ const b = e.target.closest('button[data-k]'); if(!b) return; const k = b.dataset.k; if(!REV_STATE.hide[k] && REV_SERIES.filter(s=>!REV_STATE.hide[s.k]).length<=1) return; REV_STATE.hide[k] = !REV_STATE.hide[k]; renderRev(); }); }
     const bar = REV_STATE.type==='bar';
     let g = rows.length<14 ? 'day' : REV_STATE.g;
     const autoWeek = bar && g==='day' && rows.length>62; if(autoWeek) g = 'week';   // more than ~62 day columns per series is unreadable
     if(seg) [...seg.querySelectorAll('button')].forEach(b=>b.classList.toggle('active', b.dataset.g===g));
-    if(tseg) [...tseg.querySelectorAll('button')].forEach(b=>b.classList.toggle('active', b.dataset.t===REV_STATE.type));
+    if(seg){ seg.setAttribute('aria-label', tv('Interval', 'Chu kỳ')); const lockDay = bar && rows.length>62, few = rows.length<14; [...seg.querySelectorAll('button')].forEach(b=>{ const off = few ? b.dataset.g!=='day' : (lockDay && b.dataset.g==='day'); b.setAttribute('aria-pressed', String(b.dataset.g===g)); b.classList.toggle('dim', off); if(off){ b.setAttribute('aria-disabled', 'true'); b.setAttribute('data-tip', few ? tv('Periods under 14 days are shown by day.', 'Kỳ dưới 14 ngày chỉ xem theo ngày.') : tv('Over 62 days the columns go by week. Switch to the line chart to see each day.', 'Kỳ dài hơn 62 ngày: cột gộp theo tuần. Chuyển sang biểu đồ đường để xem từng ngày.')); } else { b.removeAttribute('aria-disabled'); b.removeAttribute('data-tip'); } }); }
+    if(tseg){ tseg.setAttribute('aria-label', tv('Chart type', 'Kiểu biểu đồ')); [...tseg.querySelectorAll('button')].forEach(b=>{ const on = b.dataset.t===REV_STATE.type, lbl = tx(b.dataset.t==='line' ? 'rev.line' : 'rev.bar'); b.classList.toggle('active', on); b.setAttribute('aria-pressed', String(on)); b.setAttribute('data-tip', lbl); b.setAttribute('aria-label', lbl); }); }   // V12.8.1: icon toggle, label in the tooltip
     const buckets = bucketRows(rows, g);
     const daily = g==='day' ? dailyAgg(rows) : null;
     const series = buckets.map((b,i)=>{ const x = daily ? daily[i] : aggregate(b.rows); return {label: b.label, n: b.rows.length, net: x.netRevenue, order: x.cogs + x.feesTotal, mkt: x.marketingTotal, opex: x.fixedTotal, profit: x.netProfit, orders: x.totalOrders, ads: x.merSpend}; });
@@ -3040,7 +3041,8 @@
     }
     const best = series[pi];
     setNote('revNote', (n>1 ? tx('rev.note', {best: money(best.net,{compact:true}), day: labelOf(best)}) : '') + (autoWeek ? tv(' · columns by week (period over 62 days)', ' · cột theo tuần (kỳ dài hơn 62 ngày)') : ''));
-    if(lg){ const tot = {}; REV_SERIES.forEach(v=>{ tot[v.k] = sum(series.map(s=>s[v.k])); }); lg.innerHTML = REV_SERIES.map(v=>`<button type="button" class="li${REV_STATE.hide[v.k] ? ' off' : ''}" data-k="${v.k}" aria-pressed="${REV_STATE.hide[v.k] ? 'false' : 'true'}" title="${tv('Show / hide', 'Ẩn / hiện')}"><span class="sw" style="background:${col[v.k]}"></span>${v.l}<b>${money(tot[v.k],{compact:true})}</b></button>`).join(''); }
+    if(lg){ const tot = {}; REV_SERIES.forEach(v=>{ tot[v.k] = sum(series.map(s=>s[v.k])); }); lg.innerHTML = REV_SERIES.map(v=>`<button type="button" class="li${REV_STATE.hide[v.k] ? ' off' : ''}" data-k="${v.k}" aria-pressed="${REV_STATE.hide[v.k] ? 'false' : 'true'}" title="${v.l}
+${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" style="background:${col[v.k]}"></span><span class="lg-l">${v.l}</span><b>${money(tot[v.k],{compact:true})}</b></button>`).join(''); }
     setNote('revCaption', tx('rev.caption'));
   }
 
@@ -3490,7 +3492,7 @@
     const cogsOf = k => (a.productCostBy && a.productCostBy[k]) || 0;
     const out = {};
     // same cost lines as the P&L down to CM3 (warehousing / storage stay below CM3 as OpEx, so the channel total = the CM3 tile)
-    out.amazon = {net: netOf('amazon'), orders: a.orders.amazon, fees: a.amazonMarketplaceFeesReal + a.amazonMarketplaceFeesEst, fulfil: a.fulfillment + (smCh.amazon||0), ads: a.ads.amazonads + (a.mktDsp||0), aff: 0};
+    out.amazon = {net: netOf('amazon'), orders: a.orders.amazon, fees: a.amazonMarketplaceFeesReal + a.amazonMarketplaceFeesEst, fulfil: a.fulfillment + (smCh.amazon||0), ads: a.ads.amazonads + (a.mktDsp||0) + (a.dspLive||0), aff: 0};   // V12.8: + Amazon DSP read daily from Xnurta (was left out, so CM3 by channel was above the P&L)
     out.shopify = {net: netOf('shopify'), orders: a.orders.shopify, fees: a.paymentFeesAll, fulfil: (smCh.shopify||0) + a.shipmonkInvoiceExtras + (a.cogsOther||0), ads: a.ads.meta + a.ads.google + a.ads.applovin + (a.mktAgency||0) + (a.mktOther||0), aff: a.snowballCommission + (a.mktCreator||0)};
     out.walmart = {net: netOf('walmart'), orders: a.orders.walmart, fees: a.walmartFees, fulfil: smCh.walmart||0, ads: a.walmartAds, aff: 0};
     out.tiktok = {net: netOf('tiktok'), orders: a.orders.tiktok, fees: a.tiktokFees, fulfil: 0, ads: a.ads.tiktokads, aff: a.tiktokAffiliate + a.tiktokSmart};
@@ -4226,10 +4228,198 @@
   // ---------- wire up ----------
   let lastVw = window.innerWidth;
   window.addEventListener('resize', ()=>{ clearTimeout(window.__rsz); window.__rsz = setTimeout(()=>{ if(window.innerWidth!==lastVw){ lastVw = window.innerWidth; renderTrend(); renderBreakeven(); renderExec(); } }, 150); });
+  // ---------- V12.8: Reports tab ----------
+  // Every view of the P&L as a table (like SimplyCost's Reports): pick a report, set the dates / market / product / channel
+  // at the top, click a row for its full breakdown, export the table as CSV. Same figures as the P&L — built from
+  // aggregate() (per day / month), channelEcon(), lineEconomics() / skuEconomics(), the expenses table (xpData) and stockRows().
+  const RP = {id: null, q: '', sort: null, open: new Set(), xg: 'all'};
+  try{ const r0 = localStorage.getItem('ctu_rp'); if(r0) RP.id = r0; }catch(e){}
+  const rpEsc = s => String(s==null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const rpMonthLbl = m => LANG==='vi' ? 'Tháng '+parseInt(m.slice(5,7),10)+'/'+m.slice(0,4) : MONTHS_EN[+m.slice(5,7)-1]+' '+m.slice(0,4);
+  const rpRatio = (v, b) => (b>0.005 || b<-0.005) ? v/b*100 : null;
+  const rpFmt = (t, v) => (v===null || v===undefined || (typeof v==='number' && !isFinite(v))) ? '—' : t==='money' ? money(v) : t==='int' ? intFmt(v) : t==='pct' ? v.toFixed(1)+'%' : t==='num1' ? (+v).toFixed(1) : t==='days' ? (v>365 ? '>365' : Math.round(v)+'') : rpEsc(v);
+  const rpSum = (rows, k) => sum(rows.map(r=> +r.v[k]||0));
+  // full P&L of one bucket (day / month / whole period), three columns like the detail panel of SimplyCost
+  function rpPnlParts(a){
+    const disc = sum(CH_KEYS.map(k=>a.discountBy[k])), ref = sum(CH_KEYS.map(k=>a.refund[k]));
+    return [
+      [tv('Revenue', 'Doanh thu'), [[tv('Gross sales', 'Doanh thu gộp'), a.grossSales], [tv('Discounts', 'Giảm giá'), -disc], [tv('Refunds', 'Hoàn tiền'), -ref], [tv('Shipping charged to customers', 'Phí ship khách trả'), a.shippingIncome||0], [tv('Net revenue', 'Doanh thu thuần'), a.netRevenue, 1], [tv('Orders', 'Đơn hàng'), a.totalOrders, 0, 'int'], ['AOV', a.blendedAOV]]],
+      [tv('Costs', 'Chi phí'), [[tv('Product cost', 'Giá vốn sản phẩm'), -a.productCost], [tv('Fulfillment, packaging & postage', 'Fulfillment, bao bì & cước'), -(a.cogs - a.productCost)], [tv('Marketplace fees', 'Phí sàn'), -a.marketplaceFees], [tv('Payment processing', 'Phí thanh toán'), -a.paymentFeesAll], [tv('Order costs', 'Chi phí đơn hàng'), -(a.cogs + a.feesTotal), 1], [tv('Marketing & ads', 'Marketing & quảng cáo'), -a.marketingTotal], [tv('Warehousing & logistics', 'Kho bãi & logistics'), -(a.inventoryHolding + a.logisticsTotal)], ['G&A', -a.gaTotal]]],
+      [tv('Profit', 'Lợi nhuận'), [[tv('Gross profit', 'Lợi nhuận gộp'), a.grossProfit], [tv('CM2 — after fees', 'CM2 — sau phí'), a.cmBeforeMarketing], [tv('CM3 — after marketing', 'CM3 — sau marketing'), a.contributionProfit], [tv('EBITDA', 'EBITDA'), a.netProfit, 1], [tv('EBITDA margin', 'Biên EBITDA'), rpRatio(a.netProfit, a.netRevenue), 0, 'pct'], [tv('Depreciation, interest & tax', 'Khấu hao, lãi vay & thuế'), -(a.depreciation + a.interest + a.incomeTax)], [tv('Net profit', 'Lợi nhuận ròng'), a.netIncome, 1]]],
+    ];
+  }
+  function rpPanel(parts){
+    return '<div class="rp-panel">' + parts.map(([h, items])=>'<div class="rp-col"><div class="rp-ch">' + h + '</div>' + items.map(([l, v, b, t])=>`<div class="rp-l${b ? ' b' : ''}"><span>${l}</span><span class="${typeof v==='number' && v<0 && t!=='pct' ? 'neg' : ''}">${rpFmt(t||'money', v)}</span></div>`).join('') + '</div>').join('') + '</div>';
+  }
+  const rpCsvParts = parts => { const out = []; parts.forEach(([h, items])=>items.forEach(([l, v, b, t])=>out.push([l, v, t||'money']))); return out; };
+  const pnlVals = a => ({net: a.netRevenue, orders: a.totalOrders, order: a.cogs + a.feesTotal, mkt: a.marketingTotal, opex: a.fixedTotal, profit: a.netProfit, margin: rpRatio(a.netProfit, a.netRevenue)});
+  const pnlCols = first => [
+    {k:'label', l:first, t:'text'},
+    {k:'net', l:tv('Net revenue', 'Doanh thu thuần'), t:'money'},
+    {k:'orders', l:tv('Orders', 'Đơn'), t:'int'},
+    {k:'order', l:tv('Order costs', 'Chi phí đơn hàng'), t:'money'},
+    {k:'mkt', l:'Marketing', t:'money'},
+    {k:'opex', l:tv('Operating costs', 'Chi phí vận hành'), t:'money'},
+    {k:'profit', l:tv('Profit (EBITDA)', 'Lợi nhuận (EBITDA)'), t:'money', sign:true},
+    {k:'margin', l:tv('Margin', 'Biên'), t:'pct', sign:true},
+  ];
+  function rpBuckets(g){
+    const rows = currentRows(); if(!rows.length) return [];
+    if(g==='day'){ const d = dailyAgg(rows); return rows.map((r,i)=>({key: r.iso, sk: r.iso, label: fmtDateLong(r.date) + (r._syncing ? tv(' · today', ' · hôm nay') : ''), a: d[i]})); }
+    const map = {}; rows.forEach(r=>{ const m = r.iso.slice(0,7); (map[m] = map[m] || []).push(r); });
+    return Object.keys(map).sort().map(m=>({key: m, sk: m, label: rpMonthLbl(m) + (map[m].length < daysInMonth(m) ? ' · '+map[m].length+' '+tx('u.days') : ''), a: aggregate(map[m])}));
+  }
+  const ADS_P = [['meta', 'Meta', a=>a.ads.meta], ['google', 'Google', a=>a.ads.google], ['tiktokads', 'TikTok', a=>a.ads.tiktokads], ['applovin', 'AppLovin', a=>a.ads.applovin], ['amazonads', 'Amazon Ads', a=>a.ads.amazonads], ['dsp', 'Amazon DSP', a=>(a.mktDsp||0) + (a.dspLive||0)], ['walmart', 'Walmart Connect', a=>a.walmartAds||0]];
+  const RP_DEFS = {
+    month: () => { const b = rpBuckets('month'); return {title: tv('Profit by month', 'Lãi theo tháng'), desc: tv('One row per month: revenue, costs and EBITDA. Click a month for its full P&L.', 'Mỗi tháng một dòng: doanh thu, chi phí, EBITDA. Bấm vào một tháng để xem đủ P&L.'), cols: pnlCols(tv('Month', 'Tháng')), rows: b.map(x=>({key: x.key, sk: x.sk, label: x.label, v: pnlVals(x.a), a: x.a})), total: {a: aggregate(currentRows())}, defSort: {k: 'sk', dir: -1}, pnl: true}; },
+    day: () => { const b = rpBuckets('day'); return {title: tv('Profit by day', 'Lãi theo ngày'), desc: tv('One row per day (order date, Los Angeles time). Monthly costs (G&A) are spread evenly over the days. Click a day for its full P&L.', 'Mỗi ngày một dòng (theo ngày đặt, giờ Los Angeles). Chi phí theo tháng (G&A) được rải đều theo ngày. Bấm vào một ngày để xem đủ P&L.'), cols: pnlCols(tv('Date', 'Ngày')), rows: b.map(x=>({key: x.key, sk: x.sk, label: x.label, v: pnlVals(x.a), a: x.a})), total: {a: aggregate(currentRows())}, defSort: {k: 'sk', dir: -1}, pnl: true}; },
+    channel: () => {
+      const a = aggregate(currentRows()), ce = channelEcon(a);
+      const rows = CH_KEYS.filter(k=> Math.abs(ce[k].net)>0.005 || a.gross[k]>0.005).map(k=>{ const c = ce[k]; return {key: k, label: CH_LABEL[k], v: {net: c.net, orders: a.orders[k], cogs: c.cogs, fulfil: c.fulfil, fees: c.fees, mkt: c.adsAll, cm: c.cm, margin: rpRatio(c.cm, c.net)}, ch: k}; });
+      return {title: tv('Profit by channel', 'Lãi theo kênh'), desc: tv('Each sales channel down to CM3 (after its own fees, fulfillment and marketing). Warehousing and G&A cannot be tied to one channel, so they are not deducted here — the CM3 total equals CM3 on the P&L.', 'Từng kênh bán tới CM3 (sau phí, fulfillment và marketing của chính kênh đó). Kho bãi và G&A không gán được cho một kênh nên không trừ ở đây — tổng CM3 bằng CM3 trên P&L.'),
+        cols: [{k:'label', l:tv('Channel', 'Kênh'), t:'text'}, {k:'net', l:tv('Net revenue', 'Doanh thu thuần'), t:'money'}, {k:'orders', l:tv('Orders', 'Đơn'), t:'int'}, {k:'cogs', l:tv('Product cost', 'Giá vốn SP'), t:'money'}, {k:'fulfil', l:'Fulfillment', t:'money'}, {k:'fees', l:tv('Marketplace & payment fees', 'Phí sàn & thanh toán'), t:'money'}, {k:'mkt', l:'Marketing', t:'money'}, {k:'cm', l:'CM3', t:'money', sign:true}, {k:'margin', l:tv('CM3 margin', 'Biên CM3'), t:'pct', sign:true}],
+        rows, total: {v: null}, defSort: {k: 'net', dir: -1},
+        detail: r => { const k = r.ch, c = ce[k]; return rpPanel([[tv('Revenue', 'Doanh thu'), [[tv('Gross sales', 'Doanh thu gộp'), a.gross[k]], [tv('Discounts', 'Giảm giá'), -a.discountBy[k]], [tv('Refunds', 'Hoàn tiền'), -a.refund[k]], ...(k==='shopify' ? [[tv('Shipping charged to customers', 'Phí ship khách trả'), a.shippingIncome||0]] : []), [tv('Net revenue', 'Doanh thu thuần'), c.net, 1], [tv('Orders', 'Đơn hàng'), a.orders[k], 0, 'int'], ['AOV', a.orders[k]>0 ? c.net/a.orders[k] : null]]], [tv('Costs', 'Chi phí'), [[tv('Product cost', 'Giá vốn sản phẩm'), -c.cogs], ['Fulfillment', -c.fulfil], [tv('Marketplace & payment fees', 'Phí sàn & thanh toán'), -c.fees], [tv('Ads', 'Quảng cáo'), -c.ads], [tv('Affiliates & creators', 'Affiliate & creator'), -c.aff]]], [tv('Profit', 'Lợi nhuận'), [['CM3', c.cm, 1], [tv('CM3 margin', 'Biên CM3'), rpRatio(c.cm, c.net), 0, 'pct']]]]); }};
+    },
+    line: () => {
+      const le = lineEconomics(currentRows());
+      const rows = Object.values(le.lines).filter(l=> Math.abs(l.net)>0.005 || l.units>0).map(l=>({key: l.id, label: productLineName(l.id), sub: l.skus+' SKU', v: {units: l.units, net: l.net, cogs: l.cogs, fulfil: l.fulfil, fees: l.fees, ads: l.ads, cm: l.cm, margin: rpRatio(l.cm, l.net)}, o: l}));
+      return {title: tv('Profit by product line', 'Lãi theo dòng sản phẩm'), desc: tv('Product cost is exact per SKU (FIFO by receipt lot); fees and ads are shared by each line\'s revenue share in its channel, fulfillment by units. Channels with sales per SKU only.', 'Giá vốn chính xác theo SKU (FIFO theo lô nhập); phí và quảng cáo chia theo tỷ trọng doanh thu của dòng trong từng kênh, fulfillment theo units. Chỉ các kênh có số theo SKU.') + (le.covMin < le.n ? ' ' + le.covMin + '/' + le.n + tv(' days have sales per SKU.', ' ngày có số theo SKU.') : ''),
+        cols: [{k:'label', l:tv('Product line', 'Dòng sản phẩm'), t:'text'}, {k:'units', l:'Units', t:'int'}, {k:'net', l:tv('Net revenue', 'Doanh thu thuần'), t:'money'}, {k:'cogs', l:tv('Product cost', 'Giá vốn SP'), t:'money'}, {k:'fulfil', l:'Fulfillment', t:'money'}, {k:'fees', l:tv('Fees', 'Phí'), t:'money'}, {k:'ads', l:tv('Ads', 'Quảng cáo'), t:'money'}, {k:'cm', l:'CM3', t:'money', sign:true}, {k:'margin', l:tv('CM3 margin', 'Biên CM3'), t:'pct', sign:true}],
+        rows, total: {v: null}, defSort: {k: 'net', dir: -1},
+        detail: r => { const l = r.o; return rpPanel([[tv('Revenue', 'Doanh thu'), [[tv('Gross sales', 'Doanh thu gộp'), l.gross], [tv('Discounts & refunds', 'Giảm giá & hoàn tiền'), -(l.gross - l.net)], [tv('Net revenue', 'Doanh thu thuần'), l.net, 1], ['Units', l.units, 0, 'int'], [tv('Units refunded', 'Units hoàn'), l.refunds, 0, 'int'], ['SKU', l.skus, 0, 'int']]], [tv('Costs', 'Chi phí'), [[tv('Product cost', 'Giá vốn sản phẩm'), -l.cogs], [tv('… of which from receipt lots', '… trong đó theo lô nhập'), -l.cogsReal], ['Fulfillment', -l.fulfil], [tv('Marketplace & payment fees', 'Phí sàn & thanh toán'), -l.fees], [tv('Ads & affiliates', 'Quảng cáo & affiliate'), -l.ads]]], [tv('Profit', 'Lợi nhuận'), [['CM3', l.cm, 1], [tv('CM3 margin', 'Biên CM3'), rpRatio(l.cm, l.net), 0, 'pct'], [tv('CM3 per unit', 'CM3 mỗi unit'), l.units>0 ? l.cm/l.units : null]]]]); }};
+    },
+    sku: () => {
+      const se = skuEconomics(currentRows());
+      const rows = Object.values(se.items).filter(it=> Math.abs(it.net)>0.005 || it.units>0).map(it=>({key: it.sku, label: it.sku, sub: amazonListingName(it.sku) ? amazonListingName(it.sku).slice(0, 70) : '', v: {line: productLineName(it.line), ch: Object.keys(it.ch).map(k=>CH_LABEL[k]).join(', '), units: it.units, net: it.net, cogs: it.cogs, fulfil: it.fulfil, fees: it.fees, ads: it.ads, cm: it.cm, margin: rpRatio(it.cm, it.net)}, o: it}));
+      return {title: tv('Profit by SKU', 'Lãi theo SKU'), desc: tv('Product cost per SKU (FIFO by receipt lot, else the SKU\'s landed cost); fees and ads shared by revenue, fulfillment by units.', 'Giá vốn theo từng SKU (FIFO theo lô nhập, không có thì theo giá landed của SKU); phí và quảng cáo chia theo doanh thu, fulfillment theo units.'),
+        cols: [{k:'label', l:'SKU', t:'text'}, {k:'line', l:tv('Product line', 'Dòng SP'), t:'text'}, {k:'ch', l:tv('Channels', 'Kênh'), t:'text'}, {k:'units', l:'Units', t:'int'}, {k:'net', l:tv('Net revenue', 'Doanh thu thuần'), t:'money'}, {k:'cogs', l:tv('Product cost', 'Giá vốn SP'), t:'money'}, {k:'fulfil', l:'Fulfillment', t:'money'}, {k:'fees', l:tv('Fees', 'Phí'), t:'money'}, {k:'ads', l:tv('Ads', 'Quảng cáo'), t:'money'}, {k:'cm', l:'CM3', t:'money', sign:true}, {k:'margin', l:tv('CM3 margin', 'Biên CM3'), t:'pct', sign:true}],
+        rows, total: {v: null}, defSort: {k: 'net', dir: -1},
+        detail: r => { const it = r.o; return rpPanel([[tv('Revenue', 'Doanh thu'), [[tv('Gross sales', 'Doanh thu gộp'), it.gross], [tv('Discounts', 'Giảm giá'), -it.disc], [tv('Refunds', 'Hoàn tiền'), -it.ref], [tv('Net revenue', 'Doanh thu thuần'), it.net, 1], ['Units', it.units, 0, 'int'], [tv('Units refunded', 'Units hoàn'), it.refunds, 0, 'int'], [tv('Net price per unit', 'Giá thuần mỗi unit'), it.units>0 ? it.net/it.units : null]]], [tv('Costs', 'Chi phí'), [[tv('Product cost', 'Giá vốn sản phẩm'), -it.cogs], [tv('… of which from receipt lots', '… trong đó theo lô nhập'), -it.cogsReal], ['Fulfillment', -it.fulfil], [tv('Marketplace & payment fees', 'Phí sàn & thanh toán'), -it.fees], [tv('Ads & affiliates', 'Quảng cáo & affiliate'), -it.ads]]], [tv('Profit', 'Lợi nhuận'), [['CM3', it.cm, 1], [tv('CM3 margin', 'Biên CM3'), rpRatio(it.cm, it.net), 0, 'pct'], [tv('CM3 per unit', 'CM3 mỗi unit'), it.units>0 ? it.cm/it.units : null]]]]); }};
+    },
+    ads_day: () => rpAds('day'),
+    ads_month: () => rpAds('month'),
+    expenses: () => {
+      const D = xpData();
+      const secs = RP.xg==='all' ? XP_SECS : (XP_GROUP_SECS[RP.xg] || XP_SECS);
+      const rows = D.items.filter(x=>secs.includes(x.sec)).map((x,i)=>({key: x.iso+'|'+i, sk: x.iso, label: fmtDate(new Date(+x.iso.slice(0,4), +x.iso.slice(5,7)-1, +x.iso.slice(8,10))), title: x.full, v: {name: x.name, grp: xpSecLabel(x.sec), src: xpSrcLabel(x.src), amt: x.amt}}));
+      return {title: tv('Expenses by day', 'Chi phí theo ngày'), desc: tv('Every cost line of the P&L for each day — the same lines and totals as the P&L. Monthly costs are spread evenly over the days of the month.', 'Từng khoản chi của P&L cho mỗi ngày — cùng dòng và cùng tổng với P&L. Chi phí theo tháng được rải đều cho các ngày trong tháng.'),
+        cols: [{k:'label', l:tv('Date', 'Ngày'), t:'text'}, {k:'name', l:tv('Cost line', 'Khoản chi'), t:'text'}, {k:'grp', l:tv('Group', 'Nhóm'), t:'text'}, {k:'src', l:tv('Source', 'Nguồn số'), t:'text'}, {k:'amt', l:tv('Amount', 'Số tiền'), t:'money'}],
+        rows, total: {v: null}, defSort: {k: 'sk', dir: -1}, noExpand: true, expGroups: true};
+    },
+    inventory: () => {
+      const list = stockRows().filter(s=> s.known && (s.stock>0 || s.fbaInbound>0 || s.smkIncoming>0));
+      const rows = list.map(s=>{ const uc = skuCost(s.sku), cost = uc!==null ? uc*s.stock : null, val = s.price>0 ? s.price*s.stock : null; return {key: s.sku, label: s.sku, sub: amazonListingName(s.sku) ? amazonListingName(s.sku).slice(0, 60) : '', v: {line: productLineName(s.line), fba: s.fba, smk: s.smk, stock: s.stock, inc: s.fbaInbound + s.smkIncoming, perDay: s.perDay, cover: s.cover, uc, cost, price: s.price>0 ? s.price : null, val, pot: (val!==null && cost!==null) ? val - cost : null}}; });
+      return {title: tv('Current inventory', 'Tồn kho hiện tại'), desc: tv('Stock on hand now (Amazon FBA + ShipMonk) — not tied to the dates above. Sales per day = last 30 days. Value at cost = units × landed cost per SKU; at price = units × average price before discounts of the last 30 days, so the potential margin is before discounts, fees and ads.', 'Tồn kho hiện tại (Amazon FBA + ShipMonk) — không phụ thuộc khoảng ngày ở trên. Bán/ngày = 30 ngày gần nhất. Giá trị theo giá vốn = số lượng × giá landed của SKU; theo giá bán = số lượng × giá bán trung bình trước giảm giá 30 ngày gần nhất, nên lãi tiềm năng là trước giảm giá, phí và quảng cáo.'),
+        cols: [{k:'label', l:'SKU', t:'text'}, {k:'line', l:tv('Product line', 'Dòng SP'), t:'text'}, {k:'fba', l:'FBA', t:'int'}, {k:'smk', l:'ShipMonk', t:'int'}, {k:'stock', l:tv('In stock', 'Tồn bán được'), t:'int'}, {k:'inc', l:tv('Inbound', 'Đang về'), t:'int'}, {k:'perDay', l:tv('Sold / day', 'Bán/ngày'), t:'num1'}, {k:'cover', l:tv('Days of stock', 'Ngày còn hàng'), t:'days'}, {k:'uc', l:tv('Unit cost', 'Giá vốn/đv'), t:'money', nosum:true}, {k:'cost', l:tv('Value at cost', 'Giá trị (giá vốn)'), t:'money'}, {k:'price', l:tv('Avg list price', 'Giá bán TB (trước giảm)'), t:'money', nosum:true}, {k:'val', l:tv('Value at price', 'Giá trị (giá bán)'), t:'money'}, {k:'pot', l:tv('Potential margin', 'Lãi tiềm năng'), t:'money', sign:true}],
+        rows, total: {v: null}, defSort: {k: 'cost', dir: -1}, noExpand: true, noDates: true};
+    },
+  };
+  function rpAds(g){
+    const b = rpBuckets(g), A = aggregate(currentRows());
+    const act = ADS_P.filter(p=> Math.abs(p[2](A))>0.005);
+    const rows = b.map(x=>{ const v = {}; let t = 0; act.forEach(p=>{ v[p[0]] = p[2](x.a); t += v[p[0]]; }); v.total = t; v.share = rpRatio(t, x.a.netRevenue); v.mer = t>0 ? x.a.netRevenue/t : null; return {key: x.key, sk: x.sk, label: x.label, v}; });
+    return {title: g==='day' ? tv('Ads by day', 'Quảng cáo theo ngày') : tv('Ads by month', 'Quảng cáo theo tháng'), desc: tv('Paid ad spend per platform (same as the P&L marketing lines; affiliates, agency and creators are not ads). MER = net revenue ÷ ad spend.', 'Chi quảng cáo theo từng nền tảng (cùng số với các dòng marketing trên P&L; affiliate, agency, creator không phải quảng cáo). MER = doanh thu thuần ÷ chi quảng cáo.'),
+      cols: [{k:'label', l:g==='day' ? tv('Date', 'Ngày') : tv('Month', 'Tháng'), t:'text'}].concat(act.map(p=>({k:p[0], l:p[1], t:'money'}))).concat([{k:'total', l:tv('Total', 'Tổng'), t:'money'}, {k:'share', l:tv('% of net revenue', '% DT thuần'), t:'pct'}, {k:'mer', l:'MER', t:'num1x'}]),
+      rows, total: {v: null, ratio: {share: ['total', null, A.netRevenue], mer: [A.netRevenue, 'total']}}, defSort: {k: 'sk', dir: -1}, noExpand: true};
+  }
+  const RP_CATALOG = () => [
+    {h: tv('Profit over time & by channel', 'Lãi theo thời gian & kênh'), items: [['month', tv('Profit by month', 'Lãi theo tháng'), tv('Monthly series with every cost, down to EBITDA and net profit.', 'Chuỗi theo tháng, đủ mọi chi phí tới EBITDA và lợi nhuận ròng.')], ['day', tv('Profit by day', 'Lãi theo ngày'), tv('Daily series, same columns as by month.', 'Chuỗi theo ngày, cùng các cột như theo tháng.')], ['channel', tv('Profit by channel', 'Lãi theo kênh'), tv('Shopify, Amazon, Walmart, TikTok Shop down to CM3.', 'Shopify, Amazon, Walmart, TikTok Shop tới CM3.')]]},
+    {h: tv('Profit by product', 'Lãi theo sản phẩm'), items: [['line', tv('Profit by product line', 'Lãi theo dòng sản phẩm'), tv('Cat caves, fountains, filters… down to CM3.', 'Hang mèo, máy uống nước, lõi lọc… tới CM3.')], ['sku', tv('Profit by SKU', 'Lãi theo SKU'), tv('Every SKU sold, down to CM3.', 'Từng SKU đã bán, tới CM3.')], ['orders', tv('Profit by order', 'Lãi theo đơn hàng'), tv('Needs order-level data from the Shopify / Amazon syncs — not available yet.', 'Cần dữ liệu từng đơn từ đồng bộ Shopify / Amazon — chưa có.'), true]]},
+    {h: tv('Ads', 'Quảng cáo'), items: [['ads_day', tv('Ads by day', 'Quảng cáo theo ngày'), tv('Daily spend per platform, with MER.', 'Chi theo ngày từng nền tảng, kèm MER.')], ['ads_month', tv('Ads by month', 'Quảng cáo theo tháng'), tv('Monthly spend per platform.', 'Chi theo tháng từng nền tảng.')]]},
+    {h: tv('Expenses', 'Chi phí'), items: [['expenses', tv('Expenses by day', 'Chi phí theo ngày'), tv('Every cost line of the P&L, day by day.', 'Từng khoản chi của P&L, theo từng ngày.')]]},
+    {h: tv('Inventory', 'Tồn kho'), items: [['inventory', tv('Current inventory', 'Tồn kho hiện tại'), tv('Stock per SKU with value at cost and at price.', 'Tồn theo SKU, giá trị theo giá vốn và giá bán.')]]},
+  ];
+  let _rpDef = null;
+  function renderReports(){
+    const root = document.getElementById('rpRoot'); if(!root || currentView!=='reports') return;
+    if(!root._wired){ root._wired = true; rpWire(root); }
+    if(!RP.id || !RP_DEFS[RP.id]){
+      _rpDef = null;
+      root.innerHTML = '<div class="rp-cat">' + RP_CATALOG().map(g=>'<section class="card rp-group"><h2>' + g.h + '</h2><div class="rp-items">' + g.items.map(([id, t, d, off])=>`<button type="button" class="rp-item${off ? ' off' : ''}" ${off ? 'disabled' : `data-rp="${id}"`}><span><b>${t}</b><small>${d}</small></span><span class="rp-chev" aria-hidden="true">›</span></button>`).join('') + '</div></section>').join('') + '</div>';
+      return;
+    }
+    _rpDef = RP_DEFS[RP.id]();
+    const def = _rpDef;
+    if(!RP.sort) RP.sort = def.defSort ? {...def.defSort} : {k: 'label', dir: 1};
+    root.innerHTML = `<div class="card rp-card"><div class="rp-head"><button type="button" class="rp-crumb" data-rp="">${tv('Reports', 'Báo cáo')}</button><span class="rp-sep">›</span><h2>${def.title}</h2><button type="button" class="btn mini rp-csv" style="margin-left:auto;">${tv('Export CSV', 'Xuất CSV')}</button></div>`
+      + `<div class="rp-desc">${def.desc}${def.noDates ? '' : ' <span class="rp-hint">' + tv('Dates, market, product and channel: the controls at the top of the page.', 'Khoảng ngày, thị trường, sản phẩm, kênh: chỉnh ở thanh trên cùng.') + '</span>'}</div>`
+      + `<div class="rp-ctl"><input type="search" id="rpQ" placeholder="${tv('Search…', 'Tìm…')}" value="${rpEsc(RP.q)}" autocomplete="off">`
+      + (def.expGroups ? `<select id="rpXg">${['all'].concat(XP_GROUPS).map(k=>`<option value="${k}"${k===RP.xg ? ' selected' : ''}>${xpGroupLabel(k)}</option>`).join('')}</select>` : '')
+      + `<span class="rp-n" id="rpN"></span>${def.noExpand ? '' : '<span class="rp-tip">' + tv('Click a row for its breakdown', 'Bấm vào một dòng để xem chi tiết') + '</span>'}</div>`
+      + `<div class="rp-wrap" id="rpWrap"></div></div>`;
+    rpTable();
+  }
+  function rpFiltered(){
+    const def = _rpDef, q = RP.q.trim().toLowerCase();
+    let rows = def.rows.filter(r=> !q || [r.label, r.sub, r.title].concat(Object.values(r.v).filter(x=>typeof x==='string')).join(' ').toLowerCase().includes(q));
+    const s = RP.sort, kk = s.k;
+    const val = r => kk==='sk' ? r.sk : kk==='label' ? (r.sk || r.label) : r.v[kk];
+    rows = rows.slice().sort((x,y)=>{ const a = val(x), b = val(y); if(a===b) return 0; if(a===null || a===undefined) return 1; if(b===null || b===undefined) return -1; return (typeof a==='string' ? a.localeCompare(b) : a-b) * s.dir; });
+    return rows;
+  }
+  function rpTotals(def, rows){
+    if(def.total && def.total.a && !RP.q.trim()) return pnlVals(def.total.a);
+    const t = {}; def.cols.forEach(c=>{ if((c.t==='money' || c.t==='int') && !c.nosum) t[c.k] = rpSum(rows, c.k); });
+    if(def.cols.some(c=>c.k==='margin')){ const num = t.profit!==undefined ? t.profit : t.cm; t.margin = rpRatio(num, t.net); }
+    if(def.total && def.total.ratio){ const A = aggregate(currentRows()); if(def.total.ratio.share) t.share = rpRatio(t.total, A.netRevenue); if(def.total.ratio.mer) t.mer = t.total>0 ? A.netRevenue/t.total : null; }
+    return t;
+  }
+  function rpTable(){
+    const def = _rpDef, wrap = document.getElementById('rpWrap'); if(!def || !wrap) return;
+    const rows = rpFiltered(), LIM = 2000, shown = rows.slice(0, LIM), tot = rpTotals(def, rows), N = def.cols.length;
+    const cell = (c, v, r) => { const t = c.t==='num1x' ? 'num1' : c.t; const txt = rpFmt(t, v) + (c.t==='num1x' && v!==null && v!==undefined ? 'x' : ''); const cls = (c.t==='text' ? '' : 'num') + (c.sign && typeof v==='number' && v<0 ? ' neg' : '') + (c.sign && typeof v==='number' && v>0 ? ' pos' : ''); return `<td class="${cls}">${txt}</td>`; };
+    let h = `<table class="rp-table"><thead><tr>` + def.cols.map(c=>`<th class="${c.t==='text' ? '' : 'num'}" data-sort="${c.k}" aria-sort="${RP.sort.k===c.k || (c.k==='label' && RP.sort.k==='sk') ? (RP.sort.dir>0 ? 'ascending' : 'descending') : 'none'}">${c.l}${RP.sort.k===c.k || (c.k==='label' && RP.sort.k==='sk') ? (RP.sort.dir>0 ? ' ↑' : ' ↓') : ''}</th>`).join('') + `</tr></thead><tbody>`;
+    h += `<tr class="rp-tot"><td><b>${tv('Total', 'Tổng')}</b>${RP.q.trim() ? ' <small>' + tv('(matching rows)', '(các dòng khớp)') + '</small>' : ''}</td>` + def.cols.slice(1).map(c=> tot[c.k]===undefined ? '<td></td>' : cell(c, tot[c.k])).join('') + `</tr>`;
+    shown.forEach(r=>{
+      const open = !def.noExpand && RP.open.has(r.key);
+      h += `<tr class="rp-row${def.noExpand ? '' : ' x'}${open ? ' open' : ''}" data-key="${rpEsc(r.key)}"${r.title ? ` title="${rpEsc(r.title)}"` : ''}><td class="rp-lab">${def.noExpand ? '' : '<span class="rp-car">▸</span>'}${rpEsc(r.label)}${r.sub ? '<small>' + rpEsc(r.sub) + '</small>' : ''}</td>` + def.cols.slice(1).map(c=>cell(c, r.v[c.k], r)).join('') + `</tr>`;
+      if(open) h += `<tr class="rp-det"><td colspan="${N}">${def.pnl ? rpPanel(rpPnlParts(r.a)) : def.detail(r)}</td></tr>`;
+    });
+    if(!rows.length) h += `<tr><td colspan="${N}" class="rp-empty">${tv('No rows for this selection.', 'Không có dòng nào cho lựa chọn này.')}</td></tr>`;
+    if(rows.length>LIM) h += `<tr><td colspan="${N}" class="rp-empty">${tv('Showing the first ', 'Đang hiện ')}${intFmt(LIM)}${tv(' of ', ' / ')}${intFmt(rows.length)}${tv(' rows — the CSV has all of them.', ' dòng — file CSV có đủ.')}</td></tr>`;
+    h += `</tbody></table>`;
+    wrap.innerHTML = h;
+    const n = document.getElementById('rpN'); if(n) n.textContent = intFmt(rows.length) + ' ' + tv('rows', 'dòng');
+  }
+  function rpCsv(){
+    const def = _rpDef; if(!def) return;
+    const rows = rpFiltered(), q = s => '"' + String(s==null ? '' : s).replace(/"/g, '""') + '"';
+    const num = v => (v===null || v===undefined || !isFinite(v)) ? '' : (Math.round(v*100)/100).toString();
+    let head = def.cols.map(c=>c.l), extra = null;
+    if(def.pnl){ extra = rpCsvParts(rpPnlParts(def.total.a)).map(x=>x[0]); head = head.concat(extra); }
+    const lines = [head.map(q).join(',')];
+    rows.forEach(r=>{
+      const base = def.cols.map(c=> c.t==='text' ? q(c.k==='label' ? (r.sk || r.label) : r.v[c.k]) : num(r.v[c.k]));
+      if(def.pnl) rpCsvParts(rpPnlParts(r.a)).forEach(x=>base.push(num(x[1])));
+      lines.push(base.join(','));
+    });
+    const tot = rpTotals(def, rows); const tl = [q(tv('Total', 'Tổng'))].concat(def.cols.slice(1).map(c=> num(tot[c.k])));
+    if(def.pnl && !RP.q.trim()) rpCsvParts(rpPnlParts(def.total.a)).forEach(x=>tl.push(num(x[1])));
+    lines.push(tl.join(','));
+    const blob = new Blob(['﻿' + lines.join('\n')], {type: 'text/csv;charset=utf-8'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    const rng = currentRows(); const span = rng.length ? rng[0].iso + '_' + rng[rng.length-1].iso : '';
+    a.download = 'cattasaurus-' + RP.id + (def.noDates ? '-' + TODAY_ISO : '-' + span) + '.csv';
+    document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+  function rpWire(root){
+    root.addEventListener('click', e=>{
+      const go = e.target.closest('[data-rp]');
+      if(go){ RP.id = go.dataset.rp || null; RP.q = ''; RP.sort = null; RP.open.clear(); try{ localStorage.setItem('ctu_rp', RP.id || ''); }catch(_){} renderReports(); window.scrollTo({top: 0}); return; }
+      if(e.target.closest('.rp-csv')){ rpCsv(); return; }
+      const th = e.target.closest('th[data-sort]');
+      if(th){ let k = th.dataset.sort; if(k==='label' && _rpDef && _rpDef.rows.some(r=>r.sk)) k = 'sk'; RP.sort = (RP.sort && RP.sort.k===k) ? {k, dir: -RP.sort.dir} : {k, dir: (k==='label' || k==='sk') ? 1 : -1}; rpTable(); return; }
+      const tr = e.target.closest('tr.rp-row.x');
+      if(tr){ const k = tr.dataset.key; if(RP.open.has(k)) RP.open.delete(k); else RP.open.add(k); rpTable(); }
+    });
+    root.addEventListener('input', e=>{ if(e.target.id==='rpQ'){ RP.q = e.target.value; rpTable(); } });
+    root.addEventListener('change', e=>{ if(e.target.id==='rpXg'){ RP.xg = e.target.value; RP.open.clear(); _rpDef = RP_DEFS[RP.id](); rpTable(); } });
+  }
   function renderAll(){
     applySourceAges();   // V10: source "age" lines in the active language
     renderSubCtl(); renderKpis(); renderTrend(); renderStatement(); renderChannelCosts(); renderBreakeven(); renderRoas(); renderAttribution(); renderKlaviyo(); renderLoopSubscriptions(); renderTax(); renderSources(); renderOpexTable(); renderGaps(); renderAmazonGaps(); renderShipmonk(); renderShopifyRecon(); renderSnowball(); renderMetaCampaigns(); renderGoogleCampaigns();
-    renderExec(); renderRev(); renderChannels(); renderProductLines(); renderInventory(); renderShipmonkInventory(); renderOpexPage(); renderUnitEconomics(); renderSensitivity(); renderFunnel(); renderReturnsBySku(); renderProductPnl(); renderLots(); renderFindings(); renderPageHead();
+    renderExec(); renderRev(); renderChannels(); renderProductLines(); renderInventory(); renderShipmonkInventory(); renderOpexPage(); renderUnitEconomics(); renderSensitivity(); renderFunnel(); renderReturnsBySku(); renderProductPnl(); renderLots(); renderFindings(); renderReports(); renderPageHead();
     if(_bannerPaint) _bannerPaint();
   }
   function renderPageHead(){
@@ -4246,7 +4436,7 @@
   // view list follows the same rule so a saved or typed view outside the list falls back to the first allowed page.
   const ME = window.__ME || null;
   const canView = v => !ME || !Array.isArray(ME.views) || ME.views.includes(v);
-  const ALL_VIEWS = ['exec','sales','marketing','pnl','inventory','opex','data'];
+  const ALL_VIEWS = ['exec','sales','marketing','pnl','inventory','opex','reports','data'];   // V12.8: + reports
   const VIEWS = ALL_VIEWS.filter(canView);
   let booted = false;
   function showView(view){

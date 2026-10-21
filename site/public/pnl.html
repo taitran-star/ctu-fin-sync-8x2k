@@ -833,6 +833,57 @@
   .v12tip[hidden]{display:none;}
   @media print{.v12tip{display:none!important} tr.v12-hid{display:table-row!important} tr.v12-more-row{display:none!important} .lc > .lt{white-space:normal;}}
   @media (max-width:640px){.lc{--lc-max:62vw;} table.stmt .lc{--lc-max:56vw;}}
+  /* ---- V12.8: Reports tab ---- */
+  .rp-cat{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start;}
+  @media (max-width:900px){.rp-cat{grid-template-columns:minmax(0,1fr);}}
+  .rp-group h2{font-size:14px;font-weight:600;margin:0 0 10px;color:var(--ink-primary);}
+  .rp-items{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+  .rp-item{display:flex;align-items:center;gap:12px;text-align:left;font:inherit;background:var(--surface-card);border:0;border-top:1px solid var(--border);padding:12px 14px;cursor:pointer;color:var(--ink-primary);}
+  .rp-item:first-child{border-top:0;}
+  .rp-item:hover{background:var(--surface-card-2);}
+  .rp-item:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;}
+  .rp-item b{display:block;font-size:13.5px;font-weight:600;}
+  .rp-item small{display:block;font-size:12px;color:var(--ink-muted);margin-top:2px;line-height:1.4;}
+  .rp-item .rp-chev{margin-left:auto;font-size:18px;color:var(--ink-muted);flex:none;}
+  .rp-item.off{cursor:default;opacity:.55;}
+  .rp-item.off:hover{background:var(--surface-card);}
+  .rp-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .rp-head h2{font-size:16px;font-weight:600;margin:0;color:var(--ink-primary);}
+  .rp-crumb{font:inherit;font-size:12.5px;font-weight:600;color:var(--ink-secondary);background:var(--surface-card-2);border:1px solid var(--border);border-radius:8px;padding:4px 10px;cursor:pointer;}
+  .rp-crumb:hover{color:var(--ink-primary);}
+  .rp-sep{color:var(--ink-muted);}
+  .rp-desc{font-size:12.5px;color:var(--ink-secondary);margin:8px 0 10px;line-height:1.5;max-width:110ch;}
+  .rp-desc .rp-hint{color:var(--ink-muted);}
+  .rp-ctl{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+  .rp-ctl input[type=search],.rp-ctl select{font:inherit;font-size:13px;color:var(--ink-primary);background:var(--surface-card);border:1px solid var(--border);border-radius:8px;padding:6px 10px;min-width:0;}
+  .rp-ctl input[type=search]{flex:0 1 280px;}
+  .rp-n,.rp-tip{font-size:12px;color:var(--ink-muted);}
+  .rp-tip{margin-left:auto;}
+  .rp-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;}
+  .rp-table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums;}
+  .rp-table th{position:sticky;top:0;z-index:1;background:var(--surface-card-2);text-align:left;font-size:11.5px;font-weight:600;color:var(--ink-secondary);padding:9px 10px;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;}
+  .rp-table th.num,.rp-table td.num{text-align:right;}
+  .rp-table th:hover{color:var(--ink-primary);}
+  .rp-table td{padding:8px 10px;border-bottom:1px solid var(--gridline);white-space:nowrap;}
+  .rp-table td.rp-lab small{display:block;font-size:11px;color:var(--ink-muted);white-space:nowrap;max-width:320px;overflow:hidden;text-overflow:ellipsis;}
+  .rp-table tr.rp-tot td{font-weight:600;background:color-mix(in srgb, var(--accent) 5%, var(--surface-card));border-bottom:2px solid var(--border);}
+  .rp-table tr.rp-row.x{cursor:pointer;}
+  .rp-table tr.rp-row:hover td{background:var(--surface-card-2);}
+  .rp-table tr.rp-row.open td{background:var(--surface-card-2);font-weight:600;}
+  .rp-car{display:inline-block;width:14px;color:var(--ink-muted);font-size:10px;transition:transform .15s;}
+  .rp-row.open .rp-car{transform:rotate(90deg);color:var(--accent);}
+  .rp-table td.neg{color:var(--status-critical);} .rp-table td.pos{color:var(--success-text);}
+  .rp-table tr.rp-det > td{padding:0;background:var(--surface-card-2);white-space:normal;}
+  .rp-empty{color:var(--ink-muted);text-align:center;padding:16px!important;white-space:normal!important;}
+  .rp-panel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;padding:14px 16px 16px 24px;position:sticky;left:0;box-sizing:border-box;width:min(1100px, calc(100vw - 90px));}
+  .rp-col{padding:0 18px;border-left:1px solid var(--border);min-width:0;}
+  .rp-col:first-child{border-left:0;padding-left:0;}
+  .rp-ch{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:6px;}
+  .rp-l{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;padding:3px 0;color:var(--ink-secondary);}
+  .rp-l.b{font-weight:600;color:var(--ink-primary);}
+  .rp-l span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .rp-l span.neg{color:var(--ink-secondary);}
+  @media (max-width:760px){.rp-panel{grid-template-columns:minmax(0,1fr);padding:12px;} .rp-col{border-left:0;padding:8px 0;border-top:1px solid var(--border);} .rp-col:first-child{border-top:0;} .rp-tip{margin-left:0;flex-basis:100%;}}
   /* ---- V12.7: filter dropdowns (tick several, then Apply), structured notes, Amazon fee map ---- */
   .fb-panel{min-width:260px;padding:6px;}
   .fb-panel .dditem.chk{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:7px 10px;border-radius:8px;cursor:pointer;color:var(--ink-secondary);}
@@ -936,7 +987,31 @@
     .xp-body th{top:0;}
     .xp-foot{padding:10px 12px calc(14px + env(safe-area-inset-bottom, 0px));}
   }
-  @media (max-width:520px){#revCard .card-head .seg{width:auto;flex:1 1 0;} #revCard .card-head #revType{flex:0 0 40%;margin-left:0!important;}}
+  /* ---- V12.8.1: chart controls — compact segmented toggles on one row, right-aligned (no full-width dark bars) ---- */
+  :root{--tgl-on:var(--surface-card);--tgl-shadow:0 1px 2px rgba(5,55,46,.14),0 0 0 .5px rgba(5,55,46,.10);}
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--tgl-on:var(--surface-card-3);--tgl-shadow:0 1px 2px rgba(0,0,0,.45);}}
+  :root[data-theme="dark"]{--tgl-on:var(--surface-card-3);--tgl-shadow:0 1px 2px rgba(0,0,0,.45);}
+  #revCard .rev-head{align-items:center;gap:8px 16px;}
+  .rev-tools{display:flex;align-items:center;gap:8px;margin-left:auto;flex:none;}
+  .tgl{display:inline-flex;align-items:center;gap:2px;height:30px;padding:2px;box-sizing:border-box;background:var(--surface-card-2);border:1px solid var(--border);border-radius:8px;flex:none;}
+  .tgl button{display:inline-flex;align-items:center;justify-content:center;height:24px;padding:0 10px;border:0;border-radius:6px;background:transparent;color:var(--ink-muted);font-family:var(--font-body);font-size:12px;font-weight:500;line-height:1;letter-spacing:.01em;white-space:nowrap;cursor:pointer;transition:color .12s, background-color .12s, box-shadow .12s;}
+  .tgl button:hover{color:var(--ink-primary);}
+  .tgl button.active{background:var(--tgl-on);color:var(--ink-primary);font-weight:600;box-shadow:var(--tgl-shadow);}
+  .tgl button:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+  .tgl-ic button{width:28px;padding:0;}
+  .tgl-ic svg{display:block;}
+  @media (max-width:560px){.rev-tools{margin-left:0;width:100%;justify-content:space-between;}}
+  @media (prefers-reduced-motion: reduce){.tgl button{transition:none;}}
+  /* legend = key figures: label on top, period total under it, one aligned row (wraps to a grid on narrow screens) */
+  #revLegend{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px 12px;margin:2px 0 12px!important;}
+  #revLegend button.li{display:grid;grid-template-columns:9px minmax(0,1fr);column-gap:7px;row-gap:3px;align-items:center;justify-items:start;text-align:left;min-width:0;padding:5px 6px;margin:0;border-radius:6px;}
+  #revLegend .lg-l{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;color:var(--ink-muted);}
+  #revLegend button.li > b{grid-column:2;margin-left:0;font-size:14px;font-weight:600;line-height:1.15;color:var(--ink-primary);font-variant-numeric:tabular-nums;}
+  #revLegend button.li.off{text-decoration:none;}
+  #revLegend button.li.off .lg-l{text-decoration:line-through;}
+  @media (max-width:760px){#revLegend{grid-template-columns:repeat(3,minmax(0,1fr));}}
+  @media (max-width:420px){#revLegend{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  .tgl button.dim,.tgl button.dim:hover{color:var(--ink-muted);opacity:.5;cursor:default;}
 </style>
 </head>
 <body>
@@ -950,6 +1025,7 @@
       <button type="button" data-view="pnl" role="tab" aria-selected="false" data-i18n="nav.pnl">P&amp;L</button>
       <button type="button" data-view="inventory" role="tab" aria-selected="false" data-i18n="nav.inventory">Products &amp; inventory</button>
       <button type="button" data-view="opex" role="tab" aria-selected="false" data-i18n="nav.opex">Fixed costs &amp; cash</button>
+      <button type="button" data-view="reports" role="tab" aria-selected="false" data-i18n="nav.reports">Reports</button>
       <button type="button" data-view="data" role="tab" aria-selected="false" data-i18n="nav.data">Data</button>
     </nav>
     <div class="tb-right">
@@ -1000,7 +1076,7 @@
 
   <div class="ov-grid">
     <div class="card" id="revCard">
-      <div class="card-head"><h2 data-i18n="rev.title">Revenue, costs &amp; profit</h2><div class="note" id="revNote"></div><div class="seg two" id="revType" style="margin-left:auto;" role="group"><button type="button" data-t="bar" class="active" data-i18n="rev.bar">Columns</button><button type="button" data-t="line" data-i18n="rev.line">Line</button></div><div class="seg" id="revSeg"><button type="button" data-g="day" class="active" data-i18n="rev.daily">Daily</button><button type="button" data-g="week" data-i18n="rev.weekly">Weekly</button><button type="button" data-g="month" data-i18n="rev.monthly">Monthly</button></div></div>
+      <div class="card-head rev-head"><h2 data-i18n="rev.title">Revenue, costs &amp; profit</h2><div class="note" id="revNote"></div><div class="rev-tools"><div class="tgl" id="revSeg" role="group" aria-label="Interval"><button type="button" data-g="day" class="active" aria-pressed="true" data-i18n="rev.daily">Daily</button><button type="button" data-g="week" aria-pressed="false" data-i18n="rev.weekly">Weekly</button><button type="button" data-g="month" aria-pressed="false" data-i18n="rev.monthly">Monthly</button></div><div class="tgl tgl-ic" id="revType" role="group" aria-label="Chart type"><button type="button" data-t="bar" class="active" aria-pressed="true" aria-label="Column chart" data-tip="Column chart"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.5 13V8.5M8 13V3.5M12.5 13V6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button><button type="button" data-t="line" aria-pressed="false" aria-label="Line chart" data-tip="Line chart"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M2.5 11.5l3.8-4.3 2.9 2.4 4.3-5.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></div></div>
       <div class="legend" id="revLegend" style="margin-bottom:6px;"></div>
       <div style="position:relative;"><svg id="revChart" style="width:100%;display:block;"></svg><div class="tooltip" id="revTip"></div></div>
       <div class="caption" id="revCaption" style="margin-top:6px;"></div>
@@ -1309,6 +1385,8 @@
   </div>
   </div><!-- /viewOpex -->
 
+  <div id="viewReports" class="view" hidden><div id="rpRoot"></div></div>
+
   <div id="viewData" class="view" hidden>
   <div class="banner" id="liveBanner" style="border-color:color-mix(in srgb, var(--accent) 35%, var(--border));background:color-mix(in srgb, var(--accent) 8%, var(--surface-card));"><i data-icon="plug"></i><span data-i18n="h.liveBanner">Đang kết nối dữ liệu thật…</span></div>
   <div class="banner" id="syncBanner"><i data-icon="clock"></i><span data-i18n="h.syncBanner"><b>Lưu ý ngày gần nhất:</b> khoảng xem gồm ngày hôm nay (giờ LA) nên số ngày đó chưa chốt — Amazon ghi nhận phí/settlement muộn 24–48h, các nguồn khác tự đồng bộ vài giờ một lần.</span></div>
@@ -1389,7 +1467,7 @@
     return load(k, 1).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })); }).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=0193f28219';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=fd0c397d3e';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');
