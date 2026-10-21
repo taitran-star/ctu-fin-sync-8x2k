@@ -1,0 +1,61 @@
+name: Cattasaurus Re:amaze helpdesk sync
+
+# Reads the Re:amaze reports (volume, response time, staff, channels, tags, satisfaction) and classifies the
+# recent conversations into reason buckets for the Customer service page. Only counts are written to
+# data/reamaze.json - no names, e-mails or message text.
+
+on:
+  schedule:
+    - cron: "40 */2 * * *"   # every 2 hours at :40 UTC (off the other jobs' minutes)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: reamaze-sync
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Read Re:amaze reports and conversations
+        env:
+          REAMAZE_LOGIN: ${{ secrets.REAMAZE_LOGIN }}
+          REAMAZE_TOKEN: ${{ secrets.REAMAZE_TOKEN }}
+          REAMAZE_BRAND: ${{ secrets.REAMAZE_BRAND }}
+          REPORT_TIMEZONE: America/Los_Angeles
+          WINDOW_DAYS: "35"
+        run: |
+          if [ -z "$REAMAZE_TOKEN" ]; then
+            echo "::notice::REAMAZE_TOKEN secret not set yet - add REAMAZE_LOGIN, REAMAZE_TOKEN and REAMAZE_BRAND (repository secrets). Skipping."
+            exit 0
+          fi
+          python fetch_reamaze.py
+
+      - name: Commit updated data file if changed
+        run: |
+          git config user.name "cattasaurus-cs-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/reamaze.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Update Re:amaze data ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            echo "Push attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "Could not push after 5 attempts." && exit 1
