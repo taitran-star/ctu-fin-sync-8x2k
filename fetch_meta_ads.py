@@ -505,15 +505,18 @@ def fetch_campaign_reach(token, account_id, since, until):
 def fetch_campaign_insights(token, account_id, since, until, campaigns, warnings, rebucket=None, converted=False):
     """Daily rows per campaign -> campaigns[id]['daily'][date] buckets."""
     rebucket = rebucket or (lambda day, hour: day)
-    # 2.5: delivery and conversions in two calls (see INSIGHT_PASSES) - one call over a multi-day range answers spend 0
-    delivery_fields = "campaign_id,campaign_name,date_start,spend,impressions,clicks,inline_link_clicks"
+    # 2.5: delivery and conversions in two calls (see INSIGHT_PASSES) - one call over a multi-day range answers spend 0.
+    # 2.6: inline_link_clicks belongs to the conversions call too - asking for it next to spend zeroes spend/impressions/
+    # clicks exactly like actions do (checked with the diagnose workflow on 2026-10-21: spend,impressions,clicks alone are
+    # fine; + inline_link_clicks -> 5 of 322 rows keep their spend).
+    delivery_fields = "campaign_id,campaign_name,date_start,spend,impressions,clicks"
     reach_by_day = {}
     if converted:
         reach_by_day = fetch_campaign_reach(token, account_id, since, until)
         warnings.add("Meta reach/frequency per campaign are by account-timezone day (Meta has no hourly reach) - spend/purchases are re-bucketed to " + REPORT_TIMEZONE)
     else:
         delivery_fields = delivery_fields.replace("impressions,clicks", "impressions,reach,clicks")
-    passes = (("delivery", delivery_fields), ("conversions", "campaign_id,campaign_name,date_start,actions,action_values"))
+    passes = (("delivery", delivery_fields), ("conversions", "campaign_id,campaign_name,date_start,inline_link_clicks,actions,action_values"))
     url0 = f"{GRAPH_HOST}/{API_VERSION}/{account_id}/insights"
     rows_total = 0
     for pass_name, fields in passes:
@@ -552,9 +555,9 @@ def fetch_campaign_insights(token, account_id, since, until, campaigns, warnings
                     else:
                         d["reach"] += to_int(row.get("reach"))
                     d["clicks"] += to_int(row.get("clicks"))
-                    d["link_clicks"] += to_int(row.get("inline_link_clicks"))
                     rows_total += 1
                 else:
+                    d["link_clicks"] += to_int(row.get("inline_link_clicks"))
                     _, atc = pick_action(row.get("actions"), ATC_PRIORITY)
                     _, ic = pick_action(row.get("actions"), IC_PRIORITY)
                     _, pur = pick_action(row.get("actions"), PURCHASE_ACTION_PRIORITY)
@@ -766,7 +769,7 @@ def main():
         "products": products,
         "meta": {
             "schema": 2 if CAMPAIGNS_ENABLED else 1,
-            "script_version": "2.5",   # 2.3 = history across runs + backfill; 2.4 = refuses answers without spend; 2.5 = delivery + conversions fetched separately
+            "script_version": "2.6",   # 2.3 = history across runs + backfill; 2.4 = refuses answers without spend; 2.5/2.6 = delivery and conversions (+ link clicks) fetched separately
             "history": hist,
             "campaign_rows": campaign_rows,
             "rows_processed": rows_total,
