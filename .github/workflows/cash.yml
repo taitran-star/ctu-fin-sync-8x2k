@@ -1,0 +1,41 @@
+name: Cattasaurus cash balances
+
+# Reads the bank balances from Slash (read-only key) and stores them in the dashboard's private store
+# (Cloudflare KV via POST /api/cash). Nothing is written to this repository and no amount is printed in the log.
+
+on:
+  schedule:
+    - cron: "23 6 * * *"    # once a day, 06:23 UTC (13:23 Vietnam)
+  workflow_dispatch:        # "Run workflow" by hand
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cash-balances
+  cancel-in-progress: false
+
+jobs:
+  balances:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Read Slash balances and store them privately
+        env:
+          SLASH_API_KEY: ${{ secrets.SLASH_API_KEY }}
+          CASH_WRITE_KEY: ${{ secrets.CASH_WRITE_KEY }}
+          CASH_URL: https://dashboard.cattasaurus.com/api/cash
+        run: |
+          if [ -z "$CASH_WRITE_KEY" ]; then
+            echo "::notice::CASH_WRITE_KEY secret not set yet - add the same value as the Cloudflare Pages secret CASH_WRITE_KEY. Skipping."
+            exit 0
+          fi
+          python fetch_cash.py
