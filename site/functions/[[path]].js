@@ -55,6 +55,7 @@ const REPO_FILES = new Set([
   'products.json',          // dòng sản phẩm (SKU -> line) cho bộ lọc Sản phẩm
   'amazon_sns.json',   // bảng /sns (Subscribe & Save) — đừng bỏ dòng này khi sửa danh sách
   'amazon_dsp.json',   // V12.2: Amazon DSP theo ngày từ Xnurta (task đọc bằng trình duyệt của Claude)
+  'slash_pnl.json',    // V12.9: khoản app / công cụ marketing / creator trên thẻ Slash (tab Marketing — công cụ & AI content)
 ]);
 const STATIC_FILES = new Set(['shipmonk_invoices.json', 'shipmonk_storage_daily.json', 'klaviyo_invoices.json']);   // in public/ (read by Claude's browser); amazon_ads.json now comes from the repo (sellerboard_ads.yml)
 const ALL_FILES = new Set([...REPO_FILES, ...STATIC_FILES]);
@@ -63,7 +64,7 @@ const ALL_FILES = new Set([...REPO_FILES, ...STATIC_FILES]);
 const VIEW_FILES = {
   exec: '*', pnl: '*', opex: '*', data: '*', reports: '*',   // Reports = the full P&L by month/day/channel/SKU
   sales: ['shopify_pnl.json', 'amazon_pnl.json', 'walmart.json', 'tiktok_shop.json', 'loop_subscriptions.json', 'paypal.json', 'klaviyo.json', 'meta_ads.json', 'google_ads.json', 'targets_monthly.json', 'products.json'],
-  marketing: ['meta_ads.json', 'google_ads.json', 'applovin.json', 'tiktok_ads.json', 'amazon_ads.json', 'amazon_dsp.json', 'klaviyo.json', 'klaviyo_invoices.json', 'shopify_pnl.json', 'amazon_pnl.json', 'targets_monthly.json', 'products.json'],
+  marketing: ['meta_ads.json', 'google_ads.json', 'applovin.json', 'tiktok_ads.json', 'amazon_ads.json', 'amazon_dsp.json', 'klaviyo.json', 'klaviyo_invoices.json', 'shopify_pnl.json', 'amazon_pnl.json', 'targets_monthly.json', 'products.json', 'slash_pnl.json'],
   inventory: ['shopify_pnl.json', 'amazon_pnl.json', 'walmart.json', 'tiktok_shop.json', 'amazon_storage.json', 'shipmonk.json', 'shipmonk_invoices.json', 'shipmonk_storage_daily.json', 'cogs_skus.json', 'cogs_lots.json', 'cogs_monthly.json', 'purchase_orders.json', 'products.json', 'targets_monthly.json'],
   sns: ['amazon_sns.json'],
 };
