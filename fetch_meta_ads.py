@@ -66,6 +66,7 @@ except ImportError:  # pragma: no cover
     ZoneInfo = None
 
 API_VERSION = os.environ.get("META_API_VERSION", "v23.0")
+BLIND_ROWS = []   # days whose insights row came back without spend/impressions/clicks (see parse_insights_rows)
 GRAPH_HOST = "https://graph.facebook.com"
 WINDOW_DAYS = int(os.environ.get("WINDOW_DAYS", "45"))
 OUTPUT_PATH = os.environ.get("OUTPUT_PATH", "data/meta_ads.json")
@@ -354,6 +355,10 @@ def parse_insights_rows(rows, daily, warnings, action_types_seen, rebucket=None)
             continue
         day = rebucket(day, row.get(HOURLY_BREAKDOWN))
         d = daily.setdefault(day, new_daily_bucket())
+        if "spend" not in row and "impressions" not in row and (row.get("actions") or row.get("action_values")):
+            # Meta answered the conversions but left out spend / impressions / clicks: the token can no longer see the
+            # account's delivery + cost (2026-10-21: this zeroed 46 days of spend). Counted and refused in main().
+            BLIND_ROWS.append(day)
         d["spend"] += to_float(row.get("spend"))
         d["impressions"] += to_int(row.get("impressions"))
         d["clicks"] += to_int(row.get("clicks"))
@@ -674,6 +679,19 @@ def main():
             "last_30d": sum_range(acct_daily, (now_local - timedelta(days=30)).strftime("%Y-%m-%d"), keep_to),
         }
     finalise(daily)
+    # Guard (2.4): refuse a "blind" answer. On 2026-10-21 Meta started answering the conversions (actions) but no
+    # spend / impressions / clicks for every day of the window; the file was written with spend 0 and the P&L lost
+    # ~$170k of October marketing. Now: if most fetched days have purchases but no spend and no impressions, the run
+    # fails loudly and data/meta_ads.json stays as it was (the sync workflow only commits when the file changed).
+    fetched_days = [k for k in daily if keep_from <= k <= keep_to]
+    blind_days = sorted({k for k in BLIND_ROWS if keep_from <= k <= keep_to})
+    zero_days = [k for k in fetched_days if daily[k]["purchase_value"] > 0 and daily[k]["spend"] == 0 and daily[k]["impressions"] == 0]
+    if fetched_days and (len(blind_days) >= max(2, len(fetched_days) // 2) or len(zero_days) >= max(2, len(fetched_days) // 2)):
+        log(f"REFUSED: Meta returned conversions but no spend/impressions/clicks for {max(len(blind_days), len(zero_days))} of "
+            f"{len(fetched_days)} days ({keep_from}..{keep_to}). The access token / its user can no longer see the ad account's "
+            f"spend (check Business settings > Users / System users > ad account permission, and run the 'Meta Ads - diagnose "
+            f"token' workflow). {OUTPUT_PATH} left unchanged.")
+        sys.exit(2)
     # merge with the copy already in the repo: days outside the fetched range are kept
     previous = history_previous(OUTPUT_PATH)
     daily = history_merge(previous, daily, keep_from, keep_to)
@@ -728,7 +746,7 @@ def main():
         "products": products,
         "meta": {
             "schema": 2 if CAMPAIGNS_ENABLED else 1,
-            "script_version": "2.3",   # 2.3 = history kept across runs + backfill mode (<= 92-day slices)
+            "script_version": "2.4",   # 2.3 = history kept across runs + backfill mode (<= 92-day slices); 2.4 = refuses answers without spend
             "history": hist,
             "campaign_rows": campaign_rows,
             "rows_processed": rows_total,
