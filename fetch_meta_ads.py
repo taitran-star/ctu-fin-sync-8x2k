@@ -344,8 +344,9 @@ def graph_get(url, params, max_retries=6):
     raise RuntimeError("Exceeded retries calling Meta Graph API")
 
 
-def parse_insights_rows(rows, daily, warnings, action_types_seen, rebucket=None):
-    """Fold Graph API insights rows (one per day - or per hour when re-bucketing - level=account) into `daily`."""
+def parse_insights_rows(rows, daily, warnings, action_types_seen, rebucket=None, pass_name="both"):
+    """Fold Graph API insights rows (one per day - or per hour when re-bucketing - level=account) into `daily`.
+    pass_name: "delivery" rows carry spend/impressions/clicks, "conversions" rows carry actions; "both" = one call."""
     currency = None
     rebucket = rebucket or (lambda day, hour: day)
     for row in rows:
@@ -355,9 +356,9 @@ def parse_insights_rows(rows, daily, warnings, action_types_seen, rebucket=None)
             continue
         day = rebucket(day, row.get(HOURLY_BREAKDOWN))
         d = daily.setdefault(day, new_daily_bucket())
-        if "spend" not in row and "impressions" not in row and (row.get("actions") or row.get("action_values")):
-            # Meta answered the conversions but left out spend / impressions / clicks: the token can no longer see the
-            # account's delivery + cost (2026-10-21: this zeroed 46 days of spend). Counted and refused in main().
+        if pass_name != "conversions" and "spend" not in row and "impressions" not in row and (row.get("actions") or row.get("action_values")):
+            # Meta answered the conversions but left out spend / impressions / clicks (2026-10-21: this zeroed 46 days
+            # of spend). Counted and refused in main() together with the "spend 0 but purchases" check.
             BLIND_ROWS.append(day)
         d["spend"] += to_float(row.get("spend"))
         d["impressions"] += to_int(row.get("impressions"))
@@ -397,34 +398,47 @@ def sum_range(daily, start_key, end_key):
     return out
 
 
+# 2.5 (2026-10-21): delivery (spend / impressions / clicks) and conversions (actions / action_values) are fetched in
+# TWO calls. Since the auto-upgrade to v26.0, one call asking for both over a multi-day range answers spend 0,
+# impressions 0, clicks 0 on every day while the actions are fine (a 1-day range is fine; the same range without
+# actions is fine). Asking separately gives correct numbers for both; the rows land in the same daily buckets.
+INSIGHT_PASSES = (
+    ("delivery", "date_start,date_stop,account_currency,spend,impressions,clicks"),
+    ("conversions", "date_start,date_stop,actions,action_values"),
+)
+
+
 def fetch_insights(token, account_id, since, until, daily, warnings, action_types_seen, rebucket=None, converted=False):
-    params = {
-        "access_token": token,
-        "level": "account",
-        "time_increment": 1,
-        "time_range": json.dumps({"since": since, "until": until}),
-        "fields": "date_start,date_stop,account_currency,spend,impressions,clicks,actions,action_values",
-        "limit": 500 if converted else 100,
-    }
-    if converted:
-        params["breakdowns"] = HOURLY_BREAKDOWN
-    if ATTRIBUTION:
-        params["action_attribution_windows"] = json.dumps([w.strip() for w in ATTRIBUTION.split(",") if w.strip()])
-    url = f"{GRAPH_HOST}/{API_VERSION}/{account_id}/insights"
+    url0 = f"{GRAPH_HOST}/{API_VERSION}/{account_id}/insights"
     currency = None
     rows_total = 0
-    page = 0
-    while True:
-        page += 1
-        resp = graph_get(url, params) if params else graph_get(url, None)
-        rows = resp.get("data", []) or []
-        rows_total += len(rows)
-        currency = parse_insights_rows(rows, daily, warnings, action_types_seen, rebucket) or currency
-        nxt = (resp.get("paging") or {}).get("next")
-        log(f"page {page}: {len(rows)} rows, next={'yes' if nxt else 'no'}")
-        if not nxt:
-            break
-        url, params = nxt, None  # paging.next already includes the access token + cursor
+    for pass_name, fields in INSIGHT_PASSES:
+        params = {
+            "access_token": token,
+            "level": "account",
+            "time_increment": 1,
+            "time_range": json.dumps({"since": since, "until": until}),
+            "fields": fields,
+            "limit": 500 if converted else 100,
+        }
+        if converted:
+            params["breakdowns"] = HOURLY_BREAKDOWN
+        if ATTRIBUTION and pass_name == "conversions":
+            params["action_attribution_windows"] = json.dumps([w.strip() for w in ATTRIBUTION.split(",") if w.strip()])
+        url = url0
+        page = 0
+        while True:
+            page += 1
+            resp = graph_get(url, params) if params else graph_get(url, None)
+            rows = resp.get("data", []) or []
+            if pass_name == "delivery":
+                rows_total += len(rows)
+            currency = parse_insights_rows(rows, daily, warnings, action_types_seen, rebucket, pass_name) or currency
+            nxt = (resp.get("paging") or {}).get("next")
+            log(f"{pass_name} page {page}: {len(rows)} rows, next={'yes' if nxt else 'no'}")
+            if not nxt:
+                break
+            url, params = nxt, None  # paging.next already includes the access token + cursor
     return rows_total, currency
 
 
@@ -491,62 +505,68 @@ def fetch_campaign_reach(token, account_id, since, until):
 def fetch_campaign_insights(token, account_id, since, until, campaigns, warnings, rebucket=None, converted=False):
     """Daily rows per campaign -> campaigns[id]['daily'][date] buckets."""
     rebucket = rebucket or (lambda day, hour: day)
-    fields = "campaign_id,campaign_name,date_start,spend,impressions,clicks,inline_link_clicks,actions,action_values"
+    # 2.5: delivery and conversions in two calls (see INSIGHT_PASSES) - one call over a multi-day range answers spend 0
+    delivery_fields = "campaign_id,campaign_name,date_start,spend,impressions,clicks,inline_link_clicks"
     reach_by_day = {}
     if converted:
         reach_by_day = fetch_campaign_reach(token, account_id, since, until)
         warnings.add("Meta reach/frequency per campaign are by account-timezone day (Meta has no hourly reach) - spend/purchases are re-bucketed to " + REPORT_TIMEZONE)
     else:
-        fields = fields.replace("impressions,clicks", "impressions,reach,clicks")
-    params = {
-        "access_token": token,
-        "level": "campaign",
-        "time_increment": 1,
-        "time_range": json.dumps({"since": since, "until": until}),
-        "fields": fields,
-        "limit": 500,
-    }
-    if converted:
-        params["breakdowns"] = HOURLY_BREAKDOWN
-    if ATTRIBUTION:
-        params["action_attribution_windows"] = json.dumps([w.strip() for w in ATTRIBUTION.split(",") if w.strip()])
-    url = f"{GRAPH_HOST}/{API_VERSION}/{account_id}/insights"
+        delivery_fields = delivery_fields.replace("impressions,clicks", "impressions,reach,clicks")
+    passes = (("delivery", delivery_fields), ("conversions", "campaign_id,campaign_name,date_start,actions,action_values"))
+    url0 = f"{GRAPH_HOST}/{API_VERSION}/{account_id}/insights"
     rows_total = 0
-    while True:
-        resp = graph_get(url, params) if params else graph_get(url, None)
-        for row in resp.get("data", []) or []:
-            cid = row.get("campaign_id")
-            src_day = row.get("date_start")
-            if not cid or not src_day:
-                continue
-            day = rebucket(src_day, row.get(HOURLY_BREAKDOWN))
-            c = campaigns.setdefault(cid, {"name": row.get("campaign_name"), "daily": {}})
-            c["name"] = c.get("name") or row.get("campaign_name")
-            d = c["daily"].setdefault(day, new_campaign_bucket())
-            d["spend"] += to_float(row.get("spend"))
-            d["impressions"] += to_int(row.get("impressions"))
-            if converted:
-                r = reach_by_day.get(cid, {}).get(day)
-                if r is not None and not d.get("_reach_set"):
-                    d["reach"] = r
-                    d["_reach_set"] = True
-            else:
-                d["reach"] += to_int(row.get("reach"))
-            d["clicks"] += to_int(row.get("clicks"))
-            d["link_clicks"] += to_int(row.get("inline_link_clicks"))
-            _, atc = pick_action(row.get("actions"), ATC_PRIORITY)
-            _, ic = pick_action(row.get("actions"), IC_PRIORITY)
-            _, pur = pick_action(row.get("actions"), PURCHASE_ACTION_PRIORITY)
-            _, val = pick_action(row.get("action_values"), PURCHASE_ACTION_PRIORITY)
-            d["add_to_cart"] += atc
-            d["initiate_checkout"] += ic
-            d["purchases"] += pur
-            d["purchase_value"] += val
-            rows_total += 1
-        nxt = (resp.get("paging") or {}).get("next")
-        if not nxt:
-            break
-        url, params = nxt, None
+    for pass_name, fields in passes:
+        params = {
+            "access_token": token,
+            "level": "campaign",
+            "time_increment": 1,
+            "time_range": json.dumps({"since": since, "until": until}),
+            "fields": fields,
+            "limit": 500,
+        }
+        if converted:
+            params["breakdowns"] = HOURLY_BREAKDOWN
+        if ATTRIBUTION and pass_name == "conversions":
+            params["action_attribution_windows"] = json.dumps([w.strip() for w in ATTRIBUTION.split(",") if w.strip()])
+        url = url0
+        while True:
+            resp = graph_get(url, params) if params else graph_get(url, None)
+            for row in resp.get("data", []) or []:
+                cid = row.get("campaign_id")
+                src_day = row.get("date_start")
+                if not cid or not src_day:
+                    continue
+                day = rebucket(src_day, row.get(HOURLY_BREAKDOWN))
+                c = campaigns.setdefault(cid, {"name": row.get("campaign_name"), "daily": {}})
+                c["name"] = c.get("name") or row.get("campaign_name")
+                d = c["daily"].setdefault(day, new_campaign_bucket())
+                if pass_name == "delivery":
+                    d["spend"] += to_float(row.get("spend"))
+                    d["impressions"] += to_int(row.get("impressions"))
+                    if converted:
+                        r = reach_by_day.get(cid, {}).get(day)
+                        if r is not None and not d.get("_reach_set"):
+                            d["reach"] = r
+                            d["_reach_set"] = True
+                    else:
+                        d["reach"] += to_int(row.get("reach"))
+                    d["clicks"] += to_int(row.get("clicks"))
+                    d["link_clicks"] += to_int(row.get("inline_link_clicks"))
+                    rows_total += 1
+                else:
+                    _, atc = pick_action(row.get("actions"), ATC_PRIORITY)
+                    _, ic = pick_action(row.get("actions"), IC_PRIORITY)
+                    _, pur = pick_action(row.get("actions"), PURCHASE_ACTION_PRIORITY)
+                    _, val = pick_action(row.get("action_values"), PURCHASE_ACTION_PRIORITY)
+                    d["add_to_cart"] += atc
+                    d["initiate_checkout"] += ic
+                    d["purchases"] += pur
+                    d["purchase_value"] += val
+            nxt = (resp.get("paging") or {}).get("next")
+            if not nxt:
+                break
+            url, params = nxt, None
     return rows_total
 
 
@@ -746,7 +766,7 @@ def main():
         "products": products,
         "meta": {
             "schema": 2 if CAMPAIGNS_ENABLED else 1,
-            "script_version": "2.4",   # 2.3 = history kept across runs + backfill mode (<= 92-day slices); 2.4 = refuses answers without spend
+            "script_version": "2.5",   # 2.3 = history across runs + backfill; 2.4 = refuses answers without spend; 2.5 = delivery + conversions fetched separately
             "history": hist,
             "campaign_rows": campaign_rows,
             "rows_processed": rows_total,
