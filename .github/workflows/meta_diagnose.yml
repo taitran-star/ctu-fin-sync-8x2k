@@ -1,8 +1,11 @@
 name: Meta Ads - diagnose token (one-off)
 
 # Run by hand (Actions > this workflow > Run workflow). Uses the META_ACCESS_TOKEN
-# secret already stored in the repo to call the Graph API three times and prints
-# what Meta answers - the token itself is never printed.
+# secret already stored in the repo to call the Graph API and prints what Meta
+# answers - the token itself is never printed (masked). Nothing is written.
+#
+# 2026-10-21: added the "sync-shaped" variants (part B) after Meta started answering the
+# sync's insights call with conversions but WITHOUT spend / impressions / clicks.
 
 on:
   workflow_dispatch: {}
@@ -41,3 +44,43 @@ jobs:
           call "3. Insights yesterday (what the sync calls)"     "$ACT/insights?fields=spend,impressions&date_preset=yesterday"
           call "4. Token info (debug_token)"                     "debug_token?input_token=$TOKEN"
           echo; echo "Done. account_status 1 = active, 2 = disabled, 3 = unsettled, 7 = pending risk review, 9 = in grace period, 100 = pending closure, 101 = closed."
+
+      - name: B. Sync-shaped insights calls (which shape loses spend?)
+        env:
+          TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          ACCOUNT: ${{ secrets.META_AD_ACCOUNT_ID }}
+        run: |
+          set +e
+          echo "::add-mask::$TOKEN"
+          ACT="$ACCOUNT"; case "$ACT" in act_*) ;; *) ACT="act_$ACT";; esac
+          Y=$(date -u -d "yesterday" +%Y-%m-%d); S=$(date -u -d "45 days ago" +%Y-%m-%d); T=$(date -u +%Y-%m-%d)
+          RANGE_1="{\"since\":\"$Y\",\"until\":\"$Y\"}"; RANGE_45="{\"since\":\"$S\",\"until\":\"$T\"}"
+          F_FULL="date_start,date_stop,account_currency,spend,impressions,clicks,actions,action_values"
+          F_NOACT="date_start,date_stop,account_currency,spend,impressions,clicks"
+          F_MIN="date_start,spend,impressions"
+          shape () {
+            # $1 label, $2 api version, $3 fields, $4 time_range json, $5 extra query
+            echo; echo "=== $1"
+            curl -sS -G "https://graph.facebook.com/$2/$ACT/insights" --data-urlencode "access_token=$TOKEN" --data-urlencode "level=account" --data-urlencode "time_increment=1" --data-urlencode "fields=$3" --data-urlencode "time_range=$4" --data-urlencode "limit=100" $5 \
+              -D /tmp/h.txt | python3 -c '
+          import json,sys
+          d=json.load(sys.stdin)
+          if "error" in d:
+              e=d["error"]; print("ERROR code", e.get("code"), "subcode", e.get("error_subcode"), "message:", e.get("message")); sys.exit(0)
+          rows=d.get("data",[])
+          with_spend=[r for r in rows if "spend" in r]; with_imp=[r for r in rows if "impressions" in r]; with_act=[r for r in rows if r.get("actions")]
+          keys=sorted(set(k for r in rows for k in r))
+          print("rows", len(rows), "| with spend", len(with_spend), "| with impressions", len(with_imp), "| with actions", len(with_act))
+          print("keys seen:", keys)
+          print("spend sum", round(sum(float(r.get("spend",0) or 0) for r in rows),2), "| first row:", json.dumps(rows[0])[:300] if rows else "-")'
+            grep -i -E "^(x-fb-trace-id|x-ad-account-usage|x-business-use-case-usage|x-app-usage|facebook-api-version|x-fb-rev):" /tmp/h.txt | head -8
+          }
+          shape "B1 v23.0 (auto-upgraded) · 1 day · full fields (exactly what the sync sends)" v23.0 "$F_FULL" "$RANGE_1" ""
+          shape "B2 v23.0 (auto-upgraded) · 45 days · full fields (the sync's rolling window)"  v23.0 "$F_FULL" "$RANGE_45" ""
+          shape "B3 v25.0 explicit · 45 days · full fields"                                      v25.0 "$F_FULL" "$RANGE_45" ""
+          shape "B4 v26.0 explicit · 45 days · full fields"                                      v26.0 "$F_FULL" "$RANGE_45" ""
+          shape "B5 v25.0 · 45 days · no actions/action_values"                                 v25.0 "$F_NOACT" "$RANGE_45" ""
+          shape "B6 v25.0 · 45 days · spend+impressions only"                                   v25.0 "$F_MIN" "$RANGE_45" ""
+          shape "B7 v25.0 · 1 day · full fields"                                                 v25.0 "$F_FULL" "$RANGE_1" ""
+          shape "B8 v25.0 · 45 days · full fields · action_attribution_windows=7d_click,1d_view" v25.0 "$F_FULL" "$RANGE_45" "--data-urlencode action_attribution_windows=[\"7d_click\",\"1d_view\"]"
+          echo; echo "Done. A shape whose rows have spend is one the sync can use."
