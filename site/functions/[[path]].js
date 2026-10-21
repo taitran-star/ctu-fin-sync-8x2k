@@ -35,11 +35,11 @@ const MIN_PASSWORD = 10;
 const EPOCH_KEY = 'meta:session_epoch';   // ms; sessions issued before it are refused ("sign out every device")
 const EPOCH_CACHE_MS = 30 * 1000;         // per-isolate cache of the epoch (KV itself can lag up to ~60 s)
 
-// Pages a user can be given. The first seven are tabs of /pnl, 'sns' is the /sns page.
-const VIEWS = ['exec', 'sales', 'marketing', 'pnl', 'inventory', 'opex', 'data', 'sns'];
+// Pages a user can be given. The first eight are tabs of /pnl, 'sns' is the /sns page.
+const VIEWS = ['exec', 'sales', 'marketing', 'pnl', 'inventory', 'opex', 'reports', 'data', 'sns'];   // 'reports' = V12.8 Reports tab
 const VIEW_LABELS = {
   exec: 'Tổng quan (Điều hành)', sales: 'Bán hàng & khách hàng', marketing: 'Marketing', pnl: 'P&L (lãi lỗ đầy đủ)',
-  inventory: 'Sản phẩm & tồn kho', opex: 'Chi phí cố định & tiền mặt', data: 'Dữ liệu (sức khoẻ nguồn)', sns: 'Amazon Subscribe & Save (/sns)',
+  inventory: 'Sản phẩm & tồn kho', opex: 'Chi phí cố định & tiền mặt', reports: 'Báo cáo (bảng số, tải CSV)', data: 'Dữ liệu (sức khoẻ nguồn)', sns: 'Amazon Subscribe & Save (/sns)',
 };
 
 const RAW_BASE = 'https://raw.githubusercontent.com/taitran-star/ctu-fin-sync-8x2k/main/data/';
@@ -61,7 +61,7 @@ const ALL_FILES = new Set([...REPO_FILES, ...STATIC_FILES]);
 // Which /data files each page needs. Pages that show the full P&L (exec, pnl, opex, data) need every source; the
 // others get the sources their own cards read. A user's files = the union over their pages.
 const VIEW_FILES = {
-  exec: '*', pnl: '*', opex: '*', data: '*',
+  exec: '*', pnl: '*', opex: '*', data: '*', reports: '*',   // Reports = the full P&L by month/day/channel/SKU
   sales: ['shopify_pnl.json', 'amazon_pnl.json', 'walmart.json', 'tiktok_shop.json', 'loop_subscriptions.json', 'paypal.json', 'klaviyo.json', 'meta_ads.json', 'google_ads.json', 'targets_monthly.json', 'products.json'],
   marketing: ['meta_ads.json', 'google_ads.json', 'applovin.json', 'tiktok_ads.json', 'amazon_ads.json', 'amazon_dsp.json', 'klaviyo.json', 'klaviyo_invoices.json', 'shopify_pnl.json', 'amazon_pnl.json', 'targets_monthly.json', 'products.json'],
   inventory: ['shopify_pnl.json', 'amazon_pnl.json', 'walmart.json', 'tiktok_shop.json', 'amazon_storage.json', 'shipmonk.json', 'shipmonk_invoices.json', 'shipmonk_storage_daily.json', 'cogs_skus.json', 'cogs_lots.json', 'cogs_monthly.json', 'purchase_orders.json', 'products.json', 'targets_monthly.json'],
@@ -756,7 +756,7 @@ function setupPage() {
 // ---------- /users — admin page (server shell + fetches /api/users) ----------
 // Same look as the dashboard: Pine top bar, page on the light/dark surface, one invite card and one list.
 // Editing happens inline under a row; destructive buttons ask for a second click instead of a native dialog.
-const VIEW_SHORT = { exec: 'Tổng quan', sales: 'Bán hàng', marketing: 'Marketing', pnl: 'P&L', inventory: 'Tồn kho', opex: 'Chi phí', data: 'Dữ liệu', sns: 'S&S' };
+const VIEW_SHORT = { exec: 'Tổng quan', sales: 'Bán hàng', marketing: 'Marketing', pnl: 'P&L', inventory: 'Tồn kho', opex: 'Chi phí', reports: 'Báo cáo', data: 'Dữ liệu', sns: 'S&S' };
 
 const USERS_CSS = `
   :root{--a-pine:#05372E;--a-pistachio:#C9E595;--a-page:#f4f6f0;--a-card:#ffffff;--a-card-2:#f5f8ee;--a-ink:#05372E;--a-ink-2:#33544a;--a-ink-3:#6c857a;--a-line:rgba(5,55,46,.10);--a-line-2:rgba(5,55,46,.22);--a-accent:#285D18;--a-solid:#05372E;--a-solid-ink:#C9E595;--a-chip-on:#eaf2da;--a-good:#3f8a1e;--a-warn:#c28a00;--a-bad:#b3261e;--a-focus:#285D18;--a-shadow:0 1px 2px rgba(5,55,46,.05),0 8px 24px rgba(5,55,46,.05);}
