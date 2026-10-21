@@ -82,5 +82,34 @@ jobs:
           shape "B5 v25.0 · 45 days · no actions/action_values"                                 v25.0 "$F_NOACT" "$RANGE_45" ""
           shape "B6 v25.0 · 45 days · spend+impressions only"                                   v25.0 "$F_MIN" "$RANGE_45" ""
           shape "B7 v25.0 · 1 day · full fields"                                                 v25.0 "$F_FULL" "$RANGE_1" ""
-          shape "B8 v25.0 · 45 days · full fields · action_attribution_windows=7d_click,1d_view" v25.0 "$F_FULL" "$RANGE_45" "--data-urlencode action_attribution_windows=[\"7d_click\",\"1d_view\"]"
           echo; echo "Done. A shape whose rows have spend is one the sync can use."
+
+      - name: C. Campaign-level shapes (which field zeroes spend?)
+        env:
+          TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          ACCOUNT: ${{ secrets.META_AD_ACCOUNT_ID }}
+        run: |
+          set +e
+          echo "::add-mask::$TOKEN"
+          ACT="$ACCOUNT"; case "$ACT" in act_*) ;; *) ACT="act_$ACT";; esac
+          S=$(date -u -d "45 days ago" +%Y-%m-%d); T=$(date -u +%Y-%m-%d); S7=$(date -u -d "7 days ago" +%Y-%m-%d)
+          RANGE_45="{\"since\":\"$S\",\"until\":\"$T\"}"; RANGE_7="{\"since\":\"$S7\",\"until\":\"$T\"}"
+          cshape () {
+            echo; echo "=== $1"
+            curl -sS -G "https://graph.facebook.com/v25.0/$ACT/insights" --data-urlencode "access_token=$TOKEN" --data-urlencode "level=campaign" --data-urlencode "time_increment=1" --data-urlencode "fields=$2" --data-urlencode "time_range=$3" --data-urlencode "limit=500" | python3 -c '
+          import json,sys
+          d=json.load(sys.stdin)
+          if "error" in d:
+              e=d["error"]; print("ERROR code", e.get("code"), "subcode", e.get("error_subcode"), "message:", e.get("message")); sys.exit(0)
+          rows=d.get("data",[])
+          sp=sum(float(r.get("spend",0) or 0) for r in rows); imp=sum(int(r.get("impressions",0) or 0) for r in rows); nz=sum(1 for r in rows if float(r.get("spend",0) or 0)>0)
+          print("rows", len(rows), "| rows with spend>0", nz, "| spend sum", round(sp,2), "| impressions", imp, "| keys:", sorted(set(k for r in rows for k in r)))'
+          }
+          cshape "C1 campaign · 45d · spend,impressions,clicks"                              "campaign_id,campaign_name,date_start,spend,impressions,clicks" "$RANGE_45"
+          cshape "C2 campaign · 45d · + reach"                                                "campaign_id,campaign_name,date_start,spend,impressions,reach,clicks" "$RANGE_45"
+          cshape "C3 campaign · 45d · + inline_link_clicks"                                   "campaign_id,campaign_name,date_start,spend,impressions,clicks,inline_link_clicks" "$RANGE_45"
+          cshape "C4 campaign · 45d · + reach + inline_link_clicks (sync 2.5 delivery pass)"  "campaign_id,campaign_name,date_start,spend,impressions,reach,clicks,inline_link_clicks" "$RANGE_45"
+          cshape "C5 campaign · 7d · + reach + inline_link_clicks"                            "campaign_id,campaign_name,date_start,spend,impressions,reach,clicks,inline_link_clicks" "$RANGE_7"
+          cshape "C6 campaign · 45d · spend only"                                             "campaign_id,date_start,spend" "$RANGE_45"
+          cshape "C7 campaign · 45d · spend,impressions,clicks,actions (old one-call)"       "campaign_id,campaign_name,date_start,spend,impressions,clicks,actions,action_values" "$RANGE_45"
+          echo; echo "Done."
