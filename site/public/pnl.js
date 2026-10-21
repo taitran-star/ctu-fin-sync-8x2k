@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build fd0c397d3e).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 1e018fe91d).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -39,7 +39,7 @@
   Object.assign(L.en, {
     'nav.exec':'Overview', 'nav.sales':'Sales &amp; customers', 'nav.marketing':'Marketing', 'nav.pnl':'P&amp;L', 'nav.inventory':'Products &amp; inventory', 'nav.opex':'Fixed costs &amp; cash', 'nav.data':'Data', 'nav.reports':'Reports', 'page.reports':'Reports',
     'mode.day':'Day', 'mode.week':'Week', 'mode.month':'Month', 'mode.range':'Custom',
-    'tb.loadedAt':'When the numbers were loaded (your clock)', 'tb.reload':'Reload the latest numbers', 'tb.install':'Install', 'tb.installTitle':'Install as an app', 'tb.theme':'Light / dark', 'tb.signout':'Sign out',
+    'tb.loadedAt':'When the numbers were loaded (your clock)', 'tb.reload':'Reload the latest numbers', 'tb.install':'Install', 'tb.installTitle':'Install as an app', 'tb.theme':'Light / dark', 'tb.signout':'Sign out', 'tb.language':'Language', 'tb.users':'Users & access', 'tb.reloadShort':'Reload',
     'brief.summary':'In brief', 'brief.moved':'What moved profit', 'brief.risks':'Biggest risks', 'brief.decide':'Decide this week', 'brief.title':'Brief & actions', 'brief.todo':'What to do', 'brief.why':'Why profit moved',
     'rev.title':'Revenue, costs & profit', 'rev.daily':'Daily', 'rev.weekly':'Weekly', 'rev.monthly':'Monthly', 'rev.peak':'Peak', 'rev.bar':'Column chart', 'rev.line':'Line chart', 'stmt.compact':'Compact', 'stmt.full':'Detail', 'rev.note':'Best {day}: {best}', 'rev.caption':'Same figures as the P&L, by order date (Los Angeles). Net revenue = gross − discounts − refunds. Order costs = COGS (product cost, packaging, fulfillment, postage) + transaction fees. Marketing & ads = ads, affiliates, agency, creators. Operating costs = warehousing & logistics + G&A. Profit = EBITDA = net revenue − all of these. Click a legend item to hide or show it; the amounts next to it are the period totals.',
     'chan.title':'Sales channels', 'chan.note':'{total} across {n} channels', 'chan.avgDay':'Average day', 'chan.perOrder':'Revenue per order',
@@ -57,7 +57,7 @@
   Object.assign(L.vi, {
     'nav.exec':'Điều hành', 'nav.sales':'Bán hàng &amp; khách', 'nav.marketing':'Marketing', 'nav.pnl':'Lãi lỗ (P&amp;L)', 'nav.inventory':'Sản phẩm &amp; tồn kho', 'nav.opex':'Chi phí cố định &amp; tiền', 'nav.data':'Dữ liệu', 'nav.reports':'Báo cáo', 'page.reports':'Báo cáo',
     'mode.day':'Ngày', 'mode.week':'Tuần', 'mode.month':'Tháng', 'mode.range':'Tuỳ chọn',
-    'tb.loadedAt':'Giờ tải số liệu (giờ trên máy bạn)', 'tb.reload':'Tải lại số liệu mới nhất', 'tb.install':'Cài app', 'tb.installTitle':'Cài như app lên máy / điện thoại', 'tb.theme':'Sáng / tối', 'tb.signout':'Đăng xuất',
+    'tb.loadedAt':'Giờ tải số liệu (giờ trên máy bạn)', 'tb.reload':'Tải lại số liệu mới nhất', 'tb.install':'Cài app', 'tb.installTitle':'Cài như app lên máy / điện thoại', 'tb.theme':'Sáng / tối', 'tb.signout':'Đăng xuất', 'tb.language':'Ngôn ngữ', 'tb.users':'Người dùng & quyền', 'tb.reloadShort':'Tải lại',
     'brief.summary':'Tóm tắt kỳ này', 'brief.moved':'Điều gì làm lợi nhuận đổi', 'brief.risks':'Rủi ro lớn nhất', 'brief.decide':'Cần quyết tuần này', 'brief.title':'Tóm tắt & việc cần làm', 'brief.todo':'Việc cần làm', 'brief.why':'Vì sao lợi nhuận đổi',
     'rev.title':'Doanh thu, chi phí & lợi nhuận', 'rev.daily':'Ngày', 'rev.weekly':'Tuần', 'rev.monthly':'Tháng', 'rev.peak':'Đỉnh', 'rev.bar':'Biểu đồ cột', 'rev.line':'Biểu đồ đường', 'stmt.compact':'Thu gọn', 'stmt.full':'Chi tiết', 'rev.note':'Cao nhất {day}: {best}', 'rev.caption':'Cùng số với báo cáo P&L, theo ngày đặt hàng (giờ Los Angeles). Doanh thu thuần = gộp − giảm giá − hoàn tiền. Chi phí đơn hàng = giá vốn COGS (sản phẩm, bao bì, fulfillment, cước) + phí giao dịch. Marketing & quảng cáo = quảng cáo, affiliate, agency, creator. Chi phí vận hành = kho bãi & logistics + G&A. Lợi nhuận = EBITDA = doanh thu thuần − tất cả các khoản trên. Bấm vào chú thích để ẩn/hiện từng cột; số cạnh chú thích là tổng cả kỳ.',
     'chan.title':'Kênh bán', 'chan.note':'{total} trên {n} kênh', 'chan.avgDay':'Trung bình mỗi ngày', 'chan.perOrder':'Doanh thu mỗi đơn',
@@ -1379,7 +1379,7 @@
         const f = ly+'-'+a, t = ly+'-'+b; if(f<=max && t>=min) presets.push({label:q+' '+ly, from: f<min?min:f, to: t>max?max:t});
       });
       const chips = presets.map(p=>`<div class="chip ${p.from===rangeFrom&&p.to===rangeTo?'active':''}" data-from="${p.from}" data-to="${p.to}">${p.label}</div>`).join('');
-      el.innerHTML = `<div class="chips">${chips}</div> ${tv('From', 'Từ')} <input type="date" id="fromD" value="${rangeFrom}" min="${min}" max="${max}"> ${tv('to', 'đến')} <input type="date" id="toD" value="${rangeTo}" min="${min}" max="${max}"> <button class="btn" id="applyRange">${tx('cmp.view')}</button>`;
+      el.innerHTML = `<div class="chips rng-pre">${chips}</div><div class="rng-io"><input type="date" id="fromD" value="${rangeFrom}" min="${min}" max="${max}" aria-label="${tv('From', 'Từ ngày')}"><span class="rng-dash" aria-hidden="true">–</span><input type="date" id="toD" value="${rangeTo}" min="${min}" max="${max}" aria-label="${tv('To', 'Đến ngày')}"><button class="btn" id="applyRange">${tx('cmp.view')}</button></div>`;   // V12.8.3: one row under the filters
       el.querySelectorAll('.chip').forEach(c=>c.addEventListener('click', ()=>{ rangeFrom=c.dataset.from; rangeTo=c.dataset.to; renderAll(); }));
       document.getElementById('applyRange').addEventListener('click', ()=>{
         const f = document.getElementById('fromD').value, t = document.getElementById('toD').value;
@@ -4450,6 +4450,41 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
   }
   document.querySelectorAll('[data-lang]').forEach(b=>b.addEventListener('click', ()=>setLang(b.dataset.lang)));
   (()=>{ const tb = document.getElementById('themeBtn'); if(!tb) return; const apply = v => { if(v) document.documentElement.setAttribute('data-theme', v); else document.documentElement.removeAttribute('data-theme'); }; try{ apply(localStorage.getItem('ctu_theme')||''); }catch(e){} tb.addEventListener('click', ()=>{ const cur = document.documentElement.getAttribute('data-theme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); const next = cur==='dark' ? 'light' : 'dark'; apply(next); try{ localStorage.setItem('ctu_theme', next); }catch(e){} renderAll(); }); })();
+  // V12.8.3: one account menu in the top bar (who is signed in, data time + reload, language, theme, install, users, sign out)
+  (()=>{
+    const btn = document.getElementById('tbMeBtn'), panel = document.getElementById('tbMenuPanel'); if(!btn || !panel) return;
+    const ME = window.__ME || null;
+    const at = document.getElementById('siteLoadedAt'), badge = document.getElementById('tbBadge');
+    const nameOf = () => !ME ? 'Cattasaurus' : (ME.kind==='owner' && !ME.email ? tv('Dashboard owner', 'Chủ dashboard') : (ME.name || ME.email || 'Cattasaurus'));
+    const sync = () => {
+      const name = nameOf(), txt = at ? at.textContent.trim() : '';
+      const set = (id, t) => { const e = document.getElementById(id); if(e) e.textContent = t; };
+      set('tbWhoName', name); set('tbWhoMail', ME ? (ME.email && ME.email!==name ? ME.email : (ME.kind==='owner' && !ME.email ? tv('shared password', 'mật khẩu chung') : '')) : '');
+      set('tbAv', ((ME && ME.kind!=='owner' && (ME.name || ME.email)) || 'C').trim().charAt(0).toUpperCase() || 'C');
+      if(badge){ badge.hidden = !txt; badge.classList.toggle('warn', !!(at && at.style.color)); }
+      const lbl = tv('Account & settings', 'Tài khoản & cài đặt');
+      btn.setAttribute('aria-label', lbl + (txt ? ' · ' + txt : ''));
+      if(panel.hidden) btn.setAttribute('data-tip', name + (txt ? '\n' + txt : '')); else btn.removeAttribute('data-tip');   // no tooltip over the open menu
+      const u = document.getElementById('tbUsers'); if(u){ u.title = ''; }
+    };
+    if(at) new MutationObserver(sync).observe(at, {childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['style']});
+    document.querySelectorAll('[data-lang]').forEach(b=>b.addEventListener('click', ()=>setTimeout(sync, 0)));
+    sync();
+    const close = focus => { if(panel.hidden) return; panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); sync(); if(focus) btn.focus(); };
+    btn.addEventListener('click', e => { e.stopPropagation(); const open = panel.hidden; panel.hidden = !open; btn.setAttribute('aria-expanded', String(open)); sync(); if(open){ const t = document.querySelector('.v12tip'); if(t) t.hidden = true; } });
+    document.addEventListener('click', e => { if(!panel.hidden && !panel.contains(e.target) && !btn.contains(e.target)) close(false); });
+    document.addEventListener('keydown', e => { if(e.key==='Escape' && !panel.hidden) close(true); });
+    panel.addEventListener('click', e => { if(e.target.closest('a')) close(false); });
+  })();
+  // V12.8.3: the tab strip scrolls only when the window is too narrow — fade the cut edge and keep the active tab in view
+  (()=>{
+    const nav = document.getElementById('mainTabs'); if(!nav) return;
+    const upd = () => { const max = nav.scrollWidth - nav.clientWidth; nav.classList.toggle('fade-l', max > 2 && nav.scrollLeft > 2); nav.classList.toggle('fade-r', max > 2 && max - nav.scrollLeft > 2); };
+    const show = () => { const a = nav.querySelector('button.active'); if(a && nav.scrollWidth > nav.clientWidth + 2){ const nb = nav.getBoundingClientRect(), ab = a.getBoundingClientRect(); if(ab.left < nb.left + 8 || ab.right > nb.right - 8) nav.scrollLeft += (ab.left - nb.left) - 36; } upd(); };
+    nav.addEventListener('scroll', upd, {passive: true}); window.addEventListener('resize', show);
+    nav.addEventListener('click', () => setTimeout(show, 0));
+    show(); setTimeout(show, 400);
+  })();
   renderStatic();
   document.getElementById('mainTabs').addEventListener('click', (e)=>{ const btn = e.target.closest('button'); if(!btn) return; if(btn.dataset.view!==currentView) showView(btn.dataset.view); });
   (()=>{ let v0 = VIEWS[0] || 'exec'; try{ const s1 = localStorage.getItem('ctu_view'); if(s1 && VIEWS.includes(s1)) v0 = s1; }catch(e){} showView(v0); })();
