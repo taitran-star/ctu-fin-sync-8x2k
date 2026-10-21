@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 7ce2b46742).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build bc84dd97f6).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -37,7 +37,7 @@
     document.querySelectorAll('[data-lang]').forEach(b=>{ b.classList.toggle('active', b.dataset.lang===LANG); b.setAttribute('aria-pressed', b.dataset.lang===LANG ? 'true' : 'false'); });
   }
   Object.assign(L.en, {
-    'nav.exec':'Overview', 'nav.sales':'Sales &amp; customers', 'nav.marketing':'Marketing', 'nav.pnl':'P&amp;L', 'nav.inventory':'Products &amp; inventory', 'nav.opex':'Fixed costs &amp; cash', 'nav.data':'Data', 'nav.reports':'Reports', 'page.reports':'Reports',
+    'nav.exec':'Overview', 'nav.sales':'Sales &amp; customers', 'nav.marketing':'Marketing', 'nav.pnl':'P&amp;L', 'nav.inventory':'Products &amp; inventory', 'nav.opex':'Finance', 'nav.data':'Data', 'nav.reports':'Reports', 'page.reports':'Reports',
     'mode.day':'Day', 'mode.week':'Week', 'mode.month':'Month', 'mode.range':'Custom',
     'tb.loadedAt':'When the numbers were loaded (your clock)', 'tb.reload':'Reload the latest numbers', 'tb.install':'Install', 'tb.installTitle':'Install as an app', 'tb.theme':'Light / dark', 'tb.signout':'Sign out', 'tb.language':'Language', 'tb.users':'Users & access', 'tb.reloadShort':'Reload',
     'brief.summary':'In brief', 'brief.moved':'What moved profit', 'brief.risks':'Biggest risks', 'brief.decide':'Decide this week', 'brief.title':'Brief & actions', 'brief.todo':'What to do', 'brief.why':'Why profit moved',
@@ -51,11 +51,11 @@
     'u.days':'days', 'u.d':'d', 'u.noData':'No data', 'u.waiting':'Waiting for data', 'u.total':'Total', 'u.daysWithSku':'days with SKU data',
     'risk.stockout':'{n} SKUs run out within 30 days', 'risk.stockoutNote':'{list} — revenue at risk over the next 30 days', 'risk.stockoutAction':'Place or expedite POs for: {list}',
     'lots.title':'Receipt lots — FIFO landed cost',
-    'page.exec':'Overview', 'page.sales':'Sales & customers', 'page.marketing':'Marketing', 'page.pnl':'Profit & loss', 'page.inventory':'Products & inventory', 'page.opex':'Fixed costs & cash', 'page.data':'Data sources',
+    'page.exec':'Overview', 'page.sales':'Sales & customers', 'page.marketing':'Marketing', 'page.pnl':'Profit & loss', 'page.inventory':'Products & inventory', 'page.opex':'Finance (CFO)', 'page.data':'Data sources',
     'ctx.vs':'vs {cmp}', 'ctx.today':'includes today (not final)',
   });
   Object.assign(L.vi, {
-    'nav.exec':'Điều hành', 'nav.sales':'Bán hàng &amp; khách', 'nav.marketing':'Marketing', 'nav.pnl':'Lãi lỗ (P&amp;L)', 'nav.inventory':'Sản phẩm &amp; tồn kho', 'nav.opex':'Chi phí cố định &amp; tiền', 'nav.data':'Dữ liệu', 'nav.reports':'Báo cáo', 'page.reports':'Báo cáo',
+    'nav.exec':'Điều hành', 'nav.sales':'Bán hàng &amp; khách', 'nav.marketing':'Marketing', 'nav.pnl':'Lãi lỗ (P&amp;L)', 'nav.inventory':'Sản phẩm &amp; tồn kho', 'nav.opex':'Tài chính', 'nav.data':'Dữ liệu', 'nav.reports':'Báo cáo', 'page.reports':'Báo cáo',
     'mode.day':'Ngày', 'mode.week':'Tuần', 'mode.month':'Tháng', 'mode.range':'Tuỳ chọn',
     'tb.loadedAt':'Giờ tải số liệu (giờ trên máy bạn)', 'tb.reload':'Tải lại số liệu mới nhất', 'tb.install':'Cài app', 'tb.installTitle':'Cài như app lên máy / điện thoại', 'tb.theme':'Sáng / tối', 'tb.signout':'Đăng xuất', 'tb.language':'Ngôn ngữ', 'tb.users':'Người dùng & quyền', 'tb.reloadShort':'Tải lại',
     'brief.summary':'Tóm tắt kỳ này', 'brief.moved':'Điều gì làm lợi nhuận đổi', 'brief.risks':'Rủi ro lớn nhất', 'brief.decide':'Cần quyết tuần này', 'brief.title':'Tóm tắt & việc cần làm', 'brief.todo':'Việc cần làm', 'brief.why':'Vì sao lợi nhuận đổi',
@@ -69,7 +69,7 @@
     'u.days':'ngày', 'u.d':'ng', 'u.noData':'Chưa có dữ liệu', 'u.waiting':'Chờ dữ liệu', 'u.total':'Tổng', 'u.daysWithSku':'ngày có dữ liệu SKU',
     'risk.stockout':'{n} SKU hết hàng trong 30 ngày', 'risk.stockoutNote':'{list} — doanh thu có nguy cơ mất trong 30 ngày tới', 'risk.stockoutAction':'Đặt hoặc đẩy nhanh PO cho: {list}',
     'lots.title':'Lô nhập — giá vốn FIFO',
-    'page.exec':'Điều hành', 'page.sales':'Bán hàng & khách', 'page.marketing':'Marketing', 'page.pnl':'Lãi lỗ', 'page.inventory':'Sản phẩm & tồn kho', 'page.opex':'Chi phí cố định & tiền', 'page.data':'Nguồn dữ liệu',
+    'page.exec':'Điều hành', 'page.sales':'Bán hàng & khách', 'page.marketing':'Marketing', 'page.pnl':'Lãi lỗ', 'page.inventory':'Sản phẩm & tồn kho', 'page.opex':'Tài chính (CFO)', 'page.data':'Nguồn dữ liệu',
     'ctx.vs':'so {cmp}', 'ctx.today':'gồm hôm nay (chưa chốt)',
   });
   Object.assign(L.en, {
@@ -4706,10 +4706,239 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
     const leg = keys.map(k=>`<span class="li"><span class="sw" style="background:${MK_COLOR[k]}"></span>${AD_LABEL[k]}</span>`).join('')+`<span class="li"><span class="sw" style="background:var(--brand-forest, var(--series-1));border-radius:50%"></span>MER</span>`;
     return `<div class="legend" style="margin-bottom:6px;">${leg}</div><svg class="mk-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${tv('Daily ad spend and MER', 'Chi quảng cáo và MER theo ngày')}">${s}</svg>`;
   }
+  // ---------- V12.10: Finance (CFO) page — US GAAP view of the business for the finance team: income statement by month,
+  // OpEx control, working capital & balance-sheet items, cash & liquidity (private store, /api/cash), ratios, close
+  // checklist, tax, and auto-generated CFO notes. Replaces the "Fixed costs & cash" cards (kept behind a toggle). ----------
+  const FIN = {detail: false, cash: null, cashState: 'idle'};
+  const fin$ = v => (v<0 ? '-' : '')+'$'+Math.round(Math.abs(v)).toLocaleString('en-US');
+  const finK = v => money(v, {compact:true});
+  const finPct = (v, b, d) => (b>0 && v!==null && v!==undefined && isFinite(v)) ? (v/b*100).toFixed(d===undefined ? 1 : d)+'%' : '—';
+  const finEsc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const finOk = v => v!==null && v!==undefined && isFinite(v);
+  function finLoadCash(){   // private store on Cloudflare (KV), written by the cash workflow; never in the public repo
+    if(FIN.cashState!=='idle') return;
+    FIN.cashState = 'loading';
+    fetch('/api/cash', {credentials:'same-origin', cache:'no-store', headers:{'X-Requested-With':'ctu'}}).then(r=> r.ok ? r.json() : null).then(j=>{
+      FIN.cash = j && j.cash && j.cash.as_of ? j.cash : null; FIN.cashState = j ? (FIN.cash ? 'ok' : 'empty') : 'unavailable'; renderFinance();
+    }).catch(()=>{ FIN.cashState = 'unavailable'; renderFinance(); });
+  }
+  // the P&L lines of one set of rows, in statement order
+  function finLines(a){
+    const gm = a.netRevenue - a.cogs;
+    return {net: a.netRevenue, cogs: a.cogs, gp: gm, fees: a.feesTotal, mkt: a.marketingTotal, cm3: a.contributionProfit, wh: a.logisticsTotal + a.inventoryHolding, ga: a.gaTotal, ebitda: a.netProfit, da: a.depreciation, int: a.interest, ebt: a.ebt, tax: a.incomeTax, ni: a.netIncome, orders: a.totalOrders, refunds: a.refundsTotal, gross: a.grossSales};
+  }
+  function finMonthAgg(m){ const rows = monthMap[m]; if(!rows || !rows.length) return null; const a = aggregate(rows); return (a.netRevenue>0 || a.fixedTotal>0) ? a : null; }
+  function finClosed(m){ return !!(opexMeta && opexMeta.closed && opexMeta.closed.includes(m)); }
+  function finRunRate(key, upto){   // average per month over the last 3 closed months before `upto` (manual G&A lines) — the yardstick for a line
+    const ms = MONTHS.filter(m=> m<upto && finClosed(m)).slice(-3); if(!ms.length) return null;
+    const vals = ms.map(m=>{ const rows = monthMap[m]; return sum(rows.map(r=> r.opex && r.opex.vals[key] ? r.opex.vals[key] : 0)); });
+    return {avg: sum(vals)/vals.length, months: ms};
+  }
+  function finLots(){   // inventory on the water & purchase commitments from the Notion lots (landed cost, or product cost when freight is not booked)
+    const L = (COGS_LOTS_LIVE_DATA && Array.isArray(COGS_LOTS_LIVE_DATA.lots)) ? COGS_LOTS_LIVE_DATA.lots : [];
+    const out = {transit: 0, transitUnits: 0, transitConts: new Set(), committed: 0, committedUnits: 0, committedConts: new Set(), byEta: {}};
+    L.forEach(l=>{
+      if(!l || !l.sku) return; const st = String(l.status||''), q = parseFloat(l.qty)||0; if(!(q>0)) return;
+      const unit = isFinite(parseFloat(l.landed)) ? parseFloat(l.landed) : (isFinite(parseFloat(l.exw_usd)) ? parseFloat(l.exw_usd) : (parseFloat(l.total_product_cost)||0)/q);
+      const v = unit*q, inb = String(l.inbound||'?');
+      if(/^(in transit|arrived at port|receiving|waiting for qa)$/i.test(st)){ out.transit += v; out.transitUnits += q; out.transitConts.add(inb); }
+      else if(/^(in production|ready to ship|order placed)$/i.test(st)){ out.committed += v; out.committedUnits += q; out.committedConts.add(inb); const e = String(l.etd||l.eta||'').slice(0,7) || '?'; out.byEta[e] = (out.byEta[e]||0) + v; }
+    });
+    return out;
+  }
+  function finInventory(){   // on hand at landed cost (same maths as the Reports → Current inventory table)
+    let cost = 0, units = 0, unpriced = 0, slow = [], low = [], waiting = 0;
+    stockRows().forEach(s=>{ if(!s.known || !(s.stock>0)) return; const uc = skuCost(s.sku); units += s.stock; if(uc===null){ unpriced += s.stock; return; } cost += uc*s.stock; if(s.perDay>0 && s.cover!==null){ if(s.cover>180 && uc*s.stock>=2000) slow.push({sku:s.sku, v: uc*s.stock, cover: s.cover}); if(s.cover<30 && s.perDay>=0.5){ const all = (s.stock + s.fbaInbound + s.smkIncoming)/s.perDay; if(all<30) low.push({sku:s.sku, cover: s.cover, lost: Math.max(0, 30-all)*s.perDay*s.price}); else waiting++; } } });
+    return {cost, units, unpriced, slow: slow.sort((x,y)=>y.v-x.v), low: low.sort((x,y)=>y.lost-x.lost), waiting};
+  }
+  function finReceivables(){   // marketplace money not paid out yet — estimates from the order data (settlement cycles), until the payout APIs are wired
+    const last = n => days.slice(-n);
+    const amz = aggregate(last(14)), sh = aggregate(last(3));
+    const amzNet = (amz.gross.amazon||0) - (amz.discountBy.amazon||0) - (amz.refund.amazon||0) - amz.amazonMarketplaceFeesReal - amz.amazonMarketplaceFeesEst - amz.fulfillment;
+    const shNet = (sh.gross.shopify||0) - (sh.discountBy.shopify||0) - (sh.refund.shopify||0) - sh.paymentFeesAll;
+    const tt = aggregate(last(60)).tiktokNetUnsettled || 0;
+    return {amazon: Math.max(0, amzNet), shopify: Math.max(0, shNet), tiktok: Math.max(0, tt), total: Math.max(0, amzNet) + Math.max(0, shNet) + Math.max(0, tt)};
+  }
+  function renderFinance(){
+    const root = document.getElementById('finRoot'); if(!root) return;
+    const rows = currentRows(); if(!rows.length){ root.innerHTML = ''; return; }
+    if(FIN.cashState==='idle') finLoadCash();
+    const a = aggregate(rows), L = finLines(a), cmp = EXEC_STATE.cmp;
+    const pRows = cmp==='year' ? yearAgoRows() : (cmp==='none' ? null : prevLikeRows()), p = pRows && pRows.length ? aggregate(pRows) : null, PL = p ? finLines(p) : null;
+    const lk = cmp==='year' ? tx('u.lastYear') : likeLabel();
+    const from = rows[0].iso, to = rows[rows.length-1].iso, nDays = rows.length;
+    const beRev = isFinite(a.breakEvenRevenue) ? a.breakEvenRevenue : null;
+    const cash = FIN.cash, cashTotal = cash ? +cash.total || sum((cash.accounts||[]).map(x=>+x.balance||0)) : null;
+    // operating cash proxy: EBITDA of the last 3 closed months
+    const closed3 = MONTHS.filter(m=> m<to.slice(0,7) && finClosed(m)).slice(-3), ebitda3 = closed3.map(m=>{ const x = finMonthAgg(m); return x ? x.netProfit : 0; });
+    const burn = ebitda3.length ? sum(ebitda3)/ebitda3.length : null;
+    const runway = (cashTotal!==null && burn!==null) ? (burn<0 ? cashTotal/(-burn) : Infinity) : null;
+    // ---- KPI strip ----
+    const kp = c => {
+      let cmpH = '';
+      if(c.cmpTxt) cmpH = `<div class="cmp flat"><b>—</b><span>${c.cmpTxt}</span></div>`;
+      else if(cmp!=='none'){
+        if(!finOk(c.v) || !finOk(c.pv)) cmpH = `<div class="cmp flat"><b>—</b><span>${tv('no comparison', 'chưa có số so sánh')}</span></div>`;
+        else { let absD = !c.pts && c.money && c.pv<=0; let d = (c.pts || absD) ? c.v-c.pv : (c.pv!==0 ? (c.v-c.pv)/Math.abs(c.pv)*100 : null); if(!absD && !c.pts && c.money && d!==null && Math.abs(d)>=300){ absD = true; d = c.v-c.pv; }
+          if(d===null || !isFinite(d)) cmpH = `<div class="cmp flat"><b>—</b><span>${tv('vs ', 'so với ')}${c.f(c.pv)}</span></div>`;
+          else { const flat = absD ? Math.abs(d)<0.5 : Math.abs(d)<0.05, good = c.lower ? d<=0 : d>=0; const txt = (flat ? '' : (d>0 ? '↑ ' : '↓ '))+(absD ? fin$(Math.abs(d)) : Math.abs(d).toFixed(1)+(c.pts ? ' '+tx('u.pts') : '%'));
+            cmpH = `<div class="cmp ${flat ? 'flat' : (good ? 'good' : 'bad')}"><b>${txt}</b><span>${tv('vs ', 'so với ')}${c.f(c.pv)}</span></div>`; } }
+      }
+      const tip = [c.label+': '+(c.exact||c.f(c.v)), c.def, c.foot, (cmp!=='none' && finOk(c.pv) && !c.cmpTxt) ? tv('vs ', 'so với ')+lk+': '+c.f(c.pv) : ''].filter(Boolean).join('\n');
+      return `<div class="kpi${c.alert ? ' alert' : ''}" data-tip="${finEsc(tip)}"><div class="kh"><span class="label">${c.label}</span></div><div class="value">${c.f(c.v)}</div>${cmpH}</div>`;
+    };
+    const pc = v => finOk(v) ? v.toFixed(1)+'%' : '—';
+    const gmP = a.netRevenue>0 ? L.gp/a.netRevenue*100 : null, pGmP = PL && p.netRevenue>0 ? PL.gp/p.netRevenue*100 : null;
+    const ebP = a.netRevenue>0 ? L.ebitda/a.netRevenue*100 : null, pEbP = PL && p.netRevenue>0 ? PL.ebitda/p.netRevenue*100 : null;
+    const oxP = a.netRevenue>0 ? a.fixedTotal/a.netRevenue*100 : null, pOxP = PL && p.netRevenue>0 ? p.fixedTotal/p.netRevenue*100 : null;
+    const cov = beRev && beRev>0 ? a.netRevenue/beRev*100 : null, pCov = PL && isFinite(p.breakEvenRevenue) && p.breakEvenRevenue>0 ? p.netRevenue/p.breakEvenRevenue*100 : null;
+    const kpis = [
+      {label: tv('Net revenue', 'Doanh thu thuần'), v: L.net, pv: PL&&PL.net, f: fin$, money:true, exact: money(L.net), def: tv('Gross sales − discounts − refunds (ASC 606: by order date, net of variable consideration)', 'Doanh thu gộp − giảm giá − hoàn tiền (ASC 606: theo ngày đặt hàng, trừ các khoản giảm trừ)'), foot: tv('Gross ', 'Gộp ')+fin$(L.gross)+tv(' · refunds ', ' · hoàn tiền ')+finPct(L.refunds, L.gross)},
+      {label: tv('Gross margin', 'Biên lãi gộp'), v: gmP, pv: pGmP, pts:true, f: pc, def: tv('(Net revenue − COGS) ÷ net revenue · COGS = product cost (FIFO, landed) + packaging + fulfillment + postage', '(Doanh thu thuần − giá vốn) ÷ doanh thu thuần · giá vốn = sản phẩm (FIFO, landed) + bao bì + fulfillment + cước'), foot: tv('Gross profit ', 'Lãi gộp ')+fin$(L.gp)},
+      {label: tv('CM3 margin', 'Biên CM3'), v: a.netRevenue>0 ? L.cm3/a.netRevenue*100 : null, pv: PL && p.netRevenue>0 ? PL.cm3/p.netRevenue*100 : null, pts:true, f: pc, def: tv('Contribution after transaction fees and marketing', 'Lợi nhuận đóng góp sau phí giao dịch và marketing'), foot: 'CM3 '+fin$(L.cm3)},
+      {label: 'EBITDA', v: L.ebitda, pv: PL&&PL.ebitda, f: fin$, money:true, exact: money(L.ebitda), alert: ebP!==null && ebP<0, def: tv('CM3 − warehousing & logistics − G&A', 'CM3 − kho bãi & logistics − G&A'), foot: tv('Margin ', 'Biên ')+pc(ebP)+(a.opexEstDays>0 ? tv(' · G&A includes estimate (month not closed)', ' · G&A có tạm tính (tháng chưa chốt)') : '')},
+      {label: tv('Net income', 'Lợi nhuận ròng'), v: L.ni, pv: PL&&PL.ni, f: fin$, money:true, exact: money(L.ni), def: tv('EBITDA − D&A − interest − income tax', 'EBITDA − khấu hao − lãi vay − thuế TNDN'), foot: tv('D&A ', 'Khấu hao ')+fin$(L.da)+tv(' · interest ', ' · lãi vay ')+fin$(L.int)+tv(' · tax ', ' · thuế ')+fin$(L.tax)+(a.incomeTaxEstimated ? tv(' (accrued at ', ' (tạm tính ')+Math.round((a.taxRate||0)*100)+'%)' : '')},
+      {label: tv('OpEx ratio', 'Tỷ lệ OpEx'), v: oxP, pv: pOxP, pts:true, lower:true, f: pc, def: tv('Fixed operating costs (warehousing, logistics, G&A) ÷ net revenue', 'Chi phí vận hành cố định (kho bãi, logistics, G&A) ÷ doanh thu thuần'), foot: 'OpEx '+fin$(a.fixedTotal)},
+      {label: tv('Break-even coverage', 'Phủ điểm hoà vốn'), v: cov, pv: pCov, pts:true, f: v => finOk(v) ? Math.round(v)+'%' : '—', alert: cov!==null && cov<100, def: tv('Net revenue ÷ break-even revenue (fixed costs ÷ contribution ratio). Below 100% the period lost money before D&A.', 'Doanh thu thuần ÷ doanh thu hoà vốn (chi phí cố định ÷ tỷ lệ đóng góp). Dưới 100% là kỳ lỗ trước khấu hao.'), foot: beRev ? tv('Break-even revenue ', 'Doanh thu hoà vốn ')+fin$(beRev) : tv('No positive contribution — no finite break-even', 'Đóng góp không dương — không có điểm hoà vốn')},
+      {label: tv('Cash & runway', 'Tiền mặt & runway'), v: cashTotal, pv: null, f: v => finOk(v) ? fin$(v) : '—', money:true, cmpTxt: cash ? (runway===Infinity ? tv('self-funding on the last 3 closed months', 'tự tài trợ theo 3 tháng đã chốt') : (runway!==null ? tv('runway ≈ ', 'runway ≈ ')+runway.toFixed(1)+tv(' months at ', ' tháng với EBITDA ')+fin$(burn)+tv('/month', '/tháng') : '')) : (FIN.cashState==='loading' ? tv('loading…', 'đang tải…') : tv('not connected yet', 'chưa nối')), alert: runway!==null && runway!==Infinity && runway<6, def: tv('Bank balances from the private cash store (Slash, read-only key → Cloudflare KV; never in the public repo). Runway = cash ÷ average monthly EBITDA loss of the last 3 closed months.', 'Số dư ngân hàng từ kho riêng (Slash, key chỉ đọc → Cloudflare KV; không nằm trong repo công khai). Runway = tiền ÷ lỗ EBITDA bình quân 3 tháng đã chốt.'), foot: cash ? tv('as of ', 'tại ')+String(cash.as_of).slice(0,16).replace('T', ' ')+' · '+(cash.accounts||[]).length+tv(' accounts', ' tài khoản') : ''},
+    ];
+    // ---- income statement by month ----
+    const months = MONTHS.slice(-9).filter(m=> finMonthAgg(m));
+    const isRows = [
+      ['net', tv('Net revenue', 'Doanh thu thuần'), 'b'], ['cogs', tv('Cost of goods sold', 'Giá vốn hàng bán'), 'n'], ['gp', tv('Gross profit', 'Lãi gộp'), 'b'], ['gp%', tv('Gross margin', 'Biên lãi gộp'), 'p'],
+      ['fees', tv('Transaction selling fees', 'Phí bán hàng theo giao dịch'), 'n'], ['mkt', tv('Marketing & selling', 'Marketing & bán hàng'), 'n'], ['cm3', tv('Contribution (CM3)', 'Lợi nhuận đóng góp (CM3)'), 'b'], ['cm3%', tv('CM3 margin', 'Biên CM3'), 'p'],
+      ['wh', tv('Warehousing & logistics', 'Kho bãi & logistics'), 'n'], ['ga', tv('General & administrative', 'Quản lý chung (G&A)'), 'n'], ['ebitda', 'EBITDA', 'b'], ['ebitda%', tv('EBITDA margin', 'Biên EBITDA'), 'p'],
+      ['da', tv('Depreciation & amortization', 'Khấu hao & phân bổ'), 'n'], ['int', tv('Interest', 'Lãi vay'), 'n'], ['ebt', tv('Pre-tax income (EBT)', 'Lợi nhuận trước thuế'), 'b'], ['tax', tv('Income tax', 'Thuế TNDN'), 'n'], ['ni', tv('Net income', 'Lợi nhuận ròng'), 'b'],
+    ];
+    const mAgg = {}; months.forEach(m=>{ mAgg[m] = finLines(finMonthAgg(m)); mAgg[m]._a = finMonthAgg(m); });
+    const y = to.slice(0,4), ytdRows = days.filter(r=> r.iso>=y+'-01-01' && r.iso<=to), ytd = ytdRows.length ? finLines(aggregate(ytdRows)) : null;
+    const ttmRows = days.filter(r=> r.iso>shiftIso(to, 365) && r.iso<=to), ttm = ttmRows.length>300 ? finLines(aggregate(ttmRows)) : null;
+    const cellOf = (Lx, k, t) => { if(!Lx) return '<td class="num mk-muted">—</td>'; if(t==='p'){ const base = k.replace('%',''); return `<td class="num fin-p">${finPct(Lx[base], Lx.net)}</td>`; } const v = Lx[k]; const neg = t==='n'; const cls = (t==='b' && v<0) ? ' mk-bad' : ''; return `<td class="num${t==='b' ? ' fin-b' : ''}${cls}">${neg ? (v>0.005 ? '('+finK(v)+')' : (Math.abs(v)<0.005 ? '—' : finK(-v))) : finK(v)}</td>`; };
+    const isHead = `<thead><tr><th>${tv('Line', 'Khoản mục')}</th>${months.map(m=>{ const x = mAgg[m]._a; const est = x.opexEstDays>0 || x.amazonFeeEstDays>0; return `<th class="num">${MONTH_LABEL(m).replace(/\s*\(.*$/, '')}${est ? '<span class="fin-est" title="'+finEsc(tv('Includes estimates (month not closed or fees pending)', 'Có tạm tính (tháng chưa chốt hoặc phí chưa về)'))+'">≈</span>' : ''}</th>`; }).join('')}<th class="num fin-tot">YTD ${y}</th><th class="num fin-tot">TTM</th></tr></thead>`;
+    const isBody = '<tbody>'+isRows.map(([k, l, t])=>`<tr class="fin-${t}"><td class="mk-lab">${l}</td>${months.map(m=>cellOf(mAgg[m], k, t)).join('')}${cellOf(ytd, k, t)}${cellOf(ttm, k, t)}</tr>`).join('')+'</tbody>';
+    // ---- OpEx control ----
+    const curM = to.slice(0,7), inMonth = rows.filter(r=> r.iso.slice(0,7)===curM), mA = inMonth.length ? aggregate(inMonth) : null;
+    const opexLines = [];
+    (mA ? mA.gaItems : a.gaItems).forEach(it=>{ if(Math.abs(it.value)<0.005 && !it.manual) return; const rr = OPEX_GA_KEYS.includes(it.key) ? finRunRate(it.key, curM) : null; const dim = new Date(+curM.slice(0,4), +curM.slice(5,7), 0).getDate(); const monthV = mA ? it.value/Math.max(1, inMonth.length)*dim : null;
+      opexLines.push({key: it.key, l: it.label.replace(/ — .*$/, ''), v: it.value, monthV, rr: rr ? rr.avg : null, est: it.est, manual: it.manual}); });
+    opexLines.push({key:'wh', l: tv('Warehousing & logistics (FBA storage & service fees, ShipMonk storage / receiving / returns)', 'Kho bãi & logistics (phí lưu kho & dịch vụ FBA, ShipMonk lưu kho / nhận hàng / hàng trả)'), v: a.logisticsTotal, monthV: mA ? mA.logisticsTotal/Math.max(1, inMonth.length)*new Date(+curM.slice(0,4), +curM.slice(5,7), 0).getDate() : null, rr: (()=>{ const ms = MONTHS.filter(m=> m<curM).slice(-3); if(!ms.length) return null; return sum(ms.map(m=>{ const x = finMonthAgg(m); return x ? x.logisticsTotal : 0; }))/ms.length; })(), est: false, manual: false, api: true});
+    opexLines.sort((x,y)=>Math.abs(y.v)-Math.abs(x.v));
+    const opexHtml = opexLines.map(o=>{ const varP = (o.rr && o.monthV!==null) ? (o.monthV-o.rr)/Math.abs(o.rr)*100 : null; const flag = varP!==null && varP>25 && o.monthV-o.rr>500; const tag = o.api ? `<span class="tag live"><span class="d"></span>API</span>` : o.est ? `<span class="tag info"><span class="d"></span>${tv('estimate', 'tạm tính')}</span>` : (o.manual ? '' : `<span class="tag gap"><span class="d"></span>${tv('not entered', 'chưa nhập')}</span>`);
+      return `<tr><td class="mk-lab">${finEsc(o.l)}${tag}</td><td class="num">${money(o.v)}</td><td class="num mk-muted">${finPct(o.v, a.netRevenue)}</td><td class="num">${o.monthV!==null ? finK(o.monthV) : '—'}</td><td class="num mk-muted">${o.rr!==null ? finK(o.rr) : '—'}</td><td class="num ${flag ? 'mk-bad' : (varP!==null && varP<-15 ? 'mk-good' : '')}">${varP!==null ? (varP>0 ? '+' : '')+varP.toFixed(0)+'%' : '—'}</td></tr>`; }).join('');
+    // ---- working capital & balance-sheet items ----
+    const inv = finInventory(), lots = finLots(), rec = finReceivables(), R = ASSET_REG;
+    const nowM = TODAY_ISO.slice(0,7);
+    const fixedNbv = R ? sum(R.fixed.map(f=>{ const dep = sum(f.months.filter(([m])=> m<=nowM).map(([,v])=>v)); return f.ins ? Math.max(0, f.cost - dep) : 0; })) : 0;
+    const cip = R ? sum(R.fixed.filter(f=> !f.ins).map(f=>f.paid)) : 0, cipDue = R ? sum(R.fixed.filter(f=> !f.ins).map(f=>Math.max(0, f.cost - f.paid))) : 0;
+    const prepaidLeft = R ? sum(R.prepaid.map(pp=> sum(pp.months.filter(([m])=> m>nowM).map(([,v])=>v)))) : 0;
+    const cogs30 = aggregate(days.slice(-30)).cogs, dio = cogs30>0 ? inv.cost/(cogs30/30) : null;
+    const taxYtd = ytd ? ytd.tax : 0, taxEnt = ytdRows.some(r=> r.opex && r.opex.given && r.opex.given.income_tax);
+    const agencyNext = (()=>{ const rr = finRunRate('mkt_agency', curM); return rr ? rr.avg : (a.mktAgency/nDays*30); })();
+    const payrollNext = (()=>{ const rr = finRunRate('salary', curM); return rr ? rr.avg : (a.gaItems.find(x=>x.key==='salary')||{value:0}).value/nDays*30; })();
+    const wcRows = [
+      {g:'a', l: tv('Cash at bank', 'Tiền tại ngân hàng'), v: cashTotal, n: cash ? tv('Slash, private store', 'Slash, kho riêng') : tv('not connected — see Cash & liquidity', 'chưa nối — xem Tiền mặt & thanh khoản')},
+      {g:'a', l: tv('Marketplace receivables (estimate)', 'Phải thu sàn (ước tính)'), v: rec.total, n: tv(`Amazon last 14 days ${fin$(rec.amazon)} · Shopify Payments last 3 days ${fin$(rec.shopify)} · TikTok unsettled ${fin$(rec.tiktok)}`, `Amazon 14 ngày gần nhất ${fin$(rec.amazon)} · Shopify Payments 3 ngày ${fin$(rec.shopify)} · TikTok chưa quyết toán ${fin$(rec.tiktok)}`)},
+      {g:'a', l: tv('Inventory on hand, at cost', 'Hàng tồn kho, theo giá vốn'), v: inv.cost, n: intFmt(inv.units)+tv(' units · FIFO landed cost', ' units · giá vốn landed FIFO')+(inv.unpriced ? tv(` · ${intFmt(inv.unpriced)} units without a cost`, ` · ${intFmt(inv.unpriced)} units chưa có giá vốn`) : '')+(dio ? tv(' · DIO ', ' · số ngày tồn ')+Math.round(dio)+tv(' days', ' ngày') : '')},
+      {g:'a', l: tv('Inventory in transit (owned, not received)', 'Hàng đang về (đã sở hữu, chưa nhập kho)'), v: lots.transit, n: intFmt(lots.transitUnits)+tv(' units · ', ' units · ')+lots.transitConts.size+tv(' containers (Notion: in transit / at port / receiving)', ' cont (Notion: in transit / at port / receiving)')},
+      {g:'a', l: tv('Prepaid expenses', 'Chi phí trả trước'), v: prepaidLeft, n: tv('unamortised balance (asset register)', 'phần chưa phân bổ (danh mục tài sản)')},
+      {g:'a', l: tv('Fixed assets, net', 'Tài sản cố định, giá trị còn lại'), v: fixedNbv, n: tv('moulds in service, straight-line', 'khuôn đang dùng, đường thẳng')},
+      {g:'a', l: tv('Construction in progress (deposits)', 'Tài sản dở dang (đặt cọc)'), v: cip, n: tv('moulds not yet in service', 'khuôn chưa đưa vào dùng')},
+      {g:'l', l: tv('Purchase commitments (lots in production / ready)', 'Cam kết mua hàng (lô đang sản xuất / sẵn sàng xuất)'), v: lots.committed, n: intFmt(lots.committedUnits)+tv(' units · ', ' units · ')+lots.committedConts.size+tv(' containers · cash out over the next months', ' cont · tiền ra trong các tháng tới')},
+      {g:'l', l: tv('Balance due on CIP assets', 'Còn phải trả khuôn dở dang'), v: cipDue, n: ''},
+      {g:'l', l: tv('Income tax accrued (YTD)', 'Thuế TNDN trích trước (từ đầu năm)'), v: taxYtd, n: taxEnt ? tv('entered', 'đã nhập') : (a.taxRate>0 ? tv('accrued at ', 'tạm tính ')+Math.round(a.taxRate*100)+tv('% of positive EBT', '% trên EBT dương') : tv('no tax rate set', 'chưa đặt thuế suất'))},
+      {g:'l', l: tv('Next month, fixed: payroll + agency retainer', 'Tháng tới, cố định: lương + agency'), v: payrollNext + agencyNext, n: tv('run-rate of the last closed months', 'theo mức các tháng đã chốt')},
+    ];
+    const assets = sum(wcRows.filter(r=>r.g==='a' && finOk(r.v)).map(r=>r.v)), liab = sum(wcRows.filter(r=>r.g==='l' && finOk(r.v)).map(r=>r.v));
+    const wcHtml = g => wcRows.filter(r=>r.g===g).map(r=>`<tr><td class="mk-lab">${r.l}${r.n ? `<small>${r.n}</small>` : ''}</td><td class="num">${finOk(r.v) ? money(r.v) : '<span class="mk-muted">—</span>'}</td></tr>`).join('');
+    // ---- cash & liquidity ----
+    const commitEta = Object.keys(lots.byEta).sort().slice(0, 4).map(e=> e+' '+finK(lots.byEta[e])).join(' · ');
+    let cashH;
+    if(cash){
+      const hist = Array.isArray(cash.history) ? cash.history.slice().sort((x,y)=>String(x.d).localeCompare(String(y.d))) : [];
+      const at = n => { const d = shiftIso(TODAY_ISO, n); const h = hist.filter(x=> x.d<=d); return h.length ? +h[h.length-1].total : null; };
+      const chg = n => { const v = at(n); return v!==null ? cashTotal - v : null; };
+      const accH = (cash.accounts||[]).map(x=>`<tr><td class="mk-lab">${finEsc(x.name||tv('Account', 'Tài khoản'))}</td><td class="num">${money(+x.balance||0)}</td></tr>`).join('');
+      cashH = `<div class="mk-mini fin-mini4"><div class="mk-m"><span>${tv('Cash today', 'Tiền hôm nay')}</span><b>${fin$(cashTotal)}</b><small>${tv('as of ', 'tại ')+String(cash.as_of).slice(0,16).replace('T',' ')}</small></div><div class="mk-m"><span>${tv('Change 30 / 90 days', 'Thay đổi 30 / 90 ngày')}</span><b>${chg(30)!==null ? (chg(30)>=0?'+':'')+fin$(chg(30)) : '—'}</b><small>${chg(90)!==null ? tv('90 days ', '90 ngày ')+(chg(90)>=0?'+':'')+fin$(chg(90)) : tv('history builds up day by day', 'lịch sử tích luỹ theo ngày')}</small></div><div class="mk-m"><span>${tv('Operating cash proxy', 'Dòng tiền hoạt động (ước)')}</span><b>${burn!==null ? fin$(burn) : '—'}</b><small>${tv('avg monthly EBITDA, last 3 closed months', 'EBITDA bình quân tháng, 3 tháng đã chốt')}</small></div><div class="mk-m"><span>Runway</span><b>${runway===Infinity ? '∞' : (runway!==null ? runway.toFixed(1)+tv(' mo', ' th') : '—')}</b><small>${runway===Infinity ? tv('EBITDA positive — self-funding', 'EBITDA dương — tự tài trợ') : tv('cash ÷ monthly EBITDA loss', 'tiền ÷ lỗ EBITDA mỗi tháng')}</small></div></div>
+        <div class="fin-two"><div><div class="rp-ch">${tv('Accounts', 'Tài khoản')}</div><table class="rp-table mk-table"><tbody>${accH}<tr class="rp-tot"><td>${tv('Total', 'Tổng')}</td><td class="num">${money(cashTotal)}</td></tr></tbody></table></div><div><div class="rp-ch">${tv('Known outflows ahead', 'Khoản chi đã biết sắp tới')}</div><table class="rp-table mk-table"><tbody><tr><td class="mk-lab">${tv('Purchase commitments by ETD', 'Cam kết mua hàng theo ETD')}<small>${commitEta || '—'}</small></td><td class="num">${money(lots.committed)}</td></tr><tr><td class="mk-lab">${tv('Fixed costs, next 2 months', 'Chi phí cố định 2 tháng tới')}<small>${tv('payroll + G&A run-rate', 'lương + G&A theo mức hiện tại')}</small></td><td class="num">${money((a.gaTotal/nDays*30)*2)}</td></tr><tr><td class="mk-lab">${tv('Balance due on CIP assets', 'Còn phải trả khuôn dở dang')}</td><td class="num">${money(cipDue)}</td></tr><tr><td class="mk-lab">${tv('Income tax accrued (YTD)', 'Thuế TNDN trích trước')}</td><td class="num">${money(taxYtd)}</td></tr></tbody></table></div></div>`;
+    } else {
+      cashH = `<div class="fin-setup"><p>${tv('Bank balances stay out of the public repo. The dashboard reads them from a private Cloudflare store (<code>/api/cash</code>) that a GitHub workflow fills every day from Slash with the read-only key. To switch it on:', 'Số dư ngân hàng không nằm trong repo công khai. Dashboard đọc từ kho riêng trên Cloudflare (<code>/api/cash</code>), do một workflow GitHub ghi mỗi ngày từ Slash bằng key chỉ đọc. Để bật:')}</p><ol><li>${tv('Cloudflare Pages → project → Settings → Variables and secrets → add secret <b>CASH_WRITE_KEY</b> (any long random string) → Retry deployment.', 'Cloudflare Pages → dự án → Settings → Variables and secrets → thêm secret <b>CASH_WRITE_KEY</b> (chuỗi ngẫu nhiên dài) → Retry deployment.')}</li><li>${tv('GitHub repo → Settings → Secrets → add the same value as <b>CASH_WRITE_KEY</b>.', 'GitHub repo → Settings → Secrets → thêm cùng giá trị với tên <b>CASH_WRITE_KEY</b>.')}</li><li>${tv('Actions → "Cattasaurus cash balances" → Run workflow. This card fills in on the next load.', 'Actions → "Cattasaurus cash balances" → Run workflow. Thẻ này tự hiện số ở lần tải sau.')}</li></ol><p class="mk-muted">${FIN.cashState==='unavailable' ? tv('(/api/cash is not answering yet — the function update is still deploying, or this account has no access)', '(/api/cash chưa trả lời — hàm trên server đang deploy, hoặc tài khoản này không có quyền)') : ''}</p></div>
+        <div class="rp-ch" style="margin-top:12px;">${tv('Known outflows ahead', 'Khoản chi đã biết sắp tới')}</div><table class="rp-table mk-table"><tbody><tr><td class="mk-lab">${tv('Purchase commitments by ETD', 'Cam kết mua hàng theo ETD')}<small>${commitEta || '—'}</small></td><td class="num">${money(lots.committed)}</td></tr><tr><td class="mk-lab">${tv('Fixed costs, next 2 months', 'Chi phí cố định 2 tháng tới')}<small>${tv('payroll + G&A run-rate', 'lương + G&A theo mức hiện tại')}</small></td><td class="num">${money((a.gaTotal/nDays*30)*2)}</td></tr><tr><td class="mk-lab">${tv('Balance due on CIP assets', 'Còn phải trả khuôn dở dang')}</td><td class="num">${money(cipDue)}</td></tr><tr><td class="mk-lab">${tv('Income tax accrued (YTD)', 'Thuế TNDN trích trước')}</td><td class="num">${money(taxYtd)}</td></tr></tbody></table>`;
+    }
+    // ---- ratios ----
+    const mer = merComplete(rows), beM = breakEvenMer(a), pMer = pRows ? merComplete(pRows) : null;
+    const refP = L.gross>0 ? L.refunds/L.gross*100 : null, pRefP = PL && PL.gross>0 ? PL.refunds/PL.gross*100 : null;
+    const lev = (PL && PL.net>0 && Math.abs(L.net-PL.net)>=PL.net*0.05) ? (L.ebitda-PL.ebitda)/(L.net-PL.net) : null;
+    const ratios = [
+      [tv('Gross margin', 'Biên lãi gộp'), pc(gmP), pGmP!==null ? pc(pGmP) : '', gmP!==null && gmP<45 ? 'warn' : 'ok', tv('≥ 50% healthy for D2C hard goods', '≥ 50% là tốt với hàng D2C')],
+      [tv('CM3 margin', 'Biên CM3'), pc(a.netRevenue>0 ? L.cm3/a.netRevenue*100 : null), PL && p.netRevenue>0 ? pc(PL.cm3/p.netRevenue*100) : '', (a.netRevenue>0 && L.cm3/a.netRevenue<0.10) ? 'warn' : 'ok', tv('what is left to pay fixed costs', 'phần còn lại để trả chi phí cố định')],
+      [tv('EBITDA margin', 'Biên EBITDA'), pc(ebP), pEbP!==null ? pc(pEbP) : '', ebP!==null && ebP<5 ? (ebP<0 ? 'bad' : 'warn') : 'ok', ''],
+      [tv('OpEx ratio', 'Tỷ lệ OpEx'), pc(oxP), pOxP!==null ? pc(pOxP) : '', oxP!==null && oxP>15 ? 'warn' : 'ok', tv('fixed costs ÷ net revenue', 'chi phí cố định ÷ doanh thu thuần')],
+      [tv('Marketing ÷ net revenue', 'Marketing ÷ doanh thu thuần'), finPct(a.marketingTotal, a.netRevenue), PL ? finPct(p.marketingTotal, p.netRevenue) : '', beM && finOk(mer.value) && mer.value<beM ? 'bad' : 'ok', 'MER '+(finOk(mer.value) ? mer.value.toFixed(2)+'x' : '—')+(beM ? tv(' vs break-even ', ' so với hoà vốn ')+beM.toFixed(2)+'x' : '')],
+      [tv('Refund rate', 'Tỷ lệ hoàn tiền'), pc(refP), pRefP!==null ? pc(pRefP) : '', refP!==null && refP>8 ? 'warn' : 'ok', tv('refunds ÷ gross sales', 'hoàn tiền ÷ doanh thu gộp')],
+      ['AOV', money(a.blendedAOV), p ? money(p.blendedAOV) : '', 'ok', tv('net revenue ÷ orders', 'doanh thu thuần ÷ đơn')],
+      [tv('Inventory days (DIO)', 'Số ngày tồn kho (DIO)'), dio ? Math.round(dio)+tv(' days', ' ngày') : '—', '', dio && dio>120 ? 'warn' : 'ok', tv('on-hand cost ÷ COGS per day (last 30 days)', 'giá vốn tồn ÷ giá vốn mỗi ngày (30 ngày)')],
+      [tv('Break-even coverage', 'Phủ điểm hoà vốn'), cov!==null ? Math.round(cov)+'%' : '—', pCov!==null ? Math.round(pCov)+'%' : '', cov!==null && cov<100 ? 'bad' : 'ok', tv('net revenue ÷ break-even revenue', 'doanh thu thuần ÷ doanh thu hoà vốn')],
+      [tv('Operating leverage', 'Đòn bẩy hoạt động'), lev!==null ? (lev*100).toFixed(0)+'%' : '—', '', 'ok', tv('ΔEBITDA ÷ Δnet revenue vs the comparison period', 'ΔEBITDA ÷ Δdoanh thu thuần so với kỳ so sánh')],
+      ['Runway', runway===Infinity ? '∞' : (runway!==null ? runway.toFixed(1)+tv(' months', ' tháng') : '—'), '', runway!==null && runway!==Infinity && runway<6 ? 'bad' : 'ok', cash ? '' : tv('needs the cash store', 'cần kho tiền mặt')],
+    ];
+    const ratiosH = ratios.map(r=>`<tr><td class="mk-lab">${r[0]}${r[4] ? `<small>${r[4]}</small>` : ''}</td><td class="num"><b class="${r[3]==='bad' ? 'mk-bad' : ''}">${r[1]}</b></td><td class="num mk-muted">${r[2]}</td><td><span class="fin-dot ${r[3]}"></span></td></tr>`).join('');
+    // ---- close checklist (last 6 months) ----
+    const closeMs = MONTHS.slice(-6);
+    const chk = (ok, warn) => ok ? '<span class="fin-ok">✓</span>' : (warn ? '<span class="fin-warn">◐</span>' : '<span class="fin-no">✗</span>');
+    const closeH = closeMs.map(m=>{ const x = finMonthAgg(m); if(!x) return ''; const closed = finClosed(m), ga = x.opexDays>0 && x.opexEstDays===0, feesOk = !(x.amazonFeeEstDays>0), lotsOk = x.productCostHasLots && !(x.productCostEstUnits>0), kl = x.klaviyoCostDays>=x.n*0.9, sm = x.smInvDays>0 || x.shipmonkInvoiceExtras>0 || x.shipmonkLogistics>0, taxG = (monthMap[m]||[]).some(r=> r.opex && r.opex.given && r.opex.given.income_tax);
+      return `<tr><td class="mk-lab">${MONTH_LABEL(m).replace(/\s*\(.*$/, '')}</td><td>${closed ? `<span class="pill ok">${tv('closed', 'đã chốt')}</span>` : `<span class="pill warn">${tv('open', 'đang mở')}</span>`}</td><td>${chk(ga, x.opexDays>0)}</td><td>${chk(feesOk, true)}</td><td>${chk(lotsOk, x.productCostHasLots)}</td><td>${chk(sm, false)}</td><td>${chk(kl, x.klaviyoCostDays>0)}</td><td>${chk(x.depreciationEntered || (ASSET_REG && ASSET_REG.fixed.some(f=>f.ins)), false)}</td><td>${chk(taxG || x.incomeTaxEstimated, !(x.taxRate>0))}</td></tr>`; }).join('');
+    const policies = [
+      [tv('Revenue (ASC 606)', 'Doanh thu (ASC 606)'), tv('By order date in Los Angeles time; net of discounts and refunds; marketplace sales tax collected by the platform is excluded; shipping charged to customers is revenue.', 'Theo ngày đặt hàng giờ Los Angeles; trừ giảm giá, hoàn tiền; thuế bán hàng do sàn thu không tính; phí ship khách trả là doanh thu.')],
+      [tv('Inventory (ASC 330)', 'Hàng tồn kho (ASC 330)'), tv('FIFO by purchase lot at landed cost (product + freight + duty + FBA placement/inbound); storage, disposal and removal are period costs.', 'FIFO theo lô nhập, giá landed (sản phẩm + cước + thuế nhập + phí đặt hàng/inbound FBA); lưu kho, tiêu huỷ, removal là chi phí kỳ.')],
+      [tv('Advertising (ASC 720-35)', 'Quảng cáo (ASC 720-35)'), tv('Expensed as incurred: ads, agency, creators, affiliate commissions, DSP. Amazon coupon / deal / Vine fees belong here (reclass from service fees pending).', 'Ghi nhận khi phát sinh: quảng cáo, agency, creator, hoa hồng affiliate, DSP. Phí coupon / deal / Vine của Amazon thuộc đây (đang chờ chuyển từ phí dịch vụ).')],
+      [tv('Fixed assets (ASC 360)', 'Tài sản cố định (ASC 360)'), tv('Capitalise ≥ $2,500; straight-line over 36 months from the month placed in service; deposits on moulds not yet in service are CIP.', 'Vốn hoá từ $2.500; khấu hao đường thẳng 36 tháng từ tháng đưa vào dùng; tiền cọc khuôn chưa dùng là tài sản dở dang.')],
+      [tv('Prepaid & accruals', 'Trả trước & trích trước'), tv('Annual software, certifications and training spread over their term; agency retainers by service month; income tax accrued at the set rate on positive EBT until the return is filed.', 'Phần mềm năm, chứng nhận, đào tạo chia đều theo kỳ; agency theo tháng dịch vụ; thuế TNDN trích trước theo thuế suất trên EBT dương tới khi quyết toán.')],
+    ];
+    // ---- tax ----
+    const taxH = `<div class="mk-mini fin-mini4"><div class="mk-m"><span>${tv('Sales tax collected (Shopify)', 'Thuế bán hàng thu hộ (Shopify)')}</span><b>${fin$(a.shopifyTax||0)}</b><small>${tv('remitted by Numeral; not revenue, not cost', 'Numeral nộp; không phải doanh thu hay chi phí')}</small></div><div class="mk-m"><span>${tv('Marketplace facilitator', 'Sàn thu hộ')}</span><b>Amazon · Walmart · TikTok</b><small>${tv('the platform collects and remits — nothing to file', 'sàn thu và nộp — không phải kê khai')}</small></div><div class="mk-m"><span>${tv('Income tax, YTD', 'Thuế TNDN, từ đầu năm')}</span><b>${fin$(taxYtd)}</b><small>${ytd ? tv('EBT YTD ', 'EBT từ đầu năm ')+fin$(ytd.ebt)+(a.taxRate>0 ? ' · '+Math.round(a.taxRate*100)+'%' : '') : ''}</small></div><div class="mk-m"><span>${tv('Net income, YTD', 'Lợi nhuận ròng, từ đầu năm')}</span><b>${ytd ? fin$(ytd.ni) : '—'}</b><small>${ytd ? tv('after D&A, interest and tax', 'sau khấu hao, lãi vay, thuế') : ''}</small></div></div>`;
+    // ---- CFO notes ----
+    const notes = [];
+    if(ebP!==null && ebP<0) notes.push({w: -L.ebitda, cls:'bad', l: tv('Loss', 'Lỗ'), t: tv('EBITDA negative for the period', 'EBITDA âm trong kỳ'), d: tv(`EBITDA ${fin$(L.ebitda)} (${pc(ebP)}). Break-even revenue ${beRev ? fin$(beRev) : '—'} vs actual ${fin$(L.net)}: fixed costs need ${cov!==null ? Math.round(100-cov)+'% more revenue' : 'more revenue'} or a higher contribution margin.`, `EBITDA ${fin$(L.ebitda)} (${pc(ebP)}). Doanh thu hoà vốn ${beRev ? fin$(beRev) : '—'} so với thực tế ${fin$(L.net)}: cần thêm ${cov!==null ? Math.round(100-cov)+'% doanh thu' : 'doanh thu'} hoặc biên đóng góp cao hơn để phủ chi phí cố định.`), amt: -L.ebitda, amtL: tv('EBITDA loss', 'lỗ EBITDA')});
+    if(beM && finOk(mer.value) && mer.value<beM){ const over = a.merSpend*(1-mer.value/beM); notes.push({w: over, cls:'bad', l: tv('Marketing', 'Marketing'), t: tv('Ad spend above what it earns', 'Chi quảng cáo vượt mức sinh lời'), d: tv(`MER ${mer.value.toFixed(2)}x vs break-even ${beM.toFixed(2)}x — about ${fin$(over)} of the period's ad spend did not pay back after product, fees and fulfillment. The Marketing page lists the campaigns to cut.`, `MER ${mer.value.toFixed(2)}x so với hoà vốn ${beM.toFixed(2)}x — khoảng ${fin$(over)} chi quảng cáo trong kỳ không thu hồi được sau giá vốn, phí, fulfillment. Trang Marketing liệt kê campaign cần cắt.`), amt: over, amtL: tv('over break-even', 'vượt hoà vốn')}); }
+    opexLines.forEach(o=>{ const varP = (o.rr && o.monthV!==null) ? (o.monthV-o.rr)/Math.abs(o.rr)*100 : null; if(varP!==null && varP>25 && o.monthV-o.rr>500) notes.push({w: o.monthV-o.rr, cls:'warn', l: tv('OpEx', 'OpEx'), t: o.l, d: tv(`${MONTH_LABEL(curM).replace(/\s*\(.*$/, '')} is tracking at ${finK(o.monthV)} vs ${finK(o.rr)} per month over the last closed months (+${varP.toFixed(0)}%).${o.est ? ' Still an estimate — enter the month to confirm.' : ''}`, `${MONTH_LABEL(curM).replace(/\s*\(.*$/, '')} đang ở mức ${finK(o.monthV)} so với ${finK(o.rr)}/tháng của các tháng đã chốt (+${varP.toFixed(0)}%).${o.est ? ' Vẫn là tạm tính — nhập số tháng để xác nhận.' : ''}`), amt: o.monthV-o.rr, amtL: tv('above run-rate / month', 'vượt mức / tháng')}); });
+    const openMs = MONTHS.filter(m=> m<curM && !finClosed(m) && finMonthAgg(m) && finMonthAgg(m).opexEstDays>0);
+    if(openMs.length) notes.push({w: 2000, cls:'warn', l: tv('Close', 'Chốt sổ'), t: tv(`${openMs.length} past month(s) still estimated`, `${openMs.length} tháng cũ vẫn tạm tính`), d: openMs.map(m=>MONTH_LABEL(m).replace(/\s*\(.*$/, '')).join(', ')+tv(' — G&A still carried from an earlier month. Enter the actuals in data/opex_monthly.json and set status to closed so EBITDA and net income are final.', ' — G&A vẫn mang từ tháng trước. Nhập số thật vào data/opex_monthly.json và đặt status closed để EBITDA, lợi nhuận ròng là số chốt.'), amt: null});
+    if(refP!==null && refP>8) notes.push({w: L.refunds*0.3, cls:'warn', l: tv('Refunds', 'Hoàn tiền'), t: tv('Refund rate above 8%', 'Tỷ lệ hoàn tiền trên 8%'), d: tv(`${pc(refP)} of gross sales (${fin$(L.refunds)}). Each point is ≈${fin$(L.gross/100)} of revenue; check the SKUs behind it on Products & inventory → returns by SKU.`, `${pc(refP)} doanh thu gộp (${fin$(L.refunds)}). Mỗi điểm % ≈ ${fin$(L.gross/100)} doanh thu; xem SKU gây hoàn ở Sản phẩm & tồn kho → hoàn theo SKU.`), amt: L.refunds, amtL: tv('refunded', 'đã hoàn')});
+    if(inv.slow.length){ const v = sum(inv.slow.map(s=>s.v)); notes.push({w: v*0.5, cls:'warn', l: tv('Inventory', 'Tồn kho'), t: tv(`${inv.slow.length} SKU(s) with more than 180 days of stock`, `${inv.slow.length} SKU tồn trên 180 ngày`), d: tv(`${fin$(v)} at cost tied up: `, `${fin$(v)} giá vốn đang nằm kho: `)+inv.slow.slice(0,4).map(s=>s.sku+' '+finK(s.v)+' ('+(s.cover>365 ? '>365' : Math.round(s.cover))+tv('d', 'ng')+')').join(' · ')+tv(' — hold reorders, consider a clearance or bundle.', ' — dừng đặt thêm, cân nhắc xả hàng hoặc bundle.'), amt: v, amtL: tv('at cost', 'giá vốn')}); }
+    if(inv.low.length){ const lost = sum(inv.low.map(s=>s.lost)); notes.push({w: lost, cls:'warn', l: tv('Inventory', 'Tồn kho'), t: tv(`${inv.low.length} selling SKU(s) run out within 30 days, nothing inbound`, `${inv.low.length} SKU đang bán sẽ hết trong 30 ngày, không có hàng về`), d: inv.low.slice(0,4).map(s=>s.sku+' '+Math.round(s.cover)+tv('d', 'ng')).join(' · ')+tv(` — revenue at risk ≈ ${fin$(lost)} over the next 30 days.`, ` — doanh thu có thể mất ≈ ${fin$(lost)} trong 30 ngày tới.`)+(inv.waiting ? tv(` ${inv.waiting} more SKU(s) are low but covered by stock on the way.`, ` ${inv.waiting} SKU khác sắp hết nhưng có hàng đang về.`) : ''), amt: lost, amtL: tv('revenue at risk', 'doanh thu rủi ro')}); }
+    else if(inv.waiting) notes.push({w: 500, cls:'neutral', l: tv('Inventory', 'Tồn kho'), t: tv(`${inv.waiting} SKU(s) under 30 days of stock, covered by inbound`, `${inv.waiting} SKU tồn dưới 30 ngày, có hàng đang về`), d: tv('Watch the ETAs on the Products & inventory page — a late container turns these into stock-outs.', 'Theo dõi ETA ở trang Sản phẩm & tồn kho — cont về trễ là hết hàng.'), amt: null});
+    if(lots.committed>0 && cashTotal!==null && lots.committed > cashTotal*0.6) notes.push({w: lots.committed, cls:'bad', l: tv('Cash', 'Tiền'), t: tv('Purchase commitments vs cash', 'Cam kết mua hàng so với tiền'), d: tv(`${fin$(lots.committed)} of lots in production / ready to ship against ${fin$(cashTotal)} in the bank — line up the payment schedule with the marketplace payouts.`, `${fin$(lots.committed)} lô đang sản xuất / sẵn sàng xuất so với ${fin$(cashTotal)} trong ngân hàng — cần xếp lịch trả theo tiền sàn về.`), amt: lots.committed, amtL: tv('committed', 'đã cam kết')});
+    if(runway!==null && runway!==Infinity && runway<6) notes.push({w: cashTotal, cls:'bad', l: tv('Cash', 'Tiền'), t: tv('Runway under 6 months', 'Runway dưới 6 tháng'), d: tv(`${fin$(cashTotal)} cash ÷ ${fin$(-burn)} average monthly EBITDA loss = ${runway.toFixed(1)} months.`, `${fin$(cashTotal)} tiền ÷ ${fin$(-burn)} lỗ EBITDA bình quân tháng = ${runway.toFixed(1)} tháng.`), amt: cashTotal, amtL: tv('cash', 'tiền')});
+    if(a.taxRate>0 && ytd && ytd.ebt>0 && !taxEnt) notes.push({w: taxYtd, cls:'neutral', l: tv('Tax', 'Thuế'), t: tv('Income tax accrued, not yet entered', 'Thuế TNDN tạm tính, chưa nhập'), d: tv(`${fin$(taxYtd)} accrued at ${Math.round(a.taxRate*100)}% of YTD EBT ${fin$(ytd.ebt)}. Enter the instalments actually paid in data/opex_monthly.json (income_tax) when filed.`, `${fin$(taxYtd)} tạm tính ${Math.round(a.taxRate*100)}% trên EBT từ đầu năm ${fin$(ytd.ebt)}. Nhập số thực nộp vào data/opex_monthly.json (income_tax) khi kê khai.`), amt: taxYtd, amtL: tv('accrued', 'trích trước')});
+    if(!cash) notes.push({w: 1000, cls:'neutral', l: tv('Setup', 'Cài đặt'), t: tv('Cash store not connected', 'Chưa nối kho tiền mặt'), d: tv('Runway, cash change and the commitments check need the bank balance — see the steps in Cash & liquidity.', 'Runway, biến động tiền và kiểm tra cam kết cần số dư ngân hàng — xem các bước ở Tiền mặt & thanh khoản.'), amt: null});
+    notes.sort((x,y)=>(y.w||0)-(x.w||0));
+    const notesH = notes.length ? notes.slice(0, 12).map(x=>`<li class="mk-act"><span class="pill ${x.cls}">${x.l}</span><div><b>${finEsc(x.t)}</b><div class="mk-why">${finEsc(x.d)}</div></div><span class="mk-w">${x.amt>0 ? fin$(x.amt)+`<small>${x.amtL||''}</small>` : ''}</span></li>`).join('') : `<li class="mk-act mk-none">${tv('Nothing to flag for this period.', 'Không có gì cần lưu ý trong kỳ này.')}</li>`;
+    const detailBtn = `<button type="button" class="fb-btn mk-detail" id="finDetail" aria-expanded="${FIN.detail}">${FIN.detail ? tv('Hide the entry tables', 'Ẩn bảng nhập liệu') : tv('Show the entry tables (OpEx by month, manual entries, asset register)', 'Xem bảng nhập liệu (OpEx theo tháng, nhập tay, danh mục tài sản)')}</button>`;
+    root.innerHTML = `
+      <div class="card mk-card"><div class="card-head"><h2>${tv('Financial snapshot', 'Tổng quan tài chính')}</h2><div class="note">${tv('US GAAP view of the period · same figures as the P&L', 'Theo chuẩn US GAAP cho kỳ đang xem · cùng số với P&L')}</div></div><div class="exec-kpis v126 mk-kpis fin-kpis" id="finKpis">${kpis.map(kp).join('')}</div></div>
+      <div class="card mk-card"><div class="card-head"><h2>${tv('CFO notes — what to raise', 'Ghi chú CFO — việc cần đề xuất')}</h2><div class="note">${tv('Generated from the figures · ranked by money at stake', 'Sinh từ số liệu · xếp theo số tiền liên quan')}</div></div><ul class="mk-acts">${notesH}</ul></div>
+      <div class="card mk-card"><div class="card-head"><h2>${tv('Income statement by month', 'Báo cáo kết quả kinh doanh theo tháng')}</h2><div class="note">${tv('Condensed, GAAP order · ≈ = includes estimates · (brackets) = costs', 'Rút gọn, theo thứ tự GAAP · ≈ = có tạm tính · (ngoặc) = chi phí')}</div><button class="btn mini" type="button" data-export="finIsTable" data-name="income-statement">CSV</button></div><div class="rp-wrap"><table class="rp-table mk-table fin-is" id="finIsTable">${isHead}${isBody}</table></div></div>
+      <div class="mk-two fin-row">
+        <div class="card mk-card"><div class="card-head"><h2>${tv('OpEx control', 'Kiểm soát chi phí cố định')}</h2><div class="note">${tv('Period actual · this month at run-rate vs the last 3 closed months', 'Thực tế kỳ · tháng này theo nhịp so với 3 tháng đã chốt')}</div></div><div class="rp-wrap"><table class="rp-table mk-table"><thead><tr><th>${tv('Line', 'Khoản')}</th><th class="num">${tv('Period', 'Kỳ này')}</th><th class="num">% ${tv('rev.', 'DT')}</th><th class="num">${MONTH_LABEL(curM).replace(/\s*\(.*$/, '')}</th><th class="num">${tv('Run-rate', 'Mức chuẩn')}</th><th class="num">Δ</th></tr></thead><tbody>${opexHtml}<tr class="rp-tot"><td>OpEx</td><td class="num">${money(a.fixedTotal)}</td><td class="num">${finPct(a.fixedTotal, a.netRevenue)}</td><td class="num">${mA ? finK(mA.fixedTotal/Math.max(1, inMonth.length)*new Date(+curM.slice(0,4), +curM.slice(5,7), 0).getDate()) : '—'}</td><td colspan="2"></td></tr></tbody></table></div></div>
+        <div class="card mk-card"><div class="card-head"><h2>${tv('Working capital & balance-sheet items', 'Vốn lưu động & khoản mục bảng cân đối')}</h2><div class="note">${tv('As of today · receivables are estimates until the payout APIs are wired', 'Tại hôm nay · phải thu là ước tính tới khi nối API payout')}</div></div><div class="fin-two"><div><div class="rp-ch">${tv('Assets', 'Tài sản')}</div><table class="rp-table mk-table"><tbody>${wcHtml('a')}<tr class="rp-tot"><td>${tv('Total (known)', 'Tổng (đã biết)')}</td><td class="num">${money(assets)}</td></tr></tbody></table></div><div><div class="rp-ch">${tv('Obligations & commitments', 'Nghĩa vụ & cam kết')}</div><table class="rp-table mk-table"><tbody>${wcHtml('l')}<tr class="rp-tot"><td>${tv('Total', 'Tổng')}</td><td class="num">${money(liab)}</td></tr></tbody></table></div></div><div class="caption">${tv('Supplier balances on open lots and the sales-tax payable are not in the data yet; inventory and fixed assets follow the FIFO lots and the asset register.', 'Công nợ nhà cung cấp trên lô mở và thuế bán hàng phải nộp chưa có trong dữ liệu; tồn kho và tài sản cố định theo lô FIFO và danh mục tài sản.')}</div></div>
+      </div>
+      <div class="mk-two fin-row">
+        <div class="card mk-card"><div class="card-head"><h2>${tv('Cash & liquidity', 'Tiền mặt & thanh khoản')}</h2><div class="note">${cash ? tv('Private store · balances never enter the public repo', 'Kho riêng · số dư không vào repo công khai') : ''}</div></div>${cashH}</div>
+        <div class="card mk-card"><div class="card-head"><h2>${tv('Ratios & health', 'Chỉ số & sức khoẻ')}</h2><div class="note">${cmp!=='none' ? tv('vs ', 'so với ')+lk : ''}</div></div><div class="rp-wrap"><table class="rp-table mk-table"><thead><tr><th>${tv('Ratio', 'Chỉ số')}</th><th class="num">${tv('Period', 'Kỳ này')}</th><th class="num">${cmp!=='none' ? tv('Prior', 'Kỳ trước') : ''}</th><th></th></tr></thead><tbody>${ratiosH}</tbody></table></div></div>
+      </div>
+      <div class="mk-two fin-row">
+        <div class="card mk-card"><div class="card-head"><h2>${tv('Month-end close', 'Chốt sổ tháng')}</h2><div class="note">${tv('✓ final · ◐ partly · ✗ missing', '✓ đủ · ◐ một phần · ✗ thiếu')}</div></div><div class="rp-wrap"><table class="rp-table mk-table fin-close"><thead><tr><th>${tv('Month', 'Tháng')}</th><th>${tv('Status', 'Trạng thái')}</th><th>G&A</th><th>${tv('Amazon fees', 'Phí Amazon')}</th><th>${tv('COGS lots', 'Lô giá vốn')}</th><th>ShipMonk</th><th>Klaviyo</th><th>D&A</th><th>${tv('Tax', 'Thuế')}</th></tr></thead><tbody>${closeH}</tbody></table></div><div class="rp-ch" style="margin-top:12px;">${tv('Accounting policies in use', 'Chính sách kế toán đang áp dụng')}</div><ul class="fin-pol">${policies.map(pp=>`<li><b>${pp[0]}</b> ${pp[1]}</li>`).join('')}</ul></div>
+        <div class="card mk-card"><div class="card-head"><h2>${tv('Tax', 'Thuế')}</h2></div>${taxH}</div>
+      </div>
+      <div class="mk-detail-row">${detailBtn}</div>`;
+    const db = document.getElementById('finDetail'); if(db) db.addEventListener('click', ()=>{ FIN.detail = !FIN.detail; finDetailSync(); renderFinance(); });
+    finDetailSync();
+  }
+  function finDetailSync(){ const v = document.getElementById('viewOpex'); if(!v) return; v.classList.toggle('mk-compact', !FIN.detail); }
   function renderAll(){
     applySourceAges();   // V10: source "age" lines in the active language
     renderSubCtl(); renderKpis(); renderTrend(); renderStatement(); renderChannelCosts(); renderBreakeven(); renderRoas(); renderAttribution(); renderKlaviyo(); renderLoopSubscriptions(); renderTax(); renderSources(); renderOpexTable(); renderGaps(); renderAmazonGaps(); renderShipmonk(); renderShopifyRecon(); renderSnowball(); renderMetaCampaigns(); renderGoogleCampaigns();
-    renderExec(); renderRev(); renderChannels(); renderProductLines(); renderInventory(); renderShipmonkInventory(); renderOpexPage(); renderUnitEconomics(); renderSensitivity(); renderFunnel(); renderReturnsBySku(); renderProductPnl(); renderLots(); renderFindings(); renderReports(); renderMarketingHub(); renderPageHead();
+    renderExec(); renderRev(); renderChannels(); renderProductLines(); renderInventory(); renderShipmonkInventory(); renderOpexPage(); renderUnitEconomics(); renderSensitivity(); renderFunnel(); renderReturnsBySku(); renderProductPnl(); renderLots(); renderFindings(); renderReports(); renderMarketingHub(); renderFinance(); renderPageHead();
     if(_bannerPaint) _bannerPaint();
   }
   function renderPageHead(){

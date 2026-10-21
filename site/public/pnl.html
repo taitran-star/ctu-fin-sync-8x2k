@@ -1034,6 +1034,36 @@
   .rng-io .rng-dash{color:var(--ink-muted);}
   .rng-io .btn{height:32px;box-sizing:border-box;padding:0 14px;}
   @media (max-width:640px){#modeSeg{height:auto;} .rng-io{margin-left:0;width:100%;} .rng-io input[type=date]{flex:1 1 0;min-width:0;}}
+  /* ---- V12.10: Finance (CFO) page ---- */
+  #finRoot{display:flex;flex-direction:column;gap:var(--gap, 16px);}
+  #finRoot > .mk-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--gap, 16px);}
+  #finRoot > .mk-two > .card{min-width:0;}
+  @media (max-width:1250px){#finRoot > .mk-two{grid-template-columns:minmax(0,1fr);}}
+  #viewOpex.mk-compact > .card{display:none!important;}
+  #viewOpex > #finRoot + .card{margin-top:var(--gap, 16px);}
+  .exec-kpis.v126.mk-kpis.fin-kpis{grid-template-columns:repeat(4,minmax(0,1fr));}
+  @media (min-width:1400px){.exec-kpis.v126.mk-kpis.fin-kpis{grid-template-columns:repeat(8,minmax(0,1fr));} .exec-kpis.v126.mk-kpis.fin-kpis .kpi .value{font-size:24px;}}
+  @media (max-width:640px){.exec-kpis.v126.mk-kpis.fin-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  .fin-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}
+  @media (max-width:700px){.fin-two{grid-template-columns:minmax(0,1fr);}}
+  .fin-mini4.mk-mini{grid-template-columns:repeat(4,minmax(0,1fr));}
+  @media (max-width:900px){.fin-mini4.mk-mini{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  .fin-is td,.fin-is th{padding:6px 9px;}
+  .fin-is tr.fin-b td{font-weight:600;color:var(--ink-primary);border-top:1px solid var(--border);}
+  .fin-is tr.fin-p td{color:var(--ink-muted);font-size:11.5px;padding-top:2px;padding-bottom:6px;border-bottom:0;}
+  .fin-is tr.fin-n td{color:var(--ink-secondary);}
+  .fin-is td.mk-lab{min-width:200px;white-space:nowrap;}
+  .fin-is th.fin-tot,.fin-is td:nth-last-child(-n+2){background:color-mix(in srgb, var(--accent) 5%, var(--surface-card));}
+  .fin-est{display:inline-block;margin-left:3px;color:var(--status-serious);font-weight:700;cursor:help;}
+  .fin-dot{display:inline-block;width:9px;height:9px;border-radius:50%;}
+  .fin-dot.ok{background:var(--status-good);} .fin-dot.warn{background:var(--status-warning);} .fin-dot.bad{background:var(--status-critical);}
+  .fin-ok{color:var(--status-good);font-weight:700;} .fin-warn{color:var(--status-warning);font-weight:700;} .fin-no{color:var(--status-critical);font-weight:700;}
+  .fin-close td,.fin-close th{text-align:center;} .fin-close td.mk-lab,.fin-close th:first-child{text-align:left;}
+  .fin-pol{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--ink-secondary);line-height:1.45;}
+  .fin-pol b{color:var(--ink-primary);font-weight:600;}
+  .fin-setup{font-size:12.5px;color:var(--ink-secondary);line-height:1.5;background:var(--surface-card-2);border-radius:10px;padding:10px 14px;}
+  .fin-setup p{margin:0 0 6px;} .fin-setup ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;}
+  .fin-setup code{font-size:12px;background:var(--surface-card);padding:1px 5px;border-radius:5px;}
   /* ---- V12.9: Marketing hub ---- */
   .pill.neutral{color:var(--ink-secondary);background:var(--surface-card-3);}
   .pill.bad{color:var(--status-critical);background:color-mix(in srgb, var(--status-critical) 14%, transparent);}
@@ -1115,7 +1145,7 @@
       <button type="button" data-view="marketing" role="tab" aria-selected="false" data-i18n="nav.marketing">Marketing</button>
       <button type="button" data-view="pnl" role="tab" aria-selected="false" data-i18n="nav.pnl">P&amp;L</button>
       <button type="button" data-view="inventory" role="tab" aria-selected="false" data-i18n="nav.inventory">Products &amp; inventory</button>
-      <button type="button" data-view="opex" role="tab" aria-selected="false" data-i18n="nav.opex">Fixed costs &amp; cash</button>
+      <button type="button" data-view="opex" role="tab" aria-selected="false" data-i18n="nav.opex">Finance</button>
       <button type="button" data-view="reports" role="tab" aria-selected="false" data-i18n="nav.reports">Reports</button>
       <button type="button" data-view="data" role="tab" aria-selected="false" data-i18n="nav.data">Data</button>
     </nav>
@@ -1464,6 +1494,7 @@
   </div><!-- /viewInventory -->
 
   <div id="viewOpex" class="view" hidden>
+  <div id="finRoot"></div>
   <div class="card" id="opexSummaryCard">
     <div class="card-head"><h2 data-i18n="h.opexTitle">Chi phí hoạt động (OpEx) kỳ đang xem</h2><div class="note" id="opexFinding"></div><button class="btn mini" type="button" data-export="opexMonthsTable" data-name="opex-thang">CSV</button><div class="note" style="flex-basis:100%;" data-i18n="h.opexNote2">Kho bãi (ShipMonk, FBA lưu kho &amp; dịch vụ) + G&amp;A (nhập tay, Klaviyo, Snowball) · dưới lợi nhuận đóng góp</div></div>
     <div class="be-grid" id="opexKpis"></div>
@@ -1568,7 +1599,7 @@
     return load(k, 1).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })); }).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=7ce2b46742';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=bc84dd97f6';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');
