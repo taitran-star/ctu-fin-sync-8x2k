@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 81ad479c26).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 9cf20934bf).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -3270,6 +3270,7 @@
     const ncacNow = ncac({a, newC});
     // V12.6: eight cards — the value, then the change against the comparison chosen in the picker. The eye on Profit opens
     // the P&L for the same dates; the eye on a cost card opens that cost line by line, day by day (openExpenses).
+    // V12.6.1: no footnote lines on the cards — the definition and the breakdown show on hover (V12 tooltip, data-tip).
     const prim = cmp==='year' ? ly : (cmp==='none' ? null : p), primMer = cmp==='year' ? merLy : (cmp==='none' ? null : merPrev);
     const primLbl = cmp==='year' ? tx('u.lastYear') : lk;
     const m0 = v => (v<0 ? '-' : '')+'$'+Math.round(Math.abs(v)).toLocaleString('en-US');
@@ -3277,41 +3278,52 @@
     const orderC = x => x.cogs + x.feesTotal;
     const marginOf = x => x.netRevenue>0 ? x.netProfit/x.netRevenue*100 : null;
     const beMer = breakEvenMer(a);
-    const costTitle = tv('Open these costs line by line, day by day', 'Xem chi tiết từng khoản chi theo ngày');
+    const costTitle = tv('Click to see these costs line by line, day by day', 'Bấm để xem từng khoản chi theo ngày');
+    const refP = refundPct(a);
     const cards = [
-      {k:'net', label: tv('Net revenue', 'Doanh thu thuần'), v: a.netRevenue, pv: prim ? prim.netRevenue : null, f: m0,
-        foot: tv('Gross ', 'Gộp ')+m0(a.grossSales)+(refundPct(a)!==null ? tv(' · refunds ', ' · hoàn tiền ')+refundPct(a).toFixed(1)+'%' : '')+(planNet!==null ? tv(' · plan ', ' · kế hoạch ')+m0(planNet)+' ('+pctOf(a.netRevenue, planNet)+')' : ''), alert: refundPct(a)!==null && refundPct(a)>8},
-      {k:'profit', eye:'pnl', label: tv('Profit (EBITDA)', 'Lợi nhuận (EBITDA)'), v: a.netProfit, pv: prim ? prim.netProfit : null, f: m0, title: tv('Open the P&L for these dates', 'Mở báo cáo P&L cho cùng khoảng ngày'),
-        foot: 'CM3 '+m0(a.contributionProfit)+(a.opexDays>0 ? (a.opexEstDays>0 ? tv(' · G&A includes estimate (month not closed)', ' · G&A có tạm tính (tháng chưa chốt)') : '') : tv(' · no G&A yet', ' · chưa có G&A'))+((a.productCostEst||a.productCostHasActual||a.productCostHasLots) ? '' : tv(' · product cost not deducted', ' · chưa trừ giá vốn'))},
+      {k:'net', label: tv('Net revenue', 'Doanh thu thuần'), v: a.netRevenue, pv: prim ? prim.netRevenue : null, f: m0, exact: money(a.netRevenue),
+        def: tv('Gross sales − discounts − refunds, by order date (Los Angeles time)', 'Doanh thu gộp − giảm giá − hoàn tiền, theo ngày đặt hàng (giờ Los Angeles)'),
+        foot: tv('Gross ', 'Gộp ')+m0(a.grossSales)+(refP!==null ? tv(' · refunds ', ' · hoàn tiền ')+refP.toFixed(1)+tv('% of gross', '% doanh thu gộp')+(refP>8 ? tv(' (above 8%)', ' (trên 8%)') : '') : '')+(planNet!==null ? tv('\nPlan for this period ', '\nKế hoạch kỳ này ')+m0(planNet)+' ('+pctOf(a.netRevenue, planNet)+tv(' reached)', ' đạt được)') : ''), alert: refP!==null && refP>8},
+      {k:'profit', eye:'pnl', label: tv('Profit (EBITDA)', 'Lợi nhuận (EBITDA)'), v: a.netProfit, pv: prim ? prim.netProfit : null, f: m0, exact: money(a.netProfit), title: tv('Click to open the P&L for these dates', 'Bấm để mở báo cáo P&L cho cùng khoảng ngày'),
+        def: tv('Net revenue − order costs − marketing − operating costs (before depreciation, interest and tax)', 'Doanh thu thuần − chi phí đơn hàng − marketing − chi phí vận hành (trước khấu hao, lãi vay, thuế)'),
+        foot: tv('CM3 (contribution after marketing) ', 'CM3 (lợi nhuận đóng góp sau marketing) ')+m0(a.contributionProfit)+(a.opexDays>0 ? (a.opexEstDays>0 ? tv(' · G&A includes estimate (month not closed)', ' · G&A có tạm tính (tháng chưa chốt)') : '') : tv(' · no G&A yet', ' · chưa có G&A'))+((a.productCostEst||a.productCostHasActual||a.productCostHasLots) ? '' : tv(' · product cost not deducted', ' · chưa trừ giá vốn'))},
       {k:'margin', pts:true, label: tv('Profit margin', 'Biên lợi nhuận'), v: marginOf(a), pv: prim ? marginOf(prim) : null, f: v => (v===null || v===undefined) ? '—' : (Math.abs(v)<0.05 ? 0 : v).toFixed(1)+'%',
-        foot: tv('EBITDA ÷ net revenue · CM3 ', 'EBITDA ÷ doanh thu thuần · CM3 ')+pctOf(a.contributionProfit, a.netRevenue)},
+        def: tv('EBITDA ÷ net revenue', 'EBITDA ÷ doanh thu thuần'),
+        foot: tv('CM3 margin (after marketing) ', 'Biên CM3 (sau marketing) ')+pctOf(a.contributionProfit, a.netRevenue)},
       {k:'orders', label: tv('Orders', 'Đơn hàng'), v: a.totalOrders, pv: prim ? prim.totalOrders : null, f: v => intFmt(v),
-        foot: 'AOV '+money(a.blendedAOV)+(prim && prim.blendedAOV ? ' · '+tv('vs ', 'so với ')+money(prim.blendedAOV) : '')},
-      {k:'order', eye:'exp:order', lower:true, label: tv('Order costs', 'Chi phí đơn hàng'), v: orderC(a), pv: prim ? orderC(prim) : null, f: m0, title: costTitle,
+        def: tv('Orders on every sales channel', 'Số đơn trên mọi kênh bán'),
+        foot: tv('AOV (average order value) ', 'AOV (giá trị trung bình mỗi đơn) ')+money(a.blendedAOV)+(prim && prim.blendedAOV ? ' · '+tv('vs ', 'so với ')+money(prim.blendedAOV) : '')},
+      {k:'order', eye:'exp:order', lower:true, label: tv('Order costs', 'Chi phí đơn hàng'), v: orderC(a), pv: prim ? orderC(prim) : null, f: m0, exact: money(orderC(a)), title: costTitle,
+        def: tv('COGS (product cost, packaging, fulfillment, postage) + transaction fees (marketplace commissions, payment processing)', 'Giá vốn COGS (sản phẩm, bao bì, fulfillment, cước) + phí giao dịch (hoa hồng sàn, cổng thanh toán)'),
         foot: tv('COGS ', 'Giá vốn ')+m0(a.cogs)+tv(' · fees ', ' · phí ')+m0(a.feesTotal)+' · '+pctOf(orderC(a), a.netRevenue)+tv(' of net revenue', ' doanh thu thuần')},
-      {k:'mkt', eye:'exp:mkt', lower:true, label: tv('Marketing & ads', 'Marketing & quảng cáo'), v: a.marketingTotal, pv: prim ? prim.marketingTotal : null, f: m0, title: costTitle,
-        foot: pctOf(a.marketingTotal, a.netRevenue)+tv(' of net revenue · ads ', ' doanh thu thuần · quảng cáo ')+m0(a.merSpend)+(ncacNow!==null ? ' · nCAC '+money(ncacNow) : '')},
-      {k:'opex', eye:'exp:opex', lower:true, label: tv('Operating costs', 'Chi phí vận hành'), v: a.fixedTotal, pv: prim ? prim.fixedTotal : null, f: m0, title: costTitle,
-        foot: tv('Warehousing ', 'Kho bãi ')+m0(a.inventoryHolding + a.logisticsTotal)+' · G&A '+m0(a.gaTotal)+(a.opexEstDays>0 ? tv(' (incl. estimate)', ' (có tạm tính)') : '')},
+      {k:'mkt', eye:'exp:mkt', lower:true, label: tv('Marketing & ads', 'Marketing & quảng cáo'), v: a.marketingTotal, pv: prim ? prim.marketingTotal : null, f: m0, exact: money(a.marketingTotal), title: costTitle,
+        def: tv('Paid ads, affiliate commissions, agency, creators, Amazon DSP', 'Quảng cáo trả phí, hoa hồng affiliate, agency, creator, Amazon DSP'),
+        foot: pctOf(a.marketingTotal, a.netRevenue)+tv(' of net revenue · paid ads ', ' doanh thu thuần · quảng cáo trả phí ')+m0(a.merSpend)+(ncacNow!==null ? tv('\nnCAC (Shopify ad spend per new customer) ', '\nnCAC (chi phí quảng cáo Shopify cho mỗi khách mới) ')+money(ncacNow) : '')},
+      {k:'opex', eye:'exp:opex', lower:true, label: tv('Operating costs', 'Chi phí vận hành'), v: a.fixedTotal, pv: prim ? prim.fixedTotal : null, f: m0, exact: money(a.fixedTotal), title: costTitle,
+        def: tv('Warehousing & logistics + G&A (salaries, software, office…)', 'Kho bãi & logistics + G&A (lương, phần mềm, văn phòng…)'),
+        foot: tv('Warehousing ', 'Kho bãi ')+m0(a.inventoryHolding + a.logisticsTotal)+' · G&A '+m0(a.gaTotal)+(a.opexEstDays>0 ? tv(' (includes estimate, month not closed)', ' (có tạm tính, tháng chưa chốt)') : '')},
       {k:'mer', label: 'MER', v: merNow.value, pv: primMer ? primMer.value : null, f: v => (v===null || v===undefined) ? '—' : v.toFixed(2)+'x',
-        foot: (beMer ? tv('Break-even ', 'Hoà vốn ')+beMer.toFixed(2)+'x' : '')+(merNow.days<merNow.of ? (beMer ? ' · ' : '')+merNow.days+'/'+merNow.of+tv(' days with every ad source', ' ngày đủ số quảng cáo') : ''), alert: merNow.value!==null && beMer && merNow.value<beMer},
+        def: tv('Net revenue ÷ paid ad spend (every ads source)', 'Doanh thu thuần ÷ chi phí quảng cáo trả phí (mọi nguồn)'),
+        foot: (beMer ? tv('Break-even ', 'Hoà vốn ')+beMer.toFixed(2)+tv('x — below it, marketing costs more than it earns', 'x — thấp hơn mức này là lỗ sau marketing') : '')+(merNow.days<merNow.of ? (beMer ? '\n' : '')+tv('Based on ', 'Tính trên ')+merNow.days+'/'+merNow.of+tv(' days with every ad source reported', ' ngày đủ số mọi nguồn quảng cáo') : ''), alert: merNow.value!==null && beMer && merNow.value<beMer},
     ];
     const eyeSvg = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>';
     const vsTxt = tv('vs ', 'so với ');
+    const okN = v => v!==null && v!==undefined && isFinite(v);
     const cmpHtml = c => {
       if(cmp==='none') return '';
-      const ok = v => v!==null && v!==undefined && isFinite(v);
-      if(!ok(c.v) || !ok(c.pv)) return `<div class="cmp flat"><b>—</b><span>${tv('no comparison', 'chưa có số so sánh')}</span></div>`;
+      if(!okN(c.v) || !okN(c.pv)) return `<div class="cmp flat"><b>—</b><span>${tv('no comparison', 'chưa có số so sánh')}</span></div>`;
       // a % change on a base at or below zero (profit) means nothing: show the change in dollars there
       const absD = !c.pts && c.f===m0 && (c.pv<=0 || Math.abs(dAbs(c.v, c.pv)||0)>=1000);
       const d = (c.pts || absD) ? c.v - c.pv : dAbs(c.v, c.pv);
-      if(d===null || !isFinite(d)) return `<div class="cmp flat"><b>—</b><span title="${primLbl}">${vsTxt}${c.f(c.pv)}</span></div>`;
+      if(d===null || !isFinite(d)) return `<div class="cmp flat"><b>—</b><span>${vsTxt}${c.f(c.pv)}</span></div>`;
       const flat = absD ? Math.abs(d)<0.5 : Math.abs(d)<0.05, good = c.lower ? d<=0 : d>=0;
       const txt = (flat ? '' : (d>0 ? '↑ ' : '↓ '))+(absD ? m0(Math.abs(d)) : Math.abs(d).toFixed(1)+(c.pts ? ' '+tx('u.pts') : '%'));
-      return `<div class="cmp ${flat ? 'flat' : (good ? 'good' : 'bad')}"><b>${txt}</b><span title="${primLbl}">${vsTxt}${c.f(c.pv)}</span></div>`;
+      return `<div class="cmp ${flat ? 'flat' : (good ? 'good' : 'bad')}"><b>${txt}</b><span>${vsTxt}${c.f(c.pv)}</span></div>`;
     };
+    const tipOf = c => [c.label+': '+(c.exact || c.f(c.v)), c.def, c.foot, (cmp!=='none' && okN(c.pv)) ? vsTxt+primLbl+': '+c.f(c.pv) : '', c.eye ? '→ '+c.title : ''].filter(Boolean).join('\n');
+    const xa = s => String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     el.classList.add('v126');
-    el.innerHTML = cards.map(c=>`<div class="kpi${c.alert ? ' alert' : ''}${c.eye ? ' act' : ''}"${c.eye ? ` data-eye="${c.eye}" role="button" tabindex="0" title="${c.title||''}" aria-label="${c.label} — ${c.title||''}"` : ''}><div class="kh"><span class="label">${c.label}</span>${c.eye ? `<span class="kpi-eye">${eyeSvg}</span>` : ''}</div><div class="value" title="${c.k==='orders' || c.pts || c.k==='mer' ? '' : money(c.v||0)}">${c.f(c.v)}</div>${cmpHtml(c)}${c.foot ? `<div class="foot">${c.foot}</div>` : ''}</div>`).join('');
+    el.innerHTML = cards.map(c=>`<div class="kpi${c.alert ? ' alert' : ''}${c.eye ? ' act' : ''}" data-tip="${xa(tipOf(c))}"${c.eye ? ` data-eye="${c.eye}" role="button" tabindex="0" aria-label="${xa(c.label+' — '+c.title)}"` : ''}><div class="kh"><span class="label">${c.label}</span>${c.eye ? `<span class="kpi-eye">${eyeSvg}</span>` : ''}</div><div class="value">${c.f(c.v)}</div>${cmpHtml(c)}</div>`).join('');
     if(!el._eyeWired){ el._eyeWired = true; const go = e=>{ const c = e.target.closest('[data-eye]'); if(!c || !el.contains(c)) return; if(e.type==='keydown' && e.key!=='Enter' && e.key!==' ') return; e.preventDefault(); openEye(c.dataset.eye); }; el.addEventListener('click', go); el.addEventListener('keydown', go); }
     const _F = fifoState();
     const defCogs = document.getElementById('defCogs'); if(defCogs) defCogs.textContent = (_F && _F.ok ? tv('FIFO by receipt lot from ','FIFO theo lô nhập từ ')+_F.meta.lots+tv(' Notion lots (',' lô Notion (')+_F.meta.skus+tv(' SKUs) on every day with units per SKU since ',' SKU) cho mọi ngày có units theo SKU từ ')+_F.first+'; ' : '') + (Object.keys(COGS_ACTUAL.months).length ? tv('actuals from the accounting inventory ledger for ','số thật từ sổ kho kế toán cho ')+Object.keys(COGS_ACTUAL.months).sort().join(', ')+tv('; the remaining months ','; các tháng còn lại ') : '') + (COGS_EST ? tv('estimated at ','ước ')+(COGS_EST.rate*100).toFixed(0)+'% — '+COGS_EST.basis : tv('not enabled — product cost $0','chưa bật — giá vốn $0'));
