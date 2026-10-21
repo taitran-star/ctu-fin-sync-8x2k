@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build efe1cc9059).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 624cc69a50).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -37,7 +37,7 @@
     document.querySelectorAll('[data-lang]').forEach(b=>{ b.classList.toggle('active', b.dataset.lang===LANG); b.setAttribute('aria-pressed', b.dataset.lang===LANG ? 'true' : 'false'); });
   }
   Object.assign(L.en, {
-    'nav.exec':'Overview', 'nav.sales':'Sales &amp; customers', 'nav.marketing':'Marketing', 'nav.pnl':'P&amp;L', 'nav.inventory':'Products &amp; inventory', 'nav.opex':'Finance', 'nav.data':'Data', 'nav.reports':'Reports', 'page.reports':'Reports',
+    'nav.exec':'Overview', 'nav.sales':'Sales &amp; customers', 'nav.marketing':'Marketing', 'nav.pnl':'P&amp;L', 'nav.inventory':'Products &amp; inventory', 'nav.opex':'Finance', 'nav.data':'Data', 'nav.reports':'Reports', 'page.reports':'Reports', 'nav.cs':'Customer service', 'page.cs':'Customer service',
     'mode.day':'Day', 'mode.week':'Week', 'mode.month':'Month', 'mode.range':'Custom',
     'tb.loadedAt':'When the numbers were loaded (your clock)', 'tb.reload':'Reload the latest numbers', 'tb.install':'Install', 'tb.installTitle':'Install as an app', 'tb.theme':'Light / dark', 'tb.signout':'Sign out', 'tb.language':'Language', 'tb.users':'Users & access', 'tb.reloadShort':'Reload',
     'brief.summary':'In brief', 'brief.moved':'What moved profit', 'brief.risks':'Biggest risks', 'brief.decide':'Decide this week', 'brief.title':'Brief & actions', 'brief.todo':'What to do', 'brief.why':'Why profit moved',
@@ -55,7 +55,7 @@
     'ctx.vs':'vs {cmp}', 'ctx.today':'includes today (not final)',
   });
   Object.assign(L.vi, {
-    'nav.exec':'Điều hành', 'nav.sales':'Bán hàng &amp; khách', 'nav.marketing':'Marketing', 'nav.pnl':'Lãi lỗ (P&amp;L)', 'nav.inventory':'Sản phẩm &amp; tồn kho', 'nav.opex':'Tài chính', 'nav.data':'Dữ liệu', 'nav.reports':'Báo cáo', 'page.reports':'Báo cáo',
+    'nav.exec':'Điều hành', 'nav.sales':'Bán hàng &amp; khách', 'nav.marketing':'Marketing', 'nav.pnl':'Lãi lỗ (P&amp;L)', 'nav.inventory':'Sản phẩm &amp; tồn kho', 'nav.opex':'Tài chính', 'nav.data':'Dữ liệu', 'nav.reports':'Báo cáo', 'page.reports':'Báo cáo', 'nav.cs':'Chăm sóc khách hàng', 'page.cs':'Chăm sóc khách hàng',
     'mode.day':'Ngày', 'mode.week':'Tuần', 'mode.month':'Tháng', 'mode.range':'Tuỳ chọn',
     'tb.loadedAt':'Giờ tải số liệu (giờ trên máy bạn)', 'tb.reload':'Tải lại số liệu mới nhất', 'tb.install':'Cài app', 'tb.installTitle':'Cài như app lên máy / điện thoại', 'tb.theme':'Sáng / tối', 'tb.signout':'Đăng xuất', 'tb.language':'Ngôn ngữ', 'tb.users':'Người dùng & quyền', 'tb.reloadShort':'Tải lại',
     'brief.summary':'Tóm tắt kỳ này', 'brief.moved':'Điều gì làm lợi nhuận đổi', 'brief.risks':'Rủi ro lớn nhất', 'brief.decide':'Cần quyết tuần này', 'brief.title':'Tóm tắt & việc cần làm', 'brief.todo':'Việc cần làm', 'brief.why':'Vì sao lợi nhuận đổi',
@@ -4935,10 +4935,206 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
     finDetailSync();
   }
   function finDetailSync(){ const v = document.getElementById('viewOpex'); if(!v) return; v.classList.toggle('mk-compact', !FIN.detail); }
+  // ---------- V12.11: Customer service page — for the CS lead: what customers write about (Re:amaze, classified into
+  // reasons), speed (first response, backlog), satisfaction (CSAT), refunds / cancellations by channel and SKU, the
+  // delivery drivers behind "where is my order" (ShipMonk backlog), and auto-generated actions. Re:amaze data comes
+  // from data/reamaze.json (fetch_reamaze.py): counts only — no customer names, e-mails or message text. ----------
+  const REAMAZE_LIVE_DATA = (window.__LIVE && window.__LIVE["reamaze"]) || null;
+  const CS = {detail: false};
+  const cs$ = v => (v<0 ? '-' : '')+'$'+Math.round(Math.abs(v)).toLocaleString('en-US');
+  const csEsc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const csOk = v => v!==null && v!==undefined && isFinite(v);
+  const csPct = (v, b, d) => (b>0 && csOk(v)) ? (v/b*100).toFixed(d===undefined ? 1 : d)+'%' : '—';
+  const csHrs = s => !csOk(s) ? '—' : s<3600 ? Math.round(s/60)+' '+tv('min', 'phút') : s<48*3600 ? (s/3600).toFixed(1)+' h' : (s/86400).toFixed(1)+' '+tv('d', 'ngày');
+  const CS_REASON = {   // bucket -> label, owner (who fixes the root cause), colour
+    wismo:        {en:'Where is my order', vi:'Đơn của tôi đâu (WISMO)', own:{en:'Shipping / 3PL', vi:'Vận chuyển / kho'}, c:'var(--series-1)'},
+    damaged:      {en:'Damaged / defective', vi:'Hỏng / lỗi sản phẩm', own:{en:'Product / QA', vi:'Sản phẩm / QA'}, c:'var(--status-critical)'},
+    wrong_missing:{en:'Wrong or missing item', vi:'Sai / thiếu hàng', own:{en:'Warehouse', vi:'Kho'}, c:'var(--series-5)'},
+    return_refund:{en:'Return / refund / exchange', vi:'Trả / hoàn / đổi', own:{en:'Policy', vi:'Chính sách'}, c:'var(--series-2)'},
+    cancel_change:{en:'Cancel or change order', vi:'Huỷ / sửa đơn', own:{en:'Checkout & ops', vi:'Checkout & vận hành'}, c:'var(--series-3)'},
+    discount:     {en:'Discounts, promos, giveaways', vi:'Giảm giá, khuyến mãi, giveaway', own:{en:'Marketing', vi:'Marketing'}, c:'var(--series-4)'},
+    subscription: {en:'Subscription', vi:'Đăng ký định kỳ', own:{en:'Subscriptions', vi:'Đăng ký'}, c:'var(--series-6)'},
+    product_q:    {en:'Product question', vi:'Hỏi về sản phẩm', own:{en:'Product pages / FAQ', vi:'Trang sản phẩm / FAQ'}, c:'var(--series-2)'},
+    wholesale_biz:{en:'Wholesale / partnership', vi:'Sỉ / hợp tác', own:{en:'Sales', vi:'Kinh doanh'}, c:'var(--ink-muted)'},
+    review:       {en:'Praise / feedback', vi:'Khen / góp ý', own:{en:'—', vi:'—'}, c:'var(--success-text)'},
+    spam:         {en:'Spam', vi:'Spam', own:{en:'—', vi:'—'}, c:'var(--ink-muted)'},
+    other:        {en:'Other / unclassified', vi:'Khác / chưa phân loại', own:{en:'—', vi:'—'}, c:'var(--ink-muted)'},
+  };
+  const csReasonL = k => (CS_REASON[k] ? tv(CS_REASON[k].en, CS_REASON[k].vi) : k);
+  function csSum(obj, from, to, key){   // sum of a daily map inside [from,to]; key = field or null for plain numbers
+    let s = 0, n = 0; Object.keys(obj||{}).forEach(d=>{ if(d<from || d>to) return; const v = key ? (obj[d]||{})[key] : obj[d]; if(csOk(+v)){ s += +v; n++; } }); return {sum: s, days: n};
+  }
+  function csReasons(from, to){   // {bucket: count} for the period
+    const R = REAMAZE_LIVE_DATA && REAMAZE_LIVE_DATA.reasons || {}; const out = {}; let total = 0, days = 0;
+    Object.keys(R).forEach(d=>{ if(d<from || d>to) return; days++; Object.entries(R[d]).forEach(([k,v])=>{ out[k] = (out[k]||0) + (+v||0); total += +v||0; }); });
+    return {out, total, days};
+  }
+  function csSat(from, to){   // CSAT in the period: ratings 4–5 ÷ rated
+    const S = REAMAZE_LIVE_DATA && REAMAZE_LIVE_DATA.satisfaction_daily || {}; const dist = {1:0,2:0,3:0,4:0,5:0}; let rated = 0, unrated = 0;
+    Object.keys(S).forEach(d=>{ if(d<from || d>to) return; Object.entries(S[d]).forEach(([k,v])=>{ if(k==='unrated') unrated += +v||0; else { dist[k] = (dist[k]||0) + (+v||0); rated += +v||0; } }); });
+    return {dist, rated, unrated, csat: rated>0 ? (dist[4]+dist[5])/rated*100 : null};
+  }
+  function csResp(from, to){   // average first-response time in the period, weighted by daily volume
+    const D = REAMAZE_LIVE_DATA && REAMAZE_LIVE_DATA.daily || {}; let ws = 0, w = 0, n = 0, days = 0;
+    Object.keys(D).forEach(d=>{ if(d<from || d>to) return; const x = D[d]; if(!x) return; days++; if(csOk(+x.new)) n += +x.new; if(csOk(+x.response_time_s) && +x.response_time_s>0){ const wt = csOk(+x.new) && +x.new>0 ? +x.new : 1; ws += +x.response_time_s*wt; w += wt; } });
+    return {avg_s: w>0 ? ws/w : null, conversations: n, days};
+  }
+  function csShipmonk(rows){   // ShipMonk: `daily` is by ORDER date (orders placed that day, how many of them shipped / unshipped / on hold
+    // at the last sync), `daily_shipped` is by SHIP date. Backlog = unshipped orders of the last 21 order-days; late = unshipped,
+    // not on hold, ordered 3+ days before the latest day; on hold = stock-out / address problems (the customer is waiting).
+    const withSm = rows.filter(r=> r.shipmonkReal); if(!withSm.length) return null;
+    const asOf = withSm[withSm.length-1].iso, cohort = withSm.slice(-21);
+    let unshipped = 0, onhold = 0, late = 0, ageSum = 0;
+    cohort.forEach(r=>{ const s = r.shipmonkReal, u = s.unshipped||0, h = Math.min(u, s.onhold||0); unshipped += u; onhold += h; const age = dayDiff(r.iso, asOf); ageSum += u*age; if(age>=3) late += Math.max(0, u-h); });
+    const ds = (shipmonkMeta && shipmonkMeta.daily_shipped) || {}; const shipDays = Object.keys(ds).filter(d=> d<=asOf).sort().slice(-7);
+    const shippedDay = shipDays.length ? sum(shipDays.map(d=> +(ds[d]||{}).orders||0))/shipDays.length : null;
+    const last7 = withSm.slice(-7), receivedDay = sum(last7.map(r=> r.shipmonkReal.orders||0))/last7.length;
+    return {asOf, unshipped, onhold, late, avgAge: unshipped>0 ? ageSum/unshipped : null, shippedDay, receivedDay, backlogDays: shippedDay>0 ? (unshipped-onhold)/shippedDay : null, days: withSm.length};
+  }
+  function csSkuRefunds(rows){   // refund units per SKU across channels + refund rate on units sold
+    const sa = skuAggregate(rows); const items = {};
+    SKU_CH.forEach(k=>{ const o = sa[k]; if(!o || !o.days) return; Object.entries(o.refunds||{}).forEach(([sku,v])=>{ if(!v || /^amzn\.gr\./i.test(sku) || sku.indexOf('(no sku)')===0) return; const it = items[sku] = items[sku] || {sku, ref:0, units:0, by:{}}; it.ref += +v||0; it.by[k] = (it.by[k]||0) + (+v||0); }); Object.entries(o.units||{}).forEach(([sku,v])=>{ if(!items[sku]) return; items[sku].units += +v||0; }); });
+    return Object.values(items).map(it=>({...it, rate: it.units>0 ? it.ref/it.units*100 : null, name: skuName(it.sku)})).sort((x,y)=> y.ref-x.ref);
+  }
+  function renderCs(){
+    const root = document.getElementById('csRoot'); if(!root) return;
+    const rows = currentRows(); if(!rows.length){ root.innerHTML = ''; return; }
+    const a = aggregate(rows), cmp = EXEC_STATE.cmp;
+    const pRows = cmp==='year' ? yearAgoRows() : (cmp==='none' ? null : prevLikeRows()), p = pRows && pRows.length ? aggregate(pRows) : null;
+    const lk = cmp==='year' ? tx('u.lastYear') : likeLabel();
+    const from = rows[0].iso, to = rows[rows.length-1].iso, nDays = rows.length;
+    const pFrom = pRows && pRows.length ? pRows[0].iso : null, pTo = pRows && pRows.length ? pRows[pRows.length-1].iso : null;
+    const RZ = REAMAZE_LIVE_DATA, rzOk = !!(RZ && RZ.daily && Object.keys(RZ.daily).length);
+    const resp = rzOk ? csResp(from, to) : null, pResp = rzOk && pFrom ? csResp(pFrom, pTo) : null;
+    const conv = resp ? resp.conversations : null, pConv = pResp ? pResp.conversations : null;
+    const sat = rzOk ? csSat(from, to) : null, pSat = rzOk && pFrom ? csSat(pFrom, pTo) : null;
+    const rs = rzOk ? csReasons(from, to) : null, pRs = rzOk && pFrom ? csReasons(pFrom, pTo) : null;
+    const bl = rzOk ? RZ.backlog : null;
+    const fun = funnelAggregate(rows), pFun = pRows ? funnelAggregate(pRows) : null;
+    const canc = sum(FUNNEL_CH.map(k=>fun[k].cancelled)), placed = sum(FUNNEL_CH.map(k=>fun[k].placed)), pCanc = pFun ? sum(FUNNEL_CH.map(k=>pFun[k].cancelled)) : null, pPlaced = pFun ? sum(FUNNEL_CH.map(k=>pFun[k].placed)) : null;
+    const sm = csShipmonk(rows);
+    const okN = csOk;
+    // ---- KPI strip ----
+    const kp = c => {
+      let cmpH = '';
+      if(c.cmpTxt) cmpH = `<div class="cmp flat"><b>—</b><span>${c.cmpTxt}</span></div>`;
+      else if(cmp!=='none'){
+        if(!okN(c.v) || !okN(c.pv)) cmpH = `<div class="cmp flat"><b>—</b><span>${tv('no comparison', 'chưa có số so sánh')}</span></div>`;
+        else { const d = c.pts ? c.v-c.pv : (c.pv!==0 ? (c.v-c.pv)/Math.abs(c.pv)*100 : null);
+          if(d===null || !isFinite(d)) cmpH = `<div class="cmp flat"><b>—</b><span>${tv('vs ', 'so với ')}${c.f(c.pv)}</span></div>`;
+          else { const flat = Math.abs(d)<0.05, good = c.lower ? d<=0 : d>=0; const txt = (flat ? '' : (d>0 ? '↑ ' : '↓ '))+Math.abs(d).toFixed(1)+(c.pts ? ' '+tx('u.pts') : '%');
+            cmpH = `<div class="cmp ${flat ? 'flat' : (good ? 'good' : 'bad')}"><b>${txt}</b><span>${tv('vs ', 'so với ')}${c.f(c.pv)}</span></div>`; } }
+      }
+      const tip = [c.label+': '+(c.exact||c.f(c.v)), c.def, c.foot, (cmp!=='none' && okN(c.pv) && !c.cmpTxt) ? tv('vs ', 'so với ')+lk+': '+c.f(c.pv) : ''].filter(Boolean).join('\n');
+      return `<div class="kpi${c.alert ? ' alert' : ''}" data-tip="${csEsc(tip)}"><div class="kh"><span class="label">${c.label}</span></div><div class="value">${c.f(c.v)}</div>${cmpH}</div>`;
+    };
+    const nc = tv('Re:amaze not connected', 'chưa nối Re:amaze');
+    const contact = (conv!==null && a.totalOrders>0) ? conv/a.totalOrders*100 : null, pContact = (pConv!==null && p && p.totalOrders>0) ? pConv/p.totalOrders*100 : null;
+    const refRate = a.grossSales>0 ? a.refundsTotal/a.grossSales*100 : null, pRefRate = p && p.grossSales>0 ? p.refundsTotal/p.grossSales*100 : null;
+    const cancRate = placed>0 ? canc/placed*100 : null, pCancRate = pPlaced>0 ? pCanc/pPlaced*100 : null;
+    const kpis = [
+      {label: tv('Conversations', 'Hội thoại'), v: conv, pv: pConv, f: v => okN(v) ? intFmt(v) : '—', lower:true, cmpTxt: rzOk ? '' : nc,
+        def: tv('New customer conversations opened in Re:amaze in the period (every channel)', 'Hội thoại khách mở trong Re:amaze trong kỳ (mọi kênh)'), foot: resp ? resp.days+tv(' days with data', ' ngày có số') : ''},
+      {label: tv('Contact rate', 'Tỷ lệ liên hệ'), v: contact, pv: pContact, pts:true, lower:true, f: v => okN(v) ? v.toFixed(1)+'%' : '—', cmpTxt: rzOk ? '' : nc, alert: okN(contact) && contact>15,
+        def: tv('Conversations per 100 orders (all channels). DTC benchmark 5–12%; above 15% means the shop creates tickets', 'Hội thoại trên 100 đơn (mọi kênh). Chuẩn DTC 5–12%; trên 15% là cửa hàng đang tự tạo ticket'), foot: intFmt(a.totalOrders)+' '+tx('u.orders')},
+      {label: tv('First response', 'Phản hồi đầu'), v: resp ? resp.avg_s : null, pv: pResp ? pResp.avg_s : null, lower:true, f: csHrs, cmpTxt: rzOk ? '' : nc, alert: resp && okN(resp.avg_s) && resp.avg_s>12*3600,
+        def: tv('Average time to the first staff reply (Re:amaze response-time report), weighted by daily volume. Target: under 8 h for e-mail, minutes for chat', 'Thời gian trung bình đến lần trả lời đầu (báo cáo Re:amaze), tính theo trọng số số hội thoại mỗi ngày. Mục tiêu: dưới 8 giờ với email, vài phút với chat'),
+        foot: RZ && RZ.response_summary && RZ.response_summary.ratio ? tv('Last 30 d: ', '30 ngày: ')+Math.round((RZ.response_summary.ratio.under_1_hour||0)*100)+'% < 1 h · '+Math.round((RZ.response_summary.ratio.under_1_day||0)*100)+'% < 1 '+tv('day', 'ngày') : ''},
+      {label: 'CSAT', v: sat ? sat.csat : null, pv: pSat ? pSat.csat : null, pts:true, f: v => okN(v) ? v.toFixed(0)+'%' : '—', cmpTxt: rzOk ? (sat && sat.rated ? '' : tv('no ratings in the period', 'chưa có đánh giá trong kỳ')) : nc, alert: sat && okN(sat.csat) && sat.csat<85,
+        def: tv('Share of satisfaction ratings at 4 or 5 stars. Good: 90%+', 'Tỷ lệ đánh giá 4–5 sao. Tốt: 90%+'), foot: sat ? intFmt(sat.rated)+tv(' ratings', ' đánh giá')+(conv ? ' · '+csPct(sat.rated, conv)+tv(' of conversations rated', ' hội thoại có đánh giá') : '') : ''},
+      {label: tv('Open backlog', 'Đang chờ'), v: bl ? bl.open : null, pv: null, f: v => okN(v) ? intFmt(v) : '—', cmpTxt: bl ? intFmt(bl.unassigned)+tv(' unassigned · oldest ', ' chưa giao · lâu nhất ')+csHrs((bl.oldest_hours||0)*3600) : nc, alert: bl && ((bl.ages.d1_3||0)+(bl.ages.gt_3d||0))>5,
+        def: tv('Conversations still open right now (snapshot at the last sync), by age of the last customer message', 'Hội thoại còn mở lúc này (ảnh chụp lần sync gần nhất), theo tuổi tin nhắn khách gần nhất'), foot: bl ? tv('> 24 h: ', '> 24 giờ: ')+intFmt((bl.ages.d1_3||0)+(bl.ages.gt_3d||0))+' · '+tv('on hold ', 'tạm giữ ')+intFmt(bl.on_hold||0) : ''},
+      {label: tv('Refund rate', 'Tỷ lệ hoàn tiền'), v: refRate, pv: pRefRate, pts:true, lower:true, f: v => okN(v) ? v.toFixed(1)+'%' : '—', alert: okN(refRate) && refRate>5,
+        def: tv('Refunds ÷ gross sales, every channel (same figures as the P&L)', 'Tiền hoàn ÷ doanh thu gộp, mọi kênh (cùng số với P&L)'), foot: cs$(a.refundsTotal)+tv(' refunded', ' đã hoàn')},
+      {label: tv('Cancellations', 'Huỷ đơn'), v: cancRate, pv: pCancRate, pts:true, lower:true, f: v => okN(v) ? v.toFixed(1)+'%' : '—', alert: okN(cancRate) && cancRate>3,
+        def: tv('Cancelled orders ÷ orders placed (Shopify + Amazon, status at the last sync)', 'Đơn huỷ ÷ đơn đặt (Shopify + Amazon, trạng thái lần sync gần nhất)'), foot: intFmt(canc)+tv(' cancelled of ', ' huỷ trên ')+intFmt(placed)},
+      {label: tv('Waiting to ship', 'Đơn chưa gửi'), v: sm ? sm.unshipped : null, pv: null, f: v => okN(v) ? intFmt(v) : '—', cmpTxt: sm ? intFmt(sm.late)+tv(' late · ', ' trễ · ')+intFmt(sm.onhold)+tv(' on hold', ' tạm giữ') : tv('no ShipMonk data', 'chưa có số ShipMonk'), alert: sm && (sm.late>20 || sm.onhold>50),
+        def: tv('ShipMonk orders of the last 21 days not shipped yet (as of the latest day in the period). Late = not on hold and ordered 3+ days ago; on hold = stock-out or address problem — both create "where is my order" tickets', 'Đơn ShipMonk 21 ngày gần nhất chưa gửi (tính đến ngày cuối kỳ). Trễ = không tạm giữ và đặt từ 3 ngày trở lên; tạm giữ = hết hàng hoặc lỗi địa chỉ — cả hai sinh ticket "đơn của tôi đâu"'), foot: sm ? (okN(sm.shippedDay) ? Math.round(sm.shippedDay)+tv(' shipped/day (7 d)', ' gửi/ngày (7 ngày)')+' · ' : '')+dmShort(sm.asOf) : ''},
+    ];
+    const kpiH = `<div class="card mk-card" id="csKpiCard"><div class="card-head"><h2>${tv('Service at a glance', 'Dịch vụ khách hàng nhìn nhanh')}</h2><div class="note">${tv('What the customers ask, how fast we answer, what it costs', 'Khách hỏi gì, ta trả lời nhanh ra sao, tốn bao nhiêu')}</div></div><div class="exec-kpis v126 mk-kpis fin-kpis" id="csKpis">${kpis.map(kp).join('')}</div></div>`;
+
+    // ---- actions ----
+    const acts = [];
+    if(bl && ((bl.ages.d1_3||0)+(bl.ages.gt_3d||0))>0) acts.push({w: ((bl.ages.d1_3||0)+(bl.ages.gt_3d||0))*10, cls: (bl.ages.gt_3d||0)>0 ? 'bad' : 'warn', l: tv('Answer today', 'Trả lời hôm nay'), src: 'Backlog', t: intFmt((bl.ages.d1_3||0)+(bl.ages.gt_3d||0))+tv(' conversations waiting more than 24 h', ' hội thoại chờ hơn 24 giờ'), d: tv(`${intFmt(bl.ages.gt_3d||0)} of them more than 3 days · ${intFmt(bl.unassigned)} unassigned · oldest ${csHrs((bl.oldest_hours||0)*3600)}. Every day unanswered raises the refund / chargeback odds.`, `${intFmt(bl.ages.gt_3d||0)} trong đó quá 3 ngày · ${intFmt(bl.unassigned)} chưa giao ai · lâu nhất ${csHrs((bl.oldest_hours||0)*3600)}. Mỗi ngày không trả lời làm tăng khả năng hoàn tiền / chargeback.`), amt: intFmt(bl.open), amtL: tv('open now', 'đang mở')});
+    if(resp && okN(resp.avg_s) && resp.avg_s>8*3600) acts.push({w: resp.avg_s/3600*2, cls: resp.avg_s>24*3600 ? 'bad' : 'warn', l: tv('Speed up', 'Tăng tốc'), src: tv('Response', 'Phản hồi'), t: tv('First reply averages ', 'Trả lời đầu trung bình ')+csHrs(resp.avg_s), d: tv('Target under 8 h on e-mail. Check staffing by weekday, saved replies for the top reasons, and chat auto-answers for tracking questions.', 'Mục tiêu dưới 8 giờ với email. Xem lịch trực theo ngày, mẫu trả lời cho các lý do nhiều nhất, và tự trả lời chat cho câu hỏi tracking.'), amt: csHrs(resp.avg_s), amtL: tv('avg first reply', 'trả lời đầu TB')});
+    if(sat && sat.rated>=10 && okN(sat.csat) && sat.csat<85){ const low = (sat.dist[1]||0)+(sat.dist[2]||0)+(sat.dist[3]||0); acts.push({w: (90-sat.csat)*3, cls: sat.csat<75 ? 'bad' : 'warn', l: tv('Review', 'Xem lại'), src: 'CSAT', t: tv('CSAT ', 'CSAT ')+sat.csat.toFixed(0)+'%'+tv(' on ', ' trên ')+intFmt(sat.rated)+tv(' ratings', ' đánh giá'), d: tv(`${intFmt(low)} ratings at 3 stars or below (${intFmt((sat.dist[1]||0)+(sat.dist[2]||0))} at 1–2). Read them in Re:amaze (Reports → Satisfaction) and tag the reason; target 90%.`, `${intFmt(low)} đánh giá từ 3 sao trở xuống (${intFmt((sat.dist[1]||0)+(sat.dist[2]||0))} ở mức 1–2). Đọc trong Re:amaze (Reports → Satisfaction) và gắn tag lý do; mục tiêu 90%.`), amt: intFmt(low), amtL: tv('≤ 3 star ratings', 'đánh giá ≤ 3 sao')}); }
+    if(rs && pRs && pRs.total>0){ Object.entries(rs.out).forEach(([k,v])=>{ const pv = pRs.out[k]||0; const scale = pRs.days>0 ? rs.days/pRs.days : 1; const exp = pv*scale; if(k==='review' || k==='spam') return; if(v>=10 && exp>0 && v>=exp*1.5) acts.push({w: v-exp, cls:'warn', l: tv('Spike', 'Tăng vọt'), src: tv('Reason', 'Lý do'), t: csReasonL(k)+': '+intFmt(v)+tv(' conversations', ' hội thoại'), d: tv(`${Math.round(exp)} expected from ${lk} · owner: ${tv(CS_REASON[k].own.en, CS_REASON[k].own.vi)}. Find the cause (carrier delays, a batch, a promo) before it turns into refunds.`, `${Math.round(exp)} nếu như ${lk} · phụ trách: ${tv(CS_REASON[k].own.en, CS_REASON[k].own.vi)}. Tìm nguyên nhân (hãng vận chuyển trễ, lô hàng, khuyến mãi) trước khi thành hoàn tiền.`), amt: '+'+intFmt(v-Math.round(exp)), amtL: tv('vs ', 'so với ')+lk}); }); }
+    const skuRef = csSkuRefunds(rows);
+    skuRef.filter(x=> x.ref>=5 && okN(x.rate) && x.rate>=8).slice(0,3).forEach(x=> acts.push({w: x.ref*5, cls:'bad', l: tv('Check product', 'Kiểm sản phẩm'), src: 'SKU', t: x.sku+(x.name ? ' · '+x.name : ''), d: tv(`${intFmt(x.ref)} units refunded of ${intFmt(x.units)} sold (${x.rate.toFixed(1)}%). Read the reasons in the conversations: damage, sizing or expectation gap — then fix the listing or the batch.`, `${intFmt(x.ref)} đơn vị hoàn trên ${intFmt(x.units)} bán (${x.rate.toFixed(1)}%). Đọc lý do trong hội thoại: hỏng, kích cỡ hay kỳ vọng sai — rồi sửa listing hoặc lô hàng.`), amt: x.rate.toFixed(1)+'%', amtL: tv('refund rate', 'tỷ lệ hoàn')}));
+    if(sm && (sm.late>20 || sm.onhold>50)) acts.push({w: sm.late*2 + sm.onhold, cls: (sm.late>60 || sm.onhold>150) ? 'bad' : 'warn', l: tv('Warn customers', 'Báo khách'), src: 'ShipMonk', t: intFmt(sm.late+sm.onhold)+tv(' orders are waiting — ', ' đơn đang chờ — ')+intFmt(sm.late)+tv(' late, ', ' trễ, ')+intFmt(sm.onhold)+tv(' on hold', ' tạm giữ'), d: tv(`On hold = stock-out or address problem; late = ordered 3+ days ago, not on hold, still not shipped. Send a proactive "your order ships on …" e-mail and fix the stock-outs: it prevents most WISMO tickets and cancellations.`, `Tạm giữ = hết hàng hoặc lỗi địa chỉ; trễ = đặt từ 3 ngày trước, không tạm giữ mà vẫn chưa gửi. Gửi email chủ động "đơn sẽ gửi ngày …" và xử lý hết hàng: chặn được phần lớn ticket WISMO và huỷ đơn.`), amt: intFmt(sm.unshipped), amtL: tv('waiting to ship', 'chưa gửi')});
+    if(okN(cancRate) && cancRate>3 && canc>=10) acts.push({w: canc, cls:'warn', l: tv('Review', 'Xem lại'), src: tv('Cancellations', 'Huỷ đơn'), t: intFmt(canc)+tv(' orders cancelled (', ' đơn huỷ (')+cancRate.toFixed(1)+'%)', d: tv('Above 3%. Common causes: slow shipping after the order, duplicate orders, discount expectations. Cross-check with the "cancel or change" reason count.', 'Trên 3%. Nguyên nhân thường gặp: gửi chậm sau khi đặt, đơn trùng, kỳ vọng giảm giá. Đối chiếu với số hội thoại "huỷ / sửa đơn".'), amt: intFmt(canc), amtL: tv('cancelled', 'huỷ')});
+    acts.sort((x,y)=> y.w-x.w);
+    const actH = acts.length ? `<ul class="mk-acts">${acts.map(x=>`<li class="mk-act"><span class="pill ${x.cls}">${x.l}</span><div><b>${csEsc(x.t)}</b><span class="mk-src">${csEsc(x.src)}</span><div class="mk-why">${x.d}</div></div><div class="mk-w">${x.amt}<small>${x.amtL}</small></div></li>`).join('')}</ul>` : `<div class="mk-act mk-none">${tv('Nothing urgent from the figures.', 'Không có gì khẩn từ số liệu.')}</div>`;
+    const actCard = `<div class="card mk-card" id="csActCard"><div class="card-head"><h2>${tv('Today\'s actions', 'Việc hôm nay')}</h2><div class="note">${tv('Generated from the figures · biggest first', 'Sinh từ số liệu · lớn nhất trước')}</div></div>${actH}</div>`;
+
+    // ---- reasons ----
+    let reasonsH;
+    if(rs && rs.total>0){
+      const order = Object.keys(CS_REASON); const keys = order.filter(k=> rs.out[k]).concat(Object.keys(rs.out).filter(k=> !CS_REASON[k]));
+      const scale = pRs && pRs.days>0 ? rs.days/pRs.days : 1;
+      const bar = keys.map(k=>`<i class="mk-seg" style="width:${(rs.out[k]/rs.total*100).toFixed(2)}%;background:${CS_REASON[k] ? CS_REASON[k].c : 'var(--ink-muted)'}" title="${csEsc(csReasonL(k))} ${csPct(rs.out[k], rs.total)}"></i>`).join('');
+      const trs = keys.map(k=>{ const v = rs.out[k], pv = pRs ? Math.round((pRs.out[k]||0)*scale) : null; const perc = a.totalOrders>0 ? v/a.totalOrders*100 : null; return `<tr><td class="mk-lab"><span class="mk-dot" style="background:${CS_REASON[k] ? CS_REASON[k].c : 'var(--ink-muted)'}"></span>${csReasonL(k)}<small>${CS_REASON[k] ? tv('owner: ', 'phụ trách: ')+tv(CS_REASON[k].own.en, CS_REASON[k].own.vi) : ''}</small></td><td class="num">${intFmt(v)}</td><td class="num mk-muted">${csPct(v, rs.total)}</td><td class="num mk-muted">${okN(perc) ? perc.toFixed(1)+'%' : '—'}</td><td class="num">${pv!==null && cmp!=='none' ? mkDelta(v, pv, true) : ''}</td></tr>`; }).join('');
+      const tags = RZ.tags_30d && Object.keys(RZ.tags_30d).length ? Object.entries(RZ.tags_30d).sort((x,y)=>y[1]-x[1]).slice(0,12).map(([t,n])=>`<span class="pill neutral">${csEsc(t)} · ${intFmt(n)}</span>`).join(' ') : `<span class="mk-muted">${tv('The team is not tagging conversations yet — reasons above come from keywords in the subject and first message. Tags in Re:amaze win over keywords once used.', 'Nhóm chưa gắn tag hội thoại — lý do ở trên lấy từ từ khoá trong tiêu đề và tin nhắn đầu. Khi gắn tag trong Re:amaze thì tag sẽ được ưu tiên.')}</span>`;
+      reasonsH = `<div class="mk-bar">${bar}</div><div class="rp-wrap"><table class="rp-table mk-table"><thead><tr><th>${tv('Reason', 'Lý do')}</th><th class="num">${tv('Conversations', 'Hội thoại')}</th><th class="num">%</th><th class="num">${tv('per 100 orders', 'trên 100 đơn')}</th><th class="num">${cmp==='none' ? '' : tv('vs ', 'so với ')+lk}</th></tr></thead><tbody>${trs}<tr class="rp-tot"><td>${tv('Total', 'Tổng')}</td><td class="num">${intFmt(rs.total)}</td><td class="num">100%</td><td class="num">${a.totalOrders>0 ? (rs.total/a.totalOrders*100).toFixed(1)+'%' : '—'}</td><td></td></tr></tbody></table></div><div class="note cs-tags">${tv('Team tags, last 30 days: ', 'Tag của nhóm, 30 ngày: ')}${tags}</div>`;
+    } else reasonsH = `<div class="mk-act mk-none">${rzOk ? tv('No classified conversations in this period yet (the sync classifies the last 35 days on each run).', 'Chưa có hội thoại được phân loại trong kỳ (mỗi lần sync phân loại 35 ngày gần nhất).') : tv('Connect Re:amaze to see what customers write about.', 'Nối Re:amaze để thấy khách viết về gì.')}</div>`;
+    const reasonCard = `<div class="card mk-card" id="csReasonCard"><div class="card-head"><h2>${tv('What customers write about', 'Khách viết về gì')}</h2><div class="note">${tv('Conversations by reason · classified by tag or keyword in the sync · owner = who fixes the root cause', 'Hội thoại theo lý do · phân loại theo tag hoặc từ khoá khi sync · phụ trách = ai sửa gốc rễ')}</div></div>${reasonsH}</div>`;
+
+    // ---- response & volume chart + staff + channels ----
+    let chartH = '';
+    if(rzOk){
+      const D = RZ.daily; const ds = rows.map(r=> r.iso).filter(d=> D[d]);
+      if(ds.length>1){
+        const W = 1000, H = 260, padL = 44, padR = 44, padT = 10, padB = 26, n = ds.length, bw = Math.max(2, (W-padL-padR)/n*0.7), step = (W-padL-padR)/n;
+        const vols = ds.map(d=> +D[d].new||0), rts = ds.map(d=> csOk(+D[d].response_time_s) && +D[d].response_time_s>0 ? +D[d].response_time_s/3600 : null);
+        const maxV = Math.max(5, ...vols), maxR = Math.max(2, ...rts.filter(v=>v!==null));
+        const x = i => padL + i*step + (step-bw)/2, yV = v => padT + (H-padT-padB)*(1-v/maxV), yR = v => padT + (H-padT-padB)*(1-v/maxR);
+        let s = '';
+        [0, .5, 1].forEach(f=>{ const y = (padT + (H-padT-padB)*(1-f)).toFixed(1); s += `<line x1="${padL}" x2="${W-padR}" y1="${y}" y2="${y}" stroke="var(--border)" stroke-width="1"/><text x="${padL-6}" y="${(+y+4).toFixed(1)}" font-size="11" text-anchor="end" fill="var(--ink-muted)">${Math.round(maxV*f)}</text><text x="${W-padR+6}" y="${(+y+4).toFixed(1)}" font-size="11" fill="var(--ink-muted)">${(maxR*f).toFixed(0)} h</text>`; });
+        vols.forEach((v,i)=>{ s += `<rect x="${x(i).toFixed(1)}" y="${yV(v).toFixed(1)}" width="${bw.toFixed(1)}" height="${(H-padB-yV(v)).toFixed(1)}" rx="2" fill="var(--series-1)"><title>${dmShort(ds[i])} · ${intFmt(v)} ${tv('conversations', 'hội thoại')}</title></rect>`; });
+        let path = '', open = false; rts.forEach((v,i)=>{ if(v===null){ open = false; return; } path += (open ? ' L' : ' M')+(x(i)+bw/2).toFixed(1)+' '+yR(v).toFixed(1); open = true; });
+        s += `<path d="${path}" fill="none" stroke="var(--status-critical)" stroke-width="2"/>`;
+        rts.forEach((v,i)=>{ if(v===null) return; s += `<circle cx="${(x(i)+bw/2).toFixed(1)}" cy="${yR(v).toFixed(1)}" r="3" fill="var(--surface-card)" stroke="var(--status-critical)" stroke-width="1.6"><title>${dmShort(ds[i])} · ${v.toFixed(1)} h</title></circle>`; });
+        s += `<line x1="${padL}" x2="${W-padR}" y1="${yR(8).toFixed(1)}" y2="${yR(8).toFixed(1)}" stroke="var(--status-critical)" stroke-width="1" stroke-dasharray="4 4" opacity="${maxR>=8 ? .6 : 0}"/>`;
+        const lab = Math.max(1, Math.round(n/8)); ds.forEach((d,i)=>{ if(i%lab===0 || i===n-1) s += `<text x="${(x(i)+bw/2).toFixed(1)}" y="${H-8}" font-size="11" text-anchor="middle" fill="var(--ink-muted)">${dmShort(d)}</text>`; });
+        chartH = `<div class="legend" style="margin-bottom:6px;"><span class="li"><span class="sw" style="background:var(--series-1)"></span>${tv('New conversations / day', 'Hội thoại mới / ngày')}</span><span class="li"><span class="sw" style="background:var(--status-critical);border-radius:50%"></span>${tv('Avg first response (h) · dashed = 8 h target', 'Trả lời đầu TB (giờ) · nét đứt = mục tiêu 8 giờ')}</span></div><svg class="mk-svg cs-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${tv('Daily conversations and response time', 'Hội thoại và thời gian phản hồi theo ngày')}">${s}</svg>`;
+      }
+    }
+    const staffH = rzOk && (RZ.staff||[]).length ? `<div class="rp-wrap"><table class="rp-table mk-table"><thead><tr><th>${tv('Staff', 'Nhân viên')}</th><th class="num">${tv('Replies · 30 d', 'Trả lời · 30 ngày')}</th><th class="num">${tv('Avg response · 30 d', 'Phản hồi TB · 30 ngày')}</th><th class="num">${tv('Replies · 90 d', 'Trả lời · 90 ngày')}</th><th class="num">${tv('Avg response · 90 d', 'Phản hồi TB · 90 ngày')}</th><th class="num">${tv('Thanks · 90 d', 'Lời cảm ơn · 90 ngày')}</th></tr></thead><tbody>${RZ.staff.map(s=>`<tr><td class="mk-lab">${csEsc(s.name)}</td><td class="num">${intFmt(s.responses_30d||0)}</td><td class="num"><b class="${(s.response_time_s_30d||0)>12*3600 ? 'mk-bad' : ''}">${s.responses_30d ? csHrs(s.response_time_s_30d) : '—'}</b></td><td class="num">${intFmt(s.responses_90d||0)}</td><td class="num">${s.responses_90d ? csHrs(s.response_time_s_90d) : '—'}</td><td class="num">${intFmt(s.appreciations_90d||0)}</td></tr>`).join('')}</tbody></table></div>` : `<div class="mk-act mk-none">${rzOk ? tv('No staff report yet', 'Chưa có báo cáo nhân viên') : nc}</div>`;
+    const chanH = rzOk && (RZ.channels||[]).length ? `<div class="rp-wrap"><table class="rp-table mk-table"><thead><tr><th>${tv('Channel · 30 d', 'Kênh · 30 ngày')}</th><th class="num">${tv('Open', 'Mở')}</th><th class="num">${tv('Resolved', 'Đã xử lý')}</th><th class="num">${tv('Avg response', 'Phản hồi TB')}</th><th class="num">${tv('Replies / thread', 'Trả lời / hội thoại')}</th><th class="num">CSAT ★</th></tr></thead><tbody>${RZ.channels.map(c=>`<tr><td class="mk-lab">${csEsc(c.name)}<small>${csEsc(c.type||'')}</small></td><td class="num">${intFmt(c.active||0)}</td><td class="num">${intFmt(c.resolved||0)}</td><td class="num"><b class="${(c.avg_response_s||0)>12*3600 ? 'mk-bad' : ''}">${csHrs(c.avg_response_s)}</b></td><td class="num">${csOk(c.avg_thread_size) ? c.avg_thread_size.toFixed(1) : '—'}</td><td class="num">${csOk(c.avg_satisfaction) ? c.avg_satisfaction.toFixed(2) : '—'}</td></tr>`).join('')}</tbody></table></div>` : '';
+    const speedCard = `<div class="card mk-card" id="csSpeedCard"><div class="card-head"><h2>${tv('Volume & response time', 'Lượng hội thoại & tốc độ')}</h2><div class="note">${tv('By day in the period · staff and channels over the last 30 / 90 days (Re:amaze reports)', 'Theo ngày trong kỳ · nhân viên và kênh theo 30 / 90 ngày gần nhất (báo cáo Re:amaze)')}</div></div>${chartH}${staffH}${chanH ? '<div style="height:10px"></div>'+chanH : ''}</div>`;
+
+    // ---- satisfaction ----
+    let satH;
+    if(sat && sat.rated>0){
+      const mx = Math.max(...[1,2,3,4,5].map(k=>sat.dist[k]||0), 1);
+      satH = `<div class="mk-mini cs-sat"><div class="mk-m"><span>CSAT</span><b>${okN(sat.csat) ? sat.csat.toFixed(0)+'%' : '—'}</b><small>${intFmt(sat.dist[4]+sat.dist[5])} ${tv('of', 'trên')} ${intFmt(sat.rated)} ${tv('ratings at 4–5 ★', 'đánh giá 4–5 ★')}${pSat && okN(pSat.csat) && cmp!=='none' ? ' · '+tv('vs ', 'so với ')+lk+' '+pSat.csat.toFixed(0)+'%' : ''}</small></div><div class="mk-m"><span>${tv('Rating distribution', 'Phân bố điểm')}</span><div class="cs-dist">${[5,4,3,2,1].map(k=>`<div class="cs-row"><span>${k} ★</span><i><b style="width:${((sat.dist[k]||0)/mx*100).toFixed(1)}%;background:${k>=4 ? 'var(--success-text)' : k===3 ? 'var(--series-3)' : 'var(--status-critical)'}"></b></i><span class="num">${intFmt(sat.dist[k]||0)}</span></div>`).join('')}</div></div><div class="mk-m"><span>${tv('Survey response', 'Tỷ lệ trả lời khảo sát')}</span><b>${conv ? csPct(sat.rated, conv) : '—'}</b><small>${intFmt(sat.rated)} ${tv('rated', 'có điểm')} · ${intFmt(sat.unrated)} ${tv('opened the survey without a score', 'mở khảo sát không chấm')}</small></div></div>`;
+    } else satH = `<div class="mk-act mk-none">${rzOk ? tv('No satisfaction ratings in the period. Turn on the Re:amaze satisfaction survey (Settings → Satisfaction) to measure CSAT.', 'Chưa có đánh giá hài lòng trong kỳ. Bật khảo sát hài lòng trong Re:amaze (Settings → Satisfaction) để đo CSAT.') : nc}</div>`;
+    const satCard = `<div class="card mk-card" id="csSatCard"><div class="card-head"><h2>${tv('Satisfaction', 'Hài lòng')}</h2><div class="note">${tv('Re:amaze survey ratings in the period', 'Điểm khảo sát Re:amaze trong kỳ')}</div></div>${satH}</div>`;
+
+    // ---- refunds & cancellations by channel + SKUs ----
+    const ce = channelEcon(a);
+    const chRows = CH_KEYS.filter(k=> CH_MASK[k] && (a.orders[k]>0 || a.refund[k]>0)).map(k=>{ const f = fun[k]; const retCost = ce[k] && ce[k].orders>0 ? Math.max(0, ce[k].cm + ce[k].fulfil)/ce[k].orders : null; const refUnits = sum(skuRef.map(x=> x.by[k]||0)); return `<tr><td class="mk-lab"><span class="mk-dot" style="background:${CH_COLOR[k]}"></span>${CH_LABEL[k]}</td><td class="num">${intFmt(a.orders[k])}</td><td class="num">${cs$(a.refund[k])}</td><td class="num"><b class="${a.gross[k]>0 && a.refund[k]/a.gross[k]>0.05 ? 'mk-bad' : ''}">${csPct(a.refund[k], a.gross[k])}</b></td><td class="num">${refUnits>0 ? intFmt(refUnits) : '—'}</td><td class="num">${f ? intFmt(f.cancelled) : '—'}</td><td class="num mk-muted">${f && f.placed>0 ? csPct(f.cancelled, f.placed) : '—'}</td><td class="num">${okN(retCost) ? cs$(retCost) : '—'}</td></tr>`; }).join('');
+    const chTable = `<div class="rp-wrap"><table class="rp-table mk-table"><thead><tr><th>${tv('Channel', 'Kênh')}</th><th class="num">${tv('Orders', 'Đơn')}</th><th class="num">${tv('Refunds', 'Hoàn tiền')}</th><th class="num">${tv('% of gross', '% DT gộp')}</th><th class="num">${tv('Units refunded', 'SP hoàn')}</th><th class="num">${tv('Cancelled', 'Huỷ')}</th><th class="num">%</th><th class="num">${tv('Cost of one return', 'Chi phí 1 lần trả')}</th></tr></thead><tbody>${chRows}</tbody></table></div>`;
+    const topSku = skuRef.filter(x=> x.ref>=2).slice(0,12);
+    const skuTable = topSku.length ? `<div class="rp-wrap"><table class="rp-table mk-table"><thead><tr><th>SKU</th><th class="num">${tv('Units refunded', 'SP hoàn')}</th><th class="num">${tv('Units sold', 'SP bán')}</th><th class="num">${tv('Refund rate', 'Tỷ lệ hoàn')}</th><th>${tv('Channels', 'Kênh')}</th></tr></thead><tbody>${topSku.map(x=>`<tr><td class="mk-lab">${csEsc(x.sku)}${x.name ? `<small>${csEsc(x.name)}</small>` : ''}</td><td class="num">${intFmt(x.ref)}</td><td class="num">${intFmt(x.units)}</td><td class="num"><b class="${okN(x.rate) && x.rate>=8 ? 'mk-bad' : ''}">${okN(x.rate) ? x.rate.toFixed(1)+'%' : '—'}</b></td><td class="mk-muted">${Object.entries(x.by).map(([k,v])=> CH_LABEL[k]+' '+intFmt(v)).join(' · ')}</td></tr>`).join('')}</tbody></table></div>` : `<div class="mk-act mk-none">${tv('No refunded units by SKU in the period', 'Không có sản phẩm hoàn theo SKU trong kỳ')}</div>`;
+    const refCard = `<div class="card mk-card" id="csRefCard"><div class="card-head"><h2>${tv('Refunds, cancellations & returns', 'Hoàn tiền, huỷ & trả hàng')}</h2><div class="note">${tv('Same figures as the P&L · cost of one return = contribution lost + fulfillment already spent, per order', 'Cùng số với P&L · chi phí 1 lần trả = lợi nhuận mất + fulfillment đã chi, mỗi đơn')}</div></div>${chTable}<div style="height:10px"></div><h3 class="cs-h3">${tv('Products most refunded', 'Sản phẩm bị hoàn nhiều nhất')}</h3>${skuTable}</div>`;
+
+    // ---- delivery drivers ----
+    let shipH;
+    if(sm){
+      shipH = `<div class="mk-mini cs-ship"><div class="mk-m"><span>${tv('Waiting to ship · ', 'Chưa gửi · ')+dmShort(sm.asOf)}</span><b class="${sm.late>20 ? 'mk-bad' : ''}">${intFmt(sm.unshipped)}</b><small>${intFmt(sm.late)} ${tv('late (3+ days, not on hold)', 'trễ (3+ ngày, không tạm giữ)')}${okN(sm.avgAge) ? ' · '+tv('avg age ', 'tuổi TB ')+sm.avgAge.toFixed(1)+tv(' d', ' ngày') : ''}</small></div><div class="mk-m"><span>${tv('On hold', 'Tạm giữ')}</span><b class="${sm.onhold>50 ? 'mk-bad' : ''}">${intFmt(sm.onhold)}</b><small>${tv('stock-out or address problem — the customer is waiting', 'hết hàng hoặc lỗi địa chỉ — khách đang chờ')}</small></div><div class="mk-m"><span>${tv('Orders in vs shipped out · 7 d', 'Đơn vào / gửi ra · 7 ngày')}</span><b>${Math.round(sm.receivedDay)} / ${okN(sm.shippedDay) ? Math.round(sm.shippedDay) : '—'}</b><small>${tv('per day', 'mỗi ngày')}${okN(sm.shippedDay) ? (sm.receivedDay>sm.shippedDay*1.1 ? tv(' · backlog growing', ' · tồn đang tăng') : tv(' · keeping up', ' · đang theo kịp')) : ''}</small></div><div class="mk-m"><span>${tv('Shopify fulfilled', 'Shopify đã giao')}</span><b>${fun.shopify && fun.shopify.placed>0 ? csPct(fun.shopify.fulfilled, fun.shopify.placed, 0) : '—'}</b><small>${fun.shopify ? intFmt(fun.shopify.fulfilled)+' / '+intFmt(fun.shopify.placed)+tv(' orders placed in the period', ' đơn đặt trong kỳ') : ''}</small></div></div>`;
+    } else shipH = `<div class="mk-act mk-none">${tv('No ShipMonk data in the period', 'Chưa có số ShipMonk trong kỳ')}</div>`;
+    const shipCard = `<div class="card mk-card" id="csShipCard"><div class="card-head"><h2>${tv('Delivery — what drives "where is my order"', 'Giao hàng — cái gì sinh ra ticket "đơn của tôi đâu"')}</h2><div class="note">${tv('ShipMonk backlog and throughput · Shopify fulfillment status', 'Tồn ShipMonk và tốc độ gửi · trạng thái giao Shopify')}</div></div>${shipH}</div>`;
+
+    // ---- setup card when Re:amaze is not connected ----
+    const setupH = rzOk ? '' : `<div class="card mk-card fin-setup" id="csSetupCard"><div class="card-head"><h2>${tv('Connect Re:amaze', 'Nối Re:amaze')}</h2></div><div class="note">${tv('Tickets, response times, CSAT and reasons come from Re:amaze through its API — read-only, counts only (no customer data is stored). To switch it on:', 'Ticket, tốc độ, CSAT và lý do lấy từ Re:amaze qua API — chỉ đọc, chỉ lưu số đếm (không lưu dữ liệu khách). Để bật:')}<ol><li>${tv('Re:amaze → Settings → Developer → <b>API Token</b> (use a staff user with "access reports"). Copy the token.', 'Re:amaze → Settings → Developer → <b>API Token</b> (dùng tài khoản nhân viên có quyền "access reports"). Chép token.')}</li><li>${tv('GitHub repo → Settings → Secrets and variables → Actions → add <b>REAMAZE_LOGIN</b> (that user\'s e-mail), <b>REAMAZE_TOKEN</b>, <b>REAMAZE_BRAND</b> = <code>shoproxstore</code>.', 'GitHub repo → Settings → Secrets and variables → Actions → thêm <b>REAMAZE_LOGIN</b> (email tài khoản đó), <b>REAMAZE_TOKEN</b>, <b>REAMAZE_BRAND</b> = <code>shoproxstore</code>.')}</li><li>${tv('Actions → "Cattasaurus Re:amaze helpdesk sync" → Run workflow. It then runs every 2 hours.', 'Actions → "Cattasaurus Re:amaze helpdesk sync" → Run workflow. Sau đó tự chạy mỗi 2 giờ.')}</li></ol></div></div>`;
+    const genAt = rzOk && RZ.generated_at ? `<div class="note" style="text-align:right;">${tv('Re:amaze data as of ', 'Số Re:amaze lúc ')}${String(RZ.generated_at).replace('T',' ').slice(0,16)} UTC</div>` : '';
+    root.innerHTML = setupH + kpiH + actCard + `<div class="mk-two">${reasonCard}${satCard}</div>` + speedCard + `<div class="mk-two">${refCard}${shipCard}</div>` + genAt;
+  }
   function renderAll(){
     applySourceAges();   // V10: source "age" lines in the active language
     renderSubCtl(); renderKpis(); renderTrend(); renderStatement(); renderChannelCosts(); renderBreakeven(); renderRoas(); renderAttribution(); renderKlaviyo(); renderLoopSubscriptions(); renderTax(); renderSources(); renderOpexTable(); renderGaps(); renderAmazonGaps(); renderShipmonk(); renderShopifyRecon(); renderSnowball(); renderMetaCampaigns(); renderGoogleCampaigns();
-    renderExec(); renderRev(); renderChannels(); renderProductLines(); renderInventory(); renderShipmonkInventory(); renderOpexPage(); renderUnitEconomics(); renderSensitivity(); renderFunnel(); renderReturnsBySku(); renderProductPnl(); renderLots(); renderFindings(); renderReports(); renderMarketingHub(); renderFinance(); renderPageHead();
+    renderExec(); renderRev(); renderChannels(); renderProductLines(); renderInventory(); renderShipmonkInventory(); renderOpexPage(); renderUnitEconomics(); renderSensitivity(); renderFunnel(); renderReturnsBySku(); renderProductPnl(); renderLots(); renderFindings(); renderReports(); renderMarketingHub(); renderFinance(); renderCs(); renderPageHead();
     if(_bannerPaint) _bannerPaint();
   }
   function renderPageHead(){
@@ -4955,7 +5151,7 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
   // view list follows the same rule so a saved or typed view outside the list falls back to the first allowed page.
   const ME = window.__ME || null;
   const canView = v => !ME || !Array.isArray(ME.views) || ME.views.includes(v);
-  const ALL_VIEWS = ['exec','sales','marketing','pnl','inventory','opex','reports','data'];   // V12.8: + reports
+  const ALL_VIEWS = ['exec','sales','marketing','pnl','inventory','opex','cs','reports','data'];   // V12.11: + cs (Customer service)   // V12.8: + reports
   const VIEWS = ALL_VIEWS.filter(canView);
   let booted = false;
   function showView(view){
