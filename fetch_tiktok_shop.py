@@ -61,7 +61,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "tiktok_shop-2.3"   # 2.3 (19/10/2026): orders_daily[].sku_units / sku_sales per seller SKU (product x channel on the dashboard)
+SCRIPT_VERSION = "tiktok_shop-2.4"   # 2.4 (22/10/2026): shoppable videos (Analytics API) + affiliate orders / creators (Affiliate Seller API); 2.3: orders_daily[].sku_units / sku_sales per seller SKU
 SCHEMA = 2
 
 AUTH_HOST = "https://auth.tiktok-shops.com"
@@ -771,6 +771,156 @@ def bucket_orders(orders, statement_days):
 
 
 
+# ---------------------------------------------------------------- v2.4: shoppable videos + affiliate orders
+# Both need scopes added on 22/10/2026 (TikTok Shop Analytics = data.shop_analytics.public.read; Read Seller
+# Affiliate Collaboration = seller.affiliate_collaboration.read) and a re-authorisation. Best effort: any error
+# keeps the previous block of the file and is reported in meta.content_status. The repo is public, so creators
+# are stored as short hashes and counts only (no usernames, no video titles).
+VIDEO_WINDOW_DAYS = int(os.environ.get("VIDEO_WINDOW_DAYS", "58"))     # Analytics API: start..end must be <= 60 days; end = today (exclusive), data is ready to latest_available_date
+
+
+def _creator_hash(username_or_id):
+    return hashlib.sha256(("ctu-creator:" + str(username_or_id or "")).encode("utf-8")).hexdigest()[:12]
+
+
+def _amt(node):
+    try:
+        return float((node or {}).get("amount") or 0)
+    except (TypeError, ValueError, AttributeError):
+        return 0.0
+
+
+def fetch_videos(access_token, shop_cipher, start_day, end_day_excl):
+    """GET /analytics/202605/shop_videos/performance: every video with activity in the window, by post time.
+    Returns ({video_id: row}, status)."""
+    out, pages, page_token = {}, 0, ""
+    while True:
+        pages += 1
+        q = {"start_date_ge": start_day, "end_date_lt": end_day_excl, "page_size": 100, "sort_field": "post_time",
+             "sort_order": "DESC", "currency": "USD", "account_type": "ALL"}
+        if shop_cipher:
+            q["shop_cipher"] = shop_cipher
+        if page_token:
+            q["page_token"] = page_token
+        resp = api_call("GET", "/analytics/202605/shop_videos/performance", query_params=q, access_token=access_token)
+        if not isinstance(resp, dict) or resp.get("code") not in (0, None):
+            return out, {"status": "error", "detail": str(resp)[:500], "pages_fetched": pages - 1}
+        data = resp.get("data") or {}
+        for v in data.get("videos") or []:
+            vid = str(v.get("id") or "")
+            if not vid:
+                continue
+            post = str(v.get("video_post_time") or "")[:10]
+            cr = v.get("creator") or {}
+            out[vid] = {
+                "post": post if re.match(r"^\d{4}-\d{2}-\d{2}$", post) else None,
+                "type": str(cr.get("author_type") or "").upper() or None,
+                "creator": _creator_hash(cr.get("creator_id") or cr.get("user_name") or v.get("username")),
+                "views": int(v.get("views") or 0), "likes": int(v.get("likes") or 0), "comments": int(v.get("comments") or 0),
+                "shares": int(v.get("shares") or 0), "followers": int(v.get("new_followers") or 0),
+                "clicks": int(v.get("product_clicks") or 0), "orders": int(v.get("sku_orders") or 0),
+                "items": int(v.get("items_sold") or 0), "gmv": round(_amt(v.get("gmv")), 2),
+                "gmv_attr": round(_amt(v.get("attributed_gmv")), 2), "gmv_indirect": round(_amt(v.get("indirect_gmv")), 2),
+                "ctr": float(v.get("click_through_rate") or 0), "products": len(v.get("products") or []),
+                "advertisable": bool(v.get("advertisable")), "window": [start_day, end_day_excl],
+            }
+        page_token = data.get("next_page_token") or ""
+        if not page_token or pages > 200:
+            break
+        time.sleep(0.3)
+    return out, {"status": "ok", "pages_fetched": pages, "latest_available_date": (resp.get("data") or {}).get("latest_available_date")}
+
+
+def fetch_affiliate_orders(access_token, shop_cipher, time_ge, time_lt):
+    """POST /affiliate_seller/202410/orders/search in <=30-day chunks. Returns ({order_id: row}, status)."""
+    out, pages = {}, 0
+    chunk = 30 * 86400
+    lo = time_ge
+    while lo < time_lt:
+        hi = min(lo + chunk, time_lt)
+        page_token = ""
+        while True:
+            pages += 1
+            q = {"page_size": 100}
+            if shop_cipher:
+                q["shop_cipher"] = shop_cipher
+            if page_token:
+                q["page_token"] = page_token
+            resp = api_call("POST", "/affiliate_seller/202410/orders/search", query_params=q,
+                            body={"create_time_ge": lo, "create_time_lt": hi}, access_token=access_token)
+            if not isinstance(resp, dict) or resp.get("code") not in (0, None):
+                return out, {"status": "error", "detail": str(resp)[:500], "pages_fetched": pages - 1}
+            data = resp.get("data") or {}
+            for o in data.get("orders") or []:
+                oid = str(o.get("id") or "")
+                if not oid or not o.get("create_time"):
+                    continue
+                creators, kinds, sales, qty, est, act, settled, refunded = set(), {}, 0.0, 0, 0.0, 0.0, True, 0
+                for sku in o.get("skus") or []:
+                    creators.add(_creator_hash(sku.get("creator_username")))
+                    k = str(sku.get("content_type") or "OTHER").upper()
+                    kinds[k] = kinds.get(k, 0) + 1
+                    n = int(sku.get("quantity") or 0)
+                    sales += _amt(sku.get("price")) * n
+                    qty += n
+                    est += _amt(sku.get("estimated_paid_commission")) + _amt(sku.get("estimated_paid_shop_ads_commission"))
+                    act += _amt(sku.get("actual_paid_commission")) + _amt(sku.get("actual_paid_shop_ads_commission"))
+                    refunded += int(sku.get("refunded_quantity") or 0) + int(sku.get("returned_quantity") or 0)
+                    if str(sku.get("settlement_status") or "").upper() != "SETTLED":
+                        settled = False
+                out[oid] = {"day": day_key(o["create_time"]), "status": str(o.get("status") or ""), "creators": sorted(creators),
+                            "kinds": kinds, "sales": round(sales, 2), "qty": qty, "commission_est": round(est, 2),
+                            "commission_actual": round(act, 2), "settled": settled, "refunded_qty": refunded}
+            page_token = data.get("next_page_token") or ""
+            if not page_token or pages > 500:
+                break
+            time.sleep(0.3)
+        lo = hi
+    return out, {"status": "ok", "pages_fetched": pages}
+
+
+def content_daily(videos, aff_orders):
+    """videos_daily by post date; affiliate_daily by order date; affiliate_creators (first/last order, totals)."""
+    vd = {}
+    for v in videos.values():
+        d = v.get("post")
+        if not d or d < HISTORY_START:
+            continue
+        t = vd.setdefault(d, {"posted": 0, "official": 0, "affiliate": 0, "marketing": 0, "views": 0, "orders": 0, "items": 0, "gmv": 0.0, "creators": set()})
+        t["posted"] += 1
+        key = {"OFFICIAL": "official", "AFFILIATE": "affiliate", "MARKETING": "marketing"}.get(v.get("type") or "", None)
+        if key:
+            t[key] += 1
+        t["views"] += v.get("views") or 0; t["orders"] += v.get("orders") or 0; t["items"] += v.get("items") or 0
+        t["gmv"] += v.get("gmv") or 0
+        if v.get("creator"):
+            t["creators"].add(v["creator"])
+    for t in vd.values():
+        t["creators"] = len(t["creators"]); t["gmv"] = round(t["gmv"], 2)
+    ad, creators = {}, {}
+    for r in aff_orders.values():
+        d = r.get("day")
+        if not d or d < HISTORY_START or r.get("status") in ("UNPAID", "CANCELLED"):
+            continue
+        t = ad.setdefault(d, {"orders": 0, "sales": 0.0, "qty": 0, "commission_est": 0.0, "commission_actual": 0.0, "settled": 0, "live": 0, "video": 0, "other": 0, "creators": set()})
+        t["orders"] += 1; t["sales"] += r.get("sales") or 0; t["qty"] += r.get("qty") or 0
+        t["commission_est"] += r.get("commission_est") or 0; t["commission_actual"] += r.get("commission_actual") or 0
+        t["settled"] += 1 if r.get("settled") else 0
+        for k, n in (r.get("kinds") or {}).items():
+            t["live" if k == "LIVE" else "video" if k in ("VIDEO", "SHORT_VIDEO") else "other"] += n
+        for c in r.get("creators") or []:
+            t["creators"].add(c)
+            cc = creators.setdefault(c, {"first": d, "last": d, "orders": 0, "sales": 0.0})
+            cc["first"] = min(cc["first"], d); cc["last"] = max(cc["last"], d); cc["orders"] += 1; cc["sales"] += r.get("sales") or 0
+    for t in ad.values():
+        t["creators"] = len(t["creators"])
+        for k in ("sales", "commission_est", "commission_actual"):
+            t[k] = round(t[k], 2)
+    for cc in creators.values():
+        cc["sales"] = round(cc["sales"], 2)
+    return dict(sorted(vd.items())), dict(sorted(ad.items())), creators
+
+
 def history_previous(path):
     try:
         with open(path, encoding="utf-8") as f:
@@ -917,6 +1067,43 @@ def main():
     except Exception as e:  # noqa: BLE001
         orders_status = {"status": "error", "detail": f"{type(e).__name__}: {e}"[:500]}
         log(f"WARNING: orders step crashed - {orders_status['detail']} - keeping previous orders")
+    # ---- v2.4: shoppable videos (Analytics API) + affiliate orders (Affiliate Seller API). Never fatal.
+    merged_videos = dict((prev or {}).get("videos") or {})
+    merged_aff = dict((prev or {}).get("affiliate_orders") or {})
+    content_status = {"videos": {"status": "skipped"}, "affiliate": {"status": "skipped"}}
+    try:
+        v_end = end_date.date().isoformat()                                   # exclusive: through yesterday (today is never ready)
+        v_start = (end_date - timedelta(days=VIDEO_WINDOW_DAYS)).date().isoformat()
+        videos, vstat = fetch_videos(access_token, shop["shop_cipher"], v_start, v_end)
+        content_status["videos"] = dict(vstat, window=[v_start, v_end], fetched=len(videos))
+        if vstat["status"] == "ok":
+            merged_videos.update(videos)
+            log(f"videos fetched: {len(videos)} ({v_start} -> {v_end}), total kept {len(merged_videos)}")
+        else:
+            log(f"WARNING: videos fetch failed - {vstat.get('detail')} - keeping previous videos (scope data.shop_analytics.public.read + re-authorisation needed?)")
+    except Exception as e:  # noqa: BLE001
+        content_status["videos"] = {"status": "error", "detail": f"{type(e).__name__}: {e}"[:500]}
+        log(f"WARNING: videos step crashed - {content_status['videos']['detail']}")
+    try:
+        aff, astat = fetch_affiliate_orders(access_token, shop["shop_cipher"], time_ge, time_lt)
+        content_status["affiliate"] = dict(astat, window=[fetched_start, fetched_end], fetched=len(aff))
+        if astat["status"] == "ok":
+            prev_aff_in_range = [o for o, r in merged_aff.items() if fetched_start <= (r.get("day") or "") <= fetched_end]
+            if not aff and prev_aff_in_range:
+                log(f"WARNING: affiliate orders API returned 0 for {fetched_start} -> {fetched_end} but the file has {len(prev_aff_in_range)} - keeping previous")
+                content_status["affiliate"]["status"] = "empty_kept_previous"
+            else:
+                merged_aff = {o: r for o, r in merged_aff.items() if not (fetched_start <= (r.get("day") or "") <= fetched_end)}
+                merged_aff.update(aff)
+            log(f"affiliate orders fetched: {len(aff)} ({fetched_start} -> {fetched_end}), total kept {len(merged_aff)}")
+        else:
+            log(f"WARNING: affiliate orders fetch failed - {astat.get('detail')} - keeping previous (scope seller.affiliate_collaboration.read + re-authorisation needed?)")
+    except Exception as e:  # noqa: BLE001
+        content_status["affiliate"] = {"status": "error", "detail": f"{type(e).__name__}: {e}"[:500]}
+        log(f"WARNING: affiliate step crashed - {content_status['affiliate']['detail']}")
+    merged_videos = {k: v for k, v in merged_videos.items() if (v.get("post") or HISTORY_START) >= HISTORY_START}
+    videos_daily, affiliate_daily, affiliate_creators = content_daily(merged_videos, merged_aff)
+    log(f"content: {len(videos_daily)} video post-days, {len(affiliate_daily)} affiliate order-days, {len(affiliate_creators)} creators with orders")
     orders_daily, refunds_daily = bucket_orders(merged_orders, statement_days)
     settled_n = sum(1 for r in merged_orders.values() if (r.get("fees") or {}).get("settled"))
     _ns = sum(v["net_sales_settled"] for v in orders_daily.values())
@@ -937,6 +1124,11 @@ def main():
         "refunds_daily": refunds_daily,
         "samples_daily": dict(sorted(merged_samples.items())),
         "orders": merged_orders,
+        "videos": merged_videos,
+        "videos_daily": videos_daily,
+        "affiliate_orders": merged_aff,
+        "affiliate_daily": affiliate_daily,
+        "affiliate_creators": affiliate_creators,
         "coverage": {"first_day": days_sorted[0], "last_day": days_sorted[-1], "days": len(days_sorted)} if days_sorted else {},
         "meta": {
             "note": ("daily = Finance API statements gộp theo ngày statement (dòng tiền quyết toán, để đối chiếu "
@@ -947,6 +1139,8 @@ def main():
                      "refunds_daily theo ngày statement chứa khoản hoàn."),
             "api_status": api_status,
             "orders_status": orders_status,
+            "content_status": content_status,
+            "content_note": ("videos = Analytics API shop video performance (cua so 60 ngay gan nhat, so lieu = trong cua so), videos_daily theo NGAY DANG video; affiliate_orders = Affiliate Seller API (don co hoa hong), affiliate_daily theo ngay dat; creators = hash 12 ky tu (repo public, khong luu ten)."),
             "orders_in_window": orders_fetched,
             "orders_total": len(merged_orders),
             "orders_settled": settled_n,
