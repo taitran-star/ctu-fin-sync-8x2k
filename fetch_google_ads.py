@@ -58,7 +58,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "1.3"   # 1.3: purchase-only conversions (segments.conversion_action_category = PURCHASE) next to the account's "conversions"
+SCRIPT_VERSION = "1.3.1"   # 1.3.1: totals/last_30d purchases roll-up fixed; 1.3: purchase-only conversions (segments.conversion_action_category = PURCHASE) next to the account's "conversions"
 SCHEMA = 1
 
 API_VERSION = os.environ.get("GOOGLE_ADS_API_VERSION", "v25").strip()
@@ -385,11 +385,12 @@ def derive(d):
 
 
 def sum_range(daily, start, end):
-    tot = new_bucket(["spend", "impressions", "clicks", "conversions", "conversion_value"])
+    base = ["spend", "impressions", "clicks", "conversions", "conversion_value"]
+    tot = new_bucket(base)
     anyp = False
     for day, d in daily.items():
         if start <= day <= end:
-            for f in tot:
+            for f in base:   # 1.3.1: fixed field list (iterating `tot` double-counted purchases once the key existed)
                 tot[f] += d.get(f, 0) or 0
             if "purchases" in d:
                 anyp = True
