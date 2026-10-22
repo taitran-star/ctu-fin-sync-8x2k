@@ -33,7 +33,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-SCRIPT_VERSION = "tiktok-ads-1.0"
+SCRIPT_VERSION = "tiktok-ads-1.1"   # 1.1: ad-account balance (advertiser/info) so the dashboard shows the prepaid wallet Ecomdy tops up
 SCHEMA = 1
 API = os.environ.get("TIKTOK_ADS_API_BASE", "https://business-api.tiktok.com/open_api/v1.3")
 OUTPUT_PATH = os.environ.get("OUTPUT_PATH", "data/tiktok_ads.json")
@@ -192,6 +192,16 @@ def basic_daily(token, adv, start, end):
         page += 1
 
 
+def advertiser_info(token, adv):
+    """Prepaid balance + status of the ad account (the wallet the agency (Ecomdy) tops up). Marketing API
+    /advertiser/info/ - fields are account-level, no customer data."""
+    d = call("GET", "/advertiser/info/", token, {"advertiser_ids": [adv], "fields": ["name", "balance", "currency", "status", "timezone"]})
+    for row in d.get("list") or []:
+        if str(row.get("advertiser_id")) == str(adv):
+            return row
+    return (d.get("list") or [None])[0]
+
+
 def chunks(start, end):
     s, e = dt.date.fromisoformat(start), dt.date.fromisoformat(end)
     while s <= e:
@@ -249,6 +259,17 @@ def main():
         except RuntimeError as e:
             errors.append(f"{adv} store list: {e}"); stores = None
         acc["gmv_max_stores"] = [s.get("store_id") for s in (stores or [])]
+        try:
+            info = advertiser_info(token, adv) or {}
+            if info.get("balance") is not None:
+                acc["balance"] = r2(float(info.get("balance") or 0))
+                acc["balance_currency"] = info.get("currency") or "USD"
+                acc["balance_at"] = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+                acc["status"] = info.get("status")
+                if info.get("name"):
+                    acc["name"] = info.get("name")
+        except RuntimeError as e:
+            errors.append(f"{adv} advertiser info: {e}")
         for cs, ce in chunks(start, end):
             span, d0 = [], dt.date.fromisoformat(cs)
             while d0 <= dt.date.fromisoformat(ce):

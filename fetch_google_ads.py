@@ -58,7 +58,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "1.2"
+SCRIPT_VERSION = "1.3"   # 1.3: purchase-only conversions (segments.conversion_action_category = PURCHASE) next to the account's "conversions"
 SCHEMA = 1
 
 API_VERSION = os.environ.get("GOOGLE_ADS_API_VERSION", "v25").strip()
@@ -374,6 +374,9 @@ def derive(d):
     if "all_conversion_value" in d:
         d["all_conversion_value"] = round(d["all_conversion_value"], 2)
     d["conversions"] = round(d["conversions"], 2)
+    if "purchases" in d:
+        d["purchases"] = round(d["purchases"], 2)
+        d["purchase_value"] = round(d.get("purchase_value", 0), 2)
     d["roas"] = round(d["conversion_value"] / d["spend"], 2) if d["spend"] else None
     d["cpc"] = round(d["spend"] / d["clicks"], 2) if d["clicks"] else None
     d["cpa"] = round(d["spend"] / d["conversions"], 2) if d["conversions"] else None
@@ -383,10 +386,17 @@ def derive(d):
 
 def sum_range(daily, start, end):
     tot = new_bucket(["spend", "impressions", "clicks", "conversions", "conversion_value"])
+    anyp = False
     for day, d in daily.items():
         if start <= day <= end:
             for f in tot:
                 tot[f] += d.get(f, 0) or 0
+            if "purchases" in d:
+                anyp = True
+                tot["purchases"] = tot.get("purchases", 0) + (d.get("purchases") or 0)
+                tot["purchase_value"] = tot.get("purchase_value", 0) + (d.get("purchase_value") or 0)
+    if not anyp:
+        tot.pop("purchases", None); tot.pop("purchase_value", None)
     return derive(tot)
 
 
@@ -455,6 +465,58 @@ def fetch_campaigns(client, cid, since, until, campaigns, rebucket=None, convert
 
 
 DERIVED_FIELDS = ("cpc", "ctr", "cpa", "roas", "cpm", "aov")
+
+
+# ---- 1.3: purchases only. "metrics.conversions" follows the account's conversion settings (every action
+# ticked "include in conversions": add-to-cart, lead, duplicate purchase tags...). Segmenting by
+# conversion_action_category gives the PURCHASE share per day / campaign; the breakdown by action name is
+# kept in meta.conversion_actions so the mix is visible on the dashboard. Metrics such as clicks / cost
+# cannot share a query with conversion segments, so this is a second, separate query. Best effort: any
+# API error here only leaves the purchase fields absent (the dashboard then falls back to conversions).
+def fetch_purchases(client, cid, since, until, rebucket=None, converted=False, level="customer", actions=None):
+    rebucket = rebucket or (lambda day, hour: day)
+    sel = "campaign.id, " if level == "campaign" else ""
+    out = {}
+    def run(hour_sel):
+        rows = client.search_stream(cid, f"""
+            SELECT segments.date, {hour_sel}{sel}segments.conversion_action_category, segments.conversion_action_name,
+                   metrics.conversions, metrics.conversions_value
+            FROM {level}
+            WHERE segments.date BETWEEN '{since}' AND '{until}'
+              AND metrics.conversions > 0
+        """)
+        for r in rows:
+            seg, m = r.get("segments", {}), r.get("metrics", {})
+            day = rebucket(seg.get("date"), seg.get("hour")) if seg.get("date") else None
+            if not day:
+                continue
+            cat = str(seg.get("conversionActionCategory") or "")
+            name = str(seg.get("conversionActionName") or "")
+            conv, val = fnum(m.get("conversions")), fnum(m.get("conversionsValue"))
+            if actions is not None:
+                a = actions.setdefault(name, {"category": cat, "conversions": 0.0, "conversion_value": 0.0})
+                a["conversions"] += conv
+                a["conversion_value"] += val
+            if cat != "PURCHASE":
+                continue
+            key = (str(r.get("campaign", {}).get("id")) if level == "campaign" else "_", day)
+            d = out.setdefault(key, {"purchases": 0.0, "purchase_value": 0.0})
+            d["purchases"] += conv
+            d["purchase_value"] += val
+        return len(rows)
+    try:
+        n = run("segments.hour, " if converted else "")
+    except SystemExit:
+        raise
+    except Exception as e:  # noqa: BLE001 - hour segment may be refused with conversion segments
+        if not converted:
+            raise
+        log(f"purchases with segments.hour refused ({str(e)[:120]}); retrying by account day")
+        out.clear()
+        if actions is not None:
+            actions.clear()
+        n = run("")
+    return out, n
 
 
 def date_chunks(since, until, max_days=92):
@@ -538,6 +600,7 @@ def main():
 
     daily, campaigns, warnings, per_account = {}, {}, set(), {}
     currency, rows_total, campaign_rows = None, 0, 0
+    conversion_actions, purchases_ok = {}, False
     for cid in account_ids:
         log(f"Fetching account {cid} {since}..{until} via {API_VERSION}...")
         acct_daily = {}
@@ -549,6 +612,19 @@ def main():
                 for f in tgt:
                     tgt[f] += d[f]
         acct_currency = info.get("currencyCode")
+        try:
+            for c_since, c_until in chunks:
+                part, n = fetch_purchases(client, cid, c_since, c_until, info.get("_rebucket"), info.get("_converted"), "customer", conversion_actions)
+                rows_total += n
+                for (_, day), d in part.items():
+                    tgt = acct_daily.setdefault(day, new_bucket(["spend", "impressions", "clicks", "conversions", "conversion_value"]))
+                    tgt["purchases"] = tgt.get("purchases", 0) + d["purchases"]
+                    tgt["purchase_value"] = tgt.get("purchase_value", 0) + d["purchase_value"]
+            purchases_ok = True
+        except SystemExit:
+            raise
+        except Exception as e:  # noqa: BLE001
+            warnings.add(f"purchase-only conversions not available for {cid}: {str(e)[:200]} - dashboard falls back to 'conversions'")
         if info.get("manager"):
             warnings.add(f"{cid} is a manager account - list the client account ids in GOOGLE_ADS_CUSTOMER_ID and put the manager id in GOOGLE_ADS_LOGIN_CUSTOMER_ID")
         if currency and acct_currency and acct_currency != currency:
@@ -558,11 +634,24 @@ def main():
             tgt = daily.setdefault(day, new_bucket(["spend", "impressions", "clicks", "conversions", "conversion_value"]))
             for f in tgt:
                 tgt[f] += d[f]
+            if purchases_ok:
+                tgt["purchases"] = tgt.get("purchases", 0) + d.get("purchases", 0)
+                tgt["purchase_value"] = tgt.get("purchase_value", 0) + d.get("purchase_value", 0)
         for d in acct_daily.values():
             derive(d)
         try:
             for c_since, c_until in chunks:
                 campaign_rows += fetch_campaigns(client, cid, c_since, c_until, campaigns, info.get("_rebucket"), info.get("_converted"))
+            if purchases_ok:
+                for c_since, c_until in chunks:
+                    part, n = fetch_purchases(client, cid, c_since, c_until, info.get("_rebucket"), info.get("_converted"), "campaign")
+                    campaign_rows += n
+                    for (cid_, day), d in part.items():
+                        c = campaigns.get(cid_)
+                        if not c or day not in c["daily"]:
+                            continue
+                        c["daily"][day]["purchases"] = c["daily"][day].get("purchases", 0) + d["purchases"]
+                        c["daily"][day]["purchase_value"] = c["daily"][day].get("purchase_value", 0) + d["purchase_value"]
         except SystemExit:
             raise
         except Exception as e:  # noqa: BLE001 - campaign detail must never break the account-level file
@@ -616,6 +705,9 @@ def main():
             "campaign_rows": campaign_rows,
             "accounts": per_account,
             "warnings": sorted(warnings),
+            "purchases_only": purchases_ok,
+            "conversion_actions": {k: {"category": v["category"], "conversions": round(v["conversions"], 2), "conversion_value": round(v["conversion_value"], 2)}
+                                   for k, v in sorted(conversion_actions.items(), key=lambda kv: -kv[1]["conversions"])},
         },
     }
     os.makedirs(os.path.dirname(OUTPUT_PATH) or ".", exist_ok=True)
@@ -623,6 +715,10 @@ def main():
         json.dump(out, f, indent=2, sort_keys=True)
     log(f"Wrote {OUTPUT_PATH}: {len(daily)} days, spend last 30d {out['totals']['last_30d']['spend']} {out['currency']}, "
         f"{len(campaigns)} campaigns, {client.requests} API requests, {len(warnings)} warning types.")
+    if purchases_ok:
+        l30 = out["totals"]["last_30d"]
+        log(f"Purchases only (last 30d): {l30.get('purchases')} purchases / {l30.get('conversions')} conversions; "
+            f"actions: " + ", ".join(f"{k} [{v['category']}] {v['conversions']}" for k, v in list(out['meta']['conversion_actions'].items())[:8]))
 
 
 if __name__ == "__main__":
