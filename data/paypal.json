@@ -17256,9 +17256,9 @@
           "fee": 0.0
         },
         "T0006": {
-          "amount": 2048.68,
-          "count": 10,
-          "fee": -88.46
+          "amount": 2221.07,
+          "count": 11,
+          "fee": -94.97
         },
         "T0400": {
           "amount": -3443.47,
@@ -17266,38 +17266,56 @@
           "fee": 0.0
         }
       },
-      "fees": 88.46,
+      "fees": 94.97,
       "fees_credited": 0,
       "other": 0,
-      "payments": 3292.59,
-      "payments_count": 11,
+      "payments": 3464.98,
+      "payments_count": 12,
       "refunds": 0,
       "refunds_count": 0,
-      "transactions": 12,
+      "transactions": 13,
       "withdrawals": 3443.47
+    },
+    "2026-10-23": {
+      "by_event_code": {
+        "T0006": {
+          "amount": 131.5,
+          "count": 1,
+          "fee": -5.08
+        }
+      },
+      "fees": 5.08,
+      "fees_credited": 0,
+      "other": 0,
+      "payments": 131.5,
+      "payments_count": 1,
+      "refunds": 0,
+      "refunds_count": 0,
+      "transactions": 1,
+      "withdrawals": 0
     }
   },
-  "generated_at": "2026-10-23T05:15:26Z",
+  "generated_at": "2026-10-23T10:24:17Z",
   "meta": {
     "api_requests": 4,
     "api_retries": 0,
     "counts": {
-      "transactions_counted": 793,
+      "transactions_counted": 763,
       "transactions_duplicate": 0,
-      "transactions_not_success": 22,
-      "transactions_outside_window": 15,
-      "transactions_seen": 830,
+      "transactions_not_success": 21,
+      "transactions_outside_window": 32,
+      "transactions_seen": 816,
       "transactions_without_date": 0
     },
     "currencies_seen": {
-      "CAD": 76,
-      "USD": 1405
+      "CAD": 73,
+      "USD": 1353
     },
     "event_codes_seen": {
       "T0000": 1,
       "T0001": 2,
       "T0003": 226,
-      "T0006": 427,
+      "T0006": 414,
       "T0011": 1,
       "T0114": 3,
       "T0200": 52,
@@ -17306,7 +17324,7 @@
       "T0403": 2,
       "T1106": 2,
       "T1107": 55,
-      "T1110": 7,
+      "T1110": 6,
       "T1111": 10,
       "T1201": 1,
       "T1900": 1
@@ -17320,13 +17338,13 @@
           "start": "2025-01-01"
         }
       ],
-      "days": 660,
+      "days": 661,
       "fetched": {
-        "end": "2026-10-22",
-        "start": "2026-09-07"
+        "end": "2026-10-23",
+        "start": "2026-09-08"
       },
       "first_day": "2025-01-01",
-      "last_day": "2026-10-22",
+      "last_day": "2026-10-23",
       "missing_count": 0,
       "missing_days": [],
       "mode": "rolling",
@@ -17338,49 +17356,49 @@
     "script_version": "1.0",
     "slices": 2,
     "warnings": [
-      "transactions in currencies other than USD were summed as-is: {'USD': 1405, 'CAD': 76}"
+      "transactions in currencies other than USD were summed as-is: {'USD': 1353, 'CAD': 73}"
     ]
   },
   "source": "paypal_transaction_search",
   "timezone": "America/Los_Angeles",
   "totals": {
     "last_30d": {
-      "fees": 2137.81,
-      "fees_credited": 96.55,
-      "other": -582.22,
-      "payments": 55724.2,
-      "payments_count": 403,
-      "refunds": 2538.27,
-      "refunds_count": 24,
-      "transactions": 487,
-      "withdrawals": 49383.94
+      "fees": 2094.65,
+      "fees_credited": 81.09,
+      "other": -528.05,
+      "payments": 54374.42,
+      "payments_count": 392,
+      "refunds": 2216.36,
+      "refunds_count": 21,
+      "transactions": 469,
+      "withdrawals": 46154.23
     },
     "mtd": {
-      "fees": 1574.25,
+      "fees": 1585.84,
       "fees_credited": 65.74,
       "other": -54.2,
-      "payments": 41076.83,
-      "payments_count": 296,
+      "payments": 41380.72,
+      "payments_count": 298,
       "refunds": 1791.79,
       "refunds_count": 15,
-      "transactions": 338,
+      "transactions": 340,
       "withdrawals": 36001.1
     },
     "today": {
-      "fees": 88.46,
+      "fees": 5.08,
       "fees_credited": 0,
       "other": 0,
-      "payments": 3292.59,
-      "payments_count": 11,
+      "payments": 131.5,
+      "payments_count": 1,
       "refunds": 0,
       "refunds_count": 0,
-      "transactions": 12,
-      "withdrawals": 3443.47
+      "transactions": 1,
+      "withdrawals": 0
     }
   },
   "window": {
-    "end": "2026-10-22",
-    "start": "2026-09-07"
+    "end": "2026-10-23",
+    "start": "2026-09-08"
   },
   "window_days": 45
 }
