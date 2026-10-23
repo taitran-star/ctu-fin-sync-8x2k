@@ -28,6 +28,10 @@ Optional env vars:
                         attributing purchases to an ad for up to 7 days after
                         the click, so yesterday's purchase_value keeps growing.
   OUTPUT_PATH           default data/meta_ads.json
+  META_CREATIVES        default 1 - (2.7) also write data/meta_creatives.json: every ad with spend in the
+                        last META_CREATIVE_DAYS (35) days - daily spend / impressions / link clicks / purchases /
+                        value / 3-second plays / ThruPlays / add to cart, reach + frequency for 7 / 7 / 28-day
+                        windows, status, start date, ad set, campaign, 96px thumbnail. Never blocks meta_ads.json.
   HISTORY_START         days from this date on are kept in the file across runs (default
                         2025-01-01): a run refetches only its window and keeps the rest
   BACKFILL_START/_END   one-off run over a past range (YYYY-MM-DD, END defaults to today),
@@ -636,6 +640,146 @@ def finalise_campaigns(campaigns, meta_by_id, window_start, window_end, last30_s
     return products
 
 
+# ---------------------------------------------------------------- 2.7: ad (creative) level -> data/meta_creatives.json
+# Written AFTER data/meta_ads.json and inside its own try/except: nothing here can ever touch the P&L numbers.
+# Per ad with spend in the trailing META_CREATIVE_DAYS: daily [spend, impressions, link clicks, purchases, value,
+# 3-second video plays, ThruPlays, add to cart, clicks] (two calls like the campaign level: delivery / conversions),
+# unique reach + frequency for the last 7 days, the 7 days before and the last 28 days (one call each, no daily split -
+# reach cannot be summed over days), and the ad's status, start date, ad set, campaign and a small thumbnail.
+CREATIVES_ENABLED = os.environ.get("META_CREATIVES", "1").strip() not in ("0", "false", "no")
+CREATIVE_DAYS = int(os.environ.get("META_CREATIVE_DAYS", "35"))
+CREATIVES_PATH = os.environ.get("META_CREATIVES_PATH", "data/meta_creatives.json")
+CREATIVE_FIELDS = ["spend", "impressions", "link_clicks", "purchases", "purchase_value", "video_3s", "thruplay", "add_to_cart", "clicks"]
+
+
+def _paged(url, params):
+    out = []
+    while True:
+        resp = graph_get(url, params) if params else graph_get(url, None)
+        out.extend(resp.get("data", []) or [])
+        nxt = (resp.get("paging") or {}).get("next")
+        if not nxt:
+            return out
+        url, params = nxt, None
+
+
+def fetch_ad_daily(token, account_id, since, until, ads):
+    url = f"{GRAPH_HOST}/{API_VERSION}/{account_id}/insights"
+    base = {"access_token": token, "level": "ad", "time_increment": 1, "limit": 500,
+            "time_range": json.dumps({"since": since, "until": until})}
+    rows = _paged(url, dict(base, fields="ad_id,ad_name,adset_id,adset_name,campaign_id,campaign_name,date_start,spend,impressions,clicks"))
+    for r in rows:
+        aid, day = r.get("ad_id"), r.get("date_start")
+        if not aid or not day:
+            continue
+        a = ads.setdefault(aid, {"d": {}})
+        a.update({"n": r.get("ad_name"), "as": r.get("adset_name"), "asid": r.get("adset_id"), "c": r.get("campaign_id"), "cn": r.get("campaign_name")})
+        d = a["d"].setdefault(day, [0.0] * len(CREATIVE_FIELDS))
+        d[0] += to_float(r.get("spend"))
+        d[1] += to_int(r.get("impressions"))
+        d[8] += to_int(r.get("clicks"))
+    conv = dict(base, fields="ad_id,date_start,inline_link_clicks,actions,action_values,video_thruplay_watched_actions")
+    if ATTRIBUTION:
+        conv["action_attribution_windows"] = json.dumps([w.strip() for w in ATTRIBUTION.split(",") if w.strip()])
+    for r in _paged(url, conv):
+        aid, day = r.get("ad_id"), r.get("date_start")
+        if not aid or not day:
+            continue
+        a = ads.setdefault(aid, {"d": {}})
+        d = a["d"].setdefault(day, [0.0] * len(CREATIVE_FIELDS))
+        d[2] += to_int(r.get("inline_link_clicks"))
+        _, pur = pick_action(r.get("actions"), PURCHASE_ACTION_PRIORITY)
+        _, val = pick_action(r.get("action_values"), PURCHASE_ACTION_PRIORITY)
+        _, v3 = pick_action(r.get("actions"), ["video_view"])
+        _, tp = pick_action(r.get("video_thruplay_watched_actions"), ["video_view"])
+        _, atc = pick_action(r.get("actions"), ATC_PRIORITY)
+        d[3] += pur
+        d[4] += val
+        d[5] += v3
+        d[6] += tp
+        d[7] += atc
+    return len(rows)
+
+
+def fetch_ad_window(token, account_id, since, until):
+    """{ad_id: {r reach, f frequency, i impressions, s spend}} for one whole range (unique reach)."""
+    url = f"{GRAPH_HOST}/{API_VERSION}/{account_id}/insights"
+    params = {"access_token": token, "level": "ad", "limit": 500, "time_range": json.dumps({"since": since, "until": until}),
+              "fields": "ad_id,reach,frequency,impressions,spend"}
+    out = {}
+    for r in _paged(url, params):
+        if r.get("ad_id"):
+            out[r["ad_id"]] = {"r": to_int(r.get("reach")), "f": round(to_float(r.get("frequency")), 2),
+                               "i": to_int(r.get("impressions")), "s": round(to_float(r.get("spend")), 2)}
+    return out
+
+
+def fetch_ad_objects(token, ids):
+    """Status, start date and creative thumbnail of each ad (batches of 50 ids)."""
+    out, creatives = {}, {}
+    ids = list(ids)
+    for i in range(0, len(ids), 50):
+        chunk = ids[i:i + 50]
+        resp = graph_get(f"{GRAPH_HOST}/{API_VERSION}/", {"access_token": token, "ids": ",".join(chunk),
+                                                         "fields": "effective_status,created_time,creative{id,object_type}"})
+        for aid, o in (resp or {}).items():
+            if not isinstance(o, dict):
+                continue
+            cr = o.get("creative") or {}
+            out[aid] = {"st": o.get("effective_status"), "ct": (o.get("created_time") or "")[:10], "cr": cr.get("id"), "ty": cr.get("object_type")}
+            if cr.get("id"):
+                creatives[cr["id"]] = None
+    cids = list(creatives)
+    for i in range(0, len(cids), 50):
+        chunk = cids[i:i + 50]
+        try:
+            resp = graph_get(f"{GRAPH_HOST}/{API_VERSION}/", {"access_token": token, "ids": ",".join(chunk), "fields": "thumbnail_url",
+                                                             "thumbnail_width": 96, "thumbnail_height": 96})
+        except (Exception, SystemExit) as e:  # noqa: BLE001 - thumbnails are a nicety
+            log(f"creative thumbnails skipped: {str(e)[:120]}")
+            break
+        for cid, o in (resp or {}).items():
+            if isinstance(o, dict):
+                creatives[cid] = o.get("thumbnail_url")
+    for o in out.values():
+        o["th"] = creatives.get(o.pop("cr", None) or "")
+    return out
+
+
+def write_creatives(token, account_ids, now_local, currency):
+    today = now_local.strftime("%Y-%m-%d")
+    day = lambda n: (now_local - timedelta(days=n)).strftime("%Y-%m-%d")
+    since = day(CREATIVE_DAYS - 1)
+    ads, rows, windows = {}, 0, {"w7": (day(6), today), "w7p": (day(13), day(7)), "w28": (day(27), today)}
+    for account_id in account_ids:
+        rows += fetch_ad_daily(token, account_id, since, today, ads)
+    ads = {k: v for k, v in ads.items() if sum(d[0] for d in v.get("d", {}).values()) > 0.005}
+    for wk, (a, b) in windows.items():
+        merged = {}
+        for account_id in account_ids:
+            merged.update(fetch_ad_window(token, account_id, a, b))
+        for aid, w in merged.items():
+            if aid in ads:
+                ads[aid][wk] = w
+    try:
+        objs = fetch_ad_objects(token, ads.keys())
+    except (Exception, SystemExit) as e:  # noqa: BLE001
+        log(f"ad status / thumbnails skipped: {str(e)[:150]}")
+        objs = {}
+    for aid, a in ads.items():
+        a.update(objs.get(aid, {}))
+        a["d"] = {k: [round(x, 2) if j in (0, 4) else int(round(x)) for j, x in enumerate(v)] for k, v in sorted(a["d"].items())}
+        a.update({k: v for k, v in classify_campaign(a.get("cn") or "").items() if k == "product"})
+    out = {"schema": 1, "source": "meta_marketing_api", "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+           "currency": currency or "USD", "timezone": REPORT_TIMEZONE, "window": {"start": since, "end": today},
+           "windows": {k: {"start": a, "end": b} for k, (a, b) in windows.items()}, "fields": CREATIVE_FIELDS,
+           "attribution": ATTRIBUTION or "account default", "ads": dict(sorted(ads.items())),
+           "meta": {"script_version": "2.7", "rows": rows, "ads": len(ads)}}
+    with open(CREATIVES_PATH, "w") as f:
+        json.dump(out, f, separators=(",", ":"), sort_keys=True)
+    log(f"Wrote {CREATIVES_PATH}: {len(ads)} ads with spend, {rows} ad-day rows ({since}..{today}).")
+
+
 def main():
     token = os.environ.get("META_ACCESS_TOKEN", "").strip()
     raw_ids = os.environ.get("META_AD_ACCOUNT_ID", "").strip()
@@ -769,7 +913,7 @@ def main():
         "products": products,
         "meta": {
             "schema": 2 if CAMPAIGNS_ENABLED else 1,
-            "script_version": "2.6",   # 2.3 = history across runs + backfill; 2.4 = refuses answers without spend; 2.5/2.6 = delivery and conversions (+ link clicks) fetched separately
+            "script_version": "2.7",   # 2.7 = + data/meta_creatives.json (ad level); 2.3 = history across runs + backfill; 2.4 = refuses answers without spend; 2.5/2.6 = delivery and conversions (+ link clicks) fetched separately
             "history": hist,
             "campaign_rows": campaign_rows,
             "rows_processed": rows_total,
@@ -783,6 +927,11 @@ def main():
     with open(OUTPUT_PATH, "w") as f:
         json.dump(out, f, indent=2, sort_keys=True)
     log(f"Wrote {OUTPUT_PATH} ({rows_total} rows, {len(daily)} days, currency {out['currency']}, {len(warnings)} warning types).")
+    if CREATIVES_ENABLED and mode == "rolling":
+        try:
+            write_creatives(token, account_ids, now_local, currency)
+        except (Exception, SystemExit) as e:  # noqa: BLE001 - creative detail must never fail the sync
+            log(f"WARNING: creative-level file not updated: {str(e)[:300]}")
 
 
 if __name__ == "__main__":
