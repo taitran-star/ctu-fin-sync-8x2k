@@ -61,7 +61,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "tiktok_shop-2.4"   # 2.4 (22/10/2026): shoppable videos (Analytics API) + affiliate orders / creators (Affiliate Seller API); 2.3: orders_daily[].sku_units / sku_sales per seller SKU
+SCRIPT_VERSION = "tiktok_shop-2.4.1"   # 2.4.1 (23/10/2026): author_type "AFFILIATE_ACCOUNTS"/"OFFICIAL_ACCOUNTS" normalised; 2.4 (22/10/2026): shoppable videos (Analytics API) + affiliate orders / creators (Affiliate Seller API); 2.3: orders_daily[].sku_units / sku_sales per seller SKU
 SCHEMA = 2
 
 AUTH_HOST = "https://auth.tiktok-shops.com"
@@ -814,7 +814,7 @@ def fetch_videos(access_token, shop_cipher, start_day, end_day_excl):
             cr = v.get("creator") or {}
             out[vid] = {
                 "post": post if re.match(r"^\d{4}-\d{2}-\d{2}$", post) else None,
-                "type": str(cr.get("author_type") or "").upper() or None,
+                "type": re.sub(r"_ACCOUNTS?$", "", str(cr.get("author_type") or "").upper()) or None,
                 "creator": _creator_hash(cr.get("creator_id") or cr.get("user_name") or v.get("username")),
                 "views": int(v.get("views") or 0), "likes": int(v.get("likes") or 0), "comments": int(v.get("comments") or 0),
                 "shares": int(v.get("shares") or 0), "followers": int(v.get("new_followers") or 0),
@@ -888,7 +888,7 @@ def content_daily(videos, aff_orders):
             continue
         t = vd.setdefault(d, {"posted": 0, "official": 0, "affiliate": 0, "marketing": 0, "views": 0, "orders": 0, "items": 0, "gmv": 0.0, "creators": set()})
         t["posted"] += 1
-        key = {"OFFICIAL": "official", "AFFILIATE": "affiliate", "MARKETING": "marketing"}.get(v.get("type") or "", None)
+        key = {"OFFICIAL": "official", "AFFILIATE": "affiliate", "MARKETING": "marketing"}.get(re.sub(r"_ACCOUNTS?$", "", str(v.get("type") or "")), None)
         if key:
             t[key] += 1
         t["views"] += v.get("views") or 0; t["orders"] += v.get("orders") or 0; t["items"] += v.get("items") or 0
