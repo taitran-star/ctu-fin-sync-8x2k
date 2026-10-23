@@ -652,6 +652,7 @@ CREATIVES_PATH = os.environ.get("META_CREATIVES_PATH", "data/meta_creatives.json
 CREATIVE_FIELDS = ["spend", "impressions", "link_clicks", "purchases", "purchase_value", "video_3s", "thruplay", "add_to_cart", "clicks"]
 CREATIVE_MIN_SPEND = float(os.environ.get("META_CREATIVE_MIN_SPEND", "25"))   # smaller ads (window spend) are folded into "other"
 CREATIVE_MAX_ADS = int(os.environ.get("META_CREATIVE_MAX_ADS", "600"))
+CREATIVE_EVERY_H = int(os.environ.get("META_CREATIVE_EVERY_H", "3"))   # the ad-level pass (~5 min) runs every N hours, not every 30 min
 
 
 CREATIVE_BUDGET_S = int(os.environ.get("META_CREATIVE_BUDGET_S", "420"))   # the whole creative step must finish within this
@@ -753,41 +754,34 @@ def fetch_ad_window(token, account_id, since, until):
     return out
 
 
-def _get_ids(token, ids, fields, extra=None):
-    """GET /?ids=... in batches of 50; a batch that fails (e.g. one deleted ad -> error #100) is split in halves
-    until the bad id is isolated and dropped."""
+AD_STATUSES = ["ACTIVE", "PAUSED", "DELETED", "PENDING_REVIEW", "DISAPPROVED", "PREAPPROVED", "PENDING_BILLING_INFO",
+               "CAMPAIGN_PAUSED", "ARCHIVED", "ADSET_PAUSED", "IN_PROCESS", "WITH_ISSUES"]
+
+
+def fetch_ad_objects(token, account_ids, ids):
+    """Status, start date, creative type and thumbnail of each ad, read from the ad account's /ads edge filtered on the
+    ad ids (50 per request). 2.7.2: the root ?ids= lookup is gone since Graph API v26 ("ids query parameter is deprecated")."""
     out = {}
-
-    def go(chunk):
-        if not chunk:
-            return
-        _check_budget()
-        try:
-            resp = graph_get(f"{GRAPH_HOST}/{API_VERSION}/", dict({"access_token": token, "ids": ",".join(chunk), "fields": fields}, **(extra or {})))
-            out.update({k: v for k, v in (resp or {}).items() if isinstance(v, dict)})
-        except (Exception, SystemExit):  # noqa: BLE001
-            if len(chunk) > 1:
-                mid = len(chunk) // 2
-                go(chunk[:mid])
-                go(chunk[mid:])
     ids = list(ids)
-    for i in range(0, len(ids), 50):
-        go(ids[i:i + 50])
-    return out
-
-
-def fetch_ad_objects(token, ids):
-    """Status, start date and creative thumbnail of each ad."""
-    out, creatives = {}, {}
-    for aid, o in _get_ids(token, ids, "effective_status,created_time,creative{id,object_type}").items():
-        cr = o.get("creative") or {}
-        out[aid] = {"st": o.get("effective_status"), "ct": (o.get("created_time") or "")[:10], "cr": cr.get("id"), "ty": cr.get("object_type")}
-        if cr.get("id"):
-            creatives[cr["id"]] = None
-    for cid, o in _get_ids(token, list(creatives), "thumbnail_url", {"thumbnail_width": 96, "thumbnail_height": 96}).items():
-        creatives[cid] = o.get("thumbnail_url")
-    for o in out.values():
-        o["th"] = creatives.get(o.pop("cr", None) or "")
+    for account_id in account_ids:
+        for i in range(0, len(ids), 50):
+            chunk = [x for x in ids[i:i + 50] if x not in out]
+            if not chunk:
+                continue
+            _check_budget()
+            params = {"access_token": token, "limit": 100,
+                      "fields": "id,effective_status,created_time,creative{id,object_type,thumbnail_url}",
+                      "filtering": json.dumps([{"field": "id", "operator": "IN", "value": chunk},
+                                               {"field": "effective_status", "operator": "IN", "value": AD_STATUSES}])}
+            try:
+                rows = _paged(f"{GRAPH_HOST}/{API_VERSION}/{account_id}/ads", params)
+            except (Exception, SystemExit) as e:  # noqa: BLE001 - status / thumbnails are a nicety
+                log(f"ad status batch skipped: {str(e)[:120]}")
+                continue
+            for o in rows:
+                cr = o.get("creative") or {}
+                out[str(o.get("id"))] = {"st": o.get("effective_status"), "ct": (o.get("created_time") or "")[:10],
+                                         "ty": cr.get("object_type"), "th": cr.get("thumbnail_url")}
     return out
 
 
@@ -823,7 +817,7 @@ def write_creatives(token, account_ids, now_local, currency):
             if aid in ads:
                 ads[aid][wk] = w
     try:
-        objs = fetch_ad_objects(token, ads.keys())
+        objs = fetch_ad_objects(token, account_ids, ads.keys())
     except (Exception, SystemExit) as e:  # noqa: BLE001
         log(f"ad status / thumbnails skipped: {str(e)[:150]}")
         objs = {}
@@ -836,7 +830,7 @@ def write_creatives(token, account_ids, now_local, currency):
            "windows": {k: {"start": a, "end": b} for k, (a, b) in windows.items()}, "fields": CREATIVE_FIELDS,
            "attribution": ATTRIBUTION or "account default", "ads": dict(sorted(ads.items())), "other": other,
            "min_spend": CREATIVE_MIN_SPEND,
-           "meta": {"script_version": "2.7.1", "rows": rows, "ads": len(ads)}}
+           "meta": {"script_version": "2.7.2", "rows": rows, "ads": len(ads)}}
     with open(CREATIVES_PATH, "w") as f:
         json.dump(out, f, separators=(",", ":"), sort_keys=True)
     log(f"Wrote {CREATIVES_PATH}: {len(ads)} ads kept (+{other['n']} small ads folded, ${other['spend']:.0f}), {rows} ad-day rows ({since}..{today}).")
@@ -975,7 +969,7 @@ def main():
         "products": products,
         "meta": {
             "schema": 2 if CAMPAIGNS_ENABLED else 1,
-            "script_version": "2.7.1",   # 2.7 = + data/meta_creatives.json (ad level); 2.7.1 = ad level via async report jobs + 7-minute budget; 2.3 = history across runs + backfill; 2.4 = refuses answers without spend; 2.5/2.6 = delivery and conversions (+ link clicks) fetched separately
+            "script_version": "2.7.2",   # 2.7 = + data/meta_creatives.json (ad level); 2.7.1 = ad level via async report jobs + 7-minute budget; 2.7.2 = ad status/thumbnails via /act/ads (no ?ids= in v26); 2.3 = history across runs + backfill; 2.4 = refuses answers without spend; 2.5/2.6 = delivery and conversions (+ link clicks) fetched separately
             "history": hist,
             "campaign_rows": campaign_rows,
             "rows_processed": rows_total,
@@ -989,7 +983,11 @@ def main():
     with open(OUTPUT_PATH, "w") as f:
         json.dump(out, f, indent=2, sort_keys=True)
     log(f"Wrote {OUTPUT_PATH} ({rows_total} rows, {len(daily)} days, currency {out['currency']}, {len(warnings)} warning types).")
-    if CREATIVES_ENABLED and mode == "rolling":
+    cre_due = os.environ.get("GITHUB_EVENT_NAME", "") == "workflow_dispatch" or not os.path.exists(CREATIVES_PATH) or \
+        (now.hour % max(1, CREATIVE_EVERY_H) == 0 and now.minute < 30)
+    if CREATIVES_ENABLED and mode == "rolling" and not cre_due:
+        log(f"creative-level file: next refresh in a run at a UTC hour divisible by {CREATIVE_EVERY_H} (or a manual run)")
+    if CREATIVES_ENABLED and mode == "rolling" and cre_due:
         import signal
 
         def _alarm(signum, frame):
