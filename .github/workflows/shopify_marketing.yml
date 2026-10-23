@@ -1,0 +1,82 @@
+name: Cattasaurus Shopify marketing extras (offers + customer value)
+
+# fetch_shopify_promos.py -> data/shopify_promos.json : every web order's offers / discount codes, product cost, new
+#   customers (same app + secrets as the P&L sync, no new scope). Rolling 14 days; backfill with the two dates.
+# fetch_shopify_ltv.py    -> data/shopify_ltv.json    : customer cohorts by first-order month (ShopifyQL). Needs the
+#   app scope read_reports; without it the step logs that and leaves the file as it is.
+on:
+  schedule:
+    - cron: "50 */3 * * *"
+  workflow_dispatch:
+    inputs:
+      backfill_start:
+        description: "Offers backfill from (YYYY-MM-DD). Empty = normal rolling run."
+        required: false
+        default: ""
+      backfill_end:
+        description: "Offers backfill to (YYYY-MM-DD, inclusive). Empty = today."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: shopify-marketing-sync
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Sync to the latest main
+        run: |
+          git fetch --depth=1 origin main
+          git reset --hard origin/main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Offers and discount codes
+        env:
+          REPORT_TIMEZONE: America/Los_Angeles
+          HISTORY_START: "2025-01-01"
+          BACKFILL_START: ${{ github.event.inputs.backfill_start }}
+          BACKFILL_END: ${{ github.event.inputs.backfill_end }}
+          SHOPIFY_SHOP: ${{ secrets.SHOPIFY_SHOP }}
+          SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_CLIENT_ID }}
+          SHOPIFY_CLIENT_SECRET: ${{ secrets.SHOPIFY_CLIENT_SECRET }}
+        run: python fetch_shopify_promos.py
+
+      - name: Customer value by cohort (ShopifyQL, needs read_reports)
+        if: ${{ github.event.inputs.backfill_start == '' || github.event.inputs.backfill_start == null }}
+        continue-on-error: true
+        env:
+          SHOPIFY_SHOP: ${{ secrets.SHOPIFY_SHOP }}
+          SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_CLIENT_ID }}
+          SHOPIFY_CLIENT_SECRET: ${{ secrets.SHOPIFY_CLIENT_SECRET }}
+        run: python fetch_shopify_ltv.py
+
+      - name: Commit updated data files if changed
+        run: |
+          git config user.name "cattasaurus-shopify-marketing-bot"
+          git config user.email "actions@users.noreply.github.com"
+          for f in data/shopify_promos.json data/shopify_ltv.json; do if [ -f "$f" ]; then git add "$f"; fi; done
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Update Shopify offers / customer value ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            git rebase --abort 2>/dev/null || true
+            echo "Push attempt $i failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "Could not push after 5 attempts." && exit 1

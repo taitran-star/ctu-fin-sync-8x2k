@@ -1,0 +1,73 @@
+name: Cattasaurus Amazon Ads API sync
+
+# v2.0 (23/10/2026): campaign / ASIN / search-term detail -> data/amazon_ads_api.json, and the console
+# numbers (sales, orders, clicks, impressions) of the fetched days merged into data/amazon_ads.json.
+# Skips quietly until the Ads API app is approved and AMAZON_ADS_REFRESH_TOKEN exists
+# (run "Amazon Ads - one-time authorization" first).
+on:
+  schedule:
+    - cron: "25 */3 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: amazon-ads-api-sync
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Sync to the latest main
+        run: |
+          git fetch --depth=1 origin main
+          git reset --hard origin/main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch Amazon Ads reports (SP / SB / SD campaigns, SP ASINs, SP search terms)
+        env:
+          REPORT_TIMEZONE: America/Los_Angeles
+          AMAZON_ADS_CLIENT_ID: ${{ secrets.AMAZON_ADS_CLIENT_ID }}
+          AMAZON_ADS_CLIENT_SECRET: ${{ secrets.AMAZON_ADS_CLIENT_SECRET }}
+          AMAZON_ADS_REFRESH_TOKEN: ${{ secrets.AMAZON_ADS_REFRESH_TOKEN }}
+          AMAZON_ADS_PROFILE_ID: ${{ secrets.AMAZON_ADS_PROFILE_ID }}
+          AMAZON_ADS_REGION: NA
+          AMAZON_ADS_COUNTRY: US
+          AMAZON_ADS_PRODUCTS: SPONSORED_PRODUCTS,SPONSORED_BRANDS,SPONSORED_DISPLAY
+          AMAZON_PRODUCT_ALIASES: '{"litter": "Litter Box", "peekaboo": "Peekaboo", "pkc": "Peekaboo", "cat cave": "Peekaboo", "fountain": "Water Fountain", "donut": "Calming Donut"}'
+          WINDOW_DAYS: "45"
+        run: |
+          if [ -z "$AMAZON_ADS_REFRESH_TOKEN" ]; then
+            echo "::notice::AMAZON_ADS_REFRESH_TOKEN not set yet (Ads API approval pending) - skipping."
+            exit 0
+          fi
+          python fetch_amazon_ads.py
+
+      - name: Commit updated data files if changed
+        run: |
+          git config user.name "cattasaurus-amazon-ads-bot"
+          git config user.email "actions@users.noreply.github.com"
+          [ -f data/amazon_ads_api.json ] && git add data/amazon_ads_api.json || true
+          git add data/amazon_ads.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Update Amazon Ads API data ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            git rebase --abort 2>/dev/null || true
+            echo "Push attempt $i failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "Could not push after 5 attempts." && exit 1

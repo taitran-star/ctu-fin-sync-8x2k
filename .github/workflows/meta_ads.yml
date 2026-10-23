@@ -51,6 +51,9 @@ jobs:
           # campaign name; aliases fix names that don't follow the grammar.
           META_CAMPAIGNS: "1"
           META_PRODUCT_ALIASES: '{"litter": "Litter Box", "peekaboo": "Peekaboo", "fountain": "Water Fountain"}'
+          # 2.7: ad (creative) level for the last 35 days -> data/meta_creatives.json (never blocks meta_ads.json)
+          META_CREATIVES: "1"
+          META_CREATIVE_DAYS: "35"
           # Optional overrides (uncomment to use):
           # META_API_VERSION: v23.0
           # META_ATTRIBUTION: 7d_click,1d_view
@@ -61,6 +64,7 @@ jobs:
           git config user.name "cattasaurus-meta-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/meta_ads.json
+          [ -f data/meta_creatives.json ] && git add data/meta_creatives.json || true
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0

@@ -1,0 +1,73 @@
+name: Amazon Ads - one-time authorization (code -> refresh token)
+
+# Run this ONCE by hand (Actions > this workflow > Run workflow) right after you
+# approve the Login with Amazon consent screen. Paste the `code=` value from the
+# redirect URL. The job exchanges it for a refresh token and writes it straight
+# into the repository secret AMAZON_ADS_REFRESH_TOKEN, so the token is never
+# printed in logs or pasted anywhere by hand.
+#
+# Needs these secrets to exist first:
+#   AMAZON_ADS_CLIENT_ID, AMAZON_ADS_CLIENT_SECRET   (Login with Amazon security profile)
+#   REPO_SECRETS_PAT   a fine-grained GitHub token for THIS repo with permission
+#                      "Secrets: Read and write" (Settings > Developer settings >
+#                      Personal access tokens > Fine-grained). Delete it afterwards.
+
+on:
+  workflow_dispatch:
+    inputs:
+      code:
+        description: "Authorization code from the redirect URL (the value after code=)"
+        required: true
+        type: string
+      redirect_uri:
+        description: "Exactly the Allowed Return URL used in the consent link"
+        required: true
+        default: "https://cattasaurus.com"
+        type: string
+      region:
+        description: "NA / EU / FE"
+        required: true
+        default: "NA"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  exchange:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Exchange code for tokens and store the refresh token as a repo secret
+        env:
+          CLIENT_ID: ${{ secrets.AMAZON_ADS_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.AMAZON_ADS_CLIENT_SECRET }}
+          GH_TOKEN: ${{ secrets.REPO_SECRETS_PAT }}
+          CODE: ${{ inputs.code }}
+          REDIRECT_URI: ${{ inputs.redirect_uri }}
+          REGION: ${{ inputs.region }}
+        run: |
+          set -euo pipefail
+          case "$REGION" in
+            EU) TOKEN_URL="https://api.amazon.co.uk/auth/o2/token" ;;
+            FE) TOKEN_URL="https://api.amazon.co.jp/auth/o2/token" ;;
+            *)  TOKEN_URL="https://api.amazon.com/auth/o2/token" ;;
+          esac
+          if [ -z "$CLIENT_ID" ] || [ -z "$CLIENT_SECRET" ]; then echo "AMAZON_ADS_CLIENT_ID / _SECRET secrets missing"; exit 1; fi
+          if [ -z "$GH_TOKEN" ]; then echo "REPO_SECRETS_PAT secret missing (fine-grained token with Secrets: write)"; exit 1; fi
+          RESP=$(curl -sS -X POST "$TOKEN_URL" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            --data-urlencode "grant_type=authorization_code" \
+            --data-urlencode "code=$CODE" \
+            --data-urlencode "redirect_uri=$REDIRECT_URI" \
+            --data-urlencode "client_id=$CLIENT_ID" \
+            --data-urlencode "client_secret=$CLIENT_SECRET")
+          REFRESH=$(printf '%s' "$RESP" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("refresh_token",""))' 2>/dev/null || true)
+          if [ -z "$REFRESH" ]; then
+            echo "Token exchange failed. Amazon said:"
+            printf '%s' "$RESP" | python3 -c 'import json,sys; d=json.load(sys.stdin); print({k:v for k,v in d.items() if k not in ("access_token","refresh_token")})' || printf '%s\n' "$RESP" | head -c 400
+            echo; echo "Usual causes: code already used / expired (codes live ~5 min - get a fresh one), redirect_uri differs from the one in the consent link, or the LWA profile is not yet linked to the API application."
+            exit 1
+          fi
+          echo "::add-mask::$REFRESH"
+          printf '%s' "$REFRESH" | gh secret set AMAZON_ADS_REFRESH_TOKEN --repo "$GITHUB_REPOSITORY"
+          echo "OK - AMAZON_ADS_REFRESH_TOKEN stored. Now run 'Cattasaurus Amazon Ads sync'. You can delete REPO_SECRETS_PAT."
