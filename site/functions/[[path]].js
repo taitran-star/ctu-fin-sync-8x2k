@@ -57,6 +57,10 @@ const REPO_FILES = new Set([
   'amazon_dsp.json',   // V12.2: Amazon DSP theo ngày từ Xnurta (task đọc bằng trình duyệt của Claude)
   'slash_pnl.json',    // V12.9: khoản app / công cụ marketing / creator trên thẻ Slash (tab Marketing — công cụ & AI content)
   'reamaze.json',      // V12.11: Re:amaze helpdesk — chỉ số đếm (hội thoại, lý do, phản hồi, CSAT), không có dữ liệu khách
+  'meta_creatives.json',   // V12.16: Meta theo từng quảng cáo (35 ngày) — tab Marketing, thẻ creative
+  'shopify_promos.json',   // V12.16: ưu đãi / mã giảm giá theo ngày — tab Marketing
+  'shopify_ltv.json',      // V12.16: giá trị khách theo cohort (ShopifyQL, chỉ số tổng hợp) — tab Marketing
+  'amazon_ads_api.json',   // V12.16: Amazon Ads API — campaign / ASIN / từ khoá (khi được Amazon duyệt)
 ]);
 const STATIC_FILES = new Set(['shipmonk_invoices.json', 'shipmonk_storage_daily.json', 'klaviyo_invoices.json']);   // in public/ (read by Claude's browser); amazon_ads.json now comes from the repo (sellerboard_ads.yml)
 const ALL_FILES = new Set([...REPO_FILES, ...STATIC_FILES]);
@@ -65,7 +69,7 @@ const ALL_FILES = new Set([...REPO_FILES, ...STATIC_FILES]);
 const VIEW_FILES = {
   exec: '*', pnl: '*', opex: '*', data: '*', reports: '*',   // Reports = the full P&L by month/day/channel/SKU
   sales: ['shopify_pnl.json', 'amazon_pnl.json', 'walmart.json', 'tiktok_shop.json', 'loop_subscriptions.json', 'paypal.json', 'klaviyo.json', 'meta_ads.json', 'google_ads.json', 'targets_monthly.json', 'products.json'],
-  marketing: ['meta_ads.json', 'google_ads.json', 'applovin.json', 'tiktok_ads.json', 'amazon_ads.json', 'amazon_dsp.json', 'klaviyo.json', 'klaviyo_invoices.json', 'shopify_pnl.json', 'amazon_pnl.json', 'targets_monthly.json', 'products.json', 'slash_pnl.json'],
+  marketing: ['meta_ads.json', 'google_ads.json', 'applovin.json', 'tiktok_ads.json', 'amazon_ads.json', 'amazon_dsp.json', 'klaviyo.json', 'klaviyo_invoices.json', 'shopify_pnl.json', 'amazon_pnl.json', 'targets_monthly.json', 'products.json', 'slash_pnl.json', 'meta_creatives.json', 'shopify_promos.json', 'shopify_ltv.json', 'amazon_ads_api.json'],
   cs: ['reamaze.json', 'shopify_pnl.json', 'amazon_pnl.json', 'walmart.json', 'tiktok_shop.json', 'shipmonk.json', 'shipmonk_invoices.json', 'amazon_storage.json', 'cogs_skus.json', 'products.json', 'targets_monthly.json'],   // V12.11
   inventory: ['shopify_pnl.json', 'amazon_pnl.json', 'walmart.json', 'tiktok_shop.json', 'amazon_storage.json', 'shipmonk.json', 'shipmonk_invoices.json', 'shipmonk_storage_daily.json', 'cogs_skus.json', 'cogs_lots.json', 'cogs_monthly.json', 'purchase_orders.json', 'products.json', 'targets_monthly.json'],
   sns: ['amazon_sns.json'],
