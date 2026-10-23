@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build a7f41b8e31).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build b9eb2d0e3b).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -4549,7 +4549,7 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
     Object.keys(C.ads).forEach(id=>{ const ad = C.ads[id]; const m = M(S(ad, f0, t0)); if(!(m.s>0.005)) return;
       const l7 = e7 ? M(S(ad, e7.start, e7.end)) : null, q7 = p7 ? M(S(ad, p7.start, p7.end)) : null;
       list.push({id, ad, m, l7, q7, f7: ad.w7 ? ad.w7.f : null, f28: ad.w28 ? ad.w28.f : null}); });
-    const tot = sum(list.map(x=>x.m.s));
+    const oT = C.other && C.other.d ? S(C.other, f0, t0) : null, tot = sum(list.map(x=>x.m.s)) + (oT ? oT[0] : 0);   // V12.16.1: small ads folded by the sync
     list.forEach(x=>{
       let st = mkStatus(x.m.s, x.m.roas, x.m.p, rule.meta, tot);
       const fat = x.l7 && x.q7 && x.q7.s>50 && x.l7.s>50 && (x.f7||0)>=2.5 && ((mkFin(x.l7.ctr) && mkFin(x.q7.ctr) && x.l7.ctr < x.q7.ctr*0.8) || (mkFin(x.l7.roas) && mkFin(x.q7.roas) && x.l7.roas < x.q7.roas*0.75));
@@ -4564,7 +4564,7 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
     const fW = sum(list.filter(x=>mkFin(x.f7)).map(x=>x.f7*(x.l7 ? x.l7.s : 0))), fS = sum(list.filter(x=>mkFin(x.f7)).map(x=> x.l7 ? x.l7.s : 0));
     const top5 = list.slice().sort((p,q)=>q.m.s-p.m.s).slice(0,5);
     const chip = (l, v, sub, cls) => `<span class="mk-chip${cls ? ' '+cls : ''}"><span class="mk-chip-l">${l}</span><b>${v}</b>${sub ? `<small>${sub}</small>` : ''}</span>`;
-    const ctx = chip(tv('Ads with spend', 'Quảng cáo có chi'), intFmt(list.length), tv('top 5 take ', '5 cái đầu chiếm ')+mkPct(sum(top5.map(x=>x.m.s)), tot)+tv(' of spend', ' chi'))
+    const ctx = chip(tv('Ads with spend', 'Quảng cáo có chi'), intFmt(list.length), tv('top 5 take ', '5 cái đầu chiếm ')+mkPct(sum(top5.map(x=>x.m.s)), tot)+tv(' of spend', ' chi')+(oT && oT[0]>0.005 ? tv(' · + ', ' · + ')+intFmt(C.other.n)+tv(' small ads (', ' QC nhỏ (')+mk$(oT[0])+tv(') grouped', ') gộp lại') : ''))
       + chip(tv('New creatives launched', 'Creative mới chạy'), intFmt(newAds.length), mkPct(sum(newAds.map(x=>x.m.s)), tot)+tv(' of spend went to ads started in the period', ' chi vào quảng cáo bắt đầu trong kỳ'), newAds.length===0 ? 'alert' : '')
       + chip(tv('Winners (≥1.3× yardstick)', 'Đang thắng (≥1,3× chuẩn)'), intFmt(winAds.length), mkPct(sum(winAds.map(x=>x.m.s)), tot)+tv(' of spend', ' chi')+(yard ? tv(' · yardstick ROAS ', ' · ROAS chuẩn ')+yard.toFixed(2)+'x' : ''))
       + chip(tv('Fatiguing', 'Đang mỏi'), intFmt(fatAds.length), (fatAds.length ? mk$(sum(fatAds.map(x=> x.l7 ? x.l7.s : 0)))+tv(' spent on them in the last 7 days', ' chi cho chúng 7 ngày qua') : tv('frequency ≥ 2.5 and CTR or ROAS falling week on week', 'tần suất ≥ 2,5 và CTR hoặc ROAS giảm theo tuần')), fatAds.length ? 'alert' : '')
@@ -4636,7 +4636,7 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
     const costedG = all.g - all.mg, cogsRate = costedG>0 ? all.c/costedG : 0;   // product cost per $ of gross on lines with a known cost
     const sh = ce.shopify || {}, feeRate = sh.net>0 ? sh.fees/sh.net : 0, fulO = sh.orders>0 ? sh.fulfil/sh.orders : 0;
     const econ = t => { const cogs = t.c + t.mg*cogsRate, fees = t.n*feeRate, ful = t.o*fulO, cm2 = t.n - cogs - fees - ful; return {cogs, cm2, cm2o: t.o>0 ? cm2/t.o : null, cm2p: t.n>0 ? cm2/t.n : null, aov: t.o>0 ? t.n/t.o : null, depth: t.g>0 ? t.d/t.g : null, newp: t.o>0 ? t.new/t.o : null, upo: t.o>0 ? t.u/t.o : null, refp: t.n>0 ? t.rf/t.n : null}; };
-    const typeOf = k => ((P.offers||{})[k]||{}).type || (k==='(no discount)' ? 'none' : 'auto');
+    const typeOf = k => k==='(no discount)' ? 'none' : (((P.offers||{})[k]||{}).type || 'auto');
     const lab = k => k==='(no discount)' ? tv('No offer / discount', 'Không ưu đãi / giảm giá') : k==='(single-use codes)' ? tv('Single-use codes', 'Mã dùng 1 lần') : / \(unique codes\)$/.test(k) ? k.replace('(unique codes)', tv('(one code per customer)', '(mã riêng từng khách)')) : k;
     const list = Object.keys(off).map(k=> ({k, t: off[k], e: econ(off[k]), type: typeOf(k)})).sort((p,q)=> q.t.n-p.t.n);
     const E = econ(all), none = list.find(x=> x.k==='(no discount)'), disc = list.filter(x=> x.k!=='(no discount)');
