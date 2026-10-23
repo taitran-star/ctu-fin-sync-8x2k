@@ -1114,6 +1114,9 @@
   .mk-whatif td.name{white-space:normal;min-width:200px;max-width:300px;}
   .mk-whatif td.how{white-space:normal;min-width:300px;max-width:460px;line-height:1.35;}
   .mk-sel{font:inherit;font-size:12px;color:var(--ink-primary);background:var(--surface-card);border:1px solid var(--border);border-radius:6px;padding:3px 6px;}
+  /* ---- V12.15: delta next to a TikTok content figure ---- */
+  .mk-m b .mk-d{display:inline-block;margin-left:8px;font-size:12px;font-family:var(--font-body);text-transform:none;letter-spacing:0;color:inherit;vertical-align:middle;}
+  .mk-m b .mk-d.good{color:var(--success-text);} .mk-m b .mk-d.bad{color:var(--status-critical);}
   /* ---- V12.10.1 ---- */
   .mk-outside{margin-top:10px;font-size:12px;line-height:1.5;color:var(--ink-secondary);}
   /* ---- V12.9: Marketing hub ---- */
@@ -1654,7 +1657,7 @@
     return load(k, 1).then(function(j){ window.__LIVE[k] = j; }).catch(function(e){ window.__LIVE[k] = null; window.__LIVE_ERR[k] = String(e && e.message || e); }).then(tick);
   })); }).then(function(){
     window.__LOADED_AT = Date.now();
-    var s = document.createElement('script'); s.src = '/pnl.js?v=0b101bc3ad';
+    var s = document.createElement('script'); s.src = '/pnl.js?v=aa06655eee';
     s.onload = function(){
       var box = document.getElementById('siteLoad'); if(box) box.remove();
       var pill = document.getElementById('siteRefresh'); var at = document.getElementById('siteLoadedAt');
