@@ -650,11 +650,23 @@ CREATIVES_ENABLED = os.environ.get("META_CREATIVES", "1").strip() not in ("0", "
 CREATIVE_DAYS = int(os.environ.get("META_CREATIVE_DAYS", "35"))
 CREATIVES_PATH = os.environ.get("META_CREATIVES_PATH", "data/meta_creatives.json")
 CREATIVE_FIELDS = ["spend", "impressions", "link_clicks", "purchases", "purchase_value", "video_3s", "thruplay", "add_to_cart", "clicks"]
+CREATIVE_MIN_SPEND = float(os.environ.get("META_CREATIVE_MIN_SPEND", "25"))   # smaller ads (window spend) are folded into "other"
+CREATIVE_MAX_ADS = int(os.environ.get("META_CREATIVE_MAX_ADS", "600"))
+
+
+CREATIVE_BUDGET_S = int(os.environ.get("META_CREATIVE_BUDGET_S", "420"))   # the whole creative step must finish within this
+_CRE_DEADLINE = [None]
+
+
+def _check_budget():
+    if _CRE_DEADLINE[0] and time.time() > _CRE_DEADLINE[0]:
+        raise RuntimeError(f"creative step over its {CREATIVE_BUDGET_S}s budget - stopped (meta_ads.json is already written)")
 
 
 def _paged(url, params):
     out = []
     while True:
+        _check_budget()
         resp = graph_get(url, params) if params else graph_get(url, None)
         out.extend(resp.get("data", []) or [])
         nxt = (resp.get("paging") or {}).get("next")
@@ -663,11 +675,38 @@ def _paged(url, params):
         url, params = nxt, None
 
 
+def _insights_async(account_id, params):
+    """Ad-level insights as an async report job (Meta's way for heavy queries): POST /act/insights -> report_run_id,
+    poll until 'Job Completed', then read its rows. Falls back to the plain (sync) call when the job cannot start."""
+    url = f"{GRAPH_HOST}/{API_VERSION}/{account_id}/insights"
+    try:
+        req = urllib.request.Request(url, data=urllib.parse.urlencode(params).encode(), method="POST")
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            rid = json.loads(resp.read().decode()).get("report_run_id")
+    except Exception as e:  # noqa: BLE001
+        log(f"async insights job could not start ({str(e)[:120]}) - plain call instead")
+        rid = None
+    if not rid:
+        return _paged(url, params)
+    log(f"ad-level async job started ({params.get('fields', '')[:48]}...)")
+    while True:
+        _check_budget()
+        time.sleep(5)
+        st = graph_get(f"{GRAPH_HOST}/{API_VERSION}/{rid}", {"access_token": params["access_token"], "fields": "async_status,async_percent_completion"})
+        status = st.get("async_status")
+        if status == "Job Completed":
+            break
+        if status in ("Job Failed", "Job Skipped"):
+            raise RuntimeError(f"async insights job {status}")
+    return _paged(f"{GRAPH_HOST}/{API_VERSION}/{rid}/insights", {"access_token": params["access_token"], "limit": 500})
+
+
 def fetch_ad_daily(token, account_id, since, until, ads):
     url = f"{GRAPH_HOST}/{API_VERSION}/{account_id}/insights"
     base = {"access_token": token, "level": "ad", "time_increment": 1, "limit": 500,
-            "time_range": json.dumps({"since": since, "until": until})}
-    rows = _paged(url, dict(base, fields="ad_id,ad_name,adset_id,adset_name,campaign_id,campaign_name,date_start,spend,impressions,clicks"))
+            "time_range": json.dumps({"since": since, "until": until}),
+            "filtering": json.dumps([{"field": "spend", "operator": "GREATER_THAN", "value": 0}])}
+    rows = _insights_async(account_id, dict(base, fields="ad_id,ad_name,adset_id,adset_name,campaign_id,campaign_name,date_start,spend,impressions,clicks"))
     for r in rows:
         aid, day = r.get("ad_id"), r.get("date_start")
         if not aid or not day:
@@ -681,7 +720,7 @@ def fetch_ad_daily(token, account_id, since, until, ads):
     conv = dict(base, fields="ad_id,date_start,inline_link_clicks,actions,action_values,video_thruplay_watched_actions")
     if ATTRIBUTION:
         conv["action_attribution_windows"] = json.dumps([w.strip() for w in ATTRIBUTION.split(",") if w.strip()])
-    for r in _paged(url, conv):
+    for r in _insights_async(account_id, conv):
         aid, day = r.get("ad_id"), r.get("date_start")
         if not aid or not day:
             continue
@@ -705,55 +744,77 @@ def fetch_ad_window(token, account_id, since, until):
     """{ad_id: {r reach, f frequency, i impressions, s spend}} for one whole range (unique reach)."""
     url = f"{GRAPH_HOST}/{API_VERSION}/{account_id}/insights"
     params = {"access_token": token, "level": "ad", "limit": 500, "time_range": json.dumps({"since": since, "until": until}),
-              "fields": "ad_id,reach,frequency,impressions,spend"}
+              "fields": "ad_id,reach,frequency,impressions,spend", "filtering": json.dumps([{"field": "spend", "operator": "GREATER_THAN", "value": 0}])}
     out = {}
-    for r in _paged(url, params):
+    for r in _insights_async(account_id, params):
         if r.get("ad_id"):
             out[r["ad_id"]] = {"r": to_int(r.get("reach")), "f": round(to_float(r.get("frequency")), 2),
                                "i": to_int(r.get("impressions")), "s": round(to_float(r.get("spend")), 2)}
     return out
 
 
-def fetch_ad_objects(token, ids):
-    """Status, start date and creative thumbnail of each ad (batches of 50 ids)."""
-    out, creatives = {}, {}
+def _get_ids(token, ids, fields, extra=None):
+    """GET /?ids=... in batches of 50; a batch that fails (e.g. one deleted ad -> error #100) is split in halves
+    until the bad id is isolated and dropped."""
+    out = {}
+
+    def go(chunk):
+        if not chunk:
+            return
+        _check_budget()
+        try:
+            resp = graph_get(f"{GRAPH_HOST}/{API_VERSION}/", dict({"access_token": token, "ids": ",".join(chunk), "fields": fields}, **(extra or {})))
+            out.update({k: v for k, v in (resp or {}).items() if isinstance(v, dict)})
+        except (Exception, SystemExit):  # noqa: BLE001
+            if len(chunk) > 1:
+                mid = len(chunk) // 2
+                go(chunk[:mid])
+                go(chunk[mid:])
     ids = list(ids)
     for i in range(0, len(ids), 50):
-        chunk = ids[i:i + 50]
-        resp = graph_get(f"{GRAPH_HOST}/{API_VERSION}/", {"access_token": token, "ids": ",".join(chunk),
-                                                         "fields": "effective_status,created_time,creative{id,object_type}"})
-        for aid, o in (resp or {}).items():
-            if not isinstance(o, dict):
-                continue
-            cr = o.get("creative") or {}
-            out[aid] = {"st": o.get("effective_status"), "ct": (o.get("created_time") or "")[:10], "cr": cr.get("id"), "ty": cr.get("object_type")}
-            if cr.get("id"):
-                creatives[cr["id"]] = None
-    cids = list(creatives)
-    for i in range(0, len(cids), 50):
-        chunk = cids[i:i + 50]
-        try:
-            resp = graph_get(f"{GRAPH_HOST}/{API_VERSION}/", {"access_token": token, "ids": ",".join(chunk), "fields": "thumbnail_url",
-                                                             "thumbnail_width": 96, "thumbnail_height": 96})
-        except (Exception, SystemExit) as e:  # noqa: BLE001 - thumbnails are a nicety
-            log(f"creative thumbnails skipped: {str(e)[:120]}")
-            break
-        for cid, o in (resp or {}).items():
-            if isinstance(o, dict):
-                creatives[cid] = o.get("thumbnail_url")
+        go(ids[i:i + 50])
+    return out
+
+
+def fetch_ad_objects(token, ids):
+    """Status, start date and creative thumbnail of each ad."""
+    out, creatives = {}, {}
+    for aid, o in _get_ids(token, ids, "effective_status,created_time,creative{id,object_type}").items():
+        cr = o.get("creative") or {}
+        out[aid] = {"st": o.get("effective_status"), "ct": (o.get("created_time") or "")[:10], "cr": cr.get("id"), "ty": cr.get("object_type")}
+        if cr.get("id"):
+            creatives[cr["id"]] = None
+    for cid, o in _get_ids(token, list(creatives), "thumbnail_url", {"thumbnail_width": 96, "thumbnail_height": 96}).items():
+        creatives[cid] = o.get("thumbnail_url")
     for o in out.values():
         o["th"] = creatives.get(o.pop("cr", None) or "")
     return out
 
 
 def write_creatives(token, account_ids, now_local, currency):
+    _CRE_DEADLINE[0] = time.time() + CREATIVE_BUDGET_S
     today = now_local.strftime("%Y-%m-%d")
     day = lambda n: (now_local - timedelta(days=n)).strftime("%Y-%m-%d")
     since = day(CREATIVE_DAYS - 1)
     ads, rows, windows = {}, 0, {"w7": (day(6), today), "w7p": (day(13), day(7)), "w28": (day(27), today)}
     for account_id in account_ids:
         rows += fetch_ad_daily(token, account_id, since, today, ads)
-    ads = {k: v for k, v in ads.items() if sum(d[0] for d in v.get("d", {}).values()) > 0.005}
+    spend_of = {k: sum(d[0] for d in v.get("d", {}).values()) for k, v in ads.items()}
+    ranked = sorted((k for k in ads if spend_of[k] > 0.005), key=lambda k: -spend_of[k])
+    keep_set = set([k for k in ranked if spend_of[k] >= CREATIVE_MIN_SPEND][:CREATIVE_MAX_ADS])
+    other = {"n": 0, "spend": 0.0, "d": {}}
+    for k in ranked:
+        if k in keep_set:
+            continue
+        other["n"] += 1
+        other["spend"] += spend_of[k]
+        for day, v in ads[k]["d"].items():
+            t = other["d"].setdefault(day, [0.0] * len(CREATIVE_FIELDS))
+            for j in range(len(CREATIVE_FIELDS)):
+                t[j] += v[j]
+    other["d"] = {k: [round(x, 2) if j in (0, 4) else int(round(x)) for j, x in enumerate(v)] for k, v in sorted(other["d"].items())}
+    other["spend"] = round(other["spend"], 2)
+    ads = {k: v for k, v in ads.items() if k in keep_set}
     for wk, (a, b) in windows.items():
         merged = {}
         for account_id in account_ids:
@@ -773,11 +834,12 @@ def write_creatives(token, account_ids, now_local, currency):
     out = {"schema": 1, "source": "meta_marketing_api", "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
            "currency": currency or "USD", "timezone": REPORT_TIMEZONE, "window": {"start": since, "end": today},
            "windows": {k: {"start": a, "end": b} for k, (a, b) in windows.items()}, "fields": CREATIVE_FIELDS,
-           "attribution": ATTRIBUTION or "account default", "ads": dict(sorted(ads.items())),
-           "meta": {"script_version": "2.7", "rows": rows, "ads": len(ads)}}
+           "attribution": ATTRIBUTION or "account default", "ads": dict(sorted(ads.items())), "other": other,
+           "min_spend": CREATIVE_MIN_SPEND,
+           "meta": {"script_version": "2.7.1", "rows": rows, "ads": len(ads)}}
     with open(CREATIVES_PATH, "w") as f:
         json.dump(out, f, separators=(",", ":"), sort_keys=True)
-    log(f"Wrote {CREATIVES_PATH}: {len(ads)} ads with spend, {rows} ad-day rows ({since}..{today}).")
+    log(f"Wrote {CREATIVES_PATH}: {len(ads)} ads kept (+{other['n']} small ads folded, ${other['spend']:.0f}), {rows} ad-day rows ({since}..{today}).")
 
 
 def main():
@@ -913,7 +975,7 @@ def main():
         "products": products,
         "meta": {
             "schema": 2 if CAMPAIGNS_ENABLED else 1,
-            "script_version": "2.7",   # 2.7 = + data/meta_creatives.json (ad level); 2.3 = history across runs + backfill; 2.4 = refuses answers without spend; 2.5/2.6 = delivery and conversions (+ link clicks) fetched separately
+            "script_version": "2.7.1",   # 2.7 = + data/meta_creatives.json (ad level); 2.7.1 = ad level via async report jobs + 7-minute budget; 2.3 = history across runs + backfill; 2.4 = refuses answers without spend; 2.5/2.6 = delivery and conversions (+ link clicks) fetched separately
             "history": hist,
             "campaign_rows": campaign_rows,
             "rows_processed": rows_total,
@@ -928,10 +990,18 @@ def main():
         json.dump(out, f, indent=2, sort_keys=True)
     log(f"Wrote {OUTPUT_PATH} ({rows_total} rows, {len(daily)} days, currency {out['currency']}, {len(warnings)} warning types).")
     if CREATIVES_ENABLED and mode == "rolling":
+        import signal
+
+        def _alarm(signum, frame):
+            raise TimeoutError("creative step hit its hard time limit")
         try:
+            signal.signal(signal.SIGALRM, _alarm)
+            signal.alarm(CREATIVE_BUDGET_S + 60)   # a single hung request cannot hold the job (or the next syncs) hostage
             write_creatives(token, account_ids, now_local, currency)
         except (Exception, SystemExit) as e:  # noqa: BLE001 - creative detail must never fail the sync
             log(f"WARNING: creative-level file not updated: {str(e)[:300]}")
+        finally:
+            signal.alarm(0)
 
 
 if __name__ == "__main__":

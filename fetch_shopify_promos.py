@@ -42,7 +42,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "1.0"
+SCRIPT_VERSION = "1.0.1"
 OUTPUT_PATH = os.environ.get("PROMO_OUTPUT_PATH", "data/shopify_promos.json")
 COGS_SKUS_PATH = os.environ.get("COGS_SKUS_PATH", "data/cogs_skus.json")
 WINDOW_DAYS = int(os.environ.get("PROMO_WINDOW_DAYS", "14"))
@@ -150,7 +150,7 @@ class Agg:
     def __init__(self, tz, start, end, landed):
         self.tz, self.start, self.end, self.landed = tz, start, end, landed
         self.orders = []      # (day, primary, apps {key: disc}, numbers) - grouped after the code clean-up
-        self.types = {}
+        self.types = {NO_DISCOUNT: "none"}
         self.counts = {"seen": 0, "kept": 0, "test": 0, "cancelled": 0, "out_of_window": 0, "lines_truncated": 0}
 
     def add(self, o):
@@ -223,7 +223,7 @@ class Agg:
                 for k in ks:
                     out[k] = f"{p}… (unique codes)"
         for k, n in codes.items():
-            if k not in out and n == 1 and len(k) >= 10 and re.match(r"^[A-Z0-9]+$", k) and re.search(r"\d", k):
+            if k not in out and n == 1 and len(k) >= 10 and re.match(r"^[A-Z0-9-]+$", k) and re.search(r"\d", k):
                 out[k] = SINGLE_USE
         return out
 
