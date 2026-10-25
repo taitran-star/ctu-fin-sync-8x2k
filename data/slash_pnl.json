@@ -1,23 +1,23 @@
 {
  "schema": 1,
- "generated_at": "2026-10-24T17:01:06Z",
+ "generated_at": "2026-10-25T17:14:19Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.3",
   "from": "2026-04-01",
-  "to": "2026-10-24",
+  "to": "2026-10-25",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 2838,
-  "charges": 673,
+  "transactions_read": 2850,
+  "charges": 675,
   "stats": {
-   "status:posted": 2187,
+   "status:posted": 2192,
    "rail:rtp": 6,
    "rail:ach": 765,
-   "rail:fee": 90,
+   "rail:fee": 91,
    "rail:wire": 29,
-   "status:failed": 648,
-   "rail:card": 1564,
-   "rail:other": 384,
+   "status:failed": 655,
+   "rail:card": 1573,
+   "rail:other": 386,
    "status:pending": 3
   },
   "lines": {
@@ -124,11 +124,11 @@
   },
   "2026-10": {
    "AGENCY": 30000.0,
-   "AI": 3567.49,
+   "AI": 3587.49,
    "CRE": 4100.0,
    "EDU": 247.0,
    "KLV": 2315.0,
-   "MC": 8710.84,
+   "MC": 8830.84,
    "MT": 629.77,
    "SHOP": 7128.47,
    "SUP": 7014.8,
@@ -4968,6 +4968,20 @@
    "v": "Klaviyo",
    "l": "KLV",
    "a": 2315.0,
+   "k": "card"
+  },
+  {
+   "d": "2026-10-24",
+   "v": "Grok / xAI",
+   "l": "AI",
+   "a": 20.0,
+   "k": "card"
+  },
+  {
+   "d": "2026-10-24",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 120.0,
    "k": "card"
   },
   {
