@@ -39,7 +39,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "1.3"
+SCRIPT_VERSION = "1.4"   # 1.4 = marketing groups per MKT team (22-27/10/2026), billing cycles + service-month accrual, Tremendous = Snowball wallet top-up
 SCHEMA = 1
 API_KEY = os.environ.get("SLASH_API_KEY", "").strip()
 BASE = os.environ.get("SLASH_BASE_URL", "https://api.slash.com").rstrip("/")
@@ -54,7 +54,8 @@ LINES = {
     "MT": "Marketing tools (tracking, attribution, ad libraries)",
     "MC": "AI content production (video / image / audio)",
     "AGENCY": "Marketing agency (creative / media)",
-    "CRE": "Creators / UGC payouts",
+    "CRE": "Creators / UGC payouts (Insense, Billo, MossCreator, direct)",
+    "SBW": "Tremendous top-ups = prepaid wallet Snowball pays creator commissions from - NOT an expense (the commission is on the P&L from Shopify referral tags x 1.04)",
     "DSP": "Amazon DSP top-ups",
     "UPW": "Upwork / freelancers",
     "TAX": "Accounting / tax filing fees (Numeral, registered agent)",
@@ -64,13 +65,16 @@ LINES = {
     "SUP": "Packaging supplies (Uline)",
     "ADS": "Ad platforms charged on the card (already on the P&L from the ad APIs)",
 }
-KEEP_CHARGES = {"SHOP", "SW", "AI", "MT", "MC", "AGENCY", "CRE", "DSP", "UPW", "TAX", "LEGAL", "KLV", "EDU", "SUP"}
+KEEP_CHARGES = {"SHOP", "SW", "AI", "MT", "MC", "AGENCY", "CRE", "SBW", "DSP", "UPW", "TAX", "LEGAL", "KLV", "EDU", "SUP"}
 
-# (regex on description / merchant / memo, vendor, line) - first match wins
+# (regex on description / merchant / memo, vendor, line) - first match wins.
+# Lines of 21 apps follow the marketing team's classification of 22-27/10/2026 (file Phan_nhom_app_the_cho_MKT):
+# OpenRouter / Anthropic / Claude Team / Apify / Firecrawl / Grok / Vast.ai / Nous / Hostinger / Alibaba Cloud -> MC;
+# Adobe / Canva / Figma / Replo / Cloudflare / DigitalOcean / BrowserStack / Sellerboard / Helium 10 / Webshare -> MT (Skool stays EDU = training line).
 RULES = [
     (r"goodo|gattozzi", "Goodo Studios", "AGENCY"), (r"adcrate|ad crate", "Adcrate", "AGENCY"),
     (r"sparkx", "SparkX (Amazon DSP)", "DSP"),
-    (r"tremendous", "Tremendous (creator payouts)", "CRE"), (r"insense", "Insense (UGC)", "CRE"), (r"billo", "Billo (UGC)", "CRE"),
+    (r"tremendous", "Tremendous (Snowball wallet top-up)", "SBW"), (r"insense", "Insense (UGC)", "CRE"), (r"billo", "Billo (UGC)", "CRE"),
     (r"mosscreator|moss creator", "MossCreator", "CRE"),
     (r"shopify", "Shopify", "SHOP"), (r"klaviyo", "Klaviyo", "KLV"),
     (r"facebk|facebook|meta platforms", "Meta Ads", "ADS"), (r"applovin", "AppLovin Ads", "ADS"),
@@ -95,20 +99,20 @@ RULES = [
     (r"artlist", "Artlist", "MC"), (r"epidemic sound", "Epidemic Sound", "MC"), (r"elevenlabs", "ElevenLabs", "MC"),
     (r"capcut", "CapCut", "MC"), (r"fal\.ai", "fal.ai", "MC"), (r"meshy", "Meshy", "MC"), (r"pika", "Pika", "MC"),
     (r"twelve ?labs", "Twelve Labs", "MC"),
-    (r"openrouter", "OpenRouter", "AI"), (r"openai|chatgpt", "OpenAI", "AI"), (r"claude team", "Claude Team", "AI"),
-    (r"anthropic|claude", "Anthropic / Claude", "AI"), (r"nous research", "Nous Research", "AI"), (r"vast\.ai", "Vast.ai", "AI"),
-    (r"manus", "Manus AI", "AI"), (r"cursor", "Cursor", "AI"), (r"replit", "Replit", "AI"), (r"apify", "Apify", "AI"),
-    (r"firecrawl", "Firecrawl", "AI"), (r"grok|x\.ai|xai", "Grok / xAI", "AI"),
+    (r"openrouter", "OpenRouter", "MC"), (r"openai|chatgpt", "OpenAI", "AI"), (r"claude team", "Claude Team", "MC"),
+    (r"anthropic|claude", "Anthropic / Claude", "MC"), (r"nous research", "Nous Research", "MC"), (r"vast\.ai", "Vast.ai", "MC"),
+    (r"manus", "Manus AI", "AI"), (r"cursor", "Cursor", "AI"), (r"replit", "Replit", "AI"), (r"apify", "Apify", "MC"),
+    (r"firecrawl", "Firecrawl", "MC"), (r"grok|x\.ai|xai", "Grok / xAI", "MC"),
     (r"notion", "Notion", "SW"), (r"slack", "Slack", "SW"), (r"sqsp|squarespace", "Squarespace / Google Workspace", "SW"),
-    (r"adobe", "Adobe", "SW"), (r"canva", "Canva", "SW"), (r"figma", "Figma", "SW"), (r"zoom", "Zoom", "SW"),
+    (r"adobe", "Adobe", "MT"), (r"canva", "Canva", "MT"), (r"figma", "Figma", "MT"), (r"zoom", "Zoom", "SW"),
     (r"calendly", "Calendly", "SW"), (r"loom", "Loom", "SW"), (r"microsoft|skype", "Microsoft 365", "SW"),
     (r"google one", "Google One", "SW"), (r"n8n", "n8n Cloud", "SW"), (r"zapier", "Zapier", "SW"), (r"sync2sheet", "Sync2Sheet", "SW"),
     (r"timedoctor|time doctor", "Time Doctor", "SW"), (r"pandadoc", "PandaDoc", "SW"), (r"pacdora", "Pacdora", "SW"),
     (r"pdfaid|pdfcustomers|pdffiller|sgt\*", "PDF tools", "SW"), (r"quickbooks|intuit", "QuickBooks", "SW"),
-    (r"hostinger", "Hostinger", "SW"), (r"cloudflare", "Cloudflare", "SW"), (r"digitalocean", "DigitalOcean", "SW"),
-    (r"browserstack", "BrowserStack", "SW"), (r"alibaba cloud", "Alibaba Cloud", "SW"), (r"webshare|lumiproxy", "Webshare proxy", "SW"),
-    (r"surfshark|expressvpn", "VPN", "SW"), (r"replo", "Replo", "SW"), (r"sellerboard", "Sellerboard", "SW"),
-    (r"helium", "Helium 10", "SW"), (r"goodloading", "Goodloading", "SW"), (r"atlassian|jira", "Atlassian", "SW"),
+    (r"hostinger", "Hostinger", "MC"), (r"cloudflare", "Cloudflare", "MT"), (r"digitalocean", "DigitalOcean", "MT"),
+    (r"browserstack", "BrowserStack", "MT"), (r"alibaba cloud", "Alibaba Cloud", "MC"), (r"webshare|lumiproxy", "Webshare proxy", "MT"),
+    (r"surfshark|expressvpn", "VPN", "SW"), (r"replo", "Replo", "MT"), (r"sellerboard", "Sellerboard", "MT"),
+    (r"helium", "Helium 10", "MT"), (r"goodloading", "Goodloading", "SW"), (r"atlassian|jira", "Atlassian", "SW"),
     (r"paddle", "App billed via Paddle", "SW"), (r"github", "GitHub", "SW"), (r"tiger-roar", "tiger-roar.net", "SW"),
     (r"pdfcustomers", "PDF tools", "SW"),
 ]
@@ -122,6 +126,50 @@ SKIP = re.compile(
     r"facebook|meta platforms|google ads|amazon advertising|applovin|walmart|tiktok|"
     r"shopify paym|paypal|afterpay|amazon\.c|stripe|slash fee|slash subscription|wire transfer fee|foreign transaction fee",
     re.I)
+
+
+# Billing cycle per vendor (marketing team, 22-27/10/2026): M = monthly, Y = yearly (spread over 12 months of service
+# starting the charge month), H = 6 months (spread 6), Q = quarterly (spread 3), W = weekly, U = usage-based top-ups /
+# credits, O = one-off. Vendors not listed = M. Amount thresholds: Hostinger >= $400 and CapCut >= $100 are yearly plans.
+CYCLE_CODES = {"M": "monthly", "Y": "yearly, spread over 12 months", "H": "6-month plan, spread over 6 months",
+               "Q": "quarterly, spread over 3 months", "W": "weekly", "U": "usage / credits", "O": "one-off"}
+CYCLE = {
+    "Tremendous (Snowball wallet top-up)": "U", "Higgsfield": "U", "Insense (UGC)": "U", "MossCreator": "U", "Billo (UGC)": "U",
+    "Twelve Labs": "U", "OpenRouter": "U", "Anthropic / Claude": "U", "Apify": "U", "Vast.ai": "U", "Grok / xAI": "U",
+    "DigitalOcean": "U", "Nous Research": "U", "Uline": "U", "SparkX (Amazon DSP)": "U",
+    "Intelligems": "H",
+    "AdsPower": "Y", "ElevenLabs": "Y", "Epidemic Sound": "Y", "Helium 10": "Y", "Webshare proxy": "Y", "GS1 US": "Y",
+    "Harvard Business Services": "Y", "Delaware Business Incorporators": "Y", "Hostinger": "Y",
+    "Upwork": "W",
+    "Madgicx": "O", "DuoPlus": "O", "VPN": "O", "Daily Mentor": "O", "tiger-roar.net": "O", "Alibaba Cloud": "O", "Morris Nichols (lawyers)": "O",
+}
+AMOUNT_OVERRIDE = {"Hostinger": (400.0, "Y", "M"), "CapCut": (100.0, "Y", "M")}   # vendor: (threshold, cycle if >=, cycle if <)
+SPREAD = {"Y": 12, "H": 6, "Q": 3}
+
+
+def cycle_of(vendor, amt):
+    if vendor in AMOUNT_OVERRIDE:
+        th, big, small = AMOUNT_OVERRIDE[vendor]
+        return big if amt >= th else small
+    return CYCLE.get(vendor, "M")
+
+
+def month_add(m, n):
+    y, mm = int(m[:4]), int(m[5:7]) + n
+    y += (mm - 1) // 12
+    mm = (mm - 1) % 12 + 1
+    return "%04d-%02d" % (y, mm)
+
+
+def spread_months(day, amt, cy):
+    """[(service month, amount)] - yearly / 6-month / quarterly plans are spread evenly from the charge month."""
+    n = SPREAD.get(cy, 1)
+    if n == 1 or abs(amt) < 0.005:
+        return [(day[:7], amt)]
+    part = round(amt / n, 2)
+    out = [(month_add(day[:7], i), part) for i in range(n)]
+    out[-1] = (out[-1][0], round(amt - part * (n - 1), 2))   # rounding remainder on the last month
+    return out
 
 
 def classify(text):
@@ -251,7 +299,7 @@ def main():
     print("fetched", len(raw), "transactions")
     payee = api.payees(start, end) if api.entity else {}
 
-    charges, monthly = [], defaultdict(lambda: defaultdict(float))
+    charges, monthly, accrual = [], defaultdict(lambda: defaultdict(float)), defaultdict(lambda: defaultdict(float))
     unk_card, unk_xfer, pending = defaultdict(lambda: [0.0, 0]), defaultdict(lambda: [0.0, 0]), defaultdict(float)
     stats = defaultdict(int)
     for t in raw:
@@ -296,7 +344,14 @@ def main():
             continue                              # Shopify payouts / transfers are not app charges
         monthly[day[:7]][line] += amt
         c = {"d": day, "v": vendor, "l": line, "a": round(amt, 2), "k": r}
-        if line in ("AGENCY", "CRE", "DSP", "LEGAL"):
+        cy = cycle_of(vendor, amt)
+        c["cy"] = cy
+        sp = spread_months(day, amt, cy)
+        if len(sp) > 1:
+            c["sp"] = [[m, v] for m, v in sp]
+        for m, v in sp:
+            accrual[m][line] += v
+        if line in ("AGENCY", "CRE", "SBW", "DSP", "LEGAL"):
             c["memo"] = (t.get("memo") or "")[:80]
             c["desc"] = (t.get("description") or "")[:70]
             if who:
@@ -311,10 +366,13 @@ def main():
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "meta": {"source": "Slash API (read-only key)", "script_version": SCRIPT_VERSION, "from": HISTORY_START,
                  "to": end.date().isoformat(), "timezone": TZ, "transactions_read": len(raw), "charges": len(charges),
-                 "stats": dict(stats), "lines": LINES,
+                 "stats": dict(stats), "lines": LINES, "cycle_codes": CYCLE_CODES, "cycles": CYCLE, "amount_override": {k: list(v) for k, v in AMOUNT_OVERRIDE.items()},
                  "note": "Positive = money out. Only app / marketing-vendor / Upwork / Numeral charges are listed; "
-                         "suppliers, taxes, ad platforms, payouts and balances are never written."},
+                         "suppliers, taxes, ad platforms, payouts and balances are never written. "
+                         "monthly = by charge date; accrual = by month of service (yearly / 6-month / quarterly plans spread evenly from the charge month; "
+                         "charges[].cy = billing cycle, charges[].sp = [month, amount] split when spread). SBW (Tremendous) is a wallet top-up, not a cost."},
         "monthly": {m: {k: round(v, 2) for k, v in sorted(x.items())} for m, x in sorted(monthly.items())},
+        "accrual": {m: {k: round(v, 2) for k, v in sorted(x.items())} for m, x in sorted(accrual.items())},
         "pending": {k: round(v, 2) for k, v in pending.items()},
         "charges": charges,
         "unclassified_card": sorted([{"v": k[0], "m": k[1], "a": round(v[0], 2), "n": v[1]} for k, v in unk_card.items()],
