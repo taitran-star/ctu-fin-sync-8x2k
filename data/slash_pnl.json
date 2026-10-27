@@ -1,24 +1,24 @@
 {
  "schema": 1,
- "generated_at": "2026-10-26T19:35:33Z",
+ "generated_at": "2026-10-27T10:16:14Z",
  "meta": {
   "source": "Slash API (read-only key)",
-  "script_version": "1.3",
+  "script_version": "1.4",
   "from": "2026-04-01",
-  "to": "2026-10-26",
+  "to": "2026-10-27",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 2878,
-  "charges": 681,
+  "transactions_read": 2888,
+  "charges": 684,
   "stats": {
-   "status:posted": 2206,
+   "status:posted": 2211,
    "rail:rtp": 6,
-   "rail:ach": 778,
+   "rail:ach": 781,
    "rail:fee": 91,
    "rail:wire": 29,
-   "status:failed": 663,
-   "rail:card": 1586,
-   "rail:other": 388,
-   "status:pending": 9
+   "status:failed": 665,
+   "rail:card": 1591,
+   "rail:other": 390,
+   "status:pending": 12
   },
   "lines": {
    "SHOP": "Shopify plan + apps billed by Shopify",
@@ -27,7 +27,8 @@
    "MT": "Marketing tools (tracking, attribution, ad libraries)",
    "MC": "AI content production (video / image / audio)",
    "AGENCY": "Marketing agency (creative / media)",
-   "CRE": "Creators / UGC payouts",
+   "CRE": "Creators / UGC payouts (Insense, Billo, MossCreator, direct)",
+   "SBW": "Tremendous top-ups = prepaid wallet Snowball pays creator commissions from - NOT an expense (the commission is on the P&L from Shopify referral tags x 1.04)",
    "DSP": "Amazon DSP top-ups",
    "UPW": "Upwork / freelancers",
    "TAX": "Accounting / tax filing fees (Numeral, registered agent)",
@@ -37,109 +38,310 @@
    "SUP": "Packaging supplies (Uline)",
    "ADS": "Ad platforms charged on the card (already on the P&L from the ad APIs)"
   },
-  "note": "Positive = money out. Only app / marketing-vendor / Upwork / Numeral charges are listed; suppliers, taxes, ad platforms, payouts and balances are never written."
+  "cycle_codes": {
+   "M": "monthly",
+   "Y": "yearly, spread over 12 months",
+   "H": "6-month plan, spread over 6 months",
+   "Q": "quarterly, spread over 3 months",
+   "W": "weekly",
+   "U": "usage / credits",
+   "O": "one-off"
+  },
+  "cycles": {
+   "Tremendous (Snowball wallet top-up)": "U",
+   "Higgsfield": "U",
+   "Insense (UGC)": "U",
+   "MossCreator": "U",
+   "Billo (UGC)": "U",
+   "Twelve Labs": "U",
+   "OpenRouter": "U",
+   "Anthropic / Claude": "U",
+   "Apify": "U",
+   "Vast.ai": "U",
+   "Grok / xAI": "U",
+   "DigitalOcean": "U",
+   "Nous Research": "U",
+   "Uline": "U",
+   "SparkX (Amazon DSP)": "U",
+   "Intelligems": "H",
+   "AdsPower": "Y",
+   "ElevenLabs": "Y",
+   "Epidemic Sound": "Y",
+   "Helium 10": "Y",
+   "Webshare proxy": "Y",
+   "GS1 US": "Y",
+   "Harvard Business Services": "Y",
+   "Delaware Business Incorporators": "Y",
+   "Hostinger": "Y",
+   "Upwork": "W",
+   "Madgicx": "O",
+   "DuoPlus": "O",
+   "VPN": "O",
+   "Daily Mentor": "O",
+   "tiger-roar.net": "O",
+   "Alibaba Cloud": "O",
+   "Morris Nichols (lawyers)": "O"
+  },
+  "amount_override": {
+   "Hostinger": [
+    400.0,
+    "Y",
+    "M"
+   ],
+   "CapCut": [
+    100.0,
+    "Y",
+    "M"
+   ]
+  },
+  "note": "Positive = money out. Only app / marketing-vendor / Upwork / Numeral charges are listed; suppliers, taxes, ad platforms, payouts and balances are never written. monthly = by charge date; accrual = by month of service (yearly / 6-month / quarterly plans spread evenly from the charge month; charges[].cy = billing cycle, charges[].sp = [month, amount] split when spread). SBW (Tremendous) is a wallet top-up, not a cost."
  },
  "monthly": {
   "2026-04": {
    "ADS_CARD": 270752.29,
-   "AI": 387.79,
+   "AI": 10.0,
    "EDU": 11732.95,
    "KLV": 2315.0,
-   "MC": 704.0,
-   "MT": 2514.35,
+   "MC": 1180.66,
+   "MT": 3665.45,
    "SHOP": 7200.16,
-   "SW": 2094.72,
+   "SW": 844.75,
    "UPW": 1249.07
   },
   "2026-05": {
    "ADS_CARD": 240511.55,
-   "AI": 3361.07,
-   "CRE": 8800.0,
+   "AI": 40.0,
    "EDU": 1728.95,
    "KLV": 2315.0,
    "LEGAL": 6563.88,
-   "MC": 3343.74,
-   "MT": 1789.09,
+   "MC": 6945.36,
+   "MT": 3305.46,
+   "SBW": 8800.0,
    "SHOP": 8170.67,
-   "SW": 3015.2,
+   "SW": 1218.28,
    "TAX": 2700.0,
    "UPW": 1313.37
   },
   "2026-06": {
    "ADS_CARD": 77997.13,
    "AGENCY": 10000.0,
-   "AI": 1878.59,
-   "CRE": 11700.0,
+   "AI": 40.0,
    "EDU": 1728.95,
    "KLV": 2315.0,
-   "MC": 2874.69,
-   "MT": 1878.76,
+   "MC": 4713.28,
+   "MT": 3322.04,
+   "SBW": 11700.0,
    "SHOP": 7593.21,
-   "SW": 2719.42,
+   "SW": 1276.14,
    "TAX": 2250.0,
    "UPW": 1556.98
   },
   "2026-07": {
    "ADS_CARD": 243261.14,
    "AGENCY": 0.0,
-   "AI": 1930.61,
-   "CRE": 7500.0,
+   "AI": 20.0,
+   "CRE": 1500.0,
    "EDU": 199.0,
    "KLV": 2430.0,
-   "MC": 2541.69,
-   "MT": 1849.31,
+   "MC": 4452.3,
+   "MT": 3308.01,
+   "SBW": 6000.0,
    "SHOP": 9820.02,
-   "SW": 2532.85,
+   "SW": 1074.15,
    "TAX": 4753.0,
    "UPW": 1448.09
   },
   "2026-08": {
    "ADS_CARD": 472168.27,
    "AGENCY": 10000.0,
-   "AI": 2645.74,
-   "CRE": 13868.0,
+   "CRE": 3568.0,
    "KLV": 2200.0,
-   "MC": 1487.26,
-   "MT": 3074.61,
+   "MC": 5287.54,
+   "MT": 4446.39,
+   "SBW": 10300.0,
    "SHOP": 7848.39,
    "SUP": 14005.76,
-   "SW": 3520.53,
+   "SW": 994.21,
    "TAX": 1650.0,
    "UPW": 1814.85
   },
   "2026-09": {
    "ADS_CARD": 432326.89,
    "AGENCY": 0.0,
-   "AI": 3553.83,
-   "CRE": 13964.0,
+   "CRE": 239.0,
    "EDU": 146.67,
    "KLV": 2430.0,
-   "MC": 2087.35,
-   "MT": 1943.69,
+   "MC": 6178.58,
+   "MT": 4448.12,
+   "SBW": 13725.0,
    "SHOP": 6562.54,
    "SUP": 7429.34,
-   "SW": 4416.17,
+   "SW": 1374.34,
    "TAX": 2297.0,
    "UPW": 1554.37
   },
   "2026-10": {
    "AGENCY": 30000.0,
-   "AI": 3587.49,
-   "CRE": 4100.0,
    "EDU": 247.0,
    "KLV": 2315.0,
-   "MC": 9310.84,
-   "MT": 629.77,
+   "MC": 13469.53,
+   "MT": 2050.22,
+   "SBW": 4100.0,
    "SHOP": 7128.47,
    "SUP": 7014.8,
-   "SW": 2731.59,
+   "SW": 1059.14,
    "TAX": 2400.0,
-   "UPW": 1276.4
+   "UPW": 1762.21
+  }
+ },
+ "accrual": {
+  "2026-04": {
+   "AI": 10.0,
+   "EDU": 11732.95,
+   "KLV": 2315.0,
+   "MC": 1180.66,
+   "MT": 2961.45,
+   "SHOP": 7200.16,
+   "SW": 844.75,
+   "UPW": 1249.07
+  },
+  "2026-05": {
+   "AI": 40.0,
+   "EDU": 1728.95,
+   "KLV": 2315.0,
+   "LEGAL": 6563.88,
+   "MC": 6945.36,
+   "MT": 3369.46,
+   "SBW": 8800.0,
+   "SHOP": 8170.67,
+   "SW": 1218.28,
+   "TAX": 2700.0,
+   "UPW": 1313.37
+  },
+  "2026-06": {
+   "AGENCY": 10000.0,
+   "AI": 40.0,
+   "EDU": 1728.95,
+   "KLV": 2315.0,
+   "MC": 4713.28,
+   "MT": 3386.04,
+   "SBW": 11700.0,
+   "SHOP": 7593.21,
+   "SW": 1276.14,
+   "TAX": 2250.0,
+   "UPW": 1556.98
+  },
+  "2026-07": {
+   "AGENCY": 0.0,
+   "AI": 20.0,
+   "CRE": 1500.0,
+   "EDU": 199.0,
+   "KLV": 2430.0,
+   "MC": 4306.13,
+   "MT": 3372.01,
+   "SBW": 6000.0,
+   "SHOP": 9820.02,
+   "SW": 1074.15,
+   "TAX": 4314.84,
+   "UPW": 1448.09
+  },
+  "2026-08": {
+   "AGENCY": 10000.0,
+   "CRE": 3568.0,
+   "KLV": 2200.0,
+   "MC": 4668.97,
+   "MT": 3665.49,
+   "SBW": 10300.0,
+   "SHOP": 7848.39,
+   "SUP": 14005.76,
+   "SW": 994.21,
+   "TAX": 1689.84,
+   "UPW": 1814.85
+  },
+  "2026-09": {
+   "AGENCY": 0.0,
+   "CRE": 239.0,
+   "EDU": 146.67,
+   "KLV": 2430.0,
+   "MC": 6249.31,
+   "MT": 3803.5,
+   "SBW": 13725.0,
+   "SHOP": 6562.54,
+   "SUP": 7429.34,
+   "SW": 1374.34,
+   "TAX": 2156.26,
+   "UPW": 1554.37
+  },
+  "2026-10": {
+   "AGENCY": 30000.0,
+   "EDU": 247.0,
+   "KLV": 2315.0,
+   "MC": 13126.66,
+   "MT": 2362.98,
+   "SBW": 4100.0,
+   "SHOP": 7128.47,
+   "SUP": 7014.8,
+   "SW": 1059.14,
+   "TAX": 2456.26,
+   "UPW": 1762.21
+  },
+  "2026-11": {
+   "MC": 108.33,
+   "MT": 312.76,
+   "TAX": 56.26
+  },
+  "2026-12": {
+   "MC": 108.33,
+   "MT": 312.76,
+   "TAX": 56.26
+  },
+  "2027-01": {
+   "MC": 108.33,
+   "MT": 312.76,
+   "TAX": 56.26
+  },
+  "2027-02": {
+   "MC": 108.33,
+   "MT": 143.78,
+   "TAX": 56.26
+  },
+  "2027-03": {
+   "MC": 108.33,
+   "MT": 143.78,
+   "TAX": 56.26
+  },
+  "2027-04": {
+   "MC": 108.33,
+   "MT": 79.78,
+   "TAX": 56.26
+  },
+  "2027-05": {
+   "MC": 108.33,
+   "MT": 79.78,
+   "TAX": 56.26
+  },
+  "2027-06": {
+   "MC": 108.31,
+   "MT": 79.78,
+   "TAX": 56.18
+  },
+  "2027-07": {
+   "MC": 95.06,
+   "MT": 79.78,
+   "TAX": 16.42
+  },
+  "2027-08": {
+   "MC": 37.6,
+   "MT": 79.8,
+   "TAX": 16.38
+  },
+  "2027-09": {
+   "MC": 37.6
   }
  },
  "pending": {
-  "UPW": 485.81,
-  "SHOP": -89532.59
+  "SHOP": -89532.59,
+  "MC": 120.0
  },
  "charges": [
   {
@@ -148,21 +350,24 @@
    "l": "SW",
    "a": 0.77,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
    "d": "2026-04-03",
    "v": "Adobe",
-   "l": "SW",
+   "l": "MT",
    "a": 34.49,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-03",
    "v": "Daily Mentor",
    "l": "EDU",
    "a": 10203.0,
-   "k": "card"
+   "k": "card",
+   "cy": "O"
   },
   {
    "d": "2026-04-05",
@@ -170,6 +375,7 @@
    "l": "SW",
    "a": 232.11,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
@@ -177,154 +383,176 @@
    "v": "Higgsfield",
    "l": "MC",
    "a": 15.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-04-08",
    "v": "Adobe",
-   "l": "SW",
+   "l": "MT",
    "a": 775.91,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-09",
    "v": "Claude Team",
-   "l": "AI",
+   "l": "MC",
    "a": 5.7,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-09",
    "v": "Claude Team",
-   "l": "AI",
+   "l": "MC",
    "a": 5.7,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-09",
    "v": "Claude Team",
-   "l": "AI",
+   "l": "MC",
    "a": 5.7,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-09",
    "v": "Foreplay",
    "l": "MT",
    "a": 248.35,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-09",
    "v": "Northbeam",
    "l": "MT",
    "a": 1000.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-09",
    "v": "Notion",
    "l": "SW",
    "a": 408.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-10",
    "v": "Pacdora",
    "l": "SW",
    "a": 14.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-10",
    "v": "Upwork",
    "l": "UPW",
    "a": 407.26,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-04-12",
    "v": "Slack",
    "l": "SW",
    "a": 159.25,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-13",
    "v": "Upwork",
    "l": "UPW",
    "a": 274.61,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-04-13",
    "v": "Zoom",
    "l": "SW",
    "a": 16.99,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-15",
    "v": "Manus AI",
    "l": "AI",
    "a": 10.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-17",
    "v": "Claude Team",
-   "l": "AI",
+   "l": "MC",
    "a": 225.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-18",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-04-19",
    "v": "Higgsfield",
    "l": "MC",
    "a": 180.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-04-19",
    "v": "Shopify",
    "l": "SHOP",
    "a": 4302.28,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-20",
    "v": "Klaviyo",
    "l": "KLV",
    "a": 2315.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-20",
    "v": "Upwork",
    "l": "UPW",
    "a": 290.15,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-04-21",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-04-21",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-04-21",
@@ -332,259 +560,346 @@
    "l": "SW",
    "a": 3.74,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
    "d": "2026-04-22",
    "v": "Adobe",
-   "l": "SW",
+   "l": "MT",
    "a": 20.02,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-22",
    "v": "AdsPower",
    "l": "MT",
    "a": 768.0,
-   "k": "card"
+   "k": "card",
+   "cy": "Y",
+   "sp": [
+    [
+     "2026-04",
+     64.0
+    ],
+    [
+     "2026-05",
+     64.0
+    ],
+    [
+     "2026-06",
+     64.0
+    ],
+    [
+     "2026-07",
+     64.0
+    ],
+    [
+     "2026-08",
+     64.0
+    ],
+    [
+     "2026-09",
+     64.0
+    ],
+    [
+     "2026-10",
+     64.0
+    ],
+    [
+     "2026-11",
+     64.0
+    ],
+    [
+     "2026-12",
+     64.0
+    ],
+    [
+     "2027-01",
+     64.0
+    ],
+    [
+     "2027-02",
+     64.0
+    ],
+    [
+     "2027-03",
+     64.0
+    ]
+   ]
   },
   {
    "d": "2026-04-22",
    "v": "Claude Team",
-   "l": "AI",
+   "l": "MC",
    "a": 20.69,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-23",
    "v": "Elevar",
    "l": "MT",
    "a": 450.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-23",
    "v": "Hostinger",
-   "l": "SW",
+   "l": "MC",
    "a": 98.87,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-24",
    "v": "Adobe",
-   "l": "SW",
+   "l": "MT",
    "a": 17.48,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-24",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 110.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-04-24",
    "v": "Figma",
-   "l": "SW",
+   "l": "MT",
    "a": 65.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-24",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-04-24",
    "v": "Sellerboard",
-   "l": "SW",
+   "l": "MT",
    "a": 39.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-24",
    "v": "Shopify",
    "l": "SHOP",
    "a": 2897.88,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-25",
    "v": "PDF tools",
    "l": "SW",
    "a": 1.95,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-25",
    "v": "TopView.ai",
    "l": "MC",
    "a": 29.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-27",
    "v": "Grok / xAI",
-   "l": "AI",
+   "l": "MC",
    "a": 5.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-04-27",
    "v": "Madgicx",
    "l": "MT",
    "a": 1.0,
-   "k": "card"
+   "k": "card",
+   "cy": "O"
   },
   {
    "d": "2026-04-27",
    "v": "Scrape Creators",
    "l": "MT",
    "a": 47.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-27",
    "v": "Skool",
    "l": "EDU",
    "a": 1500.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-27",
    "v": "Upwork",
    "l": "UPW",
    "a": 277.05,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-04-28",
    "v": "PDF tools",
    "l": "SW",
    "a": 1.95,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-28",
    "v": "Whop",
    "l": "EDU",
    "a": 29.95,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-04-28",
    "v": "tiger-roar.net",
    "l": "SW",
    "a": 5.99,
-   "k": "card"
+   "k": "card",
+   "cy": "O"
   },
   {
    "d": "2026-04-29",
    "v": "Replo",
-   "l": "SW",
+   "l": "MT",
    "a": 199.2,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-01",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 25.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-01",
    "v": "Notion",
    "l": "SW",
    "a": 216.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-02",
    "v": "Adobe",
-   "l": "SW",
+   "l": "MT",
    "a": 34.49,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-02",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 200.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-02",
    "v": "PDF tools",
    "l": "SW",
    "a": 49.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-02",
    "v": "Twelve Labs",
    "l": "MC",
    "a": 15.02,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-02",
    "v": "Twelve Labs",
    "l": "MC",
    "a": 111.12,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-02",
    "v": "Zoom",
    "l": "SW",
    "a": 16.99,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-03",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 10.33,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-03",
    "v": "Apify",
-   "l": "AI",
+   "l": "MC",
    "a": 29.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-03",
    "v": "Foreplay",
    "l": "MT",
    "a": 248.35,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-03",
    "v": "Foreplay",
    "l": "MT",
    "a": 17.45,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-03",
    "v": "Higgsfield",
    "l": "MC",
    "a": 178.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-03",
    "v": "Northbeam",
    "l": "MT",
    "a": 1000.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-03",
@@ -592,182 +907,208 @@
    "l": "SW",
    "a": 0.53,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
    "d": "2026-05-04",
    "v": "Hostinger",
-   "l": "SW",
+   "l": "MC",
    "a": 16.09,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-04",
    "v": "Nous Research",
-   "l": "AI",
+   "l": "MC",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-04",
    "v": "Upwork",
    "l": "UPW",
    "a": 348.32,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-05-05",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 10.29,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-05",
    "v": "Nous Research",
-   "l": "AI",
+   "l": "MC",
    "a": 50.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-05",
    "v": "Nous Research",
-   "l": "AI",
+   "l": "MC",
    "a": 50.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-05",
    "v": "Nous Research",
-   "l": "AI",
+   "l": "MC",
    "a": 50.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-05",
    "v": "Nous Research",
-   "l": "AI",
+   "l": "MC",
    "a": 50.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-05",
    "v": "Nous Research",
-   "l": "AI",
+   "l": "MC",
    "a": 50.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-05",
    "v": "Nous Research",
-   "l": "AI",
+   "l": "MC",
    "a": 50.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-05",
    "v": "Nous Research",
-   "l": "AI",
+   "l": "MC",
    "a": 50.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-05",
    "v": "PDF tools",
    "l": "SW",
    "a": 49.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-06",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-06",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 10.04,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-06",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 10.1,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-06",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 10.27,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-06",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 10.07,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-06",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 45.28,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-06",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 10.05,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-06",
    "v": "Claude Team",
-   "l": "AI",
+   "l": "MC",
    "a": 9.15,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-06",
    "v": "Firecrawl",
-   "l": "AI",
+   "l": "MC",
    "a": 19.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-06",
    "v": "Gethookd",
    "l": "MT",
    "a": 1.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-06",
    "v": "Higgsfield",
    "l": "MC",
    "a": 15.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-06",
    "v": "Nous Research",
-   "l": "AI",
+   "l": "MC",
    "a": 50.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-06",
    "v": "Skool",
    "l": "EDU",
    "a": 199.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-06",
@@ -775,14 +1116,16 @@
    "l": "SW",
    "a": 248.08,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
    "d": "2026-05-06",
-   "v": "Tremendous (creator payouts)",
-   "l": "CRE",
+   "v": "Tremendous (Snowball wallet top-up)",
+   "l": "SBW",
    "a": 1800.0,
    "k": "ach",
+   "cy": "U",
    "memo": "PAYMENT",
    "desc": "Incoming ACH debit from TREMENDOUS"
   },
@@ -791,35 +1134,40 @@
    "v": "Zoom",
    "l": "SW",
    "a": 31.99,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-07",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 45.78,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-07",
    "v": "Canva",
-   "l": "SW",
+   "l": "MT",
    "a": 147.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-07",
    "v": "Higgsfield",
    "l": "MC",
    "a": 80.38,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-08",
    "v": "Adobe",
-   "l": "SW",
+   "l": "MT",
    "a": 851.89,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-08",
@@ -827,6 +1175,7 @@
    "l": "SW",
    "a": 58.99,
    "k": "card",
+   "cy": "M",
    "fx": "EUR"
   },
   {
@@ -834,21 +1183,24 @@
    "v": "Higgsfield",
    "l": "MC",
    "a": 240.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-09",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 145.12,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-09",
    "v": "DuoPlus",
    "l": "MT",
    "a": 22.42,
-   "k": "card"
+   "k": "card",
+   "cy": "O"
   },
   {
    "d": "2026-05-09",
@@ -856,6 +1208,7 @@
    "l": "SW",
    "a": 47.41,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
@@ -863,63 +1216,72 @@
    "v": "Pacdora",
    "l": "SW",
    "a": 14.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-09",
    "v": "Sync2Sheet",
    "l": "SW",
    "a": 15.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-10",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 150.68,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-10",
    "v": "Hostinger",
-   "l": "SW",
+   "l": "MC",
    "a": 234.46,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-11",
    "v": "Higgsfield",
    "l": "MC",
    "a": 240.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-11",
    "v": "Upwork",
    "l": "UPW",
    "a": 349.45,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-05-12",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 145.27,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-12",
    "v": "Foreplay",
    "l": "MT",
    "a": 12.76,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-12",
    "v": "Slack",
    "l": "SW",
    "a": 257.63,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-12",
@@ -927,6 +1289,7 @@
    "l": "SW",
    "a": 10.72,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
@@ -935,200 +1298,228 @@
    "l": "SW",
    "a": 6.45,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
    "d": "2026-05-12",
-   "v": "Tremendous (creator payouts)",
-   "l": "CRE",
+   "v": "Tremendous (Snowball wallet top-up)",
+   "l": "SBW",
    "a": 5000.0,
    "k": "ach",
+   "cy": "U",
    "memo": "PAYMENT",
    "desc": "Incoming ACH debit from TREMENDOUS"
   },
   {
    "d": "2026-05-13",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 146.99,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-13",
    "v": "Higgsfield",
    "l": "MC",
    "a": 240.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-13",
    "v": "Manus AI",
    "l": "AI",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-13",
    "v": "Nous Research",
-   "l": "AI",
+   "l": "MC",
    "a": 50.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-13",
-   "v": "Tremendous (creator payouts)",
-   "l": "CRE",
+   "v": "Tremendous (Snowball wallet top-up)",
+   "l": "SBW",
    "a": 2000.0,
    "k": "ach",
+   "cy": "U",
    "memo": "PAYMENT",
    "desc": "Incoming ACH debit from TREMENDOUS"
   },
   {
    "d": "2026-05-14",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 145.69,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-14",
    "v": "Gethookd",
    "l": "MT",
    "a": 29.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-15",
    "v": "Grok / xAI",
-   "l": "AI",
+   "l": "MC",
    "a": 30.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-15",
    "v": "Higgsfield",
    "l": "MC",
    "a": 240.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-15",
    "v": "Manus AI",
    "l": "AI",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-15",
    "v": "Shopify",
    "l": "SHOP",
    "a": 4019.35,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-15",
    "v": "n8n Cloud",
    "l": "SW",
    "a": 24.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-16",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 145.2,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-17",
    "v": "Claude Team",
-   "l": "AI",
+   "l": "MC",
    "a": 275.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-17",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-18",
    "v": "Adobe",
-   "l": "SW",
+   "l": "MT",
    "a": 65.15,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-18",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 145.26,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-18",
    "v": "DigitalOcean",
-   "l": "SW",
+   "l": "MT",
    "a": 5.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-18",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-18",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-18",
    "v": "Upwork",
    "l": "UPW",
    "a": 308.11,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-05-19",
    "v": "Claude Team",
-   "l": "AI",
+   "l": "MC",
    "a": 23.19,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-19",
    "v": "DigitalOcean",
-   "l": "SW",
+   "l": "MT",
    "a": 9.64,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-19",
    "v": "DigitalOcean",
-   "l": "SW",
+   "l": "MT",
    "a": 100.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-19",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-19",
    "v": "Klaviyo",
    "l": "KLV",
    "a": 2315.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-19",
@@ -1136,6 +1527,7 @@
    "l": "SW",
    "a": 4.38,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
@@ -1144,6 +1536,7 @@
    "l": "SW",
    "a": 4.38,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
@@ -1151,42 +1544,48 @@
    "v": "Zoom",
    "l": "SW",
    "a": 31.99,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-20",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 145.05,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-20",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 146.22,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-20",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 45.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-20",
    "v": "Claude Team",
-   "l": "AI",
+   "l": "MC",
    "a": 22.39,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-20",
    "v": "Foreplay",
    "l": "MT",
    "a": 8.11,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-20",
@@ -1194,6 +1593,7 @@
    "l": "LEGAL",
    "a": 6563.88,
    "k": "ach",
+   "cy": "O",
    "memo": "Professional Service (Lawyer) - Oct 2025 & Dec 2025",
    "desc": "ACH Withdrawal to Morris, Nichols, Arsht & Tunnell LLP",
    "payee": "M.N.A & T LLP"
@@ -1201,44 +1601,50 @@
   {
    "d": "2026-05-21",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 145.98,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-21",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 145.71,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-21",
    "v": "Elevar",
    "l": "MT",
    "a": 450.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-21",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-21",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-21",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-21",
@@ -1246,119 +1652,136 @@
    "l": "MC",
    "a": 9.98,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
    "d": "2026-05-21",
    "v": "Nous Research",
-   "l": "AI",
+   "l": "MC",
    "a": 50.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-21",
    "v": "Numeral (sales-tax filing fee)",
    "l": "TAX",
    "a": 2700.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-22",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-23",
    "v": "Claude Team",
-   "l": "AI",
+   "l": "MC",
    "a": 20.21,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-23",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-23",
    "v": "Nous Research",
-   "l": "AI",
+   "l": "MC",
    "a": 50.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-23",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 105.5,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-23",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-24",
    "v": "Alibaba Cloud",
-   "l": "SW",
+   "l": "MC",
    "a": 30.0,
-   "k": "card"
+   "k": "card",
+   "cy": "O"
   },
   {
    "d": "2026-05-24",
    "v": "Figma",
-   "l": "SW",
+   "l": "MT",
    "a": 65.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-24",
    "v": "Replo",
-   "l": "SW",
+   "l": "MT",
    "a": 199.2,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-24",
    "v": "Sellerboard",
-   "l": "SW",
+   "l": "MT",
    "a": 39.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-24",
    "v": "Shopify",
    "l": "SHOP",
    "a": 4151.32,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-25",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-25",
    "v": "TopView.ai",
    "l": "MC",
    "a": 29.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-25",
    "v": "Upwork",
    "l": "UPW",
    "a": 307.49,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-05-26",
@@ -1366,6 +1789,7 @@
    "l": "MC",
    "a": 25.24,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
@@ -1373,63 +1797,72 @@
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-27",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-27",
    "v": "Skool",
    "l": "EDU",
    "a": 1500.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-28",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-28",
    "v": "Whop",
    "l": "EDU",
    "a": 29.95,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-29",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-30",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-30",
    "v": "PDF tools",
    "l": "SW",
    "a": 49.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-30",
    "v": "Sync2Sheet",
    "l": "SW",
    "a": 23.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-05-31",
@@ -1437,6 +1870,7 @@
    "l": "SW",
    "a": 58.45,
    "k": "card",
+   "cy": "M",
    "fx": "EUR"
   },
   {
@@ -1444,7 +1878,8 @@
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-05-31",
@@ -1452,91 +1887,104 @@
    "l": "SW",
    "a": 1.29,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
    "d": "2026-06-01",
    "v": "Cloudflare",
-   "l": "SW",
+   "l": "MT",
    "a": 6.71,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-01",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-01",
    "v": "Notion",
    "l": "SW",
    "a": 276.39,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-01",
    "v": "Upwork",
    "l": "UPW",
    "a": 346.71,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-06-02",
    "v": "Adobe",
-   "l": "SW",
+   "l": "MT",
    "a": 34.49,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-02",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 145.42,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-02",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-02",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-02",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-02",
    "v": "PDF tools",
    "l": "SW",
    "a": 49.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-02",
    "v": "Shopify",
    "l": "SHOP",
    "a": 168.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-02",
    "v": "Shopify",
    "l": "SHOP",
    "a": 121.97,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-02",
@@ -1544,6 +1992,7 @@
    "l": "SW",
    "a": 1.03,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
@@ -1551,121 +2000,138 @@
    "v": "Twelve Labs",
    "l": "MC",
    "a": 3.1,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-02",
    "v": "Zoom",
    "l": "SW",
    "a": 16.99,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-03",
    "v": "Apify",
-   "l": "AI",
+   "l": "MC",
    "a": 29.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-03",
    "v": "Foreplay",
    "l": "MT",
    "a": 320.76,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-03",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-03",
    "v": "Higgsfield",
    "l": "MC",
    "a": 267.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-03",
    "v": "Northbeam",
    "l": "MT",
    "a": 1000.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-03",
    "v": "Numeral (sales-tax filing fee)",
    "l": "TAX",
    "a": 2250.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-03",
-   "v": "Tremendous (creator payouts)",
-   "l": "CRE",
+   "v": "Tremendous (Snowball wallet top-up)",
+   "l": "SBW",
    "a": 5000.0,
    "k": "ach",
+   "cy": "U",
    "memo": "PAYMENT",
    "desc": "Incoming ACH debit from TREMENDOUS"
   },
   {
    "d": "2026-06-04",
    "v": "Nous Research",
-   "l": "AI",
+   "l": "MC",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-05",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 145.13,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-06",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-06",
    "v": "Firecrawl",
-   "l": "AI",
+   "l": "MC",
    "a": 19.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-06",
    "v": "Google One",
    "l": "SW",
    "a": 19.99,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-06",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-06",
    "v": "Higgsfield",
    "l": "MC",
    "a": 15.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-06",
    "v": "Skool",
    "l": "EDU",
    "a": 199.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-06",
@@ -1673,21 +2139,24 @@
    "l": "SW",
    "a": 287.68,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
    "d": "2026-06-07",
    "v": "Adobe",
-   "l": "SW",
+   "l": "MT",
    "a": 951.88,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-07",
    "v": "Canva",
-   "l": "SW",
+   "l": "MT",
    "a": 147.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-08",
@@ -1695,6 +2164,7 @@
    "l": "SW",
    "a": 7.19,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
@@ -1702,7 +2172,8 @@
    "v": "Upwork",
    "l": "UPW",
    "a": 321.38,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-06-09",
@@ -1710,6 +2181,7 @@
    "l": "SW",
    "a": 47.34,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
@@ -1717,28 +2189,32 @@
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-09",
    "v": "Pacdora",
    "l": "SW",
    "a": 14.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-09",
    "v": "Sync2Sheet",
    "l": "SW",
    "a": 15.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-09",
-   "v": "Tremendous (creator payouts)",
-   "l": "CRE",
+   "v": "Tremendous (Snowball wallet top-up)",
+   "l": "SBW",
    "a": 6000.0,
    "k": "ach",
+   "cy": "U",
    "memo": "PAYMENT",
    "desc": "Incoming ACH debit from TREMENDOUS"
   },
@@ -1747,98 +2223,112 @@
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-10",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-11",
    "v": "Adnova.ai",
    "l": "MT",
    "a": 79.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-12",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-12",
    "v": "Slack",
    "l": "SW",
    "a": 307.38,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-13",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 145.33,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-13",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-13",
    "v": "Manus AI",
    "l": "AI",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-14",
    "v": "Gethookd",
    "l": "MT",
    "a": 29.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-14",
    "v": "n8n Cloud",
    "l": "SW",
    "a": 24.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-15",
    "v": "Grok / xAI",
-   "l": "AI",
+   "l": "MC",
    "a": 30.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-15",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-15",
    "v": "Manus AI",
    "l": "AI",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-15",
-   "v": "Tremendous (creator payouts)",
-   "l": "CRE",
+   "v": "Tremendous (Snowball wallet top-up)",
+   "l": "SBW",
    "a": 700.0,
    "k": "ach",
+   "cy": "U",
    "memo": "PAYMENT",
    "desc": "ACH debit from TREMENDOUS"
   },
@@ -1847,7 +2337,8 @@
    "v": "Upwork",
    "l": "UPW",
    "a": 310.45,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-06-16",
@@ -1855,6 +2346,7 @@
    "l": "AGENCY",
    "a": 10000.0,
    "k": "ach",
+   "cy": "M",
    "memo": "Payment of Invoice No. INV-8-231 June 3 July 3 Performance Creative",
    "desc": "payment of Invoice No. INV-8-231 June 3 July 3 Performance Creative",
    "payee": "Goodo(Matthew Gattozzi, LLC)"
@@ -1864,77 +2356,88 @@
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-17",
    "v": "Claude Team",
-   "l": "AI",
+   "l": "MC",
    "a": 350.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-17",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-18",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-19",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-19",
    "v": "Shopify",
    "l": "SHOP",
    "a": 4029.79,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-19",
    "v": "Zoom",
    "l": "SW",
    "a": 31.99,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-20",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 145.51,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-20",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-20",
    "v": "Klaviyo",
    "l": "KLV",
    "a": 2315.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-21",
    "v": "Elevar",
    "l": "MT",
    "a": 450.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-21",
@@ -1942,84 +2445,96 @@
    "l": "MC",
    "a": 19.96,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
    "d": "2026-06-21",
    "v": "Nous Research",
-   "l": "AI",
+   "l": "MC",
    "a": 50.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-22",
    "v": "Higgsfield",
    "l": "MC",
    "a": 115.4,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-22",
    "v": "Shopify",
    "l": "SHOP",
    "a": 117.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-22",
    "v": "Shopify",
    "l": "SHOP",
    "a": 117.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-22",
    "v": "Upwork",
    "l": "UPW",
    "a": 290.11,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-06-23",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 145.45,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-23",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-24",
    "v": "Figma",
-   "l": "SW",
+   "l": "MT",
    "a": 65.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-24",
    "v": "Replo",
-   "l": "SW",
+   "l": "MT",
    "a": 199.2,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-24",
    "v": "Sellerboard",
-   "l": "SW",
+   "l": "MT",
    "a": 39.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-24",
    "v": "Shopify",
    "l": "SHOP",
    "a": 3039.45,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-25",
@@ -2027,6 +2542,7 @@
    "l": "MC",
    "a": 25.23,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
@@ -2034,77 +2550,88 @@
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-25",
    "v": "TopView.ai",
    "l": "MC",
    "a": 29.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-26",
    "v": "Firecrawl",
-   "l": "AI",
+   "l": "MC",
    "a": 99.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-26",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-27",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-27",
    "v": "PDF tools",
    "l": "SW",
    "a": 49.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-27",
    "v": "Skool",
    "l": "EDU",
    "a": 1500.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-27",
    "v": "Whop",
    "l": "EDU",
    "a": 29.95,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-29",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-29",
    "v": "Sync2Sheet",
    "l": "SW",
    "a": 23.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-06-29",
    "v": "Upwork",
    "l": "UPW",
    "a": 288.33,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-06-30",
@@ -2112,154 +2639,176 @@
    "l": "SW",
    "a": 57.16,
    "k": "card",
+   "cy": "M",
    "fx": "EUR"
   },
   {
    "d": "2026-06-30",
    "v": "Grok / xAI",
-   "l": "AI",
+   "l": "MC",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-30",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-06-30",
    "v": "PDF tools",
    "l": "SW",
    "a": 49.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-01",
    "v": "Cloudflare",
-   "l": "SW",
+   "l": "MT",
    "a": 32.13,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-01",
    "v": "Higgsfield",
    "l": "MC",
    "a": 36.33,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-01",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-01",
    "v": "Notion",
    "l": "SW",
    "a": 264.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-02",
    "v": "Adobe",
-   "l": "SW",
+   "l": "MT",
    "a": 34.49,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-02",
    "v": "Apify",
-   "l": "AI",
+   "l": "MC",
    "a": 29.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-02",
    "v": "Numeral (sales-tax filing fee)",
    "l": "TAX",
    "a": 4275.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-02",
    "v": "Twelve Labs",
    "l": "MC",
    "a": 289.9,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-02",
    "v": "Zoom",
    "l": "SW",
    "a": 16.99,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-03",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 145.04,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-03",
    "v": "Foreplay",
    "l": "MT",
    "a": 320.31,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-03",
    "v": "Higgsfield",
    "l": "MC",
    "a": 267.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-03",
    "v": "Northbeam",
    "l": "MT",
    "a": 1000.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-03",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-03",
    "v": "n8n Cloud",
    "l": "SW",
    "a": 24.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-04",
    "v": "Nous Research",
-   "l": "AI",
+   "l": "MC",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-05",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-05",
    "v": "Google One",
    "l": "SW",
    "a": 19.99,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-05",
@@ -2267,6 +2816,7 @@
    "l": "CRE",
    "a": 1500.0,
    "k": "card",
+   "cy": "U",
    "memo": "",
    "desc": "Insense"
   },
@@ -2276,49 +2826,56 @@
    "l": "SW",
    "a": 288.71,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
    "d": "2026-07-06",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-06",
    "v": "Shopify",
    "l": "SHOP",
    "a": 62.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-06",
    "v": "Shopify",
    "l": "SHOP",
    "a": 62.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-06",
    "v": "Shopify",
    "l": "SHOP",
    "a": 174.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-06",
    "v": "Skool",
    "l": "EDU",
    "a": 199.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-06",
-   "v": "Tremendous (creator payouts)",
-   "l": "CRE",
+   "v": "Tremendous (Snowball wallet top-up)",
+   "l": "SBW",
    "a": 3500.0,
    "k": "ach",
+   "cy": "U",
    "memo": "PAYMENT",
    "desc": "ACH debit from TREMENDOUS"
   },
@@ -2327,63 +2884,172 @@
    "v": "Upwork",
    "l": "UPW",
    "a": 309.93,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-07-07",
    "v": "Adobe",
-   "l": "SW",
+   "l": "MT",
    "a": 951.88,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-07",
    "v": "Canva",
-   "l": "SW",
+   "l": "MT",
    "a": 147.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-07",
    "v": "Harvard Business Services",
    "l": "TAX",
    "a": 29.0,
-   "k": "card"
+   "k": "card",
+   "cy": "Y",
+   "sp": [
+    [
+     "2026-07",
+     2.42
+    ],
+    [
+     "2026-08",
+     2.42
+    ],
+    [
+     "2026-09",
+     2.42
+    ],
+    [
+     "2026-10",
+     2.42
+    ],
+    [
+     "2026-11",
+     2.42
+    ],
+    [
+     "2026-12",
+     2.42
+    ],
+    [
+     "2027-01",
+     2.42
+    ],
+    [
+     "2027-02",
+     2.42
+    ],
+    [
+     "2027-03",
+     2.42
+    ],
+    [
+     "2027-04",
+     2.42
+    ],
+    [
+     "2027-05",
+     2.42
+    ],
+    [
+     "2027-06",
+     2.38
+    ]
+   ]
   },
   {
    "d": "2026-07-07",
    "v": "Harvard Business Services",
    "l": "TAX",
    "a": 449.0,
-   "k": "card"
+   "k": "card",
+   "cy": "Y",
+   "sp": [
+    [
+     "2026-07",
+     37.42
+    ],
+    [
+     "2026-08",
+     37.42
+    ],
+    [
+     "2026-09",
+     37.42
+    ],
+    [
+     "2026-10",
+     37.42
+    ],
+    [
+     "2026-11",
+     37.42
+    ],
+    [
+     "2026-12",
+     37.42
+    ],
+    [
+     "2027-01",
+     37.42
+    ],
+    [
+     "2027-02",
+     37.42
+    ],
+    [
+     "2027-03",
+     37.42
+    ],
+    [
+     "2027-04",
+     37.42
+    ],
+    [
+     "2027-05",
+     37.42
+    ],
+    [
+     "2027-06",
+     37.38
+    ]
+   ]
   },
   {
    "d": "2026-07-07",
    "v": "Zoom",
    "l": "SW",
    "a": 8.39,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-08",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-08",
    "v": "Pacdora",
    "l": "SW",
    "a": 14.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-08",
    "v": "Sync2Sheet",
    "l": "SW",
    "a": 15.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-09",
@@ -2391,6 +3057,7 @@
    "l": "SW",
    "a": 47.5,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
@@ -2398,37 +3065,42 @@
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-10",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 146.21,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-10",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-10",
-   "v": "Tremendous (creator payouts)",
-   "l": "CRE",
+   "v": "Tremendous (Snowball wallet top-up)",
+   "l": "SBW",
    "a": 1500.0,
    "k": "ach",
+   "cy": "U",
    "memo": "PAYMENT",
    "desc": "ACH debit from TREMENDOUS"
   },
   {
    "d": "2026-07-10",
-   "v": "Tremendous (creator payouts)",
-   "l": "CRE",
+   "v": "Tremendous (Snowball wallet top-up)",
+   "l": "SBW",
    "a": 1000.0,
    "k": "ach",
+   "cy": "U",
    "memo": "PAYMENT",
    "desc": "ACH debit from TREMENDOUS"
   },
@@ -2437,14 +3109,16 @@
    "v": "Adnova.ai",
    "l": "MT",
    "a": 79.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-11",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-12",
@@ -2452,6 +3126,7 @@
    "l": "SW",
    "a": 0.67,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
@@ -2460,6 +3135,7 @@
    "l": "SW",
    "a": 0.66,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
@@ -2467,35 +3143,40 @@
    "v": "Slack",
    "l": "SW",
    "a": 259.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-13",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-13",
    "v": "Manus AI",
    "l": "AI",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-13",
    "v": "Upwork",
    "l": "UPW",
    "a": 363.21,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-07-15",
    "v": "Higgsfield",
    "l": "MC",
    "a": 50.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-15",
@@ -2503,6 +3184,7 @@
    "l": "SW",
    "a": 45.62,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
@@ -2510,14 +3192,16 @@
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-16",
    "v": "Higgsfield",
    "l": "MC",
    "a": 50.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-16",
@@ -2525,133 +3209,152 @@
    "l": "SW",
    "a": 45.62,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
    "d": "2026-07-17",
    "v": "Claude Team",
-   "l": "AI",
+   "l": "MC",
    "a": 350.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-17",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-17",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-18",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 52.39,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-18",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 100.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-18",
    "v": "Shopify",
    "l": "SHOP",
    "a": 4210.16,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-19",
    "v": "Klaviyo",
    "l": "KLV",
    "a": 115.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-19",
    "v": "Klaviyo",
    "l": "KLV",
    "a": 2315.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-20",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-20",
    "v": "Upwork",
    "l": "UPW",
    "a": 378.93,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-07-20",
    "v": "n8n Cloud",
    "l": "SW",
    "a": 24.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-21",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-22",
    "v": "Higgsfield",
    "l": "MC",
    "a": 129.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-23",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 111.11,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-23",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-24",
    "v": "Figma",
-   "l": "SW",
+   "l": "MT",
    "a": 65.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-24",
    "v": "Shopify",
    "l": "SHOP",
    "a": 5311.86,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-25",
    "v": "Elevar",
    "l": "MT",
    "a": 450.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-27",
@@ -2659,6 +3362,57 @@
    "l": "MC",
    "a": 159.46,
    "k": "card",
+   "cy": "Y",
+   "sp": [
+    [
+     "2026-07",
+     13.29
+    ],
+    [
+     "2026-08",
+     13.29
+    ],
+    [
+     "2026-09",
+     13.29
+    ],
+    [
+     "2026-10",
+     13.29
+    ],
+    [
+     "2026-11",
+     13.29
+    ],
+    [
+     "2026-12",
+     13.29
+    ],
+    [
+     "2027-01",
+     13.29
+    ],
+    [
+     "2027-02",
+     13.29
+    ],
+    [
+     "2027-03",
+     13.29
+    ],
+    [
+     "2027-04",
+     13.29
+    ],
+    [
+     "2027-05",
+     13.29
+    ],
+    [
+     "2027-06",
+     13.27
+    ]
+   ],
    "fx": "VND"
   },
   {
@@ -2666,44 +3420,50 @@
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-27",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-27",
    "v": "Upwork",
    "l": "UPW",
    "a": 396.02,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-07-28",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-29",
-   "v": "Tremendous (creator payouts)",
-   "l": "CRE",
+   "v": "Tremendous (Snowball wallet top-up)",
+   "l": "SBW",
    "a": 1000.0,
    "k": "ach",
+   "cy": "U",
    "memo": "PAYMENT",
    "desc": "ACH debit from TREMENDOUS"
   },
   {
    "d": "2026-07-30",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 145.61,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-30",
@@ -2711,22 +3471,25 @@
    "l": "AGENCY",
    "a": 10000.0,
    "k": "ach",
+   "cy": "M",
    "memo": "ANC-00004",
    "desc": "ACH debit from MATTHEW GATTOZZI"
   },
   {
    "d": "2026-07-30",
    "v": "Replo",
-   "l": "SW",
+   "l": "MT",
    "a": 199.2,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-07-30",
-   "v": "Tremendous (creator payouts)",
-   "l": "CRE",
+   "v": "Tremendous (Snowball wallet top-up)",
+   "l": "SBW",
    "a": -1000.0,
    "k": "ach",
+   "cy": "U",
    "memo": "PAYMENT",
    "desc": "ACH debit return from TREMENDOUS"
   },
@@ -2736,6 +3499,7 @@
    "l": "AGENCY",
    "a": -10000.0,
    "k": "ach",
+   "cy": "M",
    "memo": "ANC-00004",
    "desc": "ACH debit return from MATTHEW GATTOZZI"
   },
@@ -2744,28 +3508,32 @@
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-07-31",
    "v": "Sellerboard",
-   "l": "SW",
+   "l": "MT",
    "a": 29.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-02",
    "v": "Apify",
-   "l": "AI",
+   "l": "MC",
    "a": 33.24,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-03",
    "v": "Higgsfield",
    "l": "MC",
    "a": 267.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-03",
@@ -2773,6 +3541,7 @@
    "l": "CRE",
    "a": 3300.0,
    "k": "card",
+   "cy": "U",
    "memo": "",
    "desc": "Insense"
   },
@@ -2781,28 +3550,32 @@
    "v": "Northbeam",
    "l": "MT",
    "a": 1211.42,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-03",
    "v": "Notion",
    "l": "SW",
    "a": 264.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-03",
    "v": "PandaDoc",
    "l": "SW",
    "a": 65.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-03",
-   "v": "Tremendous (creator payouts)",
-   "l": "CRE",
+   "v": "Tremendous (Snowball wallet top-up)",
+   "l": "SBW",
    "a": 2000.0,
    "k": "ach",
+   "cy": "U",
    "memo": "PAYMENT",
    "desc": "ACH debit from TREMENDOUS"
   },
@@ -2811,107 +3584,172 @@
    "v": "Upwork",
    "l": "UPW",
    "a": 360.81,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-08-04",
    "v": "Numeral (sales-tax filing fee)",
    "l": "TAX",
    "a": 1650.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-04",
-   "v": "Tremendous (creator payouts)",
-   "l": "CRE",
+   "v": "Tremendous (Snowball wallet top-up)",
+   "l": "SBW",
    "a": -2000.0,
    "k": "ach",
+   "cy": "U",
    "memo": "PAYMENT",
    "desc": "ACH debit return from TREMENDOUS"
   },
   {
    "d": "2026-08-05",
    "v": "Grok / xAI",
-   "l": "AI",
+   "l": "MC",
    "a": 50.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-05",
    "v": "Hostinger",
-   "l": "SW",
+   "l": "MC",
    "a": 151.52,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-05",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-05",
    "v": "Uline",
    "l": "SUP",
    "a": 7002.88,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-05",
    "v": "Vast.ai",
-   "l": "AI",
+   "l": "MC",
    "a": 10.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-05",
    "v": "Vast.ai",
-   "l": "AI",
+   "l": "MC",
    "a": 100.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-06",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-06",
    "v": "Cloudflare",
-   "l": "SW",
+   "l": "MT",
    "a": 33.21,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-06",
    "v": "Hostinger",
-   "l": "SW",
+   "l": "MC",
    "a": 689.3,
-   "k": "card"
+   "k": "card",
+   "cy": "Y",
+   "sp": [
+    [
+     "2026-08",
+     57.44
+    ],
+    [
+     "2026-09",
+     57.44
+    ],
+    [
+     "2026-10",
+     57.44
+    ],
+    [
+     "2026-11",
+     57.44
+    ],
+    [
+     "2026-12",
+     57.44
+    ],
+    [
+     "2027-01",
+     57.44
+    ],
+    [
+     "2027-02",
+     57.44
+    ],
+    [
+     "2027-03",
+     57.44
+    ],
+    [
+     "2027-04",
+     57.44
+    ],
+    [
+     "2027-05",
+     57.44
+    ],
+    [
+     "2027-06",
+     57.44
+    ],
+    [
+     "2027-07",
+     57.46
+    ]
+   ]
   },
   {
    "d": "2026-08-06",
    "v": "Hostinger",
-   "l": "SW",
+   "l": "MC",
    "a": 247.43,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-06",
    "v": "Uline",
    "l": "SUP",
    "a": 1024.91,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-06",
    "v": "Vast.ai",
-   "l": "AI",
+   "l": "MC",
    "a": 200.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-07",
@@ -2919,6 +3757,7 @@
    "l": "AGENCY",
    "a": 10000.0,
    "k": "ach",
+   "cy": "M",
    "memo": "ANC-00004",
    "desc": "ACH debit from MATTHEW GATTOZZI"
   },
@@ -2927,7 +3766,8 @@
    "v": "Uline",
    "l": "SUP",
    "a": 5977.97,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-08",
@@ -2935,29 +3775,59 @@
    "l": "AGENCY",
    "a": -10000.0,
    "k": "ach",
+   "cy": "M",
    "memo": "ANC-00004",
    "desc": "ACH debit return from MATTHEW GATTOZZI"
   },
   {
    "d": "2026-08-09",
    "v": "Adobe",
-   "l": "SW",
+   "l": "MT",
    "a": 951.88,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-09",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-09",
    "v": "Intelligems",
    "l": "MT",
    "a": 1013.88,
-   "k": "card"
+   "k": "card",
+   "cy": "H",
+   "sp": [
+    [
+     "2026-08",
+     168.98
+    ],
+    [
+     "2026-09",
+     168.98
+    ],
+    [
+     "2026-10",
+     168.98
+    ],
+    [
+     "2026-11",
+     168.98
+    ],
+    [
+     "2026-12",
+     168.98
+    ],
+    [
+     "2027-01",
+     168.98
+    ]
+   ]
   },
   {
    "d": "2026-08-10",
@@ -2965,15 +3835,17 @@
    "l": "AGENCY",
    "a": 10000.0,
    "k": "ach",
+   "cy": "M",
    "memo": "ANC-00007",
    "desc": "ACH debit from MATTHEW GATTOZZI"
   },
   {
    "d": "2026-08-10",
-   "v": "Tremendous (creator payouts)",
-   "l": "CRE",
+   "v": "Tremendous (Snowball wallet top-up)",
+   "l": "SBW",
    "a": 10000.0,
    "k": "ach",
+   "cy": "U",
    "memo": "Account funding",
    "desc": "Account funding",
    "payee": "Tremendous, LLC"
@@ -2983,35 +3855,40 @@
    "v": "Upwork",
    "l": "UPW",
    "a": 354.38,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-08-10",
    "v": "Zoom",
    "l": "SW",
    "a": 26.99,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-11",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-12",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-12",
    "v": "Slack",
    "l": "SW",
    "a": 216.49,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-13",
@@ -3019,98 +3896,112 @@
    "l": "MC",
    "a": 11.26,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
    "d": "2026-08-13",
    "v": "Vast.ai",
-   "l": "AI",
+   "l": "MC",
    "a": 200.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-14",
    "v": "Adnova.ai",
    "l": "MT",
    "a": 79.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-14",
    "v": "Adobe",
-   "l": "SW",
+   "l": "MT",
    "a": 34.49,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-14",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-14",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-14",
    "v": "Zoom",
    "l": "SW",
    "a": 23.74,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-14",
    "v": "n8n Cloud",
    "l": "SW",
    "a": 24.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-15",
    "v": "Foreplay",
    "l": "MT",
    "a": 320.31,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-16",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-16",
    "v": "Hostinger",
-   "l": "SW",
+   "l": "MC",
    "a": 66.29,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-16",
    "v": "Vast.ai",
-   "l": "AI",
+   "l": "MC",
    "a": 200.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-17",
    "v": "Claude Team",
-   "l": "AI",
+   "l": "MC",
    "a": 350.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-17",
-   "v": "Tremendous (creator payouts)",
-   "l": "CRE",
+   "v": "Tremendous (Snowball wallet top-up)",
+   "l": "SBW",
    "a": 300.0,
    "k": "ach",
+   "cy": "U",
    "memo": "Account funding",
    "desc": "Account funding",
    "payee": "Tremendous, LLC"
@@ -3120,49 +4011,56 @@
    "v": "Upwork",
    "l": "UPW",
    "a": 385.44,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-08-18",
    "v": "BrowserStack",
-   "l": "SW",
+   "l": "MT",
    "a": 49.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-18",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-19",
    "v": "Klaviyo",
    "l": "KLV",
    "a": 2200.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-20",
    "v": "Goodloading",
    "l": "SW",
    "a": 57.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-20",
    "v": "Grok / xAI",
-   "l": "AI",
+   "l": "MC",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-20",
    "v": "Shopify",
    "l": "SHOP",
    "a": 4001.63,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-20",
@@ -3170,6 +4068,7 @@
    "l": "SW",
    "a": 294.16,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
@@ -3177,56 +4076,64 @@
    "v": "Zoom",
    "l": "SW",
    "a": 14.44,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-21",
    "v": "Apify",
-   "l": "AI",
+   "l": "MC",
    "a": 51.77,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-21",
    "v": "Elevar",
    "l": "MT",
    "a": 450.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-22",
    "v": "Higgsfield",
    "l": "MC",
    "a": 129.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-23",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 100.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-23",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-24",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 151.69,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-24",
    "v": "Figma",
-   "l": "SW",
+   "l": "MT",
    "a": 65.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-24",
@@ -3234,85 +4141,97 @@
    "l": "CRE",
    "a": 110.0,
    "k": "card",
+   "cy": "U",
    "memo": "",
    "desc": "Insense"
   },
   {
    "d": "2026-08-24",
    "v": "Replo",
-   "l": "SW",
+   "l": "MT",
    "a": 199.2,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-24",
    "v": "Shopify",
    "l": "SHOP",
    "a": 3846.76,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-24",
    "v": "Upwork",
    "l": "UPW",
    "a": 370.23,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-08-25",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-25",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-25",
    "v": "Vast.ai",
-   "l": "AI",
+   "l": "MC",
    "a": 50.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-25",
    "v": "Zoom",
    "l": "SW",
    "a": 8.39,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-26",
    "v": "Grok / xAI",
-   "l": "AI",
+   "l": "MC",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-27",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-27",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-28",
    "v": "Apify",
-   "l": "AI",
+   "l": "MC",
    "a": 50.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-28",
@@ -3320,6 +4239,7 @@
    "l": "CRE",
    "a": 81.0,
    "k": "card",
+   "cy": "U",
    "memo": "",
    "desc": "Mosscreator"
   },
@@ -3329,78 +4249,89 @@
    "l": "CRE",
    "a": 77.0,
    "k": "card",
+   "cy": "U",
    "memo": "",
    "desc": "Mosscreator"
   },
   {
    "d": "2026-08-30",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 45.05,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-30",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 145.54,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-30",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 145.32,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-30",
    "v": "Apify",
-   "l": "AI",
+   "l": "MC",
    "a": 50.13,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-31",
    "v": "Grok / xAI",
-   "l": "AI",
+   "l": "MC",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-08-31",
    "v": "Sellerboard",
-   "l": "SW",
+   "l": "MT",
    "a": 39.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-08-31",
    "v": "Upwork",
    "l": "UPW",
    "a": 343.99,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-09-01",
    "v": "Cloudflare",
-   "l": "SW",
+   "l": "MT",
    "a": 33.21,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-01",
    "v": "Notion",
    "l": "SW",
    "a": 264.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-02",
    "v": "Apify",
-   "l": "AI",
+   "l": "MC",
    "a": 53.93,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-02",
@@ -3408,6 +4339,7 @@
    "l": "SW",
    "a": 4.75,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
@@ -3415,77 +4347,88 @@
    "v": "Zoom",
    "l": "SW",
    "a": 26.99,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-03",
    "v": "Foreplay",
    "l": "MT",
    "a": 320.31,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-03",
    "v": "Higgsfield",
    "l": "MC",
    "a": 267.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-03",
    "v": "Northbeam",
    "l": "MT",
    "a": 1038.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-03",
    "v": "PandaDoc",
    "l": "SW",
    "a": 65.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-05",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-06",
    "v": "Grok / xAI",
-   "l": "AI",
+   "l": "MC",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-07",
    "v": "Adobe",
-   "l": "SW",
+   "l": "MT",
    "a": 951.88,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-07",
    "v": "Apify",
-   "l": "AI",
+   "l": "MC",
    "a": 73.9,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-07",
    "v": "Upwork",
    "l": "UPW",
    "a": 386.29,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-09-08",
-   "v": "Tremendous (creator payouts)",
-   "l": "CRE",
+   "v": "Tremendous (Snowball wallet top-up)",
+   "l": "SBW",
    "a": 10000.0,
    "k": "ach",
+   "cy": "U",
    "memo": "Account funding\n\n",
    "desc": "Account funding ",
    "payee": "Tremendous, LLC"
@@ -3495,14 +4438,16 @@
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-09",
    "v": "Uline",
    "l": "SUP",
    "a": 7429.34,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-10",
@@ -3510,6 +4455,7 @@
    "l": "AGENCY",
    "a": 10000.0,
    "k": "ach",
+   "cy": "M",
    "memo": "MATTHEW GA",
    "desc": "ACH debit from MATTHEW GATTOZZI"
   },
@@ -3519,49 +4465,106 @@
    "l": "SW",
    "a": 48.11,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
    "d": "2026-09-10",
    "v": "Hostinger",
-   "l": "SW",
+   "l": "MC",
    "a": 248.12,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-10",
    "v": "Hostinger",
-   "l": "SW",
+   "l": "MC",
    "a": 37.28,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-11",
    "v": "Adnova.ai",
    "l": "MT",
    "a": 79.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-11",
    "v": "Adobe",
-   "l": "SW",
+   "l": "MT",
    "a": 34.49,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-11",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 149.97,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-11",
    "v": "Delaware Business Incorporators",
    "l": "TAX",
    "a": 197.0,
-   "k": "card"
+   "k": "card",
+   "cy": "Y",
+   "sp": [
+    [
+     "2026-09",
+     16.42
+    ],
+    [
+     "2026-10",
+     16.42
+    ],
+    [
+     "2026-11",
+     16.42
+    ],
+    [
+     "2026-12",
+     16.42
+    ],
+    [
+     "2027-01",
+     16.42
+    ],
+    [
+     "2027-02",
+     16.42
+    ],
+    [
+     "2027-03",
+     16.42
+    ],
+    [
+     "2027-04",
+     16.42
+    ],
+    [
+     "2027-05",
+     16.42
+    ],
+    [
+     "2027-06",
+     16.42
+    ],
+    [
+     "2027-07",
+     16.42
+    ],
+    [
+     "2027-08",
+     16.38
+    ]
+   ]
   },
   {
    "d": "2026-09-11",
@@ -3569,6 +4572,7 @@
    "l": "AGENCY",
    "a": -10000.0,
    "k": "ach",
+   "cy": "M",
    "memo": "MATTHEW GA",
    "desc": "ACH debit return from MATTHEW GATTOZZI"
   },
@@ -3577,42 +4581,48 @@
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-11",
    "v": "Hostinger",
-   "l": "SW",
+   "l": "MC",
    "a": 252.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-11",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-12",
    "v": "Grok / xAI",
-   "l": "AI",
+   "l": "MC",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-12",
    "v": "Slack",
    "l": "SW",
    "a": 258.83,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-13",
    "v": "Canva",
-   "l": "SW",
+   "l": "MT",
    "a": 147.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-13",
@@ -3620,6 +4630,7 @@
    "l": "MC",
    "a": 11.35,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
@@ -3627,224 +4638,306 @@
    "v": "Goodloading",
    "l": "SW",
    "a": 57.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-14",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 145.66,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-14",
    "v": "Apify",
-   "l": "AI",
+   "l": "MC",
    "a": 93.07,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-14",
    "v": "Upwork",
    "l": "UPW",
    "a": 384.8,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-09-14",
    "v": "n8n Cloud",
    "l": "SW",
    "a": 60.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-15",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 145.31,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-15",
    "v": "Numeral (sales-tax filing fee)",
    "l": "TAX",
    "a": 2100.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-16",
    "v": "Atlassian",
    "l": "SW",
    "a": 19.01,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-16",
    "v": "BrowserStack",
-   "l": "SW",
+   "l": "MT",
    "a": 7.65,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-16",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-17",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 87.7,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-17",
    "v": "Claude Team",
-   "l": "AI",
+   "l": "MC",
    "a": 350.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-17",
    "v": "Grok / xAI",
-   "l": "AI",
+   "l": "MC",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-18",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 151.09,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-18",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 104.8,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-18",
    "v": "Apify",
-   "l": "AI",
+   "l": "MC",
    "a": 85.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-18",
    "v": "Atlassian",
    "l": "SW",
    "a": 96.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-18",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-19",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 146.46,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-19",
    "v": "BrowserStack",
-   "l": "SW",
+   "l": "MT",
    "a": 79.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-19",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-19",
    "v": "Klaviyo",
    "l": "KLV",
    "a": 115.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-19",
    "v": "Klaviyo",
    "l": "KLV",
    "a": 2315.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-20",
    "v": "Helium 10",
-   "l": "SW",
+   "l": "MT",
    "a": 948.0,
-   "k": "card"
+   "k": "card",
+   "cy": "Y",
+   "sp": [
+    [
+     "2026-09",
+     79.0
+    ],
+    [
+     "2026-10",
+     79.0
+    ],
+    [
+     "2026-11",
+     79.0
+    ],
+    [
+     "2026-12",
+     79.0
+    ],
+    [
+     "2027-01",
+     79.0
+    ],
+    [
+     "2027-02",
+     79.0
+    ],
+    [
+     "2027-03",
+     79.0
+    ],
+    [
+     "2027-04",
+     79.0
+    ],
+    [
+     "2027-05",
+     79.0
+    ],
+    [
+     "2027-06",
+     79.0
+    ],
+    [
+     "2027-07",
+     79.0
+    ],
+    [
+     "2027-08",
+     79.0
+    ]
+   ]
   },
   {
    "d": "2026-09-20",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-20",
    "v": "Pacdora",
    "l": "SW",
    "a": 14.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-20",
    "v": "Zoom",
    "l": "SW",
    "a": 24.44,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-21",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 146.75,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-21",
    "v": "Elevar",
    "l": "MT",
    "a": 450.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-21",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-21",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-21",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-21",
@@ -3852,6 +4945,7 @@
    "l": "SW",
    "a": 279.52,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
@@ -3859,161 +4953,234 @@
    "v": "Upwork",
    "l": "UPW",
    "a": 420.04,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-09-22",
    "v": "AdsPower",
    "l": "MT",
    "a": 9.38,
-   "k": "card"
+   "k": "card",
+   "cy": "Y",
+   "sp": [
+    [
+     "2026-09",
+     0.78
+    ],
+    [
+     "2026-10",
+     0.78
+    ],
+    [
+     "2026-11",
+     0.78
+    ],
+    [
+     "2026-12",
+     0.78
+    ],
+    [
+     "2027-01",
+     0.78
+    ],
+    [
+     "2027-02",
+     0.78
+    ],
+    [
+     "2027-03",
+     0.78
+    ],
+    [
+     "2027-04",
+     0.78
+    ],
+    [
+     "2027-05",
+     0.78
+    ],
+    [
+     "2027-06",
+     0.78
+    ],
+    [
+     "2027-07",
+     0.78
+    ],
+    [
+     "2027-08",
+     0.8
+    ]
+   ]
   },
   {
    "d": "2026-09-22",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 90.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-22",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-22",
    "v": "Grok / xAI",
-   "l": "AI",
+   "l": "MC",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-22",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-22",
    "v": "Higgsfield",
    "l": "MC",
    "a": 129.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-23",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 100.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-23",
    "v": "Atlassian",
    "l": "SW",
    "a": 18.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-23",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-23",
    "v": "Scrape Creators",
    "l": "MT",
    "a": 47.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-23",
    "v": "Shopify",
    "l": "SHOP",
    "a": 4013.18,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-23",
    "v": "VPN",
    "l": "SW",
    "a": 18.69,
-   "k": "card"
+   "k": "card",
+   "cy": "O"
   },
   {
    "d": "2026-09-24",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 45.03,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-24",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 45.38,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-24",
    "v": "Atlassian",
    "l": "SW",
    "a": 72.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-24",
    "v": "Figma",
-   "l": "SW",
+   "l": "MT",
    "a": 65.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-24",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-24",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-24",
    "v": "Replo",
-   "l": "SW",
+   "l": "MT",
    "a": 199.2,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-24",
    "v": "Shopify",
    "l": "SHOP",
    "a": 2549.36,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-25",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-25",
-   "v": "Tremendous (creator payouts)",
-   "l": "CRE",
+   "v": "Tremendous (Snowball wallet top-up)",
+   "l": "SBW",
    "a": 3725.0,
    "k": "ach",
+   "cy": "U",
    "memo": "Account funding Invoice number C9925E79-0011",
    "desc": "Account funding Invoice number C9925E79-0011",
    "payee": "Tremendous, LLC"
@@ -4021,51 +5188,58 @@
   {
    "d": "2026-09-26",
    "v": "Firecrawl",
-   "l": "AI",
+   "l": "MC",
    "a": 99.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-27",
    "v": "Firecrawl",
-   "l": "AI",
+   "l": "MC",
    "a": 99.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-27",
    "v": "Firecrawl",
-   "l": "AI",
+   "l": "MC",
    "a": 99.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-28",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 146.5,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-28",
    "v": "Atlassian",
    "l": "SW",
    "a": 48.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-09-28",
    "v": "Grok / xAI",
-   "l": "AI",
+   "l": "MC",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-28",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-28",
@@ -4073,6 +5247,7 @@
    "l": "CRE",
    "a": 239.0,
    "k": "card",
+   "cy": "U",
    "memo": "",
    "desc": "Mosscreator"
   },
@@ -4081,7 +5256,8 @@
    "v": "Upwork",
    "l": "UPW",
    "a": 363.24,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-09-28",
@@ -4089,6 +5265,7 @@
    "l": "EDU",
    "a": 47.87,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
@@ -4097,6 +5274,7 @@
    "l": "EDU",
    "a": 47.87,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
@@ -4105,119 +5283,136 @@
    "l": "EDU",
    "a": 50.93,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
    "d": "2026-09-30",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 145.03,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-30",
    "v": "Grok / xAI",
-   "l": "AI",
+   "l": "MC",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-30",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-30",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-30",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-09-30",
    "v": "Sellerboard",
-   "l": "SW",
+   "l": "MT",
    "a": 39.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-01",
    "v": "Cloudflare",
-   "l": "SW",
+   "l": "MT",
    "a": 32.88,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-01",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-01",
    "v": "Notion",
    "l": "SW",
    "a": 309.61,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-02",
    "v": "AdSpy",
    "l": "MT",
    "a": 149.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-02",
    "v": "Grok / xAI",
-   "l": "AI",
+   "l": "MC",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-02",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-03",
    "v": "Apify",
-   "l": "AI",
+   "l": "MC",
    "a": 339.06,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-03",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-03",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 105.5,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-03",
    "v": "Uline",
    "l": "SUP",
    "a": 7014.8,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-04",
@@ -4225,6 +5420,7 @@
    "l": "MC",
    "a": 8.53,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
@@ -4232,56 +5428,64 @@
    "v": "Foreplay",
    "l": "MT",
    "a": 320.31,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-04",
    "v": "Higgsfield",
    "l": "MC",
    "a": 267.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-04",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-04",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-04",
    "v": "Scrape Creators",
    "l": "MT",
    "a": 47.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-05",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-05",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-05",
    "v": "PandaDoc",
    "l": "SW",
    "a": 65.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-06",
@@ -4289,6 +5493,7 @@
    "l": "AGENCY",
    "a": 10000.0,
    "k": "ach",
+   "cy": "M",
    "memo": "For the period 01 August 2026 - 31 August 2026, minimum monthly commitment INV-1",
    "desc": "For the period 01 August 2026 - 31 August 2026, minimum monthly commit",
    "payee": "Adcrate Ltd"
@@ -4296,121 +5501,188 @@
   {
    "d": "2026-10-06",
    "v": "Grok / xAI",
-   "l": "AI",
+   "l": "MC",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-06",
    "v": "Hostinger",
-   "l": "SW",
+   "l": "MC",
    "a": 451.2,
-   "k": "card"
+   "k": "card",
+   "cy": "Y",
+   "sp": [
+    [
+     "2026-10",
+     37.6
+    ],
+    [
+     "2026-11",
+     37.6
+    ],
+    [
+     "2026-12",
+     37.6
+    ],
+    [
+     "2027-01",
+     37.6
+    ],
+    [
+     "2027-02",
+     37.6
+    ],
+    [
+     "2027-03",
+     37.6
+    ],
+    [
+     "2027-04",
+     37.6
+    ],
+    [
+     "2027-05",
+     37.6
+    ],
+    [
+     "2027-06",
+     37.6
+    ],
+    [
+     "2027-07",
+     37.6
+    ],
+    [
+     "2027-08",
+     37.6
+    ],
+    [
+     "2027-09",
+     37.6
+    ]
+   ]
   },
   {
    "d": "2026-10-06",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-07",
    "v": "Adobe",
-   "l": "SW",
+   "l": "MT",
    "a": 951.88,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-07",
    "v": "Higgsfield",
    "l": "MC",
    "a": 95.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-07",
    "v": "Numeral (sales-tax filing fee)",
    "l": "TAX",
    "a": 2400.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-07",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-07",
    "v": "Skool",
    "l": "EDU",
    "a": 247.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-08",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-09",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-09",
    "v": "Higgsfield",
    "l": "MC",
    "a": 100.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-09",
    "v": "Higgsfield",
    "l": "MC",
    "a": 100.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-09",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-09",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-09",
    "v": "Upwork",
    "l": "UPW",
    "a": 416.37,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-10-10",
    "v": "Grok / xAI",
-   "l": "AI",
+   "l": "MC",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-10",
    "v": "Higgsfield",
    "l": "MC",
    "a": 100.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-10",
@@ -4418,6 +5690,7 @@
    "l": "MC",
    "a": 519.56,
    "k": "card",
+   "cy": "U",
    "fx": "VND"
   },
   {
@@ -4425,112 +5698,128 @@
    "v": "Higgsfield",
    "l": "MC",
    "a": 500.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-10",
    "v": "Suno",
    "l": "MC",
    "a": 10.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-11",
    "v": "Claude Team",
-   "l": "AI",
+   "l": "MC",
    "a": 4.18,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-11",
    "v": "Higgsfield",
    "l": "MC",
    "a": 220.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-11",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-12",
    "v": "Adnova.ai",
    "l": "MT",
    "a": 79.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-12",
    "v": "DigitalOcean",
-   "l": "SW",
+   "l": "MT",
    "a": 5.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-12",
    "v": "DigitalOcean",
-   "l": "SW",
+   "l": "MT",
    "a": 50.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-12",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-12",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-12",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-12",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-12",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-12",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-12",
    "v": "Slack",
    "l": "SW",
    "a": 252.29,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-12",
-   "v": "Tremendous (creator payouts)",
-   "l": "CRE",
+   "v": "Tremendous (Snowball wallet top-up)",
+   "l": "SBW",
    "a": 2500.0,
    "k": "ach",
+   "cy": "U",
    "memo": "account funding tremendous inv C9925E79-0012",
    "desc": "account funding tremendous inv C9925E79-0012",
    "payee": "Tremendous, LLC"
@@ -4540,7 +5829,8 @@
    "v": "Upwork",
    "l": "UPW",
    "a": 426.25,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-10-13",
@@ -4548,6 +5838,7 @@
    "l": "AGENCY",
    "a": 10000.0,
    "k": "ach",
+   "cy": "M",
    "memo": "Cattasaurus Payment for ads expense invoice number INV-8-243\n",
    "desc": "Cattasaurus Payment for ads expense invoice number INV-8-243 ",
    "payee": "Goodo(Matthew Gattozzi, LLC)"
@@ -4557,245 +5848,280 @@
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-13",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-14",
    "v": "Adnova.ai",
    "l": "MT",
    "a": 34.46,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-14",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-14",
    "v": "Higgsfield",
    "l": "MC",
    "a": 500.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-14",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-14",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-14",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-14",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-14",
    "v": "Zoom",
    "l": "SW",
    "a": 26.99,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-15",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-15",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-15",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-15",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-16",
    "v": "Adobe",
-   "l": "SW",
+   "l": "MT",
    "a": 34.49,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-16",
    "v": "Canva",
-   "l": "SW",
+   "l": "MT",
    "a": 147.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-16",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-16",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-16",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-16",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-17",
    "v": "Claude Team",
-   "l": "AI",
+   "l": "MC",
    "a": 375.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-17",
    "v": "Grok / xAI",
-   "l": "AI",
+   "l": "MC",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-17",
    "v": "Higgsfield",
    "l": "MC",
    "a": 500.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-17",
    "v": "Shopify",
    "l": "SHOP",
    "a": 66.02,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-17",
    "v": "Shopify",
    "l": "SHOP",
    "a": 30.87,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-17",
    "v": "Shopify",
    "l": "SHOP",
    "a": 30.87,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-18",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 90.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-18",
    "v": "Anthropic / Claude",
-   "l": "AI",
+   "l": "MC",
    "a": 200.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-18",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-18",
    "v": "Shopify",
    "l": "SHOP",
    "a": 4112.12,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-19",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-19",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-19",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-19",
    "v": "OpenRouter",
-   "l": "AI",
+   "l": "MC",
    "a": 158.25,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-19",
-   "v": "Tremendous (creator payouts)",
-   "l": "CRE",
+   "v": "Tremendous (Snowball wallet top-up)",
+   "l": "SBW",
    "a": 1600.0,
    "k": "ach",
+   "cy": "U",
    "memo": "Account funding",
    "desc": "Account funding",
    "payee": "Tremendous, LLC"
@@ -4805,63 +6131,72 @@
    "v": "Upwork",
    "l": "UPW",
    "a": 433.78,
-   "k": "card"
+   "k": "card",
+   "cy": "W"
   },
   {
    "d": "2026-10-20",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-20",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-20",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-20",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-20",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-20",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-20",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-20",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-21",
@@ -4869,6 +6204,7 @@
    "l": "AGENCY",
    "a": 10000.0,
    "k": "ach",
+   "cy": "M",
    "memo": "For the period 01 July 2026  31 July 2026 invoice number INV-1700",
    "desc": "For the period 01 July 2026 till 31 July 2026 invoice number INV-1700",
    "payee": "Adcrate Ltd"
@@ -4878,147 +6214,168 @@
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-21",
    "v": "Higgsfield",
    "l": "MC",
    "a": 500.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-21",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-21",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-21",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-21",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-22",
    "v": "Goodloading",
    "l": "SW",
    "a": 57.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-22",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-22",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-22",
    "v": "Higgsfield",
    "l": "MC",
    "a": 250.75,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-22",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-22",
    "v": "n8n Cloud",
    "l": "SW",
    "a": 60.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-23",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-23",
    "v": "Klaviyo",
    "l": "KLV",
    "a": 2315.0,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-24",
    "v": "Grok / xAI",
-   "l": "AI",
+   "l": "MC",
    "a": 20.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-24",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-24",
    "v": "Shopify",
    "l": "SHOP",
    "a": 2888.59,
-   "k": "card"
+   "k": "card",
+   "cy": "M"
   },
   {
    "d": "2026-10-25",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-26",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-26",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-26",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
-   "k": "card"
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-10-26",
@@ -5026,6 +6383,7 @@
    "l": "SW",
    "a": 6.94,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
   },
   {
@@ -5034,7 +6392,32 @@
    "l": "SW",
    "a": 281.31,
    "k": "card",
+   "cy": "M",
    "fx": "VND"
+  },
+  {
+   "d": "2026-10-26",
+   "v": "Upwork",
+   "l": "UPW",
+   "a": 485.81,
+   "k": "card",
+   "cy": "W"
+  },
+  {
+   "d": "2026-10-27",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 120.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-10-27",
+   "v": "Replo",
+   "l": "MT",
+   "a": 199.2,
+   "k": "card",
+   "cy": "M"
   }
  ],
  "unclassified_card": [
