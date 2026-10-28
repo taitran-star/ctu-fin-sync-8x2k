@@ -1,24 +1,24 @@
 {
  "schema": 1,
- "generated_at": "2026-10-27T19:00:15Z",
+ "generated_at": "2026-10-28T19:08:16Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
-  "to": "2026-10-27",
+  "to": "2026-10-28",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 2893,
-  "charges": 685,
+  "transactions_read": 2926,
+  "charges": 694,
   "stats": {
-   "status:posted": 2223,
+   "status:posted": 2238,
    "rail:rtp": 6,
-   "rail:ach": 783,
+   "rail:ach": 787,
    "rail:fee": 91,
-   "rail:wire": 29,
-   "status:failed": 668,
-   "rail:card": 1594,
-   "rail:other": 390,
-   "status:pending": 2
+   "rail:wire": 31,
+   "status:failed": 685,
+   "rail:card": 1619,
+   "rail:other": 392,
+   "status:pending": 3
   },
   "lines": {
    "SHOP": "Shopify plan + apps billed by Shopify",
@@ -185,9 +185,9 @@
    "AGENCY": 30000.0,
    "EDU": 247.0,
    "KLV": 2315.0,
-   "MC": 13589.53,
-   "MT": 2050.22,
-   "SBW": 4100.0,
+   "MC": 14633.17,
+   "MT": 2117.77,
+   "SBW": 9600.0,
    "SHOP": 7128.47,
    "SUP": 7014.8,
    "SW": 1059.14,
@@ -277,9 +277,9 @@
    "AGENCY": 30000.0,
    "EDU": 247.0,
    "KLV": 2315.0,
-   "MC": 13246.66,
-   "MT": 2362.98,
-   "SBW": 4100.0,
+   "MC": 14290.3,
+   "MT": 2430.53,
+   "SBW": 9600.0,
    "SHOP": 7128.47,
    "SUP": 7014.8,
    "SW": 1059.14,
@@ -341,7 +341,7 @@
   }
  },
  "pending": {
-  "SBW": 5500.0
+  "MC": 17.59
  },
  "charges": [
   {
@@ -6405,6 +6405,14 @@
   },
   {
    "d": "2026-10-27",
+   "v": "Grok / xAI",
+   "l": "MC",
+   "a": 15.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-10-27",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
@@ -6426,6 +6434,75 @@
    "a": 199.2,
    "k": "card",
    "cy": "M"
+  },
+  {
+   "d": "2026-10-27",
+   "v": "Suno",
+   "l": "MC",
+   "a": 10.39,
+   "k": "card",
+   "cy": "M",
+   "fx": "VND"
+  },
+  {
+   "d": "2026-10-27",
+   "v": "Tremendous (Snowball wallet top-up)",
+   "l": "SBW",
+   "a": 5500.0,
+   "k": "ach",
+   "cy": "U",
+   "memo": "Account funding inv C9925E79-0015\n",
+   "desc": "Account funding inv C9925E79-0015 ",
+   "payee": "Tremendous, LLC"
+  },
+  {
+   "d": "2026-10-28",
+   "v": "Figma",
+   "l": "MT",
+   "a": 67.55,
+   "k": "card",
+   "cy": "M",
+   "fx": "VND"
+  },
+  {
+   "d": "2026-10-28",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 120.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-10-28",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 500.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-10-28",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 120.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-10-28",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 120.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-10-28",
+   "v": "OpenRouter",
+   "l": "MC",
+   "a": 158.25,
+   "k": "card",
+   "cy": "U"
   }
  ],
  "unclassified_card": [
