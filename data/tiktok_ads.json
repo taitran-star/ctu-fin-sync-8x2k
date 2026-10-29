@@ -2,7 +2,7 @@
  "source": "tiktok_marketing_api",
  "schema": 1,
  "script_version": "tiktok-ads-1.1",
- "generated_at": "2026-10-29T06:00:40Z",
+ "generated_at": "2026-10-29T13:20:31Z",
  "timezone": "America/Los_Angeles",
  "currency": "USD",
  "accounts": [
@@ -14,9 +14,9 @@
    "gmv_max_stores": [
     "7494553429084309328"
    ],
-   "balance": 429.8,
+   "balance": 405.4,
    "balance_currency": "USD",
-   "balance_at": "2026-10-29T06:00:36Z",
+   "balance_at": "2026-10-29T13:20:28Z",
    "status": "STATUS_ENABLE"
   },
   {
@@ -29,7 +29,7 @@
    ],
    "balance": 0.0,
    "balance_currency": "USD",
-   "balance_at": "2026-10-29T06:00:39Z",
+   "balance_at": "2026-10-29T13:20:30Z",
    "status": "STATUS_ENABLE"
   }
  ],
@@ -6020,19 +6020,28 @@
    "src": "api"
   },
   "2026-10-28": {
-   "spend": 95.32,
-   "gmv_max_spend": 95.32,
+   "spend": 105.0,
+   "gmv_max_spend": 105.0,
    "other_spend": 0.0,
-   "net_cost": 11.62,
+   "net_cost": 89.05,
    "orders": 4,
    "gross_revenue": 179.46,
+   "src": "api"
+  },
+  "2026-10-29": {
+   "spend": 14.78,
+   "gmv_max_spend": 14.78,
+   "other_spend": 0.0,
+   "net_cost": 0.0,
+   "orders": 0,
+   "gross_revenue": 0.0,
    "src": "api"
   }
  },
  "coverage": {
   "first_day": "2025-01-01",
-  "last_day": "2026-10-28",
-  "days": 666
+  "last_day": "2026-10-29",
+  "days": 667
  },
  "meta": {
   "note": "Chi phí TikTok Ads theo ngày. spend = cost của GMV Max (gmv_max/report, chiến dịch quảng cáo TikTok Shop) + quảng cáo thường (report/integrated BASIC, other_spend). gross_revenue / orders = doanh thu & đơn TikTok Shop mà GMV Max tự nhận (không cộng vào doanh thu P&L). net_cost = cost sau khi trừ credit/coupon quảng cáo. Ngày theo múi giờ tài khoản quảng cáo (Etc/GMT+8 = UTC-8 cố định) - lệch 1 giờ so với giờ LA khi LA đang giờ mùa hè. Trước 16/09/2026 = $0 đã kiểm tra (2 tài khoản: BASIC lifetime không có dữ liệu, GMV Max 12 tháng chỉ có chi từ 16/09/2026).",
@@ -6041,8 +6050,8 @@
   "gmv_max_store_id": "7494553429084309328",
   "api_errors": [],
   "last_window": [
-   "2026-09-29",
-   "2026-10-28"
+   "2026-09-30",
+   "2026-10-29"
   ]
  }
 }
