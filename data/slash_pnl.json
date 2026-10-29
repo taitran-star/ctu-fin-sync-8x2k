@@ -1,24 +1,24 @@
 {
  "schema": 1,
- "generated_at": "2026-10-28T19:08:16Z",
+ "generated_at": "2026-10-29T19:15:36Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
-  "to": "2026-10-28",
+  "to": "2026-10-29",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 2926,
-  "charges": 694,
+  "transactions_read": 2941,
+  "charges": 698,
   "stats": {
-   "status:posted": 2238,
+   "status:posted": 2248,
    "rail:rtp": 6,
-   "rail:ach": 787,
-   "rail:fee": 91,
+   "rail:ach": 789,
+   "rail:fee": 92,
    "rail:wire": 31,
-   "status:failed": 685,
-   "rail:card": 1619,
-   "rail:other": 392,
-   "status:pending": 3
+   "status:failed": 692,
+   "rail:card": 1629,
+   "rail:other": 394,
+   "status:pending": 1
   },
   "lines": {
    "SHOP": "Shopify plan + apps billed by Shopify",
@@ -185,7 +185,7 @@
    "AGENCY": 30000.0,
    "EDU": 247.0,
    "KLV": 2315.0,
-   "MC": 14633.17,
+   "MC": 15390.76,
    "MT": 2117.77,
    "SBW": 9600.0,
    "SHOP": 7128.47,
@@ -277,7 +277,7 @@
    "AGENCY": 30000.0,
    "EDU": 247.0,
    "KLV": 2315.0,
-   "MC": 14290.3,
+   "MC": 15047.89,
    "MT": 2430.53,
    "SBW": 9600.0,
    "SHOP": 7128.47,
@@ -340,9 +340,7 @@
    "MC": 37.6
   }
  },
- "pending": {
-  "MC": 17.59
- },
+ "pending": {},
  "charges": [
   {
    "d": "2026-04-02",
@@ -6466,6 +6464,15 @@
   },
   {
    "d": "2026-10-28",
+   "v": "Grok / xAI",
+   "l": "MC",
+   "a": 17.59,
+   "k": "card",
+   "cy": "U",
+   "fx": "VND"
+  },
+  {
+   "d": "2026-10-28",
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
@@ -6498,9 +6505,33 @@
   },
   {
    "d": "2026-10-28",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 120.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-10-28",
    "v": "OpenRouter",
    "l": "MC",
    "a": 158.25,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-10-29",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 500.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-10-29",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 120.0,
    "k": "card",
    "cy": "U"
   }
