@@ -17457,9 +17457,9 @@
           "fee": -4.85
         },
         "T0006": {
-          "amount": 2270.52,
-          "count": 17,
-          "fee": -104.6
+          "amount": 2674.85,
+          "count": 21,
+          "fee": -120.67
         },
         "T0400": {
           "amount": -2107.79,
@@ -17467,38 +17467,50 @@
           "fee": 0.0
         }
       },
-      "fees": 109.45,
+      "fees": 125.52,
       "fees_credited": 0,
       "other": 0,
-      "payments": 2395.42,
-      "payments_count": 18,
+      "payments": 2799.75,
+      "payments_count": 22,
       "refunds": 0,
       "refunds_count": 0,
-      "transactions": 19,
+      "transactions": 23,
       "withdrawals": 2107.79
+    },
+    "2026-10-30": {
+      "by_event_code": {},
+      "fees": 0,
+      "fees_credited": 0,
+      "other": 0,
+      "payments": 0,
+      "payments_count": 0,
+      "refunds": 0,
+      "refunds_count": 0,
+      "transactions": 0,
+      "withdrawals": 0
     }
   },
-  "generated_at": "2026-10-30T01:40:26Z",
+  "generated_at": "2026-10-30T08:14:39Z",
   "meta": {
-    "api_requests": 4,
+    "api_requests": 3,
     "api_retries": 0,
     "counts": {
-      "transactions_counted": 811,
+      "transactions_counted": 794,
       "transactions_duplicate": 0,
       "transactions_not_success": 17,
-      "transactions_outside_window": 20,
-      "transactions_seen": 848,
+      "transactions_outside_window": 21,
+      "transactions_seen": 832,
       "transactions_without_date": 0
     },
     "currencies_seen": {
       "CAD": 73,
-      "USD": 1446
+      "USD": 1412
     },
     "event_codes_seen": {
       "T0000": 1,
       "T0001": 2,
-      "T0003": 187,
-      "T0006": 495,
+      "T0003": 167,
+      "T0006": 499,
       "T0011": 1,
       "T0114": 2,
       "T0200": 50,
@@ -17520,67 +17532,67 @@
           "start": "2025-01-01"
         }
       ],
-      "days": 667,
+      "days": 668,
       "fetched": {
-        "end": "2026-10-29",
-        "start": "2026-09-14"
+        "end": "2026-10-30",
+        "start": "2026-09-15"
       },
       "first_day": "2025-01-01",
-      "last_day": "2026-10-29",
+      "last_day": "2026-10-30",
       "missing_count": 0,
       "missing_days": [],
       "mode": "rolling",
       "start": "2025-01-01"
     },
     "note": "PayPal lists a transaction up to 3 hours after it happens; the trailing window is refetched every run so late rows are picked up",
-    "pages": 3,
+    "pages": 2,
     "schema": 1,
     "script_version": "1.0",
     "slices": 2,
     "warnings": [
-      "transactions in currencies other than USD were summed as-is: {'USD': 1446, 'CAD': 73}"
+      "transactions in currencies other than USD were summed as-is: {'USD': 1412, 'CAD': 73}"
     ]
   },
   "source": "paypal_transaction_search",
   "timezone": "America/Los_Angeles",
   "totals": {
     "last_30d": {
-      "fees": 2488.66,
+      "fees": 2455.8,
       "fees_credited": 73.63,
-      "other": -239.49,
-      "payments": 63399.94,
-      "payments_count": 459,
+      "other": -183.94,
+      "payments": 62657.52,
+      "payments_count": 454,
       "refunds": 2017.99,
       "refunds_count": 18,
-      "transactions": 520,
-      "withdrawals": 58340.03
+      "transactions": 511,
+      "withdrawals": 56554.6
     },
     "mtd": {
-      "fees": 2382.74,
+      "fees": 2398.81,
       "fees_credited": 72.62,
       "other": -183.94,
-      "payments": 60805.33,
-      "payments_count": 439,
+      "payments": 61209.66,
+      "payments_count": 443,
       "refunds": 1988.99,
       "refunds_count": 17,
-      "transactions": 494,
+      "transactions": 498,
       "withdrawals": 55512.33
     },
     "today": {
-      "fees": 109.45,
+      "fees": 0,
       "fees_credited": 0,
       "other": 0,
-      "payments": 2395.42,
-      "payments_count": 18,
+      "payments": 0,
+      "payments_count": 0,
       "refunds": 0,
       "refunds_count": 0,
-      "transactions": 19,
-      "withdrawals": 2107.79
+      "transactions": 0,
+      "withdrawals": 0
     }
   },
   "window": {
-    "end": "2026-10-29",
-    "start": "2026-09-14"
+    "end": "2026-10-30",
+    "start": "2026-09-15"
   },
   "window_days": 45
 }
