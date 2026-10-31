@@ -1,24 +1,24 @@
 {
  "schema": 1,
- "generated_at": "2026-10-30T18:53:38Z",
+ "generated_at": "2026-10-31T17:56:50Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
-  "to": "2026-10-30",
+  "to": "2026-10-31",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 2953,
-  "charges": 700,
+  "transactions_read": 2962,
+  "charges": 701,
   "stats": {
-   "status:posted": 2256,
+   "status:posted": 2260,
    "rail:rtp": 7,
-   "rail:ach": 793,
-   "rail:fee": 92,
+   "rail:ach": 797,
+   "rail:fee": 93,
    "rail:wire": 31,
-   "status:failed": 694,
-   "rail:card": 1634,
-   "rail:other": 396,
-   "status:pending": 3
+   "status:failed": 696,
+   "rail:card": 1636,
+   "rail:other": 398,
+   "status:pending": 6
   },
   "lines": {
    "SHOP": "Shopify plan + apps billed by Shopify",
@@ -186,7 +186,7 @@
    "CRE": 239.0,
    "EDU": 247.0,
    "KLV": 2315.0,
-   "MC": 15510.76,
+   "MC": 15530.76,
    "MT": 2117.77,
    "SBW": 9600.0,
    "SHOP": 7128.47,
@@ -279,7 +279,7 @@
    "CRE": 239.0,
    "EDU": 247.0,
    "KLV": 2315.0,
-   "MC": 15167.89,
+   "MC": 15187.89,
    "MT": 2430.53,
    "SBW": 9600.0,
    "SHOP": 7128.47,
@@ -342,9 +342,7 @@
    "MC": 37.6
   }
  },
- "pending": {
-  "MC": 20.0
- },
+ "pending": {},
  "charges": [
   {
    "d": "2026-04-02",
@@ -6544,6 +6542,14 @@
    "v": "Higgsfield",
    "l": "MC",
    "a": 120.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-10-30",
+   "v": "Grok / xAI",
+   "l": "MC",
+   "a": 20.0,
    "k": "card",
    "cy": "U"
   },
