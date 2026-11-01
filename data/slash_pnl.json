@@ -1,24 +1,24 @@
 {
  "schema": 1,
- "generated_at": "2026-10-31T17:56:50Z",
+ "generated_at": "2026-11-01T18:36:41Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
-  "to": "2026-10-31",
+  "to": "2026-11-01",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 2962,
-  "charges": 701,
+  "transactions_read": 2972,
+  "charges": 704,
   "stats": {
-   "status:posted": 2260,
+   "status:posted": 2263,
    "rail:rtp": 7,
    "rail:ach": 797,
    "rail:fee": 93,
    "rail:wire": 31,
-   "status:failed": 696,
-   "rail:card": 1636,
+   "status:failed": 702,
+   "rail:card": 1646,
    "rail:other": 398,
-   "status:pending": 6
+   "status:pending": 7
   },
   "lines": {
    "SHOP": "Shopify plan + apps billed by Shopify",
@@ -194,6 +194,10 @@
    "SW": 1059.14,
    "TAX": 2400.0,
    "UPW": 1762.21
+  },
+  "2026-11": {
+   "MC": 252.0,
+   "MT": 47.0
   }
  },
  "accrual": {
@@ -289,8 +293,8 @@
    "UPW": 1762.21
   },
   "2026-11": {
-   "MC": 108.33,
-   "MT": 312.76,
+   "MC": 360.33,
+   "MT": 359.76,
    "TAX": 56.26
   },
   "2026-12": {
@@ -342,7 +346,9 @@
    "MC": 37.6
   }
  },
- "pending": {},
+ "pending": {
+  "MT": 39.0
+ },
  "charges": [
   {
    "d": "2026-04-02",
@@ -6562,6 +6568,30 @@
    "cy": "U",
    "memo": "",
    "desc": "Mosscreator"
+  },
+  {
+   "d": "2026-11-01",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 12.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-11-01",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 240.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-11-01",
+   "v": "Scrape Creators",
+   "l": "MT",
+   "a": 47.0,
+   "k": "card",
+   "cy": "M"
   }
  ],
  "unclassified_card": [
