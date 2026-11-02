@@ -17541,14 +17541,14 @@
     "2026-11-01": {
       "by_event_code": {
         "T0003": {
-          "amount": 183.36,
-          "count": 2,
-          "fee": -7.38
+          "amount": 243.78,
+          "count": 3,
+          "fee": -9.98
         },
         "T0006": {
-          "amount": 2283.26,
-          "count": 16,
-          "fee": -92.96
+          "amount": 3070.21,
+          "count": 22,
+          "fee": -123.37
         },
         "T0400": {
           "amount": -3787.18,
@@ -17556,38 +17556,38 @@
           "fee": 0.0
         }
       },
-      "fees": 100.34,
+      "fees": 133.35,
       "fees_credited": 0,
       "other": 0,
-      "payments": 2466.62,
-      "payments_count": 18,
+      "payments": 3313.99,
+      "payments_count": 25,
       "refunds": 0,
       "refunds_count": 0,
-      "transactions": 19,
+      "transactions": 26,
       "withdrawals": 3787.18
     }
   },
-  "generated_at": "2026-11-01T21:48:09Z",
+  "generated_at": "2026-11-02T01:19:58Z",
   "meta": {
     "api_requests": 4,
     "api_retries": 0,
     "counts": {
-      "transactions_counted": 846,
+      "transactions_counted": 853,
       "transactions_duplicate": 0,
       "transactions_not_success": 17,
       "transactions_outside_window": 13,
-      "transactions_seen": 876,
+      "transactions_seen": 883,
       "transactions_without_date": 0
     },
     "currencies_seen": {
       "CAD": 76,
-      "USD": 1509
+      "USD": 1523
     },
     "event_codes_seen": {
       "T0000": 1,
       "T0001": 2,
-      "T0003": 139,
-      "T0006": 565,
+      "T0003": 140,
+      "T0006": 571,
       "T0011": 1,
       "T0114": 2,
       "T0200": 52,
@@ -17627,43 +17627,43 @@
     "script_version": "1.0",
     "slices": 2,
     "warnings": [
-      "transactions in currencies other than USD were summed as-is: {'USD': 1509, 'CAD': 76}"
+      "transactions in currencies other than USD were summed as-is: {'USD': 1523, 'CAD': 76}"
     ]
   },
   "source": "paypal_transaction_search",
   "timezone": "America/Los_Angeles",
   "totals": {
     "last_30d": {
-      "fees": 2680.31,
+      "fees": 2713.32,
       "fees_credited": 73.26,
       "other": -239.94,
-      "payments": 68137.63,
-      "payments_count": 499,
+      "payments": 68985.0,
+      "payments_count": 506,
       "refunds": 1902.08,
       "refunds_count": 17,
-      "transactions": 558,
+      "transactions": 565,
       "withdrawals": 63029.13
     },
     "mtd": {
-      "fees": 100.34,
+      "fees": 133.35,
       "fees_credited": 0,
       "other": 0,
-      "payments": 2466.62,
-      "payments_count": 18,
+      "payments": 3313.99,
+      "payments_count": 25,
       "refunds": 0,
       "refunds_count": 0,
-      "transactions": 19,
+      "transactions": 26,
       "withdrawals": 3787.18
     },
     "today": {
-      "fees": 100.34,
+      "fees": 133.35,
       "fees_credited": 0,
       "other": 0,
-      "payments": 2466.62,
-      "payments_count": 18,
+      "payments": 3313.99,
+      "payments_count": 25,
       "refunds": 0,
       "refunds_count": 0,
-      "transactions": 19,
+      "transactions": 26,
       "withdrawals": 3787.18
     }
   },
