@@ -17546,9 +17546,9 @@
           "fee": -9.98
         },
         "T0006": {
-          "amount": 3655.15,
-          "count": 26,
-          "fee": -145.74
+          "amount": 3785.83,
+          "count": 27,
+          "fee": -150.79
         },
         "T0400": {
           "amount": -3787.18,
@@ -17556,55 +17556,66 @@
           "fee": 0.0
         }
       },
-      "fees": 155.72,
+      "fees": 160.77,
       "fees_credited": 0,
       "other": 0,
-      "payments": 3898.93,
-      "payments_count": 29,
+      "payments": 4029.61,
+      "payments_count": 30,
       "refunds": 0,
       "refunds_count": 0,
-      "transactions": 30,
+      "transactions": 31,
       "withdrawals": 3787.18
     },
     "2026-11-02": {
-      "by_event_code": {},
-      "fees": 0,
+      "by_event_code": {
+        "T0006": {
+          "amount": 918.72,
+          "count": 5,
+          "fee": -34.52
+        },
+        "T0400": {
+          "amount": -3868.84,
+          "count": 1,
+          "fee": 0.0
+        }
+      },
+      "fees": 34.52,
       "fees_credited": 0,
       "other": 0,
-      "payments": 0,
-      "payments_count": 0,
+      "payments": 918.72,
+      "payments_count": 5,
       "refunds": 0,
       "refunds_count": 0,
-      "transactions": 0,
-      "withdrawals": 0
+      "transactions": 6,
+      "withdrawals": 3868.84
     }
   },
-  "generated_at": "2026-11-02T08:00:28Z",
+  "generated_at": "2026-11-02T18:42:56Z",
   "meta": {
     "api_requests": 4,
     "api_retries": 0,
     "counts": {
-      "transactions_counted": 832,
+      "transactions_counted": 839,
       "transactions_duplicate": 0,
       "transactions_not_success": 15,
       "transactions_outside_window": 25,
-      "transactions_seen": 872,
+      "transactions_seen": 879,
       "transactions_without_date": 0
     },
     "currencies_seen": {
       "CAD": 76,
-      "USD": 1483
+      "USD": 1496
     },
     "event_codes_seen": {
       "T0000": 1,
       "T0001": 1,
       "T0003": 128,
-      "T0006": 575,
+      "T0006": 581,
       "T0011": 1,
       "T0114": 2,
       "T0200": 52,
       "T0300": 5,
-      "T0400": 42,
+      "T0400": 43,
       "T0403": 1,
       "T1106": 1,
       "T1107": 52,
@@ -17639,44 +17650,44 @@
     "script_version": "1.0",
     "slices": 2,
     "warnings": [
-      "transactions in currencies other than USD were summed as-is: {'USD': 1483, 'CAD': 76}"
+      "transactions in currencies other than USD were summed as-is: {'USD': 1496, 'CAD': 76}"
     ]
   },
   "source": "paypal_transaction_search",
   "timezone": "America/Los_Angeles",
   "totals": {
     "last_30d": {
-      "fees": 2675.18,
+      "fees": 2714.75,
       "fees_credited": 58.38,
       "other": -239.94,
-      "payments": 67739.78,
-      "payments_count": 496,
+      "payments": 68789.18,
+      "payments_count": 502,
       "refunds": 1475.68,
       "refunds_count": 15,
-      "transactions": 552,
-      "withdrawals": 61034.76
+      "transactions": 559,
+      "withdrawals": 64903.6
     },
     "mtd": {
-      "fees": 155.72,
+      "fees": 195.29,
       "fees_credited": 0,
       "other": 0,
-      "payments": 3898.93,
-      "payments_count": 29,
+      "payments": 4948.33,
+      "payments_count": 35,
       "refunds": 0,
       "refunds_count": 0,
-      "transactions": 30,
-      "withdrawals": 3787.18
+      "transactions": 37,
+      "withdrawals": 7656.02
     },
     "today": {
-      "fees": 0,
+      "fees": 34.52,
       "fees_credited": 0,
       "other": 0,
-      "payments": 0,
-      "payments_count": 0,
+      "payments": 918.72,
+      "payments_count": 5,
       "refunds": 0,
       "refunds_count": 0,
-      "transactions": 0,
-      "withdrawals": 0
+      "transactions": 6,
+      "withdrawals": 3868.84
     }
   },
   "window": {
