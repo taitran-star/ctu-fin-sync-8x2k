@@ -1,24 +1,24 @@
 {
  "schema": 1,
- "generated_at": "2026-11-02T22:28:58Z",
+ "generated_at": "2026-11-03T20:17:47Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
-  "to": "2026-11-02",
+  "to": "2026-11-03",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 2999,
-  "charges": 711,
+  "transactions_read": 3026,
+  "charges": 720,
   "stats": {
-   "status:posted": 2283,
+   "status:posted": 2304,
    "rail:rtp": 7,
-   "rail:ach": 802,
-   "rail:fee": 94,
+   "rail:ach": 811,
+   "rail:fee": 95,
    "rail:wire": 31,
-   "status:failed": 713,
-   "rail:card": 1665,
-   "rail:other": 400,
-   "status:pending": 3
+   "status:failed": 721,
+   "rail:card": 1680,
+   "rail:other": 402,
+   "status:pending": 1
   },
   "lines": {
    "SHOP": "Shopify plan + apps billed by Shopify",
@@ -196,9 +196,11 @@
    "UPW": 1762.21
   },
   "2026-11": {
-   "MC": 2020.25,
+   "MC": 2342.54,
    "MT": 86.0,
-   "SW": 326.37
+   "SW": 430.12,
+   "TAX": 2775.0,
+   "UPW": 515.91
   }
  },
  "accrual": {
@@ -294,10 +296,11 @@
    "UPW": 1762.21
   },
   "2026-11": {
-   "MC": 1221.08,
+   "MC": 1543.37,
    "MT": 398.76,
-   "SW": 326.37,
-   "TAX": 56.26
+   "SW": 430.12,
+   "TAX": 2831.26,
+   "UPW": 515.91
   },
   "2026-12": {
    "MC": 190.83,
@@ -351,10 +354,7 @@
    "MC": 82.5
   }
  },
- "pending": {
-  "UPW": 515.91,
-  "SW": 26.99
- },
+ "pending": {},
  "charges": [
   {
    "d": "2026-04-02",
@@ -6683,9 +6683,41 @@
   },
   {
    "d": "2026-11-02",
+   "v": "Apify",
+   "l": "MC",
+   "a": 19.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-11-02",
+   "v": "Grok / xAI",
+   "l": "MC",
+   "a": 36.29,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-11-02",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 267.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-11-02",
    "v": "Notion",
    "l": "SW",
    "a": 321.3,
+   "k": "card",
+   "cy": "M"
+  },
+  {
+   "d": "2026-11-02",
+   "v": "Numeral (sales-tax filing fee)",
+   "l": "TAX",
+   "a": 2775.0,
    "k": "card",
    "cy": "M"
   },
@@ -6705,6 +6737,48 @@
    "k": "card",
    "cy": "M",
    "fx": "VND"
+  },
+  {
+   "d": "2026-11-02",
+   "v": "Squarespace / Google Workspace",
+   "l": "SW",
+   "a": 5.88,
+   "k": "card",
+   "cy": "M",
+   "fx": "VND"
+  },
+  {
+   "d": "2026-11-02",
+   "v": "Squarespace / Google Workspace",
+   "l": "SW",
+   "a": 5.88,
+   "k": "card",
+   "cy": "M",
+   "fx": "VND"
+  },
+  {
+   "d": "2026-11-02",
+   "v": "Upwork",
+   "l": "UPW",
+   "a": 515.91,
+   "k": "card",
+   "cy": "W"
+  },
+  {
+   "d": "2026-11-02",
+   "v": "Zoom",
+   "l": "SW",
+   "a": 26.99,
+   "k": "card",
+   "cy": "M"
+  },
+  {
+   "d": "2026-11-03",
+   "v": "PandaDoc",
+   "l": "SW",
+   "a": 65.0,
+   "k": "card",
+   "cy": "M"
   }
  ],
  "unclassified_card": [
