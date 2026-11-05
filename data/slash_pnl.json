@@ -1,24 +1,24 @@
 {
  "schema": 1,
- "generated_at": "2026-11-04T20:34:07Z",
+ "generated_at": "2026-11-05T20:50:22Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
-  "to": "2026-11-04",
+  "to": "2026-11-05",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 3066,
-  "charges": 723,
+  "transactions_read": 3080,
+  "charges": 728,
   "stats": {
-   "status:posted": 2321,
+   "status:posted": 2338,
    "rail:rtp": 8,
-   "rail:ach": 824,
-   "rail:fee": 96,
+   "rail:ach": 828,
+   "rail:fee": 97,
    "rail:wire": 31,
-   "status:failed": 737,
-   "rail:card": 1703,
-   "rail:other": 404,
-   "status:pending": 8
+   "status:failed": 741,
+   "rail:card": 1710,
+   "rail:other": 406,
+   "status:pending": 1
   },
   "lines": {
    "SHOP": "Shopify plan + apps billed by Shopify",
@@ -196,8 +196,9 @@
    "UPW": 1762.21
   },
   "2026-11": {
-   "MC": 2681.14,
+   "MC": 2944.2,
    "MT": 86.0,
+   "SUP": 4095.87,
    "SW": 430.12,
    "TAX": 2775.0,
    "UPW": 515.91
@@ -296,8 +297,9 @@
    "UPW": 1762.21
   },
   "2026-11": {
-   "MC": 1881.97,
+   "MC": 2145.03,
    "MT": 398.76,
+   "SUP": 4095.87,
    "SW": 430.12,
    "TAX": 2831.26,
    "UPW": 515.91
@@ -354,9 +356,7 @@
    "MC": 82.5
   }
  },
- "pending": {
-  "SUP": 4095.87
- },
+ "pending": {},
  "charges": [
   {
    "d": "2026-04-02",
@@ -6804,6 +6804,46 @@
    "v": "Higgsfield",
    "l": "MC",
    "a": 310.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-11-05",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 90.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-11-05",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 83.06,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-11-05",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 90.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-11-05",
+   "v": "Uline",
+   "l": "SUP",
+   "a": 3887.94,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-11-05",
+   "v": "Uline",
+   "l": "SUP",
+   "a": 207.93,
    "k": "card",
    "cy": "U"
   }
