@@ -1,24 +1,24 @@
 {
  "schema": 1,
- "generated_at": "2026-11-05T20:50:22Z",
+ "generated_at": "2026-11-06T20:06:37Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
-  "to": "2026-11-05",
+  "to": "2026-11-06",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 3080,
-  "charges": 728,
+  "transactions_read": 3096,
+  "charges": 731,
   "stats": {
-   "status:posted": 2338,
+   "status:posted": 2349,
    "rail:rtp": 8,
-   "rail:ach": 828,
-   "rail:fee": 97,
+   "rail:ach": 834,
+   "rail:fee": 98,
    "rail:wire": 31,
-   "status:failed": 741,
-   "rail:card": 1710,
-   "rail:other": 406,
-   "status:pending": 1
+   "status:failed": 745,
+   "rail:card": 1717,
+   "rail:other": 408,
+   "status:pending": 2
   },
   "lines": {
    "SHOP": "Shopify plan + apps billed by Shopify",
@@ -196,10 +196,10 @@
    "UPW": 1762.21
   },
   "2026-11": {
-   "MC": 2944.2,
-   "MT": 86.0,
+   "MC": 3034.2,
+   "MT": 186.0,
    "SUP": 4095.87,
-   "SW": 430.12,
+   "SW": 860.03,
    "TAX": 2775.0,
    "UPW": 515.91
   }
@@ -297,10 +297,10 @@
    "UPW": 1762.21
   },
   "2026-11": {
-   "MC": 2145.03,
-   "MT": 398.76,
+   "MC": 2235.03,
+   "MT": 498.76,
    "SUP": 4095.87,
-   "SW": 430.12,
+   "SW": 860.03,
    "TAX": 2831.26,
    "UPW": 515.91
   },
@@ -6833,6 +6833,23 @@
   },
   {
    "d": "2026-11-05",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 90.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-11-05",
+   "v": "Squarespace / Google Workspace",
+   "l": "SW",
+   "a": 429.91,
+   "k": "card",
+   "cy": "M",
+   "fx": "VND"
+  },
+  {
+   "d": "2026-11-05",
    "v": "Uline",
    "l": "SUP",
    "a": 3887.94,
@@ -6844,6 +6861,14 @@
    "v": "Uline",
    "l": "SUP",
    "a": 207.93,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-11-06",
+   "v": "DigitalOcean",
+   "l": "MT",
+   "a": 100.0,
    "k": "card",
    "cy": "U"
   }
