@@ -1,24 +1,24 @@
 {
  "schema": 1,
- "generated_at": "2026-11-07T18:21:22Z",
+ "generated_at": "2026-11-08T18:31:10Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
-  "to": "2026-11-07",
+  "to": "2026-11-08",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 3108,
-  "charges": 733,
+  "transactions_read": 3115,
+  "charges": 738,
   "stats": {
-   "status:posted": 2353,
+   "status:posted": 2360,
    "rail:rtp": 8,
    "rail:ach": 835,
    "rail:fee": 98,
    "rail:wire": 31,
-   "status:failed": 749,
-   "rail:card": 1726,
-   "rail:other": 410,
-   "status:pending": 6
+   "status:failed": 751,
+   "rail:card": 1731,
+   "rail:other": 412,
+   "status:pending": 4
   },
   "lines": {
    "SHOP": "Shopify plan + apps billed by Shopify",
@@ -196,8 +196,9 @@
    "UPW": 1762.21
   },
   "2026-11": {
-   "MC": 3274.2,
-   "MT": 227.91,
+   "MC": 3342.76,
+   "MT": 1179.79,
+   "SHOP": 4350.43,
    "SUP": 4095.87,
    "SW": 860.03,
    "TAX": 2775.0,
@@ -297,8 +298,9 @@
    "UPW": 1762.21
   },
   "2026-11": {
-   "MC": 2475.03,
-   "MT": 540.67,
+   "MC": 2543.59,
+   "MT": 1492.55,
+   "SHOP": 4350.43,
    "SUP": 4095.87,
    "SW": 860.03,
    "TAX": 2831.26,
@@ -357,9 +359,7 @@
   }
  },
  "pending": {
-  "SUP": 9352.43,
-  "MC": 20.0,
-  "MT": 951.88
+  "SUP": 9352.43
  },
  "charges": [
   {
@@ -6891,6 +6891,47 @@
    "a": 240.0,
    "k": "card",
    "cy": "U"
+  },
+  {
+   "d": "2026-11-07",
+   "v": "Adobe",
+   "l": "MT",
+   "a": 951.88,
+   "k": "card",
+   "cy": "M"
+  },
+  {
+   "d": "2026-11-07",
+   "v": "Grok / xAI",
+   "l": "MC",
+   "a": 20.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-11-07",
+   "v": "Suno",
+   "l": "MC",
+   "a": 25.66,
+   "k": "card",
+   "cy": "M",
+   "fx": "VND"
+  },
+  {
+   "d": "2026-11-08",
+   "v": "Shopify",
+   "l": "SHOP",
+   "a": 4350.43,
+   "k": "card",
+   "cy": "M"
+  },
+  {
+   "d": "2026-11-08",
+   "v": "Suno",
+   "l": "MC",
+   "a": 22.9,
+   "k": "card",
+   "cy": "M"
   }
  ],
  "unclassified_card": [
