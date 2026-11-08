@@ -17734,14 +17734,14 @@
     "2026-11-07": {
       "by_event_code": {
         "T0003": {
-          "amount": 458.0,
-          "count": 5,
-          "fee": -18.43
+          "amount": 515.0,
+          "count": 6,
+          "fee": -20.91
         },
         "T0006": {
-          "amount": 6088.97,
-          "count": 50,
-          "fee": -245.83
+          "amount": 7682.09,
+          "count": 64,
+          "fee": -313.24
         },
         "T0400": {
           "amount": -6055.33,
@@ -17754,37 +17754,37 @@
           "fee": 0.0
         }
       },
-      "fees": 264.26,
+      "fees": 334.15,
       "fees_credited": 0,
       "other": 0,
-      "payments": 6546.97,
-      "payments_count": 55,
+      "payments": 8197.09,
+      "payments_count": 70,
       "refunds": 94.14,
       "refunds_count": 1,
-      "transactions": 57,
+      "transactions": 72,
       "withdrawals": 6055.33
     }
   },
-  "generated_at": "2026-11-07T23:48:40Z",
+  "generated_at": "2026-11-08T05:01:14Z",
   "meta": {
-    "api_requests": 3,
+    "api_requests": 4,
     "api_retries": 0,
     "counts": {
-      "transactions_counted": 940,
+      "transactions_counted": 955,
       "transactions_duplicate": 0,
       "transactions_not_success": 17,
       "transactions_outside_window": 20,
-      "transactions_seen": 977,
+      "transactions_seen": 992,
       "transactions_without_date": 0
     },
     "currencies_seen": {
       "CAD": 45,
-      "USD": 1748
+      "USD": 1778
     },
     "event_codes_seen": {
       "T0001": 1,
-      "T0003": 65,
-      "T0006": 774,
+      "T0003": 66,
+      "T0006": 788,
       "T0011": 1,
       "T0200": 32,
       "T0300": 9,
@@ -17816,48 +17816,48 @@
       "start": "2025-01-01"
     },
     "note": "PayPal lists a transaction up to 3 hours after it happens; the trailing window is refetched every run so late rows are picked up",
-    "pages": 2,
+    "pages": 3,
     "schema": 1,
     "script_version": "1.0",
     "slices": 2,
     "warnings": [
-      "transactions in currencies other than USD were summed as-is: {'CAD': 45, 'USD': 1748}"
+      "transactions in currencies other than USD were summed as-is: {'CAD': 45, 'USD': 1778}"
     ]
   },
   "source": "paypal_transaction_search",
   "timezone": "America/Los_Angeles",
   "totals": {
     "last_30d": {
-      "fees": 3474.18,
+      "fees": 3544.07,
       "fees_credited": 69.82,
       "other": -182.7,
-      "payments": 87281.76,
-      "payments_count": 655,
+      "payments": 88931.88,
+      "payments_count": 670,
       "refunds": 1917.52,
       "refunds_count": 20,
-      "transactions": 719,
+      "transactions": 734,
       "withdrawals": 76293.27
     },
     "mtd": {
-      "fees": 1227.11,
+      "fees": 1297.0,
       "fees_credited": 11.63,
       "other": 0,
-      "payments": 30055.42,
-      "payments_count": 239,
+      "payments": 31705.54,
+      "payments_count": 254,
       "refunds": 447.35,
       "refunds_count": 6,
-      "transactions": 253,
+      "transactions": 268,
       "withdrawals": 25663.93
     },
     "today": {
-      "fees": 264.26,
+      "fees": 334.15,
       "fees_credited": 0,
       "other": 0,
-      "payments": 6546.97,
-      "payments_count": 55,
+      "payments": 8197.09,
+      "payments_count": 70,
       "refunds": 94.14,
       "refunds_count": 1,
-      "transactions": 57,
+      "transactions": 72,
       "withdrawals": 6055.33
     }
   },
