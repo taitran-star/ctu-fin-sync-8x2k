@@ -61,6 +61,7 @@ const REPO_FILES = new Set([
   'shopify_promos.json',   // V12.16: ưu đãi / mã giảm giá theo ngày — tab Marketing
   'shopify_ltv.json',      // V12.16: giá trị khách theo cohort (ShopifyQL, chỉ số tổng hợp) — tab Marketing
   'amazon_ads_api.json',   // V12.16: Amazon Ads API — campaign / ASIN / từ khoá (khi được Amazon duyệt)
+  'finance_inputs.json',   // V12.17: nhập tay cho Tóm tắt BOD (tỷ giá, lịch tiền, quyết định, đòn bẩy, mốc chuẩn)
 ]);
 const STATIC_FILES = new Set(['shipmonk_invoices.json', 'shipmonk_storage_daily.json', 'klaviyo_invoices.json']);   // in public/ (read by Claude's browser); amazon_ads.json now comes from the repo (sellerboard_ads.yml)
 const ALL_FILES = new Set([...REPO_FILES, ...STATIC_FILES]);
