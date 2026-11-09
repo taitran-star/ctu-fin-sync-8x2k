@@ -1,24 +1,24 @@
 {
  "schema": 1,
- "generated_at": "2026-11-08T18:31:10Z",
+ "generated_at": "2026-11-09T23:10:34Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
-  "to": "2026-11-08",
+  "to": "2026-11-09",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 3115,
-  "charges": 738,
+  "transactions_read": 3127,
+  "charges": 740,
   "stats": {
-   "status:posted": 2360,
+   "status:posted": 2370,
    "rail:rtp": 8,
-   "rail:ach": 835,
+   "rail:ach": 839,
    "rail:fee": 98,
    "rail:wire": 31,
-   "status:failed": 751,
-   "rail:card": 1731,
-   "rail:other": 412,
-   "status:pending": 4
+   "status:failed": 754,
+   "rail:card": 1737,
+   "rail:other": 414,
+   "status:pending": 3
   },
   "lines": {
    "SHOP": "Shopify plan + apps billed by Shopify",
@@ -196,11 +196,11 @@
    "UPW": 1762.21
   },
   "2026-11": {
-   "MC": 3342.76,
+   "MC": 3582.76,
    "MT": 1179.79,
    "SHOP": 4350.43,
    "SUP": 4095.87,
-   "SW": 860.03,
+   "SW": 875.11,
    "TAX": 2775.0,
    "UPW": 515.91
   }
@@ -298,11 +298,11 @@
    "UPW": 1762.21
   },
   "2026-11": {
-   "MC": 2543.59,
+   "MC": 2783.59,
    "MT": 1492.55,
    "SHOP": 4350.43,
    "SUP": 4095.87,
-   "SW": 860.03,
+   "SW": 875.11,
    "TAX": 2831.26,
    "UPW": 515.91
   },
@@ -359,7 +359,8 @@
   }
  },
  "pending": {
-  "SUP": 9352.43
+  "SUP": 9352.43,
+  "UPW": 532.84
  },
  "charges": [
   {
@@ -6927,11 +6928,28 @@
   },
   {
    "d": "2026-11-08",
+   "v": "Squarespace / Google Workspace",
+   "l": "SW",
+   "a": 15.08,
+   "k": "card",
+   "cy": "M",
+   "fx": "VND"
+  },
+  {
+   "d": "2026-11-08",
    "v": "Suno",
    "l": "MC",
    "a": 22.9,
    "k": "card",
    "cy": "M"
+  },
+  {
+   "d": "2026-11-09",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 240.0,
+   "k": "card",
+   "cy": "U"
   }
  ],
  "unclassified_card": [
