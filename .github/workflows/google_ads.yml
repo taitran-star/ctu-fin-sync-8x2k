@@ -31,6 +31,14 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Sync to the latest main
+        # A run queued behind another run (a backfill, or the 30-minute cron) is checked out at the
+        # commit it was QUEUED on, so its copy of data/*.json can be older than what that run just
+        # pushed. Fast-forward first so the history merge starts from the newest file.
+        run: |
+          git fetch --depth=1 origin main
+          git reset --hard origin/main
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
