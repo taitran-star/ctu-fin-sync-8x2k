@@ -22,6 +22,7 @@
 //      copy already exists here (see serveRepoFile: fresh / stale-while-revalidate / GitHub-first / mirror), plus
 //      the invoice files that live next to this site's pages. ETag/304 to the browser end to end.
 //      Optional env: GH_TOKEN (if the repo is ever made private), DATA_BASE_URL (data moved to another repo).
+//      V12.18: /api/refresh (the "Cập nhật ngay" button) starts the sync workflows now - secret GH_DISPATCH_TOKEN, see handleRefresh().
 //   4. everything else — the static pages/files in public/ (index.html hub, pnl.html + pnl.js, icons...).
 //      Brand images, icons and the open-licence fonts (/img/*, /fonts/LibreFranklin-*, /fonts/FuzzyBubbles-*) are public so the
 //      login page can show them; the licensed Bureau Grot font and everything else stay behind the sign-in.
@@ -112,12 +113,14 @@ export async function onRequest(context) {
     return loginPage(url, null, 401, '');
   }
 
+  if (path === '/api/refresh') return handleRefresh(request, env, url, me);   // V12.18: "Cập nhật ngay" button (Data tab)
   if (path.startsWith('/api/')) return handleApi(path, request, env, url, me);
   if (path === '/users' || path === '/users.html') return me.admin ? usersPage(me, env) : forbiddenPage(me);
   if (path.startsWith('/data/')) {
     const name = decodeURIComponent(path.slice('/data/'.length));
     if (!me.files.has(name)) return json({ error: ALL_FILES.has(name) ? 'forbidden' : 'unknown source' }, ALL_FILES.has(name) ? 403 : 404);
-    return asset(await serveData(name, request, env, context), 'private, no-cache');
+    const fresh = request.headers.get('X-Fresh') === '1' && !!env.GH_DISPATCH_TOKEN;   // V12.18: right after a manual refresh, skip the 5-minute edge copy
+    return asset(await serveData(name, request, env, context, fresh), 'private, no-cache');
   }
   if ((path === '/sns' || path === '/sns.html') && !me.views.includes('sns')) return forbiddenPage(me);
   if ((path === '/pnl' || path === '/pnl.html') && !me.views.some((v) => v !== 'sns')) return forbiddenPage(me);
@@ -136,7 +139,7 @@ function asset(res, cacheControl) {
 // ---------- /data/<file>.json ----------
 // Conditional requests end to end: the browser keeps the last copy and sends If-None-Match; when the file
 // has not changed we answer 304 and nothing is downloaded again (the big files are 2-5 MB).
-async function serveData(name, request, env, context) {
+async function serveData(name, request, env, context, fresh) {
   // name is already decoded and allowed for this user (onRequest)
   const inm = request.headers.get('If-None-Match') || '';
 
@@ -148,6 +151,7 @@ async function serveData(name, request, env, context) {
     if (!REPO_FILES.has(name)) return json({ error: 'static file missing: ' + name }, 404);   // else fall through to the repo copy
   }
   if (!REPO_FILES.has(name)) return json({ error: 'unknown source' }, 404);
+  if (fresh) { const now = await serveFresh(name, request, env, context, inm); if (now) return now; }
   const fromR2 = await serveFromR2(name, request, env);
   if (fromR2) return fromR2;
   return serveRepoFile(name, request, env, context, inm);
@@ -593,6 +597,111 @@ async function handleApi(path, request, env, url, me) {
   }
   return json({ error: 'method' }, 405);
 }
+// ---------- V12.18: manual refresh ("Cập nhật ngay" on the Data tab) ----------
+// POST /api/refresh starts the sync workflows of the data repo right away (GitHub workflow_dispatch), GET /api/refresh
+// reports how far those runs are. Needs the Pages secret GH_DISPATCH_TOKEN = a fine-grained GitHub token limited to
+// the data repo with "Actions: Read and write" (+ "Contents: Read-only"). Without it the button answers 503 and the
+// page says what to set up; nothing else changes (the repo's own ticker keeps the 30-minute clock).
+// Who may press it: admins and users who can open the Data tab. One press per REFRESH_COOLDOWN_MS for everybody.
+// The token is only ever sent to api.github.com; it is never returned, logged or stored.
+const GH_REPO = 'taitran-star/ctu-fin-sync-8x2k';
+const REFRESH_WORKFLOWS = [
+  'amazon_pnl.yml', 'shopify_pnl.yml', 'meta_ads.yml', 'google_ads.yml', 'shipmonk.yml', 'paypal.yml', 'walmart.yml',
+  'tiktok_shop.yml', 'tiktok_ads.yml', 'amazon_storage.yml', 'klaviyo.yml', 'loop_subscriptions.yml',
+  'sellerboard_ads.yml', 'amazon_ads.yml', 'shopify_marketing.yml', 'amazon_sns.yml', 'reamaze.yml', 'slash.yml',
+];   // not here: applovin.yml (expired key), notion_lots.yml (no token yet), cash.yml (daily, own secret)
+const REFRESH_COOLDOWN_MS = 3 * 60 * 1000;
+const REFRESH_WATCH_MS = 15 * 60 * 1000;      // GET reports run progress for this long after a press
+const REFRESH_KEY = 'meta:refresh';
+
+function ghHeaders(env, accept) {
+  return { 'Authorization': 'Bearer ' + env.GH_DISPATCH_TOKEN, 'Accept': accept || 'application/vnd.github+json',
+           'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'cattasaurus-dashboard' };
+}
+function refreshCache(request) {
+  try {
+    if (typeof caches === 'undefined' || !caches.default) return null;
+    return { cache: caches.default, key: new Request(new URL('/__edge/refresh-state', request.url).toString()) };
+  } catch (e) { return null; }
+}
+async function refreshRead(env, request) {
+  try { if (kv(env)) { const v = await kv(env).get(REFRESH_KEY, 'json'); if (v) return v; } } catch (e) { /* fall through */ }
+  const c = refreshCache(request);
+  if (c) { try { const hit = await c.cache.match(c.key); if (hit) return await hit.json(); } catch (e) { /* none */ } }
+  return null;
+}
+async function refreshWrite(env, request, state) {
+  const text = JSON.stringify(state);
+  try { if (kv(env)) await kv(env).put(REFRESH_KEY, text); } catch (e) { /* the edge copy below still limits the rate */ }
+  const c = refreshCache(request);
+  if (c) { try { await c.cache.put(c.key, new Response(text, { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, s-maxage=86400' } })); } catch (e) { /* ignore */ } }
+}
+async function refreshProgress(env, state) {
+  // the runs started by workflow_dispatch since the press: the first one of each workflow we started
+  try {
+    const since = new Date(Date.parse(state.at) - 15000).toISOString().replace(/\.\d+Z$/, 'Z');
+    const r = await fetch('https://api.github.com/repos/' + GH_REPO + '/actions/runs?event=workflow_dispatch&per_page=100&created=' + encodeURIComponent('>=' + since), { headers: ghHeaders(env) });
+    if (!r.ok) return { error: 'github HTTP ' + r.status };
+    const j = await r.json();
+    const first = {};
+    for (const run of (j.workflow_runs || [])) {
+      const file = String(run.path || '').split('/').pop();
+      if (!state.started.includes(file)) continue;
+      if (!first[file] || run.created_at < first[file].created_at) first[file] = run;
+    }
+    const out = { total: state.started.length, seen: 0, completed: 0, success: 0, failed: [], running: [] };
+    for (const file of state.started) {
+      const run = first[file];
+      if (!run) { out.running.push(file); continue; }
+      out.seen++;
+      if (run.status === 'completed') { out.completed++; if (run.conclusion === 'success') out.success++; else out.failed.push(file.replace(/\.yml$/, '')); }
+      else out.running.push(file);
+    }
+    return out;
+  } catch (e) { return { error: 'github fetch failed' }; }
+}
+async function handleRefresh(request, env, url, me) {
+  if (request.headers.get('X-Requested-With') !== 'ctu') return json({ error: 'bad request' }, 400);
+  if (!(me.admin || me.views.includes('data'))) return json({ error: 'forbidden' }, 403);
+  const configured = !!env.GH_DISPATCH_TOKEN;
+  const last = await refreshRead(env, request);
+  const age = last && last.at ? Date.now() - Date.parse(last.at) : Infinity;
+  if (request.method === 'GET') {
+    const out = { configured, last, cooldown_s: Math.max(0, Math.ceil((REFRESH_COOLDOWN_MS - age) / 1000)), workflows: REFRESH_WORKFLOWS.length };
+    if (configured && last && age < REFRESH_WATCH_MS) out.progress = await refreshProgress(env, last);
+    return json(out, 200);
+  }
+  if (request.method !== 'POST') return json({ error: 'method' }, 405);
+  if (!configured) return json({ error: 'not_configured', hint: 'Pages > Settings > Variables and Secrets: add the secret GH_DISPATCH_TOKEN, then retry the deployment' }, 503);
+  if (age < REFRESH_COOLDOWN_MS) return json({ error: 'cooldown', retry_in_s: Math.ceil((REFRESH_COOLDOWN_MS - age) / 1000), last }, 429);
+  const skip = String(env.REFRESH_SKIP || '').split(/[\s,]+/).filter(Boolean);
+  const files = REFRESH_WORKFLOWS.filter((f) => !skip.includes(f));
+  const results = await Promise.all(files.map(async (file) => {
+    try {
+      const r = await fetch('https://api.github.com/repos/' + GH_REPO + '/actions/workflows/' + file + '/dispatches',
+        { method: 'POST', headers: { ...ghHeaders(env), 'Content-Type': 'application/json' }, body: JSON.stringify({ ref: 'main' }) });
+      return { file, status: r.status };
+    } catch (e) { return { file, status: 0 }; }
+  }));
+  const started = results.filter((x) => x.status === 204).map((x) => x.file);
+  const failed = results.filter((x) => x.status !== 204);
+  if (!started.length) return json({ error: 'github', status: failed.length ? failed[0].status : 0, hint: 'the token was refused: check that it covers this repository with Actions: Read and write and has not expired' }, 502);
+  const state = { at: new Date().toISOString(), by: me.email || 'owner', started, failed };
+  await refreshWrite(env, request, state);
+  return json({ ok: true, ...state }, 200);
+}
+// Right after a manual refresh the page asks with "X-Fresh: 1": read the file through the GitHub API (no CDN in front,
+// unlike raw.githubusercontent.com which keeps a copy for ~5 minutes) and renew the edge copy. null -> normal path.
+async function serveFresh(name, request, env, context, inm) {
+  const got = await fetchComplete('https://api.github.com/repos/' + GH_REPO + '/contents/data/' + name + '?ref=main',
+    ghHeaders(env, 'application/vnd.github.raw'), WAIT_WARM_MS * 2, 'github-api');
+  if (!got.buf) return null;
+  const stored = makeStored(got);
+  const edge = edgeCache(name, request);
+  if (edge) later(context, edge.cache.put(edge.key, stored.clone()).catch(() => {}));
+  return answer(stored, inm, 'github-api', 0);
+}
+
 function cleanViews(v) { return Array.isArray(v) ? VIEWS.filter((x) => v.includes(x)) : []; }
 
 // ---------- V12.10: cash balances (private, KV key meta:cash) ----------
