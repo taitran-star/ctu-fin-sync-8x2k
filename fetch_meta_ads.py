@@ -655,6 +655,18 @@ CREATIVE_MAX_ADS = int(os.environ.get("META_CREATIVE_MAX_ADS", "600"))
 CREATIVE_EVERY_H = int(os.environ.get("META_CREATIVE_EVERY_H", "3"))   # the ad-level pass (~5 min) runs every N hours, not every 30 min
 
 
+def _creatives_age_h():
+    """Hours since CREATIVES_PATH was generated (its generated_at). The checkout's mtime is the checkout time, so it
+    cannot be used. Missing or unreadable file -> very old, so the pass runs."""
+    try:
+        with open(CREATIVES_PATH) as f:
+            ts = str(json.load(f).get("generated_at") or "")
+        dt = datetime.strptime(ts[:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
+        return max(0.0, (datetime.now(timezone.utc) - dt).total_seconds() / 3600.0)
+    except Exception:  # noqa: BLE001
+        return 1e9
+
+
 CREATIVE_BUDGET_S = int(os.environ.get("META_CREATIVE_BUDGET_S", "420"))   # the whole creative step must finish within this
 _CRE_DEADLINE = [None]
 
@@ -830,7 +842,7 @@ def write_creatives(token, account_ids, now_local, currency):
            "windows": {k: {"start": a, "end": b} for k, (a, b) in windows.items()}, "fields": CREATIVE_FIELDS,
            "attribution": ATTRIBUTION or "account default", "ads": dict(sorted(ads.items())), "other": other,
            "min_spend": CREATIVE_MIN_SPEND,
-           "meta": {"script_version": "2.7.2", "rows": rows, "ads": len(ads)}}
+           "meta": {"script_version": "2.7.4", "rows": rows, "ads": len(ads)}}
     with open(CREATIVES_PATH, "w") as f:
         json.dump(out, f, separators=(",", ":"), sort_keys=True)
     log(f"Wrote {CREATIVES_PATH}: {len(ads)} ads kept (+{other['n']} small ads folded, ${other['spend']:.0f}), {rows} ad-day rows ({since}..{today}).")
@@ -969,7 +981,7 @@ def main():
         "products": products,
         "meta": {
             "schema": 2 if CAMPAIGNS_ENABLED else 1,
-            "script_version": "2.7.2",   # 2.7 = + data/meta_creatives.json (ad level); 2.7.1 = ad level via async report jobs + 7-minute budget; 2.7.2 = ad status/thumbnails via /act/ads (no ?ids= in v26); 2.3 = history across runs + backfill; 2.4 = refuses answers without spend; 2.5/2.6 = delivery and conversions (+ link clicks) fetched separately
+            "script_version": "2.7.4",   # 2.7.4 = creative pass due ONLY by file age (a manual/dispatched run no longer forces it; META_FORCE_CREATIVES=1 does) - supersedes the 2.7.3 draft of 10/11 10:30 that still forced on workflow_dispatch; 2.7 = + data/meta_creatives.json (ad level); 2.7.1 = ad level via async report jobs + 7-minute budget; 2.7.2 = ad status/thumbnails via /act/ads (no ?ids= in v26); 2.3 = history across runs + backfill; 2.4 = refuses answers without spend; 2.5/2.6 = delivery and conversions (+ link clicks) fetched separately
             "history": hist,
             "campaign_rows": campaign_rows,
             "rows_processed": rows_total,
@@ -983,10 +995,14 @@ def main():
     with open(OUTPUT_PATH, "w") as f:
         json.dump(out, f, indent=2, sort_keys=True)
     log(f"Wrote {OUTPUT_PATH} ({rows_total} rows, {len(daily)} days, currency {out['currency']}, {len(warnings)} warning types).")
-    cre_due = os.environ.get("GITHUB_EVENT_NAME", "") == "workflow_dispatch" or not os.path.exists(CREATIVES_PATH) or \
-        (now.hour % max(1, CREATIVE_EVERY_H) == 0 and now.minute < 30)
+    # 2.7.4: due by the AGE of data/meta_creatives.json (its generated_at), not by the clock. GitHub runs scheduled
+    # jobs 15-45 minutes late and skips most of them, so the old "UTC hour divisible by N and minute < 30" window was
+    # almost never hit (the file sat still for days). Runs started by workflow_dispatch (now every 30 minutes from the
+    # Cloudflare cron worker) no longer force the pass either; META_FORCE_CREATIVES=1 (workflow input) does.
+    cre_age_h = _creatives_age_h()
+    cre_due = os.environ.get("META_FORCE_CREATIVES", "").strip() == "1" or cre_age_h >= max(1, CREATIVE_EVERY_H)
     if CREATIVES_ENABLED and mode == "rolling" and not cre_due:
-        log(f"creative-level file: next refresh in a run at a UTC hour divisible by {CREATIVE_EVERY_H} (or a manual run)")
+        log(f"creative-level file: {cre_age_h:.1f} h old, refreshed again once older than {CREATIVE_EVERY_H} h (or META_FORCE_CREATIVES=1)")
     if CREATIVES_ENABLED and mode == "rolling" and cre_due:
         import signal
 
