@@ -12,6 +12,10 @@ Modes
   A) refresh (normal, twice a month):
      python3 build_shipmonk_billing.py BLOB.json --inv-prev shipmonk_invoices.json \
          --storage-prev shipmonk_storage_daily.json --out-dir OUT
+  A2) refresh with the storage part collected in PHASE 2 on reporting.shipmonk.cloud (v1.1, 09/11/2026):
+     python3 build_shipmonk_billing.py [BLOB.json] --storage-blob STORAGE_BLOB.json --inv-prev shipmonk_invoices.json \
+         --storage-prev shipmonk_storage_daily.json --out-dir OUT
+     (--storage-blob overrides blob.storage; BLOB.json may be omitted when only storage changed -> invoices kept)
   B) rebuild from the legacy raw export (acceptance test; identical to the Sept-2026 builder):
      python3 build_shipmonk_billing.py --raw-invoices raw_invoices.json \
          [--current-start 2026-09-15 --current-end 2026-09-30] [--storage-rows legacy_rows.json] \
@@ -47,7 +51,7 @@ import re
 import sys
 from collections import defaultdict
 
-TOOLKIT_VERSION = "1.0"
+TOOLKIT_VERSION = "1.1"
 SCRIPT_VERSION = "1.0"      # kept as in the live files (meta.script_version) so the schema is unchanged
 STORAGE_TOLERANCE = 0.15    # documented max |sum(storage days) - invoice storage| per billing period
 
@@ -436,6 +440,7 @@ def main(argv=None):
     ap.add_argument("blob", nargs="?", help="blob from collect_shipmonk_billing.js (object, or JSON string literal file)")
     ap.add_argument("--inv-prev", help="previous shipmonk_invoices.json (merge base)")
     ap.add_argument("--storage-prev", help="previous shipmonk_storage_daily.json (merge base)")
+    ap.add_argument("--storage-blob", help="v1.1: phase-2 blob from collect_shipmonk_storage_phase2.js ({storage:{chunks..}} or the storage object itself); overrides blob.storage")
     ap.add_argument("--raw-invoices", help="legacy raw export (list of raw invoices) - rebuild mode")
     ap.add_argument("--storage-rows", action="append", default=[], help="legacy storage rows file(s) [date, wh, true, cap, inv, strategy]")
     ap.add_argument("--current-start")
@@ -444,14 +449,26 @@ def main(argv=None):
     ap.add_argument("--generated-at", help="fixed timestamp (tests)")
     ap.add_argument("--out-dir", required=True)
     a = ap.parse_args(argv)
-    if not a.blob and not a.raw_invoices:
-        ap.error("give BLOB_JSON or --raw-invoices")
+    if not a.blob and not a.raw_invoices and not (a.storage_blob and a.inv_prev):
+        ap.error("give BLOB_JSON, --raw-invoices, or --storage-blob together with --inv-prev")
 
     os.makedirs(a.out_dir, exist_ok=True)
     report = [f"build_shipmonk_billing.py toolkit v{TOOLKIT_VERSION} - {now_iso()}", ""]
     warnings = []
 
     blob = load_blob(a.blob) if a.blob else None
+    if a.storage_blob:                              # v1.1: storage collected in phase 2 on reporting.shipmonk.cloud
+        sb = load_blob(a.storage_blob)
+        st_obj = sb.get("storage") if isinstance(sb.get("storage"), dict) else (sb if ("chunks" in sb or "error" in sb) else None)
+        if st_obj is None:
+            raise SystemExit("--storage-blob: expected {storage:{chunks:[...]}} or a storage object with chunks")
+        if blob is None:
+            blob = {"invoices": [], "current": None, "storage": st_obj}
+        else:
+            if isinstance(blob.get("storage"), dict) and blob["storage"].get("phase2"):
+                report.append("storage: main blob deferred to phase 2 - using --storage-blob")
+            blob["storage"] = st_obj
+        report.append(f"storage from --storage-blob {os.path.basename(a.storage_blob)}: {sb.get('toolkit', '?')} collected_at {sb.get('collected_at', '?')} chunks={len(st_obj.get('chunks') or [])}")
     inv_prev = load_json(a.inv_prev) if a.inv_prev else None
     st_prev = load_json(a.storage_prev) if a.storage_prev else None
 
