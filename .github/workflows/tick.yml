@@ -1,0 +1,116 @@
+name: Cattasaurus sync ticker
+
+# Keeps the data syncs on a 30-minute clock WITHOUT any token or outside service.
+#
+# Problem (10/11/2026): GitHub skips ~95 % of the `schedule:` runs of the 21 sync workflows (a run every 4-11 h
+# instead of every 30 min). A `workflow_dispatch` started through the API is not skipped - and the repository's own
+# GITHUB_TOKEN may start workflow_dispatch runs ("events triggered by GITHUB_TOKEN, with the exception of
+# workflow_dispatch and repository_dispatch, do not create a new workflow run").
+#
+# How it works: one run of this workflow ticks every :07 and :37 UTC for ~5 h 50 min (dispatching the syncs that are
+# due, same cadence each workflow already had), then starts the next ticker run itself, so the chain goes on.
+# `schedule:` below only seeds / restarts the chain when it ever breaks; the concurrency group keeps exactly one
+# ticker alive (a second one waits, and a newer pending run replaces an older pending one).
+#
+# Cadence (UTC)
+#   every tick (:07, :37)   amazon_pnl shopify_pnl meta_ads google_ads shipmonk paypal walmart tiktok_shop tiktok_ads (applovin: skipped, see TICK_SKIP)
+#   :07 every hour          amazon_storage klaviyo loop_subscriptions sellerboard_ads
+#   :07 even hours          reamaze        :07 hours divisible by 3   amazon_ads shopify_marketing        :07 hours divisible by 4   amazon_sns
+#   daily                   03:07 notion_lots  ·  06:37 cash  ·  13:37 slash
+#
+# Controls (Settings > Secrets and variables > Actions > Variables):
+#   TICK_ENABLED = 0   -> a run does one tick and stops (no chain); delete the variable or set 1 to resume
+#   TICK_SKIP          -> space-separated workflow files never started; default "applovin.yml" (its report key expired
+#                         03/11/2026 -> every run fails -> failure mail every 30 min). Set it to "-" to skip nothing.
+# Hard stop: Actions > this workflow > "..." > Disable workflow (stops schedule and dispatch alike).
+# Cost: public repository -> GitHub-hosted minutes are free; one runner stays busy (mostly sleeping) around the clock.
+
+on:
+  schedule:
+    - cron: "7,37 * * * *"     # seed / restart only; the chain does not depend on it
+  workflow_dispatch:
+    inputs:
+      chain:
+        description: "1 = tick for ~5 h 50 min then start the next run (default); 0 = one tick only"
+        required: false
+        default: "1"
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: ctu-tick
+  cancel-in-progress: false
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 358
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      CHAIN: ${{ github.event.inputs.chain || '1' }}
+      TICK_ENABLED: ${{ vars.TICK_ENABLED || '1' }}
+      TICK_SKIP: ${{ vars.TICK_SKIP || 'applovin.yml' }}
+      RUN_MINUTES: "350"
+    steps:
+      - name: Tick every :07 / :37 UTC and start the syncs that are due
+        shell: bash
+        run: |
+          set -u
+          EVERY30="amazon_pnl.yml shopify_pnl.yml meta_ads.yml google_ads.yml shipmonk.yml paypal.yml walmart.yml tiktok_shop.yml tiktok_ads.yml applovin.yml"
+          HOURLY="amazon_storage.yml klaviyo.yml loop_subscriptions.yml sellerboard_ads.yml"
+          EVERY2H="reamaze.yml"
+          EVERY3H="amazon_ads.yml shopify_marketing.yml"
+          EVERY4H="amazon_sns.yml"
+          DAILY="notion_lots.yml:3:0 cash.yml:6:1 slash.yml:13:1"   # file:UTC hour:half (0 = the :07 tick, 1 = the :37 tick)
+
+          due_list() {   # $1 = epoch seconds of the tick -> workflow files due at that tick
+            local h m first out d f dh half
+            h=$(date -u -d "@$1" +%-H); m=$(date -u -d "@$1" +%-M)
+            first=0; [ "$m" -lt 30 ] && first=1
+            out="$EVERY30"
+            if [ "$first" = 1 ]; then
+              out="$out $HOURLY"
+              [ $((h % 2)) = 0 ] && out="$out $EVERY2H"
+              [ $((h % 3)) = 0 ] && out="$out $EVERY3H"
+              [ $((h % 4)) = 0 ] && out="$out $EVERY4H"
+            fi
+            for d in $DAILY; do
+              IFS=: read -r f dh half <<<"$d"
+              if [ "$dh" = "$h" ]; then
+                if { [ "$half" = 0 ] && [ "$first" = 1 ]; } || { [ "$half" = 1 ] && [ "$first" = 0 ]; }; then out="$out $f"; fi
+              fi
+            done
+            echo $out
+          }
+
+          dispatch() {   # $1 = epoch seconds of the tick
+            local f ok=0 bad=0
+            echo "== tick $(date -u -d "@$1" +%Y-%m-%dT%H:%M:%SZ)"
+            for f in $(due_list "$1"); do
+              case " $TICK_SKIP " in *" $f "*) echo "   skip    $f"; continue;; esac
+              if gh workflow run "$f" --ref main >/dev/null 2>/tmp/err; then echo "   started $f"; ok=$((ok+1))
+              else echo "   FAILED  $f: $(head -c 160 /tmp/err | tr '\n' ' ')"; bad=$((bad+1)); fi
+            done
+            echo "   -> $ok started, $bad failed"
+          }
+
+          START=$(date +%s); END=$((START + RUN_MINUTES * 60))
+          echo "ticker run started $(date -u +%Y-%m-%dT%H:%M:%SZ) · chain=$CHAIN enabled=$TICK_ENABLED skip='$TICK_SKIP' · event=${GITHUB_EVENT_NAME}"
+          dispatch "$(date +%s)"
+          if [ "$CHAIN" != "1" ] || [ "$TICK_ENABLED" != "1" ]; then echo "single tick (chain=$CHAIN enabled=$TICK_ENABLED) - done"; exit 0; fi
+          while :; do
+            now=$(date +%s); m=$(date -u -d "@$now" +%-M); s=$(date -u -d "@$now" +%-S)
+            if   [ "$m" -lt 7 ];  then wait=$(( (7  - m) * 60 - s ))
+            elif [ "$m" -lt 37 ]; then wait=$(( (37 - m) * 60 - s ))
+            else                       wait=$(( (67 - m) * 60 - s )); fi
+            [ "$wait" -lt 60 ] && wait=$((wait + 1800))        # just ticked: go for the following boundary
+            if [ $((now + wait)) -ge "$END" ]; then break; fi
+            echo "   sleeping ${wait}s until the next tick"
+            sleep "$wait"
+            dispatch "$(date +%s)"
+          done
+          if gh workflow run tick.yml --ref main -f chain=1; then echo "next ticker run queued $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          else echo "WARNING: could not queue the next ticker run - the schedule: cron will restart the chain"; fi
