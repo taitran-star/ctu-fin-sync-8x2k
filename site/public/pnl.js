@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 9d6b1d0af4).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build d77ada8473).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -989,10 +989,10 @@
     // receiving, returns handling are operating logistics costs (OpEx), not cost of the order.
     const shipmonkInvoiceExtras = smInvAdjCredits + smTrueUp + smInv.packaging_purchases + boxCost;   // packaging material = COGS: boxes used (FIFO) + purchases on days without box data
     // Storage for days without an invoice yet (open billing period + today): the daily report / carry-forward estimate
-    let smStorageOpen = 0, smStorageOpenDays = 0, smStorageCarryDays = 0, smStorageReportDays = 0;
+    let smStorageOpen = 0, smStorageOpenDays = 0, smStorageCarryDays = 0, smStorageAvgDays = 0, smStorageRateDays = 0, smStorageRateInv = null, smStorageReportDays = 0;
     rows.forEach(r=>{
       if(r.shipmonkInv){ if(r.shipmonkInv.storageSrc==='report') smStorageReportDays++; return; }
-      if(r.shipmonkStorage){ smStorageOpen += r.shipmonkStorage.inv; smStorageOpenDays++; if(r.shipmonkStorage.src==='carry') smStorageCarryDays++; }
+      if(r.shipmonkStorage){ smStorageOpen += r.shipmonkStorage.inv; smStorageOpenDays++; if(r.shipmonkStorage.src==='carry') smStorageCarryDays++; else if(r.shipmonkStorage.src==='avg14') smStorageAvgDays++; else if(r.shipmonkStorage.src==='invrate'){ smStorageRateDays++; smStorageRateInv = r.shipmonkStorage.invoice||smStorageRateInv; } }   // V12.17.1: avg14 = 14-day report average, invrate = latest invoice's per-day rate
     });
     if(partial) smStorageOpen *= allocShare;
     smInv.storage += smStorageOpen;
@@ -1109,11 +1109,12 @@
     const salaryEntered = !!gaItems.find(it=>it.key==='salary' && it.manual);
     // Klaviyo: real invoices booked per billing cycle (data/klaviyo_invoices.json), spread per day
     const klaviyoCostDays = rows.filter(r=>r.klaviyoCost).length;
+    const klaviyoSlashDays = rows.filter(r=>r.klaviyoCost && r.klaviyoCost.src==='slash').length;   // V12.17.1: provisional days (Slash card charge, no invoice yet)
     const klaviyoCost = sum(rows.map(r=> r.klaviyoCost ? r.klaviyoCost.cost : 0));
     const klaviyoCostParts = {platform:0, sms:0, upgrades:0, flex:0};
     rows.forEach(r=>{ if(r.klaviyoCost){ Object.keys(klaviyoCostParts).forEach(k=>{ klaviyoCostParts[k] += r.klaviyoCost[k]||0; }); } });
     if(klaviyoCostDays>0){
-      gaItems.push({key:'klaviyo', label: tv('Klaviyo — email & SMS (invoiced per 19→18 billing cycle, spread evenly per day)', 'Klaviyo — email & SMS (hoá đơn theo chu kỳ 19→18, chia đều theo ngày)') + (klaviyoCostDays<n ? tv(` — ${n-klaviyoCostDays} days without an invoice yet`, ` — ${n-klaviyoCostDays} ngày chưa có hoá đơn`) : ''), monthly:0, value: klaviyoCost, real:true});
+      gaItems.push({key:'klaviyo', label: tv('Klaviyo — email & SMS (invoiced per 19→18 billing cycle, spread evenly per day)', 'Klaviyo — email & SMS (hoá đơn theo chu kỳ 19→18, chia đều theo ngày)') + (klaviyoSlashDays>0 ? tv(` — ${klaviyoSlashDays} days provisional from the Slash card charge (invoice not read yet)`, ` — ${klaviyoSlashDays} ngày tạm theo thẻ Slash (chưa đọc hoá đơn)`) : '') + (klaviyoCostDays<n ? tv(` — ${n-klaviyoCostDays} days without an invoice yet`, ` — ${n-klaviyoCostDays} ngày chưa có hoá đơn`) : ''), monthly:0, value: klaviyoCost, real:true, est: klaviyoSlashDays>0, slashDays: klaviyoSlashDays});
     }
     const gaTotal = sum(gaItems.map(it=>it.value));
     const inventoryHolding = INVENTORY_MONTHLY/30*n*allocShare;
@@ -1181,7 +1182,7 @@
       productCost, productCostEst, cogsEstRate, productCostBy, productCostActual, productCostEstAmount, productCostHasActual, productCostLots, productCostFallback, productCostHasLots, productCostLotUnits, productCostFbUnits, productCostEstUnits, productCostUnits, packaging, fulfillment, postage, cogs, grossProfit, nonAmazonOrders, shopifyTax, shopifyRealDays, amazonRealDays,
       boxCost, boxLots, boxFb, boxUnits, boxLotUnits, boxFbUnits, boxEstUnits, boxDays, boxMode, smPackagingMemo, boxBySku, boxEstDays, boxEstBoxes, boxEstCost, boxInferred,
       shipmonkRealDays, shipmonkOrders, shipmonkUnshipped, shipmonkUnits, shipmonkPickPack, shipmonkByStore, shipmonkByChannel,
-      smInvDays, smInv, smInvOther, smInvAdjCredits, smStorageOpen, smStorageOpenDays, smStorageCarryDays, smStorageReportDays, smInvShipCmp, smApiShipCmp, smCmpDays, smCmpMissingDays, smTrueUp, shipmonkInvoiceExtras, shipmonkLogistics, amazonLogistics, logisticsTotal, feesTotal, marketingTotal, cmBeforeMarketing,
+      smInvDays, smInv, smInvOther, smInvAdjCredits, smStorageOpen, smStorageOpenDays, smStorageCarryDays, smStorageAvgDays, smStorageRateDays, smStorageRateInv, smStorageReportDays, smInvShipCmp, smApiShipCmp, smCmpDays, smCmpMissingDays, smTrueUp, shipmonkInvoiceExtras, shipmonkLogistics, amazonLogistics, logisticsTotal, feesTotal, marketingTotal, cmBeforeMarketing,
       paymentFees, afterpayFees, afterpayAmount, afterpayOrders, paymentFeeDays, paymentFeeOrders, feesMissingOrders, gatewayMix, feeTypeMix, paypalDays, paypalFees, paypalPayments, paypalPaymentsCount, paypalCompare, paymentFeesAll, marketplaceFees, adSpend, otherVarTotal, contributionProfit,
       gaItems, gaTotal, inventoryHolding, fixedTotal, netProfit, klaviyoCost, klaviyoCostDays, klaviyoCostParts,
       mktItems, mktAgency, mktCreator, mktDsp, mktManual, dspLive, dspBonus, dspLiveDays, dspRecent, dspEstDays, dspEstAmt, mktOther, cogsOther, cogsAdj, cogsTooling,
@@ -1716,18 +1717,21 @@
       const evenDays = a.smInvDays - a.smStorageReportDays;
       let stNote = '';
       if(a.smStorageReportDays>0 || a.smStorageOpenDays>0){
-        stNote = tv(' — actual per-day fees per ShipMonk\'s Storage Fees report', ' — phí thật từng ngày theo report Storage Fees của ShipMonk');
+        const perReportOpen = a.smStorageOpenDays - a.smStorageCarryDays - (a.smStorageAvgDays||0) - (a.smStorageRateDays||0);   // V12.17.1: open-period days the report really has
+        stNote = (a.smStorageReportDays>0 || perReportOpen>0) ? tv(' — actual per-day fees per ShipMonk\'s Storage Fees report', ' — phí thật từng ngày theo report Storage Fees của ShipMonk') : tv(' — estimated, the Storage Fees report has no row for these days yet', ' — tạm tính, report Storage Fees chưa có số cho các ngày này');
         if(a.smStorageReportDays>0 && a.smInvDays===a.smStorageReportDays && a.smStorageOpenDays===0) stNote += tv(' (reconciled to invoice)', ' (đã khớp hoá đơn)');
         else {
           const parts = [];
           if(a.smStorageReportDays>0) parts.push(a.smStorageReportDays+tv(' days reconciled to invoice', ' ngày đã khớp hoá đơn'));
-          if(a.smStorageOpenDays - a.smStorageCarryDays>0) parts.push((a.smStorageOpenDays - a.smStorageCarryDays)+tv(' days of the open billing period: per report', ' ngày kỳ chưa xuất hoá đơn: theo report'));
+          if(a.smStorageOpenDays - a.smStorageCarryDays - (a.smStorageAvgDays||0) - (a.smStorageRateDays||0)>0) parts.push((a.smStorageOpenDays - a.smStorageCarryDays - (a.smStorageAvgDays||0) - (a.smStorageRateDays||0))+tv(' days of the open billing period: per report', ' ngày kỳ chưa xuất hoá đơn: theo report'));
           if(a.smStorageCarryDays>0) parts.push(a.smStorageCarryDays+tv(' days not in the report yet: carried from the latest day', ' ngày report chưa có: tạm lấy bằng ngày gần nhất'));
-          if(evenDays>0) parts.push(evenDays+tv(' days before 06/2025: spread evenly over the billing period', ' ngày trước 06/2025: chia đều theo kỳ hoá đơn'));
+          if(a.smStorageAvgDays>0) parts.push(a.smStorageAvgDays+tv(' days without invoice or report: estimated at the average of the last 14 reported days', ' ngày chưa có hoá đơn lẫn report: tạm tính TB 14 ngày report gần nhất'));   // V12.17.1
+          if(a.smStorageRateDays>0) parts.push(a.smStorageRateDays+tv(' days of the open billing period without a report row: estimated at the per-day rate of the latest invoice'+(a.smStorageRateInv ? ' '+a.smStorageRateInv : ''), ' ngày kỳ chưa chốt, report chưa có: tạm tính theo mức/ngày của hoá đơn gần nhất'+(a.smStorageRateInv ? ' '+a.smStorageRateInv : '')));   // V12.17.1
+          if(evenDays>0) parts.push(evenDays+tv(' invoice days spread evenly over the billing period (no per-day report row: before 06/2025, or a gap in the report)', ' ngày hoá đơn chia đều theo kỳ (report chưa có số theo ngày: trước 06/2025 hoặc report thiếu)'));   // V12.17.1 wording: gaps happen after 06/2025 too
           stNote += ' ('+parts.join(' · ')+')';
         }
       } else stNote = tv(' — spread evenly over the days of the billing period (the per-day report only exists from 06/2025)', ' — chia đều theo ngày trong kỳ hoá đơn (report theo ngày chỉ có từ 06/2025)') + (a.smInvDays<a.n ? tx('st.noInvoiceDays', {n: a.n-a.smInvDays, d: dayWord(a.n-a.smInvDays)}) : '');
-      rows.push({...stLine(tv('ShipMonk storage — pallets & bins', 'Lưu kho ShipMonk — pallet & bin') + stNote + alloc, -a.smInv.storage, nr, 'fix', 'logi'), neg: a.smInv.storage>=0, live:true, est: a.smStorageCarryDays>0, estTitle: tv('Days the ShipMonk report has not updated yet (refreshes ~04:00 warehouse time) are carried from the latest day; replaced once the report has the figure', 'Ngày report ShipMonk chưa cập nhật (làm mới ~04:00 giờ kho) tạm lấy bằng ngày gần nhất; tự thay khi report có số'), hget: x=>-x.smInv.storage});
+      rows.push({...stLine(tv('ShipMonk storage — pallets & bins', 'Lưu kho ShipMonk — pallet & bin') + stNote + alloc, -a.smInv.storage, nr, 'fix', 'logi'), neg: a.smInv.storage>=0, live:true, est: a.smStorageCarryDays>0 || a.smStorageAvgDays>0 || a.smStorageRateDays>0, estTitle: (a.smStorageAvgDays>0 || a.smStorageRateDays>0) ? tv('Days with neither an invoice nor a report row (ShipMonk report down / open billing period) are estimated: at the per-day rate of the latest invoice when it is newer than the report, else at the average of the last 14 reported days; replaced by the report or the invoice when they land', 'Ngày chưa có hoá đơn lẫn report (report ShipMonk đứng / kỳ chưa chốt) tạm tính: theo mức/ngày của hoá đơn gần nhất nếu hoá đơn mới hơn report, nếu không thì TB 14 ngày report gần nhất; tự thay khi có report hoặc hoá đơn') : tv('Days the ShipMonk report has not updated yet (refreshes ~04:00 warehouse time) are carried from the latest day; replaced once the report has the figure', 'Ngày report ShipMonk chưa cập nhật (làm mới ~04:00 giờ kho) tạm lấy bằng ngày gần nhất; tự thay khi report có số'), hget: x=>-x.smInv.storage});
       logiLine(tv('ShipMonk receiving — cartons received, containers unloaded', 'Receiving hàng nhập ShipMonk — nhận carton, dỡ container'), a.smInv.receiving, undefined, x=>-x.smInv.receiving);
       logiLine(tv('ShipMonk returns handling — processing + return postage', 'Xử lý hàng trả ShipMonk — processing + cước hàng trả'), a.smInv.returns, undefined, x=>-x.smInv.returns);
       if(a.smInvOther !== 0) logiLine(tv('Other ShipMonk fees — minimum fee, late fees, audits, surcharges', 'Phí khác ShipMonk — phí tối thiểu, phạt trễ, audit, phụ phí') + (Math.abs(a.smInv.unallocated)>=1 ? tv(' (including ', ' (gồm ')+money(a.smInv.unallocated)+tv(' of invoice items that could not be split by section)', ' hoá đơn không tách được mục)') : ''), a.smInvOther, undefined, x=>-x.smInvOther);
@@ -1741,7 +1745,7 @@
     a.gaItems.forEach(it=>{
       if(OPEX_HIDE_ZERO.includes(it.key) && Math.abs(it.value)<0.005) return;   // V12.4
       const known = it.real || it.manual;
-      rows.push({...stLine(it.label + (known ? '' : tx('st.notEntered')) + (it.key==='klaviyo' ? '' : alloc), -it.value, nr, 'fix', 'fixed'), neg: it.value>=0, live: it.real ? 'real' : (it.manual && !it.allEst ? 'manual' : false), gap: known ? false : 'manual', est: !!it.est, estTitle: OPEX_EST_TITLE(), hget: x=>-((x.gaItems.find(g=>g.key===it.key)||{}).value||0)});
+      rows.push({...stLine(it.label + (known ? '' : tx('st.notEntered')) + (it.key==='klaviyo' ? '' : alloc), -it.value, nr, 'fix', 'fixed'), neg: it.value>=0, live: it.real ? 'real' : (it.manual && !it.allEst ? 'manual' : false), gap: known ? false : 'manual', est: !!it.est, estTitle: it.key==='klaviyo' ? tv('Days the Klaviyo invoice has not been read yet are booked from the Slash card charge (plan renewal on the 19th spread over the 19→18 cycle); replaced by the invoice', 'Ngày chưa đọc hoá đơn Klaviyo tạm ghi theo thẻ Slash (gói gia hạn ngày 19 rải đều chu kỳ 19→18); tự thay khi có hoá đơn') : OPEX_EST_TITLE(), hget: x=>-((x.gaItems.find(g=>g.key===it.key)||{}).value||0)});
     });
     rows.push({...stSub(tv('= Total G&A', '= Tổng G&A'), -a.gaTotal, nr, 'fixed_sub'), hget: x=>-x.gaTotal});
     rows.push({...stSub(tv('= Total operating costs (OpEx)', '= Tổng chi phí hoạt động (OpEx)'), -a.fixedTotal, nr, 'opex_sub'), hget: x=>-x.fixedTotal});
@@ -4469,11 +4473,24 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
   }
   const mkPill = s => s.k==='none' ? '<span class="mk-muted">—</span>' : `<span class="pill ${s.cls}">${s.l}</span>`;
   // Slash card charges (data/slash_pnl.json): tools and AI content the department pays for; by payment date
+  // V12.17.1: amounts by SERVICE month (accrual), not by charge date: a charge with sp = [[month, amount], ...]
+  // (yearly / 6-month / quarterly plans, spread by fetch_slash.py 1.4) counts each month's share pro rata to the
+  // days of that month inside the period; every other charge counts on its charge date as before.
+  function slashAccrualAmount(c, from, to){
+    if(!Array.isArray(c.sp) || !c.sp.length) return (c.d>=from && c.d<=to) ? (+c.a||0) : 0;
+    let v = 0;
+    c.sp.forEach(x=>{ const ym = String(x[0]||''), amt = +x[1]||0; if(!/^\d{4}-\d{2}$/.test(ym) || !amt) return;
+      const dim = new Date(+ym.slice(0,4), +ym.slice(5,7), 0).getDate(), m0 = ym+'-01', m1 = ym+'-'+String(dim).padStart(2,'0');
+      const a = from>m0 ? from : m0, b = to<m1 ? to : m1; if(a>b) return;
+      v += amt * (dayDiff(a, b)+1) / dim; });
+    return v;
+  }
   function mkSlash(from, to){
     const S = SLASH_LIVE_DATA; const list = S && Array.isArray(S.charges) ? S.charges : [];
     const inP = list.filter(c=> c.d>=from && c.d<=to);
-    const sumL = (arr, l) => sum(arr.filter(c=>c.l===l).map(c=>+c.a||0));
-    return {ok: !!S, all: list, inP, tools: sumL(inP, 'MT'), ai: sumL(inP, 'MC'), agency: sumL(inP, 'AGENCY'), creator: sumL(inP, 'CRE'), lines: S && S.meta && S.meta.lines || {}, to: S && S.meta && S.meta.to || null};
+    const sumL = (l) => sum(list.filter(c=>c.l===l).map(c=>slashAccrualAmount(c, from, to)));
+    const spread = inP.filter(c=>Array.isArray(c.sp) && c.sp.length).length;
+    return {ok: !!S, all: list, inP, accrual:true, spread, tools: sumL('MT'), ai: sumL('MC'), agency: sumL('AGENCY'), creator: sumL('CRE'), lines: S && S.meta && S.meta.lines || {}, to: S && S.meta && S.meta.to || null};
   }
   // Meta / Google campaigns summed over the period (same maths as the detail tables)
   function mkCampaigns(rows){
@@ -4731,8 +4748,8 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
       {k:'creator', l:tv('Creators / UGC (Insense, Billo, MossCreator…)', 'Creator / UGC (Insense, Billo, MossCreator…)'), v:a.mktCreator, pv:p&&p.mktCreator, line:'mkt', note: sl.ok && sl.creator>0.005 ? tv('card/ACH in the period ', 'thẻ/ACH trong kỳ ')+mk$(sl.creator) : tv('entered monthly', 'nhập theo tháng')},
       {k:'other', l:tv('Other marketing', 'Marketing khác'), v:a.mktOther, pv:p&&p.mktOther, line:'mkt'},
       {k:'email', l:tv('Email platform (Klaviyo)', 'Nền tảng email (Klaviyo)'), v:a.klaviyoCost||0, pv:p&&(p.klaviyoCost||0), line:'ga', note: tv('invoices', 'theo hoá đơn')},
-      {k:'tools', l:tv('Marketing tools (tracking, attribution, ad research, design, web)', 'Công cụ marketing (tracking, attribution, nghiên cứu QC, thiết kế, web)'), v:sl.tools, pv:pSl&&pSl.tools, line:'ga', note: sl.ok ? tv('card charges by payment date', 'trừ thẻ theo ngày trả') : tv('needs data/slash_pnl.json', 'cần data/slash_pnl.json')},
-      {k:'ai', l:tv('AI content & AI APIs (video / image / audio / LLM)', 'AI làm content & AI API (video / ảnh / audio / LLM)'), v:sl.ai, pv:pSl&&pSl.ai, line:'ga', note: sl.ok ? tv('card charges by payment date', 'trừ thẻ theo ngày trả') : ''},
+      {k:'tools', l:tv('Marketing tools (tracking, attribution, ad research, design, web)', 'Công cụ marketing (tracking, attribution, nghiên cứu QC, thiết kế, web)'), v:sl.tools, pv:pSl&&pSl.tools, line:'ga', note: sl.ok ? tv('card charges by service month (yearly / 6-month plans spread evenly)', 'trừ thẻ theo tháng dịch vụ (gói năm / 6 tháng chia đều)') : tv('needs data/slash_pnl.json', 'cần data/slash_pnl.json')},
+      {k:'ai', l:tv('AI content & AI APIs (video / image / audio / LLM)', 'AI làm content & AI API (video / ảnh / audio / LLM)'), v:sl.ai, pv:pSl&&pSl.ai, line:'ga', note: sl.ok ? tv('card charges by service month (yearly / 6-month plans spread evenly)', 'trừ thẻ theo tháng dịch vụ (gói năm / 6 tháng chia đều)') : ''},
     ].filter(b=> b.v>0.005 || (b.pv||0)>0.005);
     const bTot = sum(B.map(b=>b.v));
     const barH = B.filter(b=>b.v>0.005).map(b=>`<span class="mk-seg" style="flex:${b.v.toFixed(2)};background:${MK_COLOR[b.k]||'var(--ink-muted)'}" title="${mkEsc(b.l+' '+money(b.v)+' · '+mkPct(b.v, bTot))}"></span>`).join('');
@@ -5843,6 +5860,7 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
   // Klaviyo (email + SMS) attribution + campaign/flow performance, and the Klaviyo invoices (cost).
   const klaviyoMatched = KLAVIYO_LIVE_DATA ? applyKlaviyoRows(KLAVIYO_LIVE_DATA) : false;
   const klaviyoInvMatched = KLAVIYO_INVOICES_LIVE_DATA ? applyKlaviyoInvoiceRows(KLAVIYO_INVOICES_LIVE_DATA) : false;
+  const klaviyoSlashMatched = applyKlaviyoSlashRows(SLASH_LIVE_DATA);   // V12.17.1: provisional cycle from the Slash card charge
   // Monthly OpEx entered by hand in the repo (data/opex_monthly.json).
   const opexMatched = OPEX_MONTHLY_LIVE_DATA ? applyOpexRows(OPEX_MONTHLY_LIVE_DATA) : false;
   // V12.2: Amazon DSP daily spend from Xnurta (after the OpEx rows: it replaces the monthly DSP top-up from book_from on).
@@ -6187,17 +6205,36 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
 
   // Daily storage fee (report): every day in the file gets the reported amount; days after the report's last day
   // (today, and yesterday until the 04:00 refresh) carry the last reported day forward as an estimate.
+  // V12.17.1: when the report stops for longer (ShipMonk's Metabase was down for days in 11/2026) the days of the
+  // open billing period beyond the 7-day carry take the AVERAGE of the last 14 reported days instead of nothing
+  // (up to 62 days = two billing periods), tagged as an estimate; days an invoice covers are never touched here
+  // (aggregate() reads the invoice first), so the figure is replaced by the invoice / the report when they land.
   function applyShipmonkStorageRows(data){
     if(!data || !data.daily) return false;
+    const SM_STORAGE_CARRY_DAYS = 7, SM_STORAGE_AVG_DAYS = 14, SM_STORAGE_EST_MAX_DAYS = 62;   // inside the function: it runs before the top-level consts below are initialised (TDZ)
     shipmonkStorageMeta = data;
     let matched = 0, lastIso = null, last = null;
+    const recent = [];   // last SM_STORAGE_AVG_DAYS reported days, in order
+    let avg = null;
     days.forEach(d=>{
       const r = data.daily[d.iso];
       if(r){
         d.shipmonkStorage = {inv: parseFloat(r.inv)||0, tru: parseFloat(r.tru)||0, wh: r.wh||{}, src:'report'};
         lastIso = d.iso; last = d.shipmonkStorage; matched++;
-      } else if(last && d.iso > lastIso && dayDiff(lastIso, d.iso) <= 7){
-        d.shipmonkStorage = {inv: last.inv, tru: last.tru, wh: last.wh, src:'carry', from: lastIso};
+        recent.push(last); if(recent.length>SM_STORAGE_AVG_DAYS) recent.shift(); avg = null;
+      } else if(last && d.iso > lastIso){
+        const gap = dayDiff(lastIso, d.iso);
+        if(gap <= SM_STORAGE_CARRY_DAYS){
+          d.shipmonkStorage = {inv: last.inv, tru: last.tru, wh: last.wh, src:'carry', from: lastIso};
+        } else if(gap <= SM_STORAGE_EST_MAX_DAYS && recent.length){
+          if(!avg){
+            const n = recent.length, wh = {};
+            recent.forEach(x=>{ Object.keys(x.wh||{}).forEach(w=>{ const v = x.wh[w]; const t = wh[w] = wh[w] || [0,0]; t[0] += (+v[0]||0)/n; t[1] += (+v[1]||0)/n; }); });
+            Object.keys(wh).forEach(w=>{ wh[w] = [Math.round(wh[w][0]*100)/100, Math.round(wh[w][1]*100)/100]; });
+            avg = {inv: Math.round(sum(recent.map(x=>x.inv))/n*100)/100, tru: Math.round(sum(recent.map(x=>x.tru))/n*100)/100, wh, n};
+          }
+          d.shipmonkStorage = {inv: avg.inv, tru: avg.tru, wh: avg.wh, src:'avg14', from: lastIso, n: avg.n};
+        }
       }
     });
     return matched>0;
@@ -6243,6 +6280,20 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
                        trueUp: tu ? tu.perDay : 0, cmpOk: !!tu, cmpInv: tu ? tu.invPerDay : 0, cmpApi: tu ? (tu.apiByDay[d.iso]||0) : 0};
       matched++;
     });
+    // V12.17.1: when the latest closed invoice is more recent than the daily report (report down / not re-read), the
+    // days after that invoice (open billing period) take the invoice's own per-day storage rate - the freshest figure
+    // there is - instead of the report's 14-day average (storage grows with the pallet count). Estimate; replaced by
+    // the report / the next invoice.
+    const lastInv = (data.invoices||[]).filter(i=>i && i.end && (i.storage||0)>0 && (i.days||0)>0).sort((a,b)=> a.end<b.end ? -1 : a.end>b.end ? 1 : 0).pop();
+    const repLast = (shipmonkStorageMeta && shipmonkStorageMeta.last_day) || null;
+    if(lastInv && (!repLast || lastInv.end > repLast)){
+      const rate = Math.round(lastInv.storage/lastInv.days*100)/100;
+      days.forEach(d=>{
+        if(d.iso <= lastInv.end || d.shipmonkInv || dayDiff(lastInv.end, d.iso) > 62) return;
+        if(d.shipmonkStorage && d.shipmonkStorage.src==='report') return;
+        d.shipmonkStorage = {inv: rate, tru: rate, wh: {}, src:'invrate', from: lastInv.end, invoice: lastInv.number};
+      });
+    }
     return matched>0;
   }
   // Sync v1.1+ books each order on its ORDER date (meta.cost_basis "...by_ordered_at"); v1.0 on the ship date.
@@ -6345,6 +6396,30 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
       const r = data.daily[iso] || {};
       days[idx].klaviyoCost = {cost: parseFloat(r.cost)||0, platform: parseFloat(r.platform)||0, sms: parseFloat(r.sms)||0, upgrades: parseFloat(r.upgrades)||0, flex: parseFloat(r.flex)||0, cycle: r.cycle||null};
       matched++;
+    });
+    return matched>0;
+  }
+  // V12.17.1: Klaviyo has no billing API and the invoice file is read by hand from klaviyo.com once a month. Until that
+  // read lands, the Slash card charge "Klaviyo" (line KLV, charged on/after the 19th) stands in for the invoice: the
+  // plan renewal (>= $1,000) opens the 19th -> 18th cycle of its charge month, smaller KLV charges of the same cycle are
+  // plan upgrades; the total is spread evenly per day over the cycle on every day the invoice file does not cover.
+  // Tagged provisional; replaced by the invoice figures when klaviyo_invoices.json has the cycle.
+  function applyKlaviyoSlashRows(slash){
+    const list = slash && Array.isArray(slash.charges) ? slash.charges.filter(c=> c.l==='KLV' && (+c.a||0) > 0 && c.d) : [];
+    if(!list.length) return false;
+    const cycleOf = iso => { const y = +iso.slice(0,4), m = +iso.slice(5,7), dd = +iso.slice(8,10); return dd>=19 ? iso.slice(0,7)+'-19' : isoDate(new Date(y, m-2, 19)); };
+    const cycles = {};
+    list.forEach(c=>{ const k = cycleOf(c.d); const t = cycles[k] = cycles[k] || {start:k, platform:0, upgrades:0, charged:c.d}; if((+c.a||0) >= 1000) t.platform += +c.a; else t.upgrades += +c.a; if(c.d > t.charged) t.charged = c.d; });
+    let matched = 0;
+    Object.keys(cycles).sort().forEach(k=>{
+      const t = cycles[k]; if(t.platform<=0) return;   // an upgrade alone (no renewal seen) is not a cycle
+      const y = +k.slice(0,4), m = +k.slice(5,7), end = isoDate(new Date(y, m, 18));   // 19th -> 18th of the next month
+      const n = dayDiff(k, end)+1, total = t.platform + t.upgrades;
+      days.forEach(d=>{
+        if(d.iso < k || d.iso > end || d.klaviyoCost) return;
+        d.klaviyoCost = {cost: total/n, platform: t.platform/n, sms: 0, upgrades: t.upgrades/n, flex: 0, cycle: k, src:'slash', charged: t.charged};
+        matched++;
+      });
     });
     return matched>0;
   }
