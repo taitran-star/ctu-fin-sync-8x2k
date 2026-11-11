@@ -1607,6 +1607,7 @@
   <div class="banner" id="syncBanner"><i data-icon="clock"></i><span data-i18n="h.syncBanner"><b>Lưu ý ngày gần nhất:</b> khoảng xem gồm ngày hôm nay (giờ LA) nên số ngày đó chưa chốt — Amazon ghi nhận phí/settlement muộn 24–48h, các nguồn khác tự đồng bộ vài giờ một lần.</span></div>
     <div class="card">
       <div class="card-head"><h2 data-i18n="h.healthTitle">Sức khoẻ dữ liệu theo nguồn</h2><div class="note" data-i18n="h.healthNote">Trạng thái tự động hoá của từng nguồn · chấm màu = tuổi lần đồng bộ gần nhất (Xanh &lt; 4h · Vàng 4–48h · Đỏ quá 48h hoặc chưa kết nối) · "N/14 ngày" = số ngày có số liệu thật trong 14 ngày gần nhất (không tính hôm nay, vì hôm nay chưa chốt)</div></div>
+      <div id="syncNowRow" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;"><button class="btn" id="syncNow" type="button">&#8635; C&#7853;p nh&#7853;t ngay</button><span class="note" id="syncNowMsg" role="status" aria-live="polite" style="margin:0;"></span></div>
       <div class="sources healthgrid" id="healthGrid"></div>
     </div>
 
@@ -1663,8 +1664,10 @@
   }, 3000);
   function sad(text){ var im = document.getElementById('siteLoadImg'); if(im){ im.src = '/img/mascot-shy.png'; im.style.animation = 'none'; } if(msg) msg.textContent = text; if(bar) bar.style.width = '100%'; }
   window.__STALE = {};   // sources answered from a saved copy (service worker) or an old edge copy, with the reason
+  // V12.18: the "Cập nhật ngay" button reloads the page with this flag -> every source is read straight from GitHub (X-Fresh)
+  var FRESH = false; try{ var ff = Number(sessionStorage.getItem('ctu_fresh') || 0); if(ff && Date.now() - ff < 120000) FRESH = true; sessionStorage.removeItem('ctu_fresh'); }catch(e){}
   function load(k, attempt){
-    return fetch('/data/' + SOURCES[k], {credentials:'same-origin', cache:'no-cache'}).then(function(r){
+    return fetch('/data/' + SOURCES[k], {credentials:'same-origin', cache:'no-cache', headers: FRESH ? {'X-Fresh':'1'} : {}}).then(function(r){
       if(r.status === 401){ location.replace('/login'); throw new Error('login'); }
       if(r.status === 404){ return null; }
       if(!r.ok){ throw new Error('HTTP ' + r.status); }
@@ -1704,6 +1707,66 @@
     s.onerror = function(){ sad(T('Could not load pnl.js — reload the page.', 'Không tải được pnl.js — tải lại trang.')); };
     document.body.appendChild(s);
   });
+  // V12.18: "Cập nhật ngay" (Data tab) - POST /api/refresh starts every sync workflow on GitHub now; the page then
+  // follows the runs (GET /api/refresh every 15 s) and reloads the numbers when they are done. Sources read in a
+  // signed-in browser (ShipMonk / Klaviyo invoices, Amazon DSP, Sellerboard intraday) are not part of it.
+  (function(){
+    var btn = document.getElementById('syncNow'), msg = document.getElementById('syncNowMsg'), row = document.getElementById('syncNowRow');
+    if(!btn || !msg) return;
+    btn.innerHTML = '&#8635; ' + T('Update now', 'Cập nhật ngay');
+    var timer = null;
+    var hhmm = function(ms){ var d = new Date(ms); return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); };
+    function say(t, tone){ msg.textContent = t; msg.style.color = tone === 'bad' ? 'var(--status-critical)' : tone === 'good' ? 'var(--status-good)' : ''; }
+    function api(method){
+      return fetch('/api/refresh', {method: method, credentials:'same-origin', cache:'no-store', headers:{'X-Requested-With':'ctu'}}).then(function(r){
+        if(r.status === 401){ location.replace('/login'); throw new Error('login'); }
+        return r.json().catch(function(){ return {}; }).then(function(j){ j.__status = r.status; return j; });
+      });
+    }
+    function reloadFresh(){ try{ sessionStorage.setItem('ctu_fresh', String(Date.now())); }catch(e){} location.reload(); }
+    function watch(t0){
+      clearInterval(timer); btn.disabled = true;
+      var step = function(){
+        api('GET').then(function(j){
+          var p = j.progress, secs = Math.round((Date.now() - t0) / 1000);
+          if(p && !p.error){
+            say(T('Syncing… ', 'Đang đồng bộ… ') + p.completed + '/' + p.total + T(' sources done · ', ' nguồn xong · ') + secs + 's' + (p.failed && p.failed.length ? T(' · failed: ', ' · lỗi: ') + p.failed.join(', ') : ''), p.failed && p.failed.length ? 'bad' : '');
+            if(p.total && p.completed >= p.total){ clearInterval(timer); say(T('Done — loading the new numbers…', 'Xong — đang tải số mới…'), 'good'); setTimeout(reloadFresh, 1200); return; }
+          }
+          if(secs > 480){ clearInterval(timer); say(T('Some syncs are still running — loading what is ready…', 'Một số nguồn vẫn đang chạy — tải phần đã xong…')); setTimeout(reloadFresh, 1200); }
+        }).catch(function(){});
+      };
+      timer = setInterval(step, 15000);
+    }
+    btn.addEventListener('click', function(){
+      btn.disabled = true; say(T('Starting the syncs on GitHub…', 'Đang gọi các nguồn trên GitHub…'));
+      api('POST').then(function(j){
+        if(j.__status === 200 && j.ok){
+          say(T('Started ', 'Đã gọi ') + j.started.length + T(' sources — usually 1–5 minutes…', ' nguồn — thường mất 1–5 phút…') + (j.failed && j.failed.length ? T(' (not started: ', ' (không gọi được: ') + j.failed.map(function(x){ return String(x.file).replace(/\.yml$/, ''); }).join(', ') + ')' : ''));
+          watch(Date.now()); return;
+        }
+        btn.disabled = false;
+        if(j.__status === 503) say(T('Not set up yet: add the secret GH_DISPATCH_TOKEN in Cloudflare Pages (Settings → Variables and Secrets), then retry the deployment.', 'Chưa cài: thêm secret GH_DISPATCH_TOKEN trong Cloudflare Pages (Settings → Variables and Secrets) rồi Retry deployment.'), 'bad');
+        else if(j.__status === 429){
+          var t0 = j.last && j.last.at ? Date.parse(j.last.at) : 0;
+          say(T('Just updated at ', 'Vừa cập nhật lúc ') + (t0 ? hhmm(t0) : '?') + T(' — try again in ', ' — thử lại sau ') + (j.retry_in_s || 0) + 's');
+          if(t0 && Date.now() - t0 < 480000) watch(t0);
+        }
+        else if(j.__status === 403) say(T('Your account cannot start an update.', 'Tài khoản này không có quyền bấm cập nhật.'), 'bad');
+        else if(j.__status === 502) say(T('GitHub refused the token (expired or missing the Actions permission) — HTTP ', 'GitHub từ chối token (hết hạn hoặc thiếu quyền Actions) — HTTP ') + (j.status || '?'), 'bad');
+        else say(T('Could not start: ', 'Không gọi được: ') + (j.error || ('HTTP ' + j.__status)), 'bad');
+      }).catch(function(e){ btn.disabled = false; if(!/login/.test(String(e && e.message))) say(T('No connection — try again.', 'Mất kết nối — thử lại.'), 'bad'); });
+    });
+    // on load: hide for accounts that cannot use it, say when it is not set up, resume following a refresh in progress
+    api('GET').then(function(j){
+      if(j.__status === 403 || j.__status === 404 || j.__status === 400){ if(row) row.hidden = true; return; }
+      if(j.__status !== 200) return;
+      if(!j.configured){ say(T('Manual update is not set up yet (secret GH_DISPATCH_TOKEN) — the sources still sync by themselves every 30 minutes.', 'Nút chưa được cài (secret GH_DISPATCH_TOKEN) — các nguồn vẫn tự đồng bộ 30 phút một lần.')); return; }
+      var t0 = j.last && j.last.at ? Date.parse(j.last.at) : 0, p = j.progress;
+      if(t0 && Date.now() - t0 < 480000 && p && !p.error && p.completed < p.total) watch(t0);
+      else say(T('Starts every automatic source now (1–5 minutes). Without pressing: every 30 minutes.', 'Gọi mọi nguồn tự động chạy ngay (1–5 phút). Không bấm: tự chạy 30 phút một lần.') + (t0 ? T(' Last pressed ', ' Lần bấm gần nhất ') + hhmm(t0) + (new Date(t0).toDateString() === new Date().toDateString() ? '' : ' (' + new Date(t0).toLocaleDateString() + ')') + '.' : ''));
+    }).catch(function(){});
+  })();
   document.getElementById('siteReload').addEventListener('click', function(){ location.reload(); });
   // Coming back to the tab / home-screen app after 15 minutes: fetch fresh numbers automatically.
   document.addEventListener('visibilitychange', function(){
