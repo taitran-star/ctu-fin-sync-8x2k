@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "updated_at": "2026-11-09",
+  "note": "Nhap tay cho tab Tai chinh (CFO) -> Tom tat cho BOD (V12.17). Sua truc tiep tren GitHub; dashboard doc lai sau ~1 phut. Khong ghi so du ngan hang hay ten nha cung cap vao day (repo public) — so du lay tu kho tien mat rieng (CASH_WRITE_KEY).",
+  "fx": {
+    "book_rate": 22000,
+    "accountant_rate": 26100,
+    "vn_keys": ["salary", "office", "other"],
+    "note": "VND per USD. book_rate = ty gia dashboard dang dung trong opex_monthly; accountant_rate = ty gia ke toan dung trong file tuan (CL1). Khi chot mot ty gia chung: dat ca hai bang nhau va ghi lai opex_monthly."
+  },
+  "cash_calendar": {
+    "shopify_payout_days": 3,
+    "amazon_settlement_days": 14,
+    "next_amazon_settlement": null,
+    "shipmonk_pay_lag_days": 21,
+    "payroll_day": 5,
+    "agency_day": 6,
+    "klaviyo_day": 19,
+    "numeral_day": 3,
+    "factory_deposit_pct": 30,
+    "note": "next_amazon_settlement = ngay ket thuc ky settlement Amazon gan nhat sap toi (YYYY-MM-DD) — lay trong Seller Central > Payments; factory_deposit_pct = % da coc khi dat hang (phan con lai tra truoc khi xuat)."
+  },
+  "opening_cash": null,
+  "benchmarks": {
+    "gross_margin_min": 55,
+    "refund_max": 4,
+    "supply_months_max": 4,
+    "runway_min_months": 6
+  },
+  "levers_manual": [
+    {"id": "agency", "label": {"vi": "Agency quảng cáo: trả theo kết quả hoặc dừng khi hết hợp đồng", "en": "Ad agency: pay for performance or stop at contract end"}, "amount": 10000, "confidence": "medium", "when": "hết hợp đồng", "owner": "Tai", "note": "cam kết tối thiểu $10k/tháng + 5% phần chi QC trên $100k; chưa đo được ROI riêng"}
+  ],
+  "decisions": [
+    {"t": "Quy tắc chi Meta theo ROAS biên ≥ hoà vốn Shopify; dừng campaign Water Fountain", "why": "Meta chiếm 77% ngân sách, ROAS 1.63x dưới hoà vốn 1.68x; Water Fountain 0.68x", "owner": "Marketing", "due": "2026-11-15", "status": "open"},
+    {"t": "Test giảm độ sâu khuyến mãi 5–10 điểm trên 20% lưu lượng", "why": "+$50k CM3/tháng nếu giữ ≥ 92% đơn; giảm giá đang 33% doanh thu gộp", "owner": "Marketing", "due": "2026-12-01", "status": "open"},
+    {"t": "Bật kho tiền mặt (CASH_WRITE_KEY), đóng sổ tháng 10, dừng PO mới tới khi hàng đang về nhập kho", "why": "chưa có runway; tổng cung ≈ 7 tháng bán trong khi tại kho 1 tháng", "owner": "Tai", "due": "2026-11-15", "status": "open"}
+  ]
+}
