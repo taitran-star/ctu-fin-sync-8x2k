@@ -1,24 +1,24 @@
 {
  "schema": 1,
- "generated_at": "2026-11-12T13:38:55Z",
+ "generated_at": "2026-11-12T21:07:56Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
   "to": "2026-11-12",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 3169,
-  "charges": 748,
+  "transactions_read": 3172,
+  "charges": 750,
   "stats": {
-   "status:posted": 2403,
+   "status:posted": 2408,
    "rail:rtp": 8,
-   "rail:ach": 859,
-   "rail:fee": 99,
+   "rail:ach": 861,
+   "rail:fee": 100,
    "rail:wire": 32,
    "status:failed": 762,
    "rail:card": 1751,
    "rail:other": 420,
-   "status:pending": 4
+   "status:pending": 2
   },
   "lines": {
    "SHOP": "Shopify plan + apps billed by Shopify",
@@ -196,8 +196,10 @@
    "UPW": 1762.21
   },
   "2026-11": {
+   "DSP": 8500.0,
    "MC": 4322.76,
    "MT": 1297.79,
+   "SBW": 3500.0,
    "SHOP": 4350.43,
    "SUP": 13448.3,
    "SW": 1112.49,
@@ -298,8 +300,10 @@
    "UPW": 1762.21
   },
   "2026-11": {
+   "DSP": 8500.0,
    "MC": 3523.59,
    "MT": 1610.55,
+   "SBW": 3500.0,
    "SHOP": 4350.43,
    "SUP": 13448.3,
    "SW": 1112.49,
@@ -358,10 +362,7 @@
    "MC": 82.5
   }
  },
- "pending": {
-  "DSP": 8500.0,
-  "SBW": 3500.0
- },
+ "pending": {},
  "charges": [
   {
    "d": "2026-04-02",
@@ -7014,6 +7015,28 @@
    "a": 237.38,
    "k": "card",
    "cy": "M"
+  },
+  {
+   "d": "2026-11-12",
+   "v": "SparkX (Amazon DSP)",
+   "l": "DSP",
+   "a": 8500.0,
+   "k": "ach",
+   "cy": "U",
+   "memo": "Amazon-DSP Advertising Fee-Prepayment,SparkX AI Platform Annual Fee iNVOICE numb",
+   "desc": "Amazon-DSP Advertising Fee-Prepayment,SparkX AI Platform Annual Fee iN",
+   "payee": "SparkX Marketing Co. Limited"
+  },
+  {
+   "d": "2026-11-12",
+   "v": "Tremendous (Snowball wallet top-up)",
+   "l": "SBW",
+   "a": 3500.0,
+   "k": "ach",
+   "cy": "U",
+   "memo": "Account funding Invoice number C9925E79-0016",
+   "desc": "Account funding Invoice number C9925E79-0016",
+   "payee": "Tremendous, LLC"
   }
  ],
  "unclassified_card": [
