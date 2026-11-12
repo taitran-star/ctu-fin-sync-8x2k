@@ -1,24 +1,24 @@
 {
  "schema": 1,
- "generated_at": "2026-11-11T13:59:25Z",
+ "generated_at": "2026-11-12T13:38:55Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
-  "to": "2026-11-11",
+  "to": "2026-11-12",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 3153,
-  "charges": 745,
+  "transactions_read": 3169,
+  "charges": 748,
   "stats": {
-   "status:posted": 2387,
+   "status:posted": 2403,
    "rail:rtp": 8,
-   "rail:ach": 854,
-   "rail:fee": 98,
+   "rail:ach": 859,
+   "rail:fee": 99,
    "rail:wire": 32,
-   "status:failed": 757,
-   "rail:card": 1743,
-   "rail:other": 418,
-   "status:pending": 9
+   "status:failed": 762,
+   "rail:card": 1751,
+   "rail:other": 420,
+   "status:pending": 4
   },
   "lines": {
    "SHOP": "Shopify plan + apps billed by Shopify",
@@ -196,11 +196,11 @@
    "UPW": 1762.21
   },
   "2026-11": {
-   "MC": 4062.76,
+   "MC": 4322.76,
    "MT": 1297.79,
    "SHOP": 4350.43,
    "SUP": 13448.3,
-   "SW": 875.11,
+   "SW": 1112.49,
    "TAX": 2775.0,
    "UPW": 1048.75
   }
@@ -298,11 +298,11 @@
    "UPW": 1762.21
   },
   "2026-11": {
-   "MC": 3263.59,
+   "MC": 3523.59,
    "MT": 1610.55,
    "SHOP": 4350.43,
    "SUP": 13448.3,
-   "SW": 875.11,
+   "SW": 1112.49,
    "TAX": 2831.26,
    "UPW": 1048.75
   },
@@ -358,7 +358,10 @@
    "MC": 82.5
   }
  },
- "pending": {},
+ "pending": {
+  "DSP": 8500.0,
+  "SBW": 3500.0
+ },
  "charges": [
   {
    "d": "2026-04-02",
@@ -6985,6 +6988,30 @@
    "v": "Adnova.ai",
    "l": "MT",
    "a": 118.0,
+   "k": "card",
+   "cy": "M"
+  },
+  {
+   "d": "2026-11-11",
+   "v": "Grok / xAI",
+   "l": "MC",
+   "a": 20.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-11-11",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 240.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-11-12",
+   "v": "Slack",
+   "l": "SW",
+   "a": 237.38,
    "k": "card",
    "cy": "M"
   }
