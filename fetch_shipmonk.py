@@ -105,6 +105,31 @@ v1.5 (2026-10-19) - exact product cost per order (dashboard V11.1), two addition
                              = stock of the packaging-type products (box opening stock for FIFO).
                              (The old per-product "bundle_components" field was dropped: it summed
                              the components of every bundle the product belonged to.)
+
+v1.7 (2026-11-12) - ShipMonk STORAGE per day without ShipMonk's billing (no billing API; the Metabase
+"Storage Fees" report was switched off in 11/2026). Two additive top-level blocks, never fatal:
+  inventory_history  {days{YYYY-MM-DD: {on_hand{wh}, incoming{wh}, at_dock{wh}, incoming_by_status{wh{status}},
+                     packaging_on_hand, as_of, samples, src}}} - the LAST inventory snapshot of every shop-calendar
+                     day per warehouse (each run overwrites today's row), kept INVENTORY_HISTORY_DAYS days; seeded
+                     with 16/10 -> 11/11/2026 read back from the git history of this file. at_dock = open
+                     receivings in an arrived / in-progress status (units at the dock, not yet put away).
+  storage_model      per-day storage estimate for the days after the latest invoice that has storage
+                     (site/public/shipmonk_invoices.json, written by tools/shipmonk_billing):
+                       est(d) = rate(d) x max(0, P0 + sum_wh (stock_wh(d) - mean_stock_wh(anchor)) / k_wh)
+                       stock_wh(d) = on hand at the last snapshot of d-1 (ShipMonk counts locations overnight)
+                       P0 = anchor invoice storage per day / rate(mid-period)   (pallet-equivalents, bins incl.)
+                       mean_stock = average stock over the anchor invoice's days (>= 50 % of them in history)
+                       k = units per pallet-equivalent: PA2 53.5, NV3 49.9, TO1 31.6 (fit on 04-10/2026), else 50
+                       rate = USD per pallet-equivalent per day: 0.5328 to 07/2026, 0.5590 from 01/08/2026
+                     Checked: 13 invoices 04 -> 10/2026 mean abs error 4.0 % per period; 01-11/11/2026 vs the
+                     running invoice -0.3 % (flat rate of the previous invoice: -3.3 %). storage_model.checks
+                     re-scores the model against every new invoice automatically.
+  SHIPMONK_STORAGE_MODEL      1 (default) / 0 to skip the model (history is still kept)
+  SHIPMONK_INVOICES_PATH      default site/public/shipmonk_invoices.json
+  SHIPMONK_PALLET_RATES       JSON {effective_date: usd_per_pallet_day}, default {"2000-01-01":0.5328,"2026-08-01":0.559}
+  SHIPMONK_UNITS_PER_PALLET   JSON {warehouse: units}, default {"PA2":53.5,"NV3":49.9,"TO1":31.6}
+  SHIPMONK_STORAGE_DOCK       0 (default) / 1 to count units at the dock as stock (needs at_dock history
+                              over the anchor invoice; off until an invoice shows it helps)
 """
 import email.utils
 import json
@@ -122,7 +147,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "1.6.0"
+SCRIPT_VERSION = "1.7.0"
 SCHEMA = 1
 
 API_KEY = os.environ.get("SHIPMONK_API_KEY", "").strip()
@@ -160,6 +185,64 @@ WAREHOUSE_COUNTRY = {
     "PA1": "US", "PA2": "US", "PA8": "US", "TX1": "US", "TX8": "US", "TO1": "CA", "UK1": "GB",
     # deprecated identifiers kept for historical data
     "NY7": "US", "CA7": "US", "KY7": "US", "NV2": "US", "NV7": "US", "NJ1": "US", "NJ7": "US", "TO7": "CA", "CA1": "US", "FL1": "US",
+}
+
+
+def _num_map(name, default):
+    """JSON {key: positive number} from an env var; the default when unset or invalid (never raises)."""
+    raw = os.environ.get(name, "").strip()
+    if raw:
+        try:
+            v = json.loads(raw)
+            out = {str(k): float(x) for k, x in v.items() if float(x) > 0}
+            if out:
+                return out
+        except (ValueError, TypeError, AttributeError):
+            pass
+    return dict(default)
+
+
+# v1.7: storage per day from the stock in each warehouse (see the docstring)
+STORAGE_MODEL_ENABLED = os.environ.get("SHIPMONK_STORAGE_MODEL", "1").strip().lower() not in ("0", "false", "no", "off")
+STORAGE_INVOICES_PATH = os.environ.get("SHIPMONK_INVOICES_PATH", "site/public/shipmonk_invoices.json").strip() or "site/public/shipmonk_invoices.json"
+STORAGE_RATES = _num_map("SHIPMONK_PALLET_RATES", {"2000-01-01": 0.5328, "2026-08-01": 0.5590})
+STORAGE_UNITS_PER_PALLET = {k.upper(): v for k, v in _num_map("SHIPMONK_UNITS_PER_PALLET", {"PA2": 53.5, "NV3": 49.9, "TO1": 31.6}).items()}
+STORAGE_DEFAULT_UNITS_PER_PALLET = 50.0
+STORAGE_COUNT_DOCK = os.environ.get("SHIPMONK_STORAGE_DOCK", "0").strip().lower() in ("1", "true", "yes", "on")
+STORAGE_MAX_DAYS = 62        # estimate at most two billing periods past the anchor invoice
+STORAGE_CARRY_DAYS = 7       # a day without a snapshot uses the latest earlier one, up to this many days back
+STORAGE_MIN_COVERAGE = 0.5   # share of the anchor invoice's days that must have a snapshot
+INVENTORY_HISTORY_DAYS = 400
+# last snapshot of each day per warehouse before v1.7 recorded it (git history of data/shipmonk.json):
+# day -> (on_hand{wh}, incoming{wh}, packaging_on_hand)
+INVENTORY_HISTORY_SEED = {
+    "2026-10-16": ({"NV3": 6247, "PA2": 14820, "TO1": 2040}, {"NV3": 42159, "PA2": 74385}, None),
+    "2026-10-17": ({"NV3": 6209, "PA2": 14648, "TO1": 2040}, {"NV3": 42159, "PA2": 74385}, None),
+    "2026-10-18": ({"NV3": 6184, "PA2": 14600, "TO1": 2040}, {"NV3": 53439, "PA2": 74385}, 24005),
+    "2026-10-19": ({"NV3": 6011, "PA2": 14275, "TO1": 2039}, {"NV3": 53439, "PA2": 74385}, 23664),
+    "2026-10-20": ({"NV3": 5965, "PA2": 14026, "TO1": 2039}, {"NV3": 53439, "PA2": 74385}, 23551),
+    "2026-10-21": ({"NV3": 5931, "PA2": 13776, "TO1": 2039}, {"NV3": 53439, "PA2": 74618}, 23422),
+    "2026-10-22": ({"NV3": 6197, "PA2": 13559, "TO1": 2039}, {"NV3": 53103, "PA2": 74618}, 23279),
+    "2026-10-23": ({"NV3": 9062, "PA2": 13370, "TO1": 2039}, {"NV3": 49781, "PA2": 74618}, 23033),
+    "2026-10-24": ({"NV3": 8878, "PA2": 13079, "TO1": 2039}, {"NV3": 49781, "PA2": 74618}, 26518),
+    "2026-10-25": ({"NV3": 8639, "PA2": 12763, "TO1": 2039}, {"NV3": 49781, "PA2": 74618}, 26299),
+    "2026-10-26": ({"NV3": 8464, "PA2": 12514, "TO1": 2038}, {"NV3": 49781, "PA2": 74618}, 25914),
+    "2026-10-27": ({"NV3": 8308, "PA2": 16085, "TO1": 2035}, {"NV3": 49781, "PA2": 70858}, 28044),
+    "2026-10-28": ({"NV3": 8136, "PA2": 17691, "TO1": 2032}, {"NV3": 49781, "PA2": 68978}, 27737),
+    "2026-10-29": ({"NV3": 7944, "PA2": 19145, "TO1": 2032}, {"NV3": 49781, "PA2": 67098}, 27474),
+    "2026-10-30": ({"NV3": 7795, "PA2": 18835, "TO1": 2033}, {"NV3": 49781, "PA2": 67098}, 27252),
+    "2026-10-31": ({"NV3": 7630, "PA2": 18559, "TO1": 2033}, {"NV3": 49781, "PA2": 67098}, 27000),
+    "2026-11-01": ({"NV3": 7471, "PA2": 18196, "TO1": 2033}, {"NV3": 49781, "PA2": 67098}, 26696),
+    "2026-11-02": ({"NV3": 7375, "PA2": 17949, "TO1": 2025}, {"NV3": 49781, "PA2": 67098}, 26526),
+    "2026-11-03": ({"NV3": 7195, "PA2": 17725, "TO1": 2023}, {"NV3": 49781, "PA2": 67098}, 26145),
+    "2026-11-04": ({"NV3": 7036, "PA2": 17634, "TO1": 2023}, {"NV3": 49781, "PA2": 67128}, 25978),
+    "2026-11-05": ({"NV3": 6901, "PA2": 17114, "TO1": 2021}, {"NV3": 49781, "PA2": 67128}, 25560),
+    "2026-11-06": ({"NV3": 6723, "PA2": 16866, "TO1": 2021}, {"NV3": 49781, "PA2": 67128}, 25390),
+    "2026-11-07": ({"NV3": 6556, "PA2": 16583, "TO1": 2021}, {"NV3": 49781, "PA2": 67128}, 25107),
+    "2026-11-08": ({"NV3": 6477, "PA2": 16330, "TO1": 2021}, {"NV3": 58357, "PA2": 85800}, 31956),
+    "2026-11-09": ({"NV3": 6107, "PA2": 15287, "TO1": 2004}, {"NV3": 58357, "PA2": 85800}, 32143),
+    "2026-11-10": ({"NV3": 5623, "PA2": 14469, "TO1": 2004}, {"NV3": 58357, "PA2": 85770}, 33324),
+    "2026-11-11": ({"NV3": 9041, "PA2": 13959, "TO1": 2004}, {"NV3": 54681, "PA2": 85770}, 32960),
 }
 
 DAILY_FIELDS = ["orders", "orders_shipped", "orders_unshipped", "orders_onhold", "units", "packages", "packaging_units", "packaging_units_est", "packaging_orders_est", "shipping_cost", "packaging_cost", "pick_pack_cost", "total_cost", "cost_missing_orders"]
@@ -1032,6 +1115,8 @@ class InventoryBuilder:
         self.skipped_types = {}
         self.bundles = {}     # v1.5: bundle_sku -> {component_sku: qty} (ShipMonk bundle table, every product type)
         self.packaging = {}   # v1.5: packaging-type products (boxes) -> stock, for the box FIFO opening stock
+        self.incoming_by_status = {}   # v1.7: warehouse -> {receiving status: units still to receive}
+        self.receiving_statuses = {}   # v1.7: receiving status -> receivings seen (open and closed)
 
     def register_warehouse(self, key, wh):
         w = self.warehouses.setdefault(key, {"id": None, "identifier": None, "name": None, "country": None})
@@ -1126,10 +1211,12 @@ class InventoryBuilder:
         if not isinstance(r, dict):
             return
         status = str(r.get("status") or "").lower()
+        self.receiving_statuses[status or "unknown"] = self.receiving_statuses.get(status or "unknown", 0) + 1
         if status in ("received", "completed", "complete", "cancelled", "canceled", "closed"):
             return
         self.counts["incoming_receivings_open"] += 1
         key, wh = _warehouse_key(r.get("warehouse"))
+        by_status = self.incoming_by_status.setdefault(key, {})
         for it in (r.get("items") or r.get("receiving_items") or []):
             if not isinstance(it, dict):
                 continue
@@ -1140,6 +1227,7 @@ class InventoryBuilder:
             if not sku or exp is None:
                 continue
             remaining = max(0, exp - rec)
+            by_status[status or "unknown"] = by_status.get(status or "unknown", 0) + remaining   # v1.7: every SKU, sellable or not
             entry = self.skus.get(sku)
             if entry is None:
                 self.counts["incoming_unknown_sku"] += 1
@@ -1173,6 +1261,9 @@ class InventoryBuilder:
             "warehouses": [dict(w) for _, w in sorted(self.warehouses.items())],
             "skus": dict(sorted(self.skus.items())),
             "packaging": dict(sorted(self.packaging.items())),   # v1.5: packaging-type products (boxes) stock
+            # v1.7: open receivings per warehouse and status (units still to receive) + receivings seen per status
+            "incoming_by_status": {k: dict(sorted(v.items())) for k, v in sorted(self.incoming_by_status.items())},
+            "receiving_statuses": dict(sorted(self.receiving_statuses.items())),
             "totals": totals,
             "fields": {
                 "available": "quantity_total_available - units ShipMonk can allocate to new orders (use as 'available to sell')",
@@ -1331,6 +1422,214 @@ def fetch_inventory(client, previous, now_utc):
         meta["elapsed_s"] = round(time.time() - t0, 1)
 
 
+# ---------------------------------------------------------------- v1.7 storage per day
+def _day_add(day, n):
+    return (datetime.strptime(day, "%Y-%m-%d") + timedelta(days=n)).strftime("%Y-%m-%d")
+
+
+def _dock_status(status):
+    """Receiving statuses whose remaining units are physically at the warehouse (arrived, being received)."""
+    s = str(status or "").lower()
+    return "arriv" in s or "progress" in s or "dock" in s or "receiving" in s or "unload" in s or s in ("partially_received", "processing")
+
+
+def inventory_history_update(previous, block, meta_inv, tz):
+    """Daily stock per warehouse: the previous file's rows + the seed for days it lacks + this run's snapshot
+    (overwrites today's row, so a finished day keeps its last snapshot). Returns (history_block, info)."""
+    prev = (previous or {}).get("inventory_history") if isinstance(previous, dict) else None
+    days = {}
+    if isinstance(prev, dict) and isinstance(prev.get("days"), dict):
+        days = {d: r for d, r in prev["days"].items() if isinstance(r, dict) and isinstance(r.get("on_hand"), dict)}
+    seeded = 0
+    for d, (oh, inc, pk) in INVENTORY_HISTORY_SEED.items():
+        if d not in days:
+            days[d] = {"on_hand": dict(oh), "incoming": dict(inc), "packaging_on_hand": pk, "src": "seed"}
+            seeded += 1
+    info = {"recorded_day": None, "seeded": seeded, "skipped": None}
+    fresh = isinstance(block, dict) and meta_inv.get("fetched") and not meta_inv.get("carried_over")
+    if not fresh:
+        info["skipped"] = "no fresh inventory snapshot this run"
+    else:
+        tw = ((block.get("totals") or {}).get("by_warehouse") or {})
+        on_hand = {w: int(r["on_hand"]) for w, r in sorted(tw.items()) if isinstance(r, dict) and (r.get("on_hand") or 0) > 0}
+        try:
+            day = datetime.strptime(str(block.get("as_of")), "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc).astimezone(tz).strftime("%Y-%m-%d")
+        except ValueError:
+            day = None
+        if not on_hand or not day:
+            info["skipped"] = "snapshot has no stock on hand" if day else "snapshot has no as_of"
+        else:
+            rec = {"as_of": block.get("as_of"), "src": "sync", "on_hand": on_hand,
+                   "incoming": {w: int(r["incoming"]) for w, r in sorted(tw.items()) if isinstance(r, dict) and (r.get("incoming") or 0) > 0}}
+            pk = block.get("packaging")
+            rec["packaging_on_hand"] = sum(int(p.get("on_hand") or 0) for p in pk.values() if isinstance(p, dict)) if isinstance(pk, dict) and pk else None
+            inc_meta = meta_inv.get("incoming") or {}
+            ibs = block.get("incoming_by_status")
+            if inc_meta.get("fetched") and isinstance(ibs, dict):
+                rec["incoming_by_status"] = ibs
+                rec["at_dock"] = {w: n for w, n in ((w, sum(int(v or 0) for s, v in st.items() if _dock_status(s))) for w, st in sorted(ibs.items())) if n > 0}
+            old = days.get(day)
+            rec["samples"] = (int(old.get("samples") or 0) if isinstance(old, dict) and old.get("src") == "sync" else 0) + 1
+            days[day] = rec
+            info["recorded_day"] = day
+    keep = sorted(days)[-INVENTORY_HISTORY_DAYS:]
+    hist = {
+        "basis": "last inventory snapshot of each shop-calendar day (" + TZ_NAME + "), units per ShipMonk warehouse",
+        "fields": {"on_hand": "units in the warehouse (inventory.totals.by_warehouse.on_hand)",
+                   "incoming": "open receivings: units still to receive",
+                   "at_dock": "open receivings in an arrived / in-progress status: units at the dock, not put away yet",
+                   "incoming_by_status": "open receivings by status: units still to receive",
+                   "packaging_on_hand": "boxes and other packaging-type products in stock (all warehouses)",
+                   "src": "sync = recorded by this script, seed = read back from the git history of this file"},
+        "first_day": keep[0] if keep else None,
+        "last_day": keep[-1] if keep else None,
+        "days": {d: days[d] for d in keep},
+    }
+    info["days"] = len(keep)
+    return hist, info
+
+
+def _storage_rate(day):
+    """USD per pallet-equivalent per day in force on `day`."""
+    rate = None
+    for start in sorted(STORAGE_RATES):
+        if start <= day:
+            rate = STORAGE_RATES[start]
+    return rate if rate is not None else STORAGE_RATES[min(STORAGE_RATES)]
+
+
+def _units_per_pallet(wh):
+    return STORAGE_UNITS_PER_PALLET.get(str(wh).upper(), STORAGE_DEFAULT_UNITS_PER_PALLET)
+
+
+def _stock_for_day(hist_days, day, dock):
+    """Stock that counts for `day`'s storage: the last snapshot of the day before (ShipMonk counts the occupied
+    locations overnight), carried from up to STORAGE_CARRY_DAYS earlier. Returns ({wh: units}, snapshot_day)."""
+    for back in range(1, STORAGE_CARRY_DAYS + 2):
+        d = _day_add(day, -back)
+        rec = hist_days.get(d)
+        if not isinstance(rec, dict) or not isinstance(rec.get("on_hand"), dict):
+            continue
+        units = {}
+        for w, v in rec["on_hand"].items():
+            units[str(w).upper()] = units.get(str(w).upper(), 0.0) + float(v or 0)
+        if dock:
+            ad = rec.get("at_dock")
+            if not isinstance(ad, dict):
+                return None, None
+            for w, v in ad.items():
+                units[str(w).upper()] = units.get(str(w).upper(), 0.0) + float(v or 0)
+        return units, d
+    return None, None
+
+
+def _storage_anchor(inv, hist_days, dock):
+    """Pallet-equivalents and mean stock of one invoice period, or None when history covers too few of its days."""
+    try:
+        n = int(inv.get("days") or 0)
+        storage = float(inv.get("storage") or 0)
+        start, end = str(inv["start"]), str(inv["end"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    if n <= 0 or storage <= 0:
+        return None
+    snaps = []
+    for i in range(n):
+        u, src = _stock_for_day(hist_days, _day_add(start, i), dock)
+        if u is not None and src >= _day_add(start, -1):   # never a snapshot carried from before the period
+            snaps.append(u)
+    if len(snaps) < max(1, STORAGE_MIN_COVERAGE * n):
+        return None
+    whs = sorted({w for u in snaps for w in u})
+    mean = {w: sum(u.get(w, 0.0) for u in snaps) / len(snaps) for w in whs}
+    mid = _day_add(start, n // 2)
+    rate = _storage_rate(mid)
+    return {"invoice": inv.get("number"), "start": start, "end": end, "days": n, "storage": round(storage, 2),
+            "avg_day": round(storage / n, 2), "rate": rate, "pallets": round(storage / n / rate, 2),
+            "coverage_days": len(snaps), "mean_stock": {w: round(v, 1) for w, v in mean.items()},
+            "_p0": storage / n / rate, "_mean": mean}
+
+
+def _storage_est(anchor, hist_days, day, dock):
+    """(usd, pallet_equivalents, snapshot_day) for `day` from `anchor`, or None without a snapshot."""
+    u, src = _stock_for_day(hist_days, day, dock)
+    if u is None:
+        return None
+    whs = set(u) | set(anchor["_mean"])
+    delta = sum((u.get(w, 0.0) - anchor["_mean"].get(w, 0.0)) / _units_per_pallet(w) for w in whs)
+    pallets = max(0.0, anchor["_p0"] + delta)
+    return round(_storage_rate(day) * pallets, 2), round(pallets, 1), src
+
+
+def storage_model_build(hist_block, today_key):
+    """storage_model block (see the docstring) or (None, reason). Reads the invoices file next to the dashboard."""
+    try:
+        with open(STORAGE_INVOICES_PATH) as f:
+            invoices = (json.load(f) or {}).get("invoices") or []
+    except (OSError, ValueError) as e:
+        return None, f"invoices file not readable ({STORAGE_INVOICES_PATH}): {str(e)[:120]}"
+    closed = sorted((i for i in invoices if isinstance(i, dict) and i.get("start") and i.get("end")
+                     and float(i.get("storage") or 0) > 0 and int(i.get("days") or 0) > 0), key=lambda i: str(i["end"]))
+    if not closed:
+        return None, "no invoice with storage in " + STORAGE_INVOICES_PATH
+    hist_days = (hist_block or {}).get("days") or {}
+    anchor, dock = None, STORAGE_COUNT_DOCK
+    for d_try in ([True, False] if STORAGE_COUNT_DOCK else [False]):
+        for inv in reversed(closed):
+            anchor = _storage_anchor(inv, hist_days, d_try)
+            if anchor:
+                dock = d_try
+                break
+        if anchor:
+            break
+    if not anchor:
+        return None, "inventory history does not cover any invoice period yet"
+    daily = {}
+    for i in range(1, STORAGE_MAX_DAYS + 1):
+        day = _day_add(anchor["end"], i)
+        if day > today_key:
+            break
+        r = _storage_est(anchor, hist_days, day, dock)
+        if r:
+            daily[day] = {"est": r[0], "pallets": r[1], "stock_day": r[2]}
+    # self-check: each invoice scored by the model anchored on the invoice before it (when history covers both)
+    checks = []
+    for a_inv, b_inv in zip(closed, closed[1:]):
+        a = _storage_anchor(a_inv, hist_days, dock)
+        if not a:
+            continue
+        n = int(b_inv.get("days") or 0)
+        ests = [_storage_est(a, hist_days, _day_add(str(b_inv["start"]), i), dock) for i in range(n)]
+        if n <= 0 or any(e is None for e in ests):
+            continue
+        model = round(sum(e[0] for e in ests), 2)
+        actual = round(float(b_inv.get("storage") or 0), 2)
+        checks.append({"invoice": b_inv.get("number"), "start": b_inv.get("start"), "end": b_inv.get("end"), "anchor": a["invoice"],
+                       "actual": actual, "model": model, "error_pct": round((model / actual - 1) * 100, 1) if actual else None,
+                       "flat_previous": round(a["avg_day"] * n, 2),
+                       "flat_previous_error_pct": round((a["avg_day"] * n / actual - 1) * 100, 1) if actual else None})
+    pub = {k: v for k, v in anchor.items() if not k.startswith("_")}
+    model = {
+        "version": 1,
+        "method": ("est(d) = rate(d) x max(0, P0 + sum_wh (stock_wh(d) - mean_stock_wh) / units_per_pallet_wh); "
+                   "stock_wh(d) = last snapshot of the day before (on hand" + (" + at dock" if dock else "") + "); "
+                   "P0 = anchor invoice storage per day / rate at mid-period; mean_stock = average over the anchor invoice's days"),
+        "rates": dict(sorted(STORAGE_RATES.items())),
+        "units_per_pallet": dict(sorted(STORAGE_UNITS_PER_PALLET.items())),
+        "default_units_per_pallet": STORAGE_DEFAULT_UNITS_PER_PALLET,
+        "count_dock": dock,
+        "invoices_file": STORAGE_INVOICES_PATH,
+        "anchor": pub,
+        "first_day": min(daily) if daily else None,
+        "last_day": max(daily) if daily else None,
+        "daily": daily,
+        "checks": checks[-12:],
+        "validation": {"backtest_04_10_2026": "13 invoices 01/04-14/10/2026: mean abs error 4.0 % per period, bias +0.5 % (flat previous-invoice rate: 9.2 %, +8.3 %)",
+                       "running_invoice_2026_11_01_11": "01-11/11/2026: model 5,763.80 vs running invoice 5,780.37 (-0.3 %); flat previous-invoice rate -3.3 %"},
+    }
+    return model, None
+
+
 def main():
     if not API_KEY:
         log("SHIPMONK_API_KEY is not set")
@@ -1412,7 +1711,7 @@ def main():
             "api_retries": client.retries,
             "counts": agg.counts,
             "warnings": sorted(agg.warnings),
-            "not_in_api": ["storage fees", "receiving fees", "returns processing", "special projects", "account minimums - only on ShipMonk invoices"],
+            "not_in_api": ["storage fees (v1.7: estimated per day in storage_model from the stock per warehouse)", "receiving fees", "returns processing", "special projects", "account minimums - only on ShipMonk invoices"],
             "packaging_inference": dict(agg.pack_stats, rules_learned_this_run=len(agg.pack_rules), rules_prior=len(agg.prior_rules),
                                         bom_bundles_used=len(agg.bom_bundles),
                                         note="orders with no packaging line in the API get the box inferred from orders of the same composition (warehouse first, then any), else one box per cave/donut; counted in packaging_units_est / packaging_orders_est"),
@@ -1421,6 +1720,36 @@ def main():
     }
     # inventory snapshot: additive and non-fatal - everything above is written unchanged whatever happens here
     out["inventory"], out["meta"]["inventory"], out["bom"] = fetch_inventory(client, previous, datetime.now(timezone.utc))
+    # v1.7: daily stock history + storage per day estimated from it (additive, never fatal)
+    try:
+        out["inventory_history"], hinfo = inventory_history_update(previous, out["inventory"], out["meta"]["inventory"], tz)
+        out["meta"]["inventory_history"] = hinfo
+        log(f"Inventory history: {hinfo['days']} days" + (f", recorded {hinfo['recorded_day']}" if hinfo["recorded_day"] else f", not recorded ({hinfo['skipped']})")
+            + (f", {hinfo['seeded']} seeded" if hinfo["seeded"] else ""))
+    except Exception as e:  # noqa: BLE001
+        prev_h = (previous or {}).get("inventory_history") if isinstance(previous, dict) else None
+        if isinstance(prev_h, dict):
+            out["inventory_history"] = prev_h
+        out["meta"]["inventory_history"] = {"error": (f"{type(e).__name__}: {e}")[:300]}
+        log(f"Inventory history: WARNING {out['meta']['inventory_history']['error']}")
+    out["meta"]["storage_model"] = {"enabled": STORAGE_MODEL_ENABLED}
+    if STORAGE_MODEL_ENABLED and isinstance(out.get("inventory_history"), dict):
+        try:
+            model, why = storage_model_build(out["inventory_history"], today_key)
+            if model:
+                out["storage_model"] = model
+                a = model["anchor"]
+                last = model["daily"].get(model["last_day"]) if model["last_day"] else None
+                out["meta"]["storage_model"].update({"anchor": a["invoice"], "days": len(model["daily"]), "last_day": model["last_day"]})
+                log(f"Storage model: anchor invoice {a['invoice']} ({a['start']}..{a['end']}, {a['avg_day']:.2f}/day = {a['pallets']:.1f} pallet-eq, "
+                    f"{a['coverage_days']}/{a['days']} days of stock), {len(model['daily'])} days estimated"
+                    + (f", {model['last_day']} {last['est']:.2f}" if last else "") + f", {len(model['checks'])} invoice checks")
+            else:
+                out["meta"]["storage_model"]["error"] = why
+                log(f"Storage model: not built - {why}")
+        except Exception as e:  # noqa: BLE001
+            out["meta"]["storage_model"]["error"] = (f"{type(e).__name__}: {e}")[:300]
+            log(f"Storage model: WARNING {out['meta']['storage_model']['error']}")
     os.makedirs(os.path.dirname(OUTPUT_PATH) or ".", exist_ok=True)
     with open(OUTPUT_PATH, "w") as f:
         json.dump(out, f, indent=2, sort_keys=True)
