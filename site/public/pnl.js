@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build d77ada8473).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 4dcea93242).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -382,6 +382,23 @@
   // Amazon FBA inventory snapshot + monthly storage fee reports + a per-day storage estimate for months Amazon has not
   // billed yet - data/amazon_storage.json from fetch_amazon_storage.py (hourly). Do not rename this line.
   const AMAZON_STORAGE_LIVE_DATA = (window.__LIVE && window.__LIVE["amazon_storage"]) || null; /*AMAZON_STORAGE_INJECT*/
+  // V12.19: tooltip of the ShipMonk storage line when days come from the stock formula (sync v1.7 storage_model)
+  function smStorageModelTitle(){
+    const m = (shipmonkMeta && shipmonkMeta.storage_model) || {}, an = m.anchor || {}, k = m.units_per_pallet || {};
+    const n2 = x => tv((+x).toFixed(2), (+x).toFixed(2).replace('.', ',')), n1 = x => tv((+x).toFixed(1), (+x).toFixed(1).replace('.', ',')), dm = k => k ? String(k).slice(8,10)+'/'+String(k).slice(5,7) : '';
+    const ks = Object.keys(k).sort().map(w=> w+' '+n1(k[w])).join(' · ');
+    const rates = m.rates || {}, rk = Object.keys(rates).sort(), rate = rk.length ? rates[rk[rk.length-1]] : null;
+    let t = tv('ShipMonk has no billing API and its Storage Fees report is off, so days without an invoice are estimated from the stock: pallet-equivalents of the latest invoice',
+               'ShipMonk không có API phí và report Storage Fees đã tắt, nên ngày chưa có hoá đơn được ước tính từ tồn kho: số pallet tương đương của hoá đơn gần nhất');
+    if(an.invoice) t += ' '+an.invoice+' ('+dm(an.start)+' → '+dm(an.end)+': $'+n2(an.avg_day||0)+tv('/day = ','/ngày = ')+n1(an.pallets||0)+tv(' pallets',' pallet')+')';
+    t += tv(' + change in units on hand per warehouse at the end of the day before ÷ units per pallet (', ' + chênh lệch số đơn vị tồn từng kho cuối ngày trước ÷ đơn vị/pallet (') + ks + ')';
+    if(rate) t += tv(' × $',' × $')+tv(rate.toFixed(4), rate.toFixed(4).replace('.', ','))+tv('/pallet/day','/pallet/ngày');
+    const ck = (m.checks||[]).slice(-1)[0];
+    if(ck && ck.error_pct!=null) t += tv('. Last check: invoice ', '. Lần kiểm gần nhất: hoá đơn ')+ck.invoice+' '+(ck.error_pct>0?'+':'')+n1(ck.error_pct)+'%'+tv(' (flat rate of the previous invoice ',' (cách cũ lấy mức/ngày hoá đơn trước ')+(ck.flat_previous_error_pct>0?'+':'')+n1(ck.flat_previous_error_pct||0)+'%)';
+    else t += tv('. Checked: 01–11/11/2026 −0.3% vs the running invoice (flat rate of the previous invoice −3.3%); 13 invoices 04–10/2026: 4% mean error',
+                 '. Đã kiểm: 01–11/11/2026 lệch −0,3% so với hoá đơn đang chạy (cách cũ lấy mức/ngày hoá đơn trước: −3,3%); 13 hoá đơn 04–10/2026: sai số TB 4%');
+    return t + tv('; replaced by the invoice when it lands', '; tự thay bằng hoá đơn khi có');
+  }
   // V12.2: tooltip of the estimated FBA storage line — Amazon's formula (sync v1.5) + how close it came to Amazon's reports
   function storageEstTitle(){
     const st = (AMAZON_STORAGE_LIVE_DATA && AMAZON_STORAGE_LIVE_DATA.storage) || {};
@@ -989,10 +1006,10 @@
     // receiving, returns handling are operating logistics costs (OpEx), not cost of the order.
     const shipmonkInvoiceExtras = smInvAdjCredits + smTrueUp + smInv.packaging_purchases + boxCost;   // packaging material = COGS: boxes used (FIFO) + purchases on days without box data
     // Storage for days without an invoice yet (open billing period + today): the daily report / carry-forward estimate
-    let smStorageOpen = 0, smStorageOpenDays = 0, smStorageCarryDays = 0, smStorageAvgDays = 0, smStorageRateDays = 0, smStorageRateInv = null, smStorageReportDays = 0;
+    let smStorageOpen = 0, smStorageOpenDays = 0, smStorageCarryDays = 0, smStorageAvgDays = 0, smStorageRateDays = 0, smStorageRateInv = null, smStorageReportDays = 0, smStorageModelDays = 0, smStorageModelInv = null;
     rows.forEach(r=>{
       if(r.shipmonkInv){ if(r.shipmonkInv.storageSrc==='report') smStorageReportDays++; return; }
-      if(r.shipmonkStorage){ smStorageOpen += r.shipmonkStorage.inv; smStorageOpenDays++; if(r.shipmonkStorage.src==='carry') smStorageCarryDays++; else if(r.shipmonkStorage.src==='avg14') smStorageAvgDays++; else if(r.shipmonkStorage.src==='invrate'){ smStorageRateDays++; smStorageRateInv = r.shipmonkStorage.invoice||smStorageRateInv; } }   // V12.17.1: avg14 = 14-day report average, invrate = latest invoice's per-day rate
+      if(r.shipmonkStorage){ smStorageOpen += r.shipmonkStorage.inv; smStorageOpenDays++; if(r.shipmonkStorage.src==='carry') smStorageCarryDays++; else if(r.shipmonkStorage.src==='avg14') smStorageAvgDays++; else if(r.shipmonkStorage.src==='invrate'){ smStorageRateDays++; smStorageRateInv = r.shipmonkStorage.invoice||smStorageRateInv; } else if(r.shipmonkStorage.src==='model'){ smStorageModelDays++; smStorageModelInv = r.shipmonkStorage.invoice||smStorageModelInv; } }   // V12.17.1: avg14 = 14-day report average, invrate = latest invoice's per-day rate; V12.19: model = stock formula
     });
     if(partial) smStorageOpen *= allocShare;
     smInv.storage += smStorageOpen;
@@ -1182,7 +1199,7 @@
       productCost, productCostEst, cogsEstRate, productCostBy, productCostActual, productCostEstAmount, productCostHasActual, productCostLots, productCostFallback, productCostHasLots, productCostLotUnits, productCostFbUnits, productCostEstUnits, productCostUnits, packaging, fulfillment, postage, cogs, grossProfit, nonAmazonOrders, shopifyTax, shopifyRealDays, amazonRealDays,
       boxCost, boxLots, boxFb, boxUnits, boxLotUnits, boxFbUnits, boxEstUnits, boxDays, boxMode, smPackagingMemo, boxBySku, boxEstDays, boxEstBoxes, boxEstCost, boxInferred,
       shipmonkRealDays, shipmonkOrders, shipmonkUnshipped, shipmonkUnits, shipmonkPickPack, shipmonkByStore, shipmonkByChannel,
-      smInvDays, smInv, smInvOther, smInvAdjCredits, smStorageOpen, smStorageOpenDays, smStorageCarryDays, smStorageAvgDays, smStorageRateDays, smStorageRateInv, smStorageReportDays, smInvShipCmp, smApiShipCmp, smCmpDays, smCmpMissingDays, smTrueUp, shipmonkInvoiceExtras, shipmonkLogistics, amazonLogistics, logisticsTotal, feesTotal, marketingTotal, cmBeforeMarketing,
+      smInvDays, smInv, smInvOther, smInvAdjCredits, smStorageOpen, smStorageOpenDays, smStorageCarryDays, smStorageAvgDays, smStorageRateDays, smStorageRateInv, smStorageReportDays, smStorageModelDays, smStorageModelInv, smInvShipCmp, smApiShipCmp, smCmpDays, smCmpMissingDays, smTrueUp, shipmonkInvoiceExtras, shipmonkLogistics, amazonLogistics, logisticsTotal, feesTotal, marketingTotal, cmBeforeMarketing,
       paymentFees, afterpayFees, afterpayAmount, afterpayOrders, paymentFeeDays, paymentFeeOrders, feesMissingOrders, gatewayMix, feeTypeMix, paypalDays, paypalFees, paypalPayments, paypalPaymentsCount, paypalCompare, paymentFeesAll, marketplaceFees, adSpend, otherVarTotal, contributionProfit,
       gaItems, gaTotal, inventoryHolding, fixedTotal, netProfit, klaviyoCost, klaviyoCostDays, klaviyoCostParts,
       mktItems, mktAgency, mktCreator, mktDsp, mktManual, dspLive, dspBonus, dspLiveDays, dspRecent, dspEstDays, dspEstAmt, mktOther, cogsOther, cogsAdj, cogsTooling,
@@ -1717,21 +1734,23 @@
       const evenDays = a.smInvDays - a.smStorageReportDays;
       let stNote = '';
       if(a.smStorageReportDays>0 || a.smStorageOpenDays>0){
-        const perReportOpen = a.smStorageOpenDays - a.smStorageCarryDays - (a.smStorageAvgDays||0) - (a.smStorageRateDays||0);   // V12.17.1: open-period days the report really has
-        stNote = (a.smStorageReportDays>0 || perReportOpen>0) ? tv(' — actual per-day fees per ShipMonk\'s Storage Fees report', ' — phí thật từng ngày theo report Storage Fees của ShipMonk') : tv(' — estimated, the Storage Fees report has no row for these days yet', ' — tạm tính, report Storage Fees chưa có số cho các ngày này');
+        const perReportOpen = a.smStorageOpenDays - a.smStorageCarryDays - (a.smStorageAvgDays||0) - (a.smStorageRateDays||0) - (a.smStorageModelDays||0);   // V12.17.1: open-period days the report really has (V12.19: minus the formula days)
+        stNote = (a.smStorageReportDays>0 || perReportOpen>0) ? tv(' — actual per-day fees per ShipMonk\'s Storage Fees report', ' — phí thật từng ngày theo report Storage Fees của ShipMonk') : a.smStorageModelDays>0 ? (a.smInvDays>0 ? tv(' — per invoice; days not invoiced yet estimated with the stock formula', ' — theo hoá đơn; ngày chưa có hoá đơn ước tính theo công thức tồn kho') : tv(' — estimated with the stock formula (units in each warehouse × pallet rate), no invoice yet', ' — ước tính theo công thức tồn kho (đơn vị hàng từng kho × giá pallet), chưa có hoá đơn')) : tv(' — estimated, the Storage Fees report has no row for these days yet', ' — tạm tính, report Storage Fees chưa có số cho các ngày này');
         if(a.smStorageReportDays>0 && a.smInvDays===a.smStorageReportDays && a.smStorageOpenDays===0) stNote += tv(' (reconciled to invoice)', ' (đã khớp hoá đơn)');
+        else if(a.smStorageModelDays>0 && a.smStorageModelDays===a.smStorageOpenDays && a.smInvDays===0) stNote += a.smStorageModelInv ? tv(' (anchored on invoice ', ' (neo hoá đơn ')+a.smStorageModelInv+')' : '';   // V12.19: every day from the formula
         else {
           const parts = [];
           if(a.smStorageReportDays>0) parts.push(a.smStorageReportDays+tv(' days reconciled to invoice', ' ngày đã khớp hoá đơn'));
-          if(a.smStorageOpenDays - a.smStorageCarryDays - (a.smStorageAvgDays||0) - (a.smStorageRateDays||0)>0) parts.push((a.smStorageOpenDays - a.smStorageCarryDays - (a.smStorageAvgDays||0) - (a.smStorageRateDays||0))+tv(' days of the open billing period: per report', ' ngày kỳ chưa xuất hoá đơn: theo report'));
+          if(perReportOpen>0) parts.push(perReportOpen+tv(' days of the open billing period: per report', ' ngày kỳ chưa xuất hoá đơn: theo report'));
           if(a.smStorageCarryDays>0) parts.push(a.smStorageCarryDays+tv(' days not in the report yet: carried from the latest day', ' ngày report chưa có: tạm lấy bằng ngày gần nhất'));
           if(a.smStorageAvgDays>0) parts.push(a.smStorageAvgDays+tv(' days without invoice or report: estimated at the average of the last 14 reported days', ' ngày chưa có hoá đơn lẫn report: tạm tính TB 14 ngày report gần nhất'));   // V12.17.1
+          if(a.smStorageModelDays>0) parts.push(a.smStorageModelDays+tv(' days without an invoice: estimated with the stock formula (units in each warehouse at the end of the day before ÷ units per pallet × pallet rate, anchored on invoice'+(a.smStorageModelInv ? ' '+a.smStorageModelInv : '')+')', ' ngày chưa có hoá đơn: ước tính theo công thức tồn kho (đơn vị hàng từng kho cuối ngày trước ÷ đơn vị/pallet × giá pallet, neo hoá đơn'+(a.smStorageModelInv ? ' '+a.smStorageModelInv : '')+')'));   // V12.19
           if(a.smStorageRateDays>0) parts.push(a.smStorageRateDays+tv(' days of the open billing period without a report row: estimated at the per-day rate of the latest invoice'+(a.smStorageRateInv ? ' '+a.smStorageRateInv : ''), ' ngày kỳ chưa chốt, report chưa có: tạm tính theo mức/ngày của hoá đơn gần nhất'+(a.smStorageRateInv ? ' '+a.smStorageRateInv : '')));   // V12.17.1
           if(evenDays>0) parts.push(evenDays+tv(' invoice days spread evenly over the billing period (no per-day report row: before 06/2025, or a gap in the report)', ' ngày hoá đơn chia đều theo kỳ (report chưa có số theo ngày: trước 06/2025 hoặc report thiếu)'));   // V12.17.1 wording: gaps happen after 06/2025 too
           stNote += ' ('+parts.join(' · ')+')';
         }
       } else stNote = tv(' — spread evenly over the days of the billing period (the per-day report only exists from 06/2025)', ' — chia đều theo ngày trong kỳ hoá đơn (report theo ngày chỉ có từ 06/2025)') + (a.smInvDays<a.n ? tx('st.noInvoiceDays', {n: a.n-a.smInvDays, d: dayWord(a.n-a.smInvDays)}) : '');
-      rows.push({...stLine(tv('ShipMonk storage — pallets & bins', 'Lưu kho ShipMonk — pallet & bin') + stNote + alloc, -a.smInv.storage, nr, 'fix', 'logi'), neg: a.smInv.storage>=0, live:true, est: a.smStorageCarryDays>0 || a.smStorageAvgDays>0 || a.smStorageRateDays>0, estTitle: (a.smStorageAvgDays>0 || a.smStorageRateDays>0) ? tv('Days with neither an invoice nor a report row (ShipMonk report down / open billing period) are estimated: at the per-day rate of the latest invoice when it is newer than the report, else at the average of the last 14 reported days; replaced by the report or the invoice when they land', 'Ngày chưa có hoá đơn lẫn report (report ShipMonk đứng / kỳ chưa chốt) tạm tính: theo mức/ngày của hoá đơn gần nhất nếu hoá đơn mới hơn report, nếu không thì TB 14 ngày report gần nhất; tự thay khi có report hoặc hoá đơn') : tv('Days the ShipMonk report has not updated yet (refreshes ~04:00 warehouse time) are carried from the latest day; replaced once the report has the figure', 'Ngày report ShipMonk chưa cập nhật (làm mới ~04:00 giờ kho) tạm lấy bằng ngày gần nhất; tự thay khi report có số'), hget: x=>-x.smInv.storage});
+      rows.push({...stLine(tv('ShipMonk storage — pallets & bins', 'Lưu kho ShipMonk — pallet & bin') + stNote + alloc, -a.smInv.storage, nr, 'fix', 'logi'), neg: a.smInv.storage>=0, live:true, est: a.smStorageCarryDays>0 || a.smStorageAvgDays>0 || a.smStorageRateDays>0 || a.smStorageModelDays>0, estTitle: a.smStorageModelDays>0 ? smStorageModelTitle() : (a.smStorageAvgDays>0 || a.smStorageRateDays>0) ? tv('Days with neither an invoice nor a report row (ShipMonk report down / open billing period) are estimated: at the per-day rate of the latest invoice when it is newer than the report, else at the average of the last 14 reported days; replaced by the report or the invoice when they land', 'Ngày chưa có hoá đơn lẫn report (report ShipMonk đứng / kỳ chưa chốt) tạm tính: theo mức/ngày của hoá đơn gần nhất nếu hoá đơn mới hơn report, nếu không thì TB 14 ngày report gần nhất; tự thay khi có report hoặc hoá đơn') : tv('Days the ShipMonk report has not updated yet (refreshes ~04:00 warehouse time) are carried from the latest day; replaced once the report has the figure', 'Ngày report ShipMonk chưa cập nhật (làm mới ~04:00 giờ kho) tạm lấy bằng ngày gần nhất; tự thay khi report có số'), hget: x=>-x.smInv.storage});
       logiLine(tv('ShipMonk receiving — cartons received, containers unloaded', 'Receiving hàng nhập ShipMonk — nhận carton, dỡ container'), a.smInv.receiving, undefined, x=>-x.smInv.receiving);
       logiLine(tv('ShipMonk returns handling — processing + return postage', 'Xử lý hàng trả ShipMonk — processing + cước hàng trả'), a.smInv.returns, undefined, x=>-x.smInv.returns);
       if(a.smInvOther !== 0) logiLine(tv('Other ShipMonk fees — minimum fee, late fees, audits, surcharges', 'Phí khác ShipMonk — phí tối thiểu, phạt trễ, audit, phụ phí') + (Math.abs(a.smInv.unallocated)>=1 ? tv(' (including ', ' (gồm ')+money(a.smInv.unallocated)+tv(' of invoice items that could not be split by section)', ' hoá đơn không tách được mục)') : ''), a.smInvOther, undefined, x=>-x.smInvOther);
@@ -5937,7 +5956,7 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
     }
     if(shipmonkInvMatched){
       const im = SHIPMONK_INVOICES_LIVE_DATA.meta || {};
-      setSource('shipmonk_inv',(SHIPMONK_INVOICES_LIVE_DATA.meta && SHIPMONK_INVOICES_LIVE_DATA.meta.current_period ? 'g' : 'w'), fmtAmazonAge(SHIPMONK_INVOICES_LIVE_DATA.generated_at) + (im.first_day ? tv(' · invoices ',' · hoá đơn ')+fmtD(im.first_day)+' → '+fmtD(im.last_day) : '') + (im.missing_count ? tx('age.missing', {n: im.missing_count}) : '') + (shipmonkStorageMatched ? tv(' · daily storage through ',' · lưu kho theo ngày đến ')+fmtD(SHIPMONK_STORAGE_LIVE_DATA.last_day) : ''));
+      setSource('shipmonk_inv',(SHIPMONK_INVOICES_LIVE_DATA.meta && SHIPMONK_INVOICES_LIVE_DATA.meta.current_period ? 'g' : 'w'), fmtAmazonAge(SHIPMONK_INVOICES_LIVE_DATA.generated_at) + (im.first_day ? tv(' · invoices ',' · hoá đơn ')+fmtD(im.first_day)+' → '+fmtD(im.last_day) : '') + (im.missing_count ? tx('age.missing', {n: im.missing_count}) : '') + (shipmonkStorageMatched ? tv(' · daily storage through ',' · lưu kho theo ngày đến ')+fmtD(SHIPMONK_STORAGE_LIVE_DATA.last_day) : '') + (shipmonkMeta && shipmonkMeta.storage_model && shipmonkMeta.storage_model.last_day ? tv(' · storage by stock formula ',' · lưu kho theo công thức tồn kho ')+fmtD(shipmonkMeta.storage_model.first_day)+' → '+fmtD(shipmonkMeta.storage_model.last_day) : ''));   // V12.19
     }
     if(klaviyoMatched || klaviyoInvMatched){
       const km = (KLAVIYO_INVOICES_LIVE_DATA && KLAVIYO_INVOICES_LIVE_DATA.meta) || {};
@@ -6292,6 +6311,21 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
         if(d.iso <= lastInv.end || d.shipmonkInv || dayDiff(lastInv.end, d.iso) > 62) return;
         if(d.shipmonkStorage && d.shipmonkStorage.src==='report') return;
         d.shipmonkStorage = {inv: rate, tru: rate, wh: {}, src:'invrate', from: lastInv.end, invoice: lastInv.number};
+      });
+    }
+    // V12.19: ShipMonk storage FORMULA (sync v1.7 storage_model): stock per warehouse at the end of the day before x pallet
+    // rate, anchored on the latest invoice with storage (pallet-equivalents per day of that invoice + change in units / units
+    // per pallet). Every day with neither an invoice nor a report row takes it, ahead of the carry / 14-day average / invoice
+    // rate above (01-11/11/2026: -0.3 % vs the running invoice, the flat invoice rate -3.3 %). Replaced by the invoice.
+    const smModel = (shipmonkMeta && shipmonkMeta.storage_model && shipmonkMeta.storage_model.daily) ? shipmonkMeta.storage_model : null;
+    if(smModel){
+      const anc = smModel.anchor || {};
+      days.forEach(d=>{
+        const m = smModel.daily[d.iso];
+        if(!m || d.shipmonkInv) return;
+        if(d.shipmonkStorage && d.shipmonkStorage.src==='report') return;
+        const v = Math.round((parseFloat(m.est)||0)*100)/100;
+        d.shipmonkStorage = {inv: v, tru: v, wh: {}, src:'model', pallets: parseFloat(m.pallets)||0, stockDay: m.stock_day||null, invoice: anc.invoice||null};
       });
     }
     return matched>0;
