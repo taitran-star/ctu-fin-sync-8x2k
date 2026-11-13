@@ -1,24 +1,23 @@
 {
  "schema": 1,
- "generated_at": "2026-11-12T21:07:56Z",
+ "generated_at": "2026-11-13T13:37:59Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
-  "to": "2026-11-12",
+  "to": "2026-11-13",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 3172,
-  "charges": 750,
+  "transactions_read": 3188,
+  "charges": 752,
   "stats": {
-   "status:posted": 2408,
+   "status:posted": 2420,
    "rail:rtp": 8,
-   "rail:ach": 861,
+   "rail:ach": 866,
    "rail:fee": 100,
    "rail:wire": 32,
-   "status:failed": 762,
-   "rail:card": 1751,
-   "rail:other": 420,
-   "status:pending": 2
+   "status:failed": 768,
+   "rail:card": 1760,
+   "rail:other": 422
   },
   "lines": {
    "SHOP": "Shopify plan + apps billed by Shopify",
@@ -197,8 +196,8 @@
   },
   "2026-11": {
    "DSP": 8500.0,
-   "MC": 4322.76,
-   "MT": 1297.79,
+   "MC": 4562.76,
+   "MT": 1444.79,
    "SBW": 3500.0,
    "SHOP": 4350.43,
    "SUP": 13448.3,
@@ -301,8 +300,8 @@
   },
   "2026-11": {
    "DSP": 8500.0,
-   "MC": 3523.59,
-   "MT": 1610.55,
+   "MC": 3763.59,
+   "MT": 1757.55,
    "SBW": 3500.0,
    "SHOP": 4350.43,
    "SUP": 13448.3,
@@ -7010,6 +7009,14 @@
   },
   {
    "d": "2026-11-12",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 240.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-11-12",
    "v": "Slack",
    "l": "SW",
    "a": 237.38,
@@ -7037,6 +7044,14 @@
    "memo": "Account funding Invoice number C9925E79-0016",
    "desc": "Account funding Invoice number C9925E79-0016",
    "payee": "Tremendous, LLC"
+  },
+  {
+   "d": "2026-11-13",
+   "v": "Canva",
+   "l": "MT",
+   "a": 147.0,
+   "k": "card",
+   "cy": "M"
   }
  ],
  "unclassified_card": [
@@ -7122,6 +7137,12 @@
    "v": "Amazon",
    "m": "2026-10",
    "a": 1.12,
+   "n": 1
+  },
+  {
+   "v": "Google GOOGLE*ONE 21M",
+   "m": "2026-11",
+   "a": 97.09,
    "n": 1
   },
   {
