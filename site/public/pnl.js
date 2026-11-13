@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 746d16a9a9).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build e006f02282).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -585,6 +585,7 @@
   // recurring revenue - Loop has no endpoint to list orders store-wide) - data/loop_subscriptions.json.
   const LOOP_LIVE_DATA = (window.__LIVE && window.__LIVE["loop_subscriptions"]) || null; /*LOOP_SUBSCRIPTIONS_INJECT*/
   let loopMeta = null;
+  let SNS_COVER = null;   // V12.21: {first, last, pending, pendingFrom} of the Amazon Subscribe & Save order feed
   // Afterpay merchant fee: Shopify exposes no fee for the Afterpay gateway -> captured amount x pct + orders x fixed.
   // V12: 6% + $0.30 per order IS the contract rate - every US order in Afterpay's settlement reports 06/2025-07/2026
   // (187/187) matches it to the cent; Canadian buyers pay 8% + $0.30 (7 orders, ~4% of Afterpay orders); fees are not
@@ -5400,31 +5401,47 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
   }
   // V12.20: Shopify orders of a set of days split into recurring (renewals Loop charges by itself) and one-time orders.
   // Only days that have the renewal count (sync loop-1.3) are counted on both sides, so the two always add up.
+  // V12.21: + Amazon split into Subscribe & Save and one-time (data/amazon_sns.json: one line per S&S order item).
   function finRecurringSplit(rows){
     const cov = (rows||[]).filter(r=> r.loopReal && r.loopReal.recurringOrders!=null && r.orders && r.orders.shopify!=null);
-    const one = r => { const so = r.orders.shopify||0, sn = Math.max(0, (r.channels.shopify||0) - (r.discounts.shopify||0)); const ro = Math.min(r.loopReal.recurringOrders, so), rn = Math.min(r.loopReal.recurringNet||0, sn); return {iso: r.iso, so, sn, ro, rn, no: so-ro, nn: sn-rn}; };
+    const one = r => { const so = r.orders.shopify||0, sn = Math.max(0, (r.channels.shopify||0) - (r.discounts.shopify||0)); const ro = Math.min(r.loopReal.recurringOrders, so), rn = Math.min(r.loopReal.recurringNet||0, sn);
+      const az = !!(SNS_COVER && r.iso>=SNS_COVER.first && r.iso<=SNS_COVER.last && r.orders.amazon!=null);
+      const ao = az ? (r.orders.amazon||0) : 0, an = az ? Math.max(0, (r.channels.amazon||0) - (r.discounts.amazon||0)) : 0, s = az && r.snsReal ? r.snsReal : null;
+      const zo = s ? Math.min(s.orders, ao) : 0, zn = s ? Math.min(s.net, an) : 0;
+      return {iso: r.iso, so, sn, ro, rn, no: so-ro, nn: sn-rn, az, ao, an, zo, zn, ano: ao-zo, ann: an-zn}; };
     const d = cov.map(one), t = k => sum(d.map(x=>x[k]));
-    return {days: d, covered: d.length, total: (rows||[]).length, so: t('so'), sn: t('sn'), ro: t('ro'), rn: t('rn'), no: t('no'), nn: t('nn')};
+    return {days: d, covered: d.length, total: (rows||[]).length, azDays: d.filter(x=>x.az).length, so: t('so'), sn: t('sn'), ro: t('ro'), rn: t('rn'), no: t('no'), nn: t('nn'), ao: t('ao'), an: t('an'), zo: t('zo'), zn: t('zn'), ano: t('ano'), ann: t('ann')};
   }
   function finRecurringCard(rows, pRows, lk){
     const S = finRecurringSplit(rows); if(!S.covered) return '';
     const P = pRows && pRows.length ? finRecurringSplit(pRows) : null, pOk = P && P.covered===P.total && P.covered>0;
+    const AZ = S.azDays>0, pAz = pOk && P.azDays===P.covered;   // Amazon rows compare only when the prior period is fully covered too
     const dm = k => k.slice(8,10)+'/'+k.slice(5,7), aov = (n, o) => o>0 ? money(n/o) : '—';
-    const dl = (v, pv) => { if(!pOk) return '<td class="num mk-muted">—</td>'; if(!(pv>0)) return `<td class="num mk-muted">${v>0 ? tv('new', 'mới') : '—'}</td>`; const x = (v-pv)/pv*100; return `<td class="num ${x>=0 ? 'mk-good' : 'mk-bad'}" title="${finEsc(tv('vs ', 'so với ')+lk+': '+intFmt(pv))}">${x>=0 ? '+' : ''}${Math.abs(x)>=1000 ? Math.round(x).toLocaleString('en-US') : x.toFixed(0)}%</td>`; };
-    const line = (cls, lab, o, n, po) => `<tr${cls ? ' class="'+cls+'"' : ''}><td class="mk-lab">${lab}</td><td class="num">${intFmt(o)}</td><td class="num mk-muted">${finPct(o, S.so)}</td>${dl(o, po)}<td class="num">${money(n)}</td><td class="num mk-muted">${finPct(n, S.sn)}</td><td class="num">${aov(n, o)}</td></tr>`;
-    const body = line('', tv('One-time orders <span class="mk-muted">(normal purchases, incl. the first order of a new subscription)</span>', 'Đơn thường <span class="mk-muted">(khách tự mua, gồm cả đơn đầu của subscription mới)</span>'), S.no, S.nn, P && P.no)
-      + line('', tv('Recurring orders <span class="mk-muted">(renewals Loop charges automatically)</span>', 'Đơn định kỳ <span class="mk-muted">(Loop tự gia hạn và trừ tiền)</span>'), S.ro, S.rn, P && P.ro)
-      + line('rp-tot', tv('All Shopify orders', 'Tổng đơn Shopify'), S.so, S.sn, P && P.so);
+    const TO = S.so + (AZ ? S.ao : 0), TN = S.sn + (AZ ? S.an : 0);
+    const dl = (v, pv, ok) => { if(!ok) return '<td class="num mk-muted">—</td>'; if(!(pv>0)) return `<td class="num mk-muted">${v>0 ? tv('new', 'mới') : '—'}</td>`; const x = (v-pv)/pv*100; return `<td class="num ${x>=0 ? 'mk-good' : 'mk-bad'}" title="${finEsc(tv('vs ', 'so với ')+lk+': '+intFmt(pv))}">${x>=0 ? '+' : ''}${Math.abs(x)>=1000 ? Math.round(x).toLocaleString('en-US') : x.toFixed(0)}%</td>`; };
+    const line = (cls, lab, o, n, po, ok) => `<tr${cls ? ' class="'+cls+'"' : ''}><td class="mk-lab">${lab}</td><td class="num">${intFmt(o)}</td><td class="num mk-muted">${finPct(o, TO)}</td>${dl(o, po, ok)}<td class="num">${money(n)}</td><td class="num mk-muted">${finPct(n, TN)}</td><td class="num">${aov(n, o)}</td></tr>`;
+    const mu = (en, vi) => ' <span class="mk-muted">('+tv(en, vi)+')</span>';
+    let body = line('', 'Shopify — '+tv('one-time', 'đơn thường')+mu('normal purchases, incl. the first order of a new subscription', 'khách tự mua, gồm cả đơn đầu của subscription mới'), S.no, S.nn, P && P.no, pOk)
+      + line('', 'Shopify — '+tv('recurring', 'đơn định kỳ')+mu('renewals Loop charges automatically', 'Loop tự gia hạn và trừ tiền'), S.ro, S.rn, P && P.ro, pOk);
+    if(AZ) body += line('', 'Amazon — '+tv('one-time', 'đơn thường'), S.ano, S.ann, P && P.ano, pAz)
+      + line('', 'Amazon — Subscribe &amp; Save'+mu('every order with the S&amp;S flag, sign-up order included', 'mọi đơn có cờ S&amp;S, gồm cả đơn đăng ký đầu'), S.zo, S.zn, P && P.zo, pAz)
+      + line('rp-tot', tv('One-time total', 'Tổng đơn thường'), S.no+S.ano, S.nn+S.ann, P && (P.no+P.ano), pAz)
+      + line('rp-tot', tv('Recurring total (Loop + S&amp;S)', 'Tổng đơn định kỳ (Loop + S&amp;S)'), S.ro+S.zo, S.rn+S.zn, P && (P.ro+P.zo), pAz);
+    body += line('rp-tot', AZ ? tv('All orders (Shopify + Amazon)', 'Tổng đơn (Shopify + Amazon)') : tv('All Shopify orders', 'Tổng đơn Shopify'), TO, TN, P && (P.so + (AZ ? P.ao : 0)), AZ ? pAz : pOk);
     // by day: every day of a short period, else the days where renewals matter most
     const big = S.days.filter(x=> x.so>0 && x.ro/x.so>=0.2 && x.ro>=20);
     let list = S.days.length<=31 ? S.days.slice() : big.slice().sort((x,y)=>y.ro-x.ro).slice(0, 12).sort((x,y)=> x.iso<y.iso ? -1 : 1);
-    const dayRows = list.map(x=>{ const sh = x.so>0 ? x.ro/x.so*100 : 0, hot = sh>=20 && x.ro>=20; return `<tr${hot ? ' class="fin-rec-hot"' : ''}><td class="mk-lab">${dm(x.iso)}${hot ? ' <span class="pill warn">'+tv('renewal batch', 'đợt gia hạn')+'</span>' : ''}</td><td class="num">${intFmt(x.so)}</td><td class="num">${intFmt(x.no)}</td><td class="num">${intFmt(x.ro)}</td><td class="num ${hot ? 'mk-bad' : 'mk-muted'}">${sh.toFixed(0)}%</td><td class="num">${money(x.nn)}</td><td class="num">${money(x.rn)}</td></tr>`; }).join('');
-    const dayH = list.length ? `<div class="rp-ch" style="margin-top:12px;">${S.days.length<=31 ? tv('By day', 'Theo ngày') : tv('Days with a renewal batch (recurring ≥ 20% of the orders)', 'Các ngày có đợt gia hạn (đơn định kỳ ≥ 20% số đơn)')}</div><div class="rp-wrap"><table class="rp-table mk-table" id="finRecDays"><thead><tr><th>${tv('Day', 'Ngày')}</th><th class="num">${tv('Shopify orders', 'Đơn Shopify')}</th><th class="num">${tv('One-time', 'Đơn thường')}</th><th class="num">${tv('Recurring', 'Định kỳ')}</th><th class="num">% ${tv('recurring', 'định kỳ')}</th><th class="num">${tv('One-time net sales', 'DT thuần đơn thường')}</th><th class="num">${tv('Recurring net sales', 'DT thuần định kỳ')}</th></tr></thead><tbody>${dayRows}</tbody></table></div>` : '';
-    const part = S.covered<S.total ? tv(` · ${S.total-S.covered} day(s) of the period have no renewal count yet and are left out of this card`, ` · ${S.total-S.covered} ngày trong kỳ chưa có số đơn định kỳ nên không tính vào thẻ này`) : '';
-    const flag = big.length ? `<div class="fin-rec-note"><b>${tv('Read with care: ', 'Lưu ý khi đọc số: ')}</b>${tv(`${big.length} day(s) in this period carry a renewal batch (${big.slice(0,4).map(x=>dm(x.iso)+': '+intFmt(x.ro)+' of '+intFmt(x.so)+' orders').join(' · ')}). Those orders are charged by Loop on the subscription date — no ad click behind them — so compare ad spend, MER and conversion against the one-time orders only.`, `Kỳ này có ${big.length} ngày dính đợt gia hạn (${big.slice(0,4).map(x=>dm(x.iso)+': '+intFmt(x.ro)+'/'+intFmt(x.so)+' đơn').join(' · ')}). Các đơn đó do Loop tự trừ tiền theo lịch subscription, không đến từ quảng cáo — khi so chi quảng cáo, MER, tỷ lệ chuyển đổi thì chỉ nên nhìn đơn thường.`)}</div>` : '';
-    return `<div class="card mk-card" id="finRecCard"><div class="card-head"><h2>${tv('Recurring vs one-time orders', 'Đơn định kỳ và đơn thường')}</h2><div class="note">${tv('Shopify · selected period · net sales = after discounts, before refunds, shipping and tax (the P&L basis)', 'Shopify · kỳ đang xem · DT thuần = sau giảm giá, trước hoàn tiền, phí ship và thuế (cùng cách tính với P&L)')}${part}</div><button class="btn mini" type="button" data-export="finRecTable" data-name="recurring-vs-one-time">CSV</button></div>
-      ${flag}<div class="rp-wrap"><table class="rp-table mk-table" id="finRecTable"><thead><tr><th>${tv('Order type', 'Loại đơn')}</th><th class="num">${tv('Orders', 'Số đơn')}</th><th class="num">% ${tv('orders', 'đơn')}</th><th class="num">${pOk ? tv('vs ', 'so ')+lk : 'Δ'}</th><th class="num">${tv('Net sales', 'DT thuần')}</th><th class="num">% ${tv('sales', 'DT')}</th><th class="num">AOV</th></tr></thead><tbody>${body}</tbody></table></div>${dayH}
-      <div class="mk-muted" style="font-size:12px;margin-top:10px;">${tv('Recurring = Shopify orders tagged <code>Subscription Recurring Order</code> created by the Loop Subscriptions app (renewal charges), by order day in Los Angeles time. Everything else on Shopify is one-time. Amazon Subscribe &amp; Save is not in this split.', 'Định kỳ = đơn Shopify có tag <code>Subscription Recurring Order</code> do app Loop Subscriptions tạo (lần trừ tiền gia hạn), theo ngày đặt giờ Los Angeles. Mọi đơn Shopify còn lại là đơn thường. Amazon Subscribe &amp; Save chưa nằm trong bảng này.')}</div></div>`;
+    const azTd = x => AZ ? (x.az ? `<td class="num">${intFmt(x.ano)}</td><td class="num">${intFmt(x.zo)}</td>` : '<td class="num mk-muted">—</td><td class="num mk-muted">—</td>') : '';
+    const dayRows = list.map(x=>{ const sh = x.so>0 ? x.ro/x.so*100 : 0, hot = sh>=20 && x.ro>=20; return `<tr${hot ? ' class="fin-rec-hot"' : ''}><td class="mk-lab">${dm(x.iso)}${hot ? ' <span class="pill warn">'+tv('renewal batch', 'đợt gia hạn')+'</span>' : ''}</td><td class="num">${intFmt(x.no)}</td><td class="num">${intFmt(x.ro)}</td><td class="num ${hot ? 'mk-bad' : 'mk-muted'}">${sh.toFixed(0)}%</td>${azTd(x)}<td class="num">${money(x.nn + x.ann)}</td><td class="num">${money(x.rn + x.zn)}</td></tr>`; }).join('');
+    const dayH = list.length ? `<div class="rp-ch" style="margin-top:12px;">${S.days.length<=31 ? tv('By day', 'Theo ngày') : tv('Days with a renewal batch (recurring ≥ 20% of the Shopify orders)', 'Các ngày có đợt gia hạn (đơn định kỳ ≥ 20% số đơn Shopify)')}</div><div class="rp-wrap"><table class="rp-table mk-table" id="finRecDays"><thead><tr><th>${tv('Day', 'Ngày')}</th><th class="num">Shopify ${tv('one-time', 'thường')}</th><th class="num">Shopify ${tv('recurring', 'định kỳ')}</th><th class="num">% ${tv('recurring', 'định kỳ')}</th>${AZ ? `<th class="num">Amazon ${tv('one-time', 'thường')}</th><th class="num">Amazon S&amp;S</th>` : ''}<th class="num">${tv('One-time net sales', 'DT thuần đơn thường')}</th><th class="num">${tv('Recurring net sales', 'DT thuần định kỳ')}</th></tr></thead><tbody>${dayRows}</tbody></table></div>` : '';
+    let part = S.covered<S.total ? tv(` · ${S.total-S.covered} day(s) of the period have no renewal count yet and are left out of this card`, ` · ${S.total-S.covered} ngày trong kỳ chưa có số đơn định kỳ nên không tính vào thẻ này`) : '';
+    if(SNS_COVER && AZ && S.azDays<S.covered) part += tv(` · Amazon counted from ${dm(SNS_COVER.first)} (${S.covered-S.azDays} earlier day(s) are Shopify only)`, ` · Amazon tính từ ${dm(SNS_COVER.first)} (${S.covered-S.azDays} ngày trước đó chỉ có Shopify)`);
+    const pend = SNS_COVER && AZ && SNS_COVER.pendingFrom && S.days.some(x=> x.az && x.iso>=SNS_COVER.pendingFrom);
+    const pendH = pend ? `<div class="mk-muted" style="font-size:12px;margin-top:8px;">${tv(`Amazon S&amp;S from ${dm(SNS_COVER.pendingFrom)} on is provisional: ${intFmt(SNS_COVER.pending)} Amazon orders are still Pending and get their S&amp;S flag checked again once they ship, so the S&amp;S count of recent days can still go up.`, `Số Amazon S&amp;S từ ${dm(SNS_COVER.pendingFrom)} là tạm tính: còn ${intFmt(SNS_COVER.pending)} đơn Amazon đang Pending, cờ S&amp;S được kiểm lại khi đơn giao, nên số S&amp;S các ngày gần đây có thể tăng thêm.`)}</div>` : '';
+    const flag = big.length ? `<div class="fin-rec-note"><b>${tv('Read with care: ', 'Lưu ý khi đọc số: ')}</b>${tv(`${big.length} day(s) in this period carry a renewal batch (${big.slice(0,4).map(x=>dm(x.iso)+': '+intFmt(x.ro)+' of '+intFmt(x.so)+' Shopify orders').join(' · ')}). Those orders are charged by Loop on the subscription date — no ad click behind them — so compare ad spend, MER and conversion against the one-time orders only.`, `Kỳ này có ${big.length} ngày dính đợt gia hạn (${big.slice(0,4).map(x=>dm(x.iso)+': '+intFmt(x.ro)+'/'+intFmt(x.so)+' đơn Shopify').join(' · ')}). Các đơn đó do Loop tự trừ tiền theo lịch subscription, không đến từ quảng cáo — khi so chi quảng cáo, MER, tỷ lệ chuyển đổi thì chỉ nên nhìn đơn thường.`)}</div>` : '';
+    return `<div class="card mk-card" id="finRecCard"><div class="card-head"><h2>${tv('Recurring vs one-time orders', 'Đơn định kỳ và đơn thường')}</h2><div class="note">${tv('Shopify + Amazon · selected period · net sales = after discounts, before refunds, shipping and tax (the P&L basis)', 'Shopify + Amazon · kỳ đang xem · DT thuần = sau giảm giá, trước hoàn tiền, phí ship và thuế (cùng cách tính với P&L)')}${part}</div><button class="btn mini" type="button" data-export="finRecTable" data-name="recurring-vs-one-time">CSV</button></div>
+      ${flag}<div class="rp-wrap"><table class="rp-table mk-table" id="finRecTable"><thead><tr><th>${tv('Order type', 'Loại đơn')}</th><th class="num">${tv('Orders', 'Số đơn')}</th><th class="num">% ${tv('orders', 'đơn')}</th><th class="num">${pOk ? tv('vs ', 'so ')+lk : 'Δ'}</th><th class="num">${tv('Net sales', 'DT thuần')}</th><th class="num">% ${tv('sales', 'DT')}</th><th class="num">AOV</th></tr></thead><tbody>${body}</tbody></table></div>${dayH}${pendH}
+      <div class="mk-muted" style="font-size:12px;margin-top:10px;">${tv('Shopify recurring = orders tagged <code>Subscription Recurring Order</code> created by the Loop Subscriptions app (renewal charges). Amazon Subscribe &amp; Save = orders whose items carry Amazon\'s <code>SUBSCRIBE_AND_SAVE</code> program flag (cancelled orders left out); Amazon does not tell a sign-up order from a renewal, so both are counted. By order day in Los Angeles time. TikTok Shop and Walmart have no subscriptions.', 'Shopify định kỳ = đơn có tag <code>Subscription Recurring Order</code> do app Loop Subscriptions tạo (lần trừ tiền gia hạn). Amazon Subscribe &amp; Save = đơn có sản phẩm mang cờ <code>SUBSCRIBE_AND_SAVE</code> của Amazon (bỏ đơn đã huỷ); Amazon không phân biệt đơn đăng ký đầu với đơn gia hạn nên tính cả hai. Theo ngày đặt giờ Los Angeles. TikTok Shop và Walmart không có subscription.')}</div></div>`;
   }
 
   function renderFinance(){
@@ -5900,6 +5917,7 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
   // ShipMonk fulfillment costs baked in by the same sync.
   const paypalMatched = PAYPAL_LIVE_DATA ? applyPaypalRows(PAYPAL_LIVE_DATA) : false;
   const loopMatched = LOOP_LIVE_DATA ? applyLoopRows(LOOP_LIVE_DATA) : false;
+  try { applySnsRows((window.__LIVE && window.__LIVE["amazon_sns"]) || null); } catch(e){ SNS_COVER = null; }   // V12.21
   const tiktokMatched = TIKTOK_SHOP_LIVE_DATA ? applyTiktokShopRows(TIKTOK_SHOP_LIVE_DATA) : false;
   if(tiktokMatched){ CH_UNCONNECTED.tiktok = false; }
   const walmartMatched = WALMART_LIVE_DATA ? applyWalmartRows(WALMART_LIVE_DATA) : false;
@@ -6166,6 +6184,20 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
       matched++;
     });
     return matched>0;
+  }
+
+  // V12.21: Amazon Subscribe & Save orders per day (data/amazon_sns.json, one line per S&S order item; cancelled left out)
+  function applySnsRows(data){
+    SNS_COVER = null;
+    if(!data || !data.weeks) return false;
+    const by = {};
+    Object.keys(data.weeks).forEach(w=> ((data.weeks[w]||{}).orders||[]).forEach(o=>{ if(!o || !o.date || /cancel/i.test(o.status||'')) return; const b = by[o.date] = by[o.date] || {ids: {}, net: 0}; b.ids[o.id] = 1; b.net += (parseFloat(o.price)||0) - (parseFloat(o.promo)||0); }));
+    const meta = data.meta || {}, isoOf = t => { try { return new Intl.DateTimeFormat('en-CA', {timeZone: data.timezone||'America/Los_Angeles', year:'numeric', month:'2-digit', day:'2-digit'}).format(new Date(t)); } catch(e){ return String(t||'').slice(0,10); } };
+    const first = meta.backfill_start || Object.keys(by).sort()[0]; if(!first) return false;
+    const q = (meta.queue||[]).filter(x=> x && x.purchase_date);
+    SNS_COVER = {first, last: isoOf(data.generated_at), pending: q.length, pendingFrom: q.length ? q.map(x=>isoOf(x.purchase_date)).sort()[0] : null};
+    days.forEach(d=>{ const b = by[d.iso]; if(b) d.snsReal = {orders: Object.keys(b.ids).length, net: Math.max(0, b.net)}; });
+    return true;
   }
 
   function applyLoopRows(data){
