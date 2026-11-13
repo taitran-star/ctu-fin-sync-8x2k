@@ -59,7 +59,7 @@ OUTPUT_PATH = os.environ.get("OUTPUT_PATH", "data/loop_subscriptions.json")
 TZ_NAME = os.environ.get("REPORT_TIMEZONE", "America/Los_Angeles")
 TZ = ZoneInfo(TZ_NAME)
 LOOKBACK_DAYS = int(os.environ.get("LOOKBACK_DAYS", "63"))
-SCRIPT_VERSION = "loop-1.2"
+SCRIPT_VERSION = "loop-1.3"
 
 INTERVAL_DAYS = {"DAY": 1, "WEEK": 7, "MONTH": 30.4368, "YEAR": 365.2422}
 
@@ -181,10 +181,19 @@ query($first: Int!, $after: String, $q: String!) {
       tags
       app { name }
       totalPriceSet { shopMoney { amount } }
+      subtotalPriceSet { shopMoney { amount } }
+      totalDiscountsSet { shopMoney { amount } }
     }
   }
 }
 """
+
+
+def _shop_amount(node, key):
+    try:
+        return float(((node.get(key) or {}).get("shopMoney") or {}).get("amount"))
+    except (TypeError, ValueError):
+        return 0.0
 
 
 def fetch_shopify_recurring_revenue(window_start_utc):
@@ -202,6 +211,7 @@ def fetch_shopify_recurring_revenue(window_start_utc):
     q = f"tag:'{RECURRING_TAG}' AND created_at:>={q_start}"
 
     per_day = {}
+    per_day_detail = {}   # loop-1.3: day -> {orders, net_sales, discounts} for the recurring vs one-time split
     after = None
     pages = 0
     orders_seen = 0
@@ -260,6 +270,10 @@ def fetch_shopify_recurring_revenue(window_start_utc):
                 continue
             d = day_key(o.get("createdAt"))
             per_day[d] = round(per_day.get(d, 0.0) + amt, 2)
+            det = per_day_detail.setdefault(d, {"orders": 0, "net_sales": 0.0, "discounts": 0.0})
+            det["orders"] += 1
+            det["net_sales"] += _shop_amount(o, "subtotalPriceSet")    # after discounts, before shipping / tax = the P&L's net sales basis
+            det["discounts"] += _shop_amount(o, "totalDiscountsSet")
             orders_matched += 1
         pages += 1
         info = conn.get("pageInfo") or {}
@@ -270,7 +284,7 @@ def fetch_shopify_recurring_revenue(window_start_utc):
     log(f"Shopify recurring revenue: {orders_seen} orders tagged '{RECURRING_TAG}', "
         f"{orders_matched} matched app='{RECURRING_APP}' ({orders_app_mismatch} tag-only mismatches "
         f"excluded), {pages} page(s), {len(per_day)} day(s) with activity")
-    return {"per_day": per_day, "orders_seen": orders_seen, "orders_matched": orders_matched,
+    return {"per_day": per_day, "per_day_detail": per_day_detail, "orders_seen": orders_seen, "orders_matched": orders_matched,
             "orders_app_mismatch": orders_app_mismatch, "pages": pages}
 
 
@@ -321,6 +335,7 @@ def main():
             "new_subscriptions": 0, "new_subscribers": 0,
             "checkout_revenue": 0.0, "checkout_orders_found": 0,
             "recurring_revenue_actual": None,  # filled below from Shopify when available
+            "recurring_orders": None, "recurring_net_sales": None, "recurring_discounts": None,   # loop-1.3, same source
         })
 
     for i, sub in enumerate(new_subs):
@@ -361,20 +376,58 @@ def main():
         daily[d]["checkout_revenue"] = round(daily[d]["checkout_revenue"], 2)
 
     # 1b) Recurring revenue - REAL, from Shopify's own order feed (see module docstring).
-    shopify_result = fetch_shopify_recurring_revenue(window_start)
+    # loop-1.3: also the renewal ORDER COUNT and net sales per day (recurring_orders / recurring_net_sales /
+    # recurring_discounts) so the dashboard can split Shopify orders into recurring vs one-time. Older days
+    # kept from previous runs that lack the count are backfilled once (query window widened, max 400 days).
+    prev_daily = {}
+    if os.path.exists(OUTPUT_PATH):
+        try:
+            prev_daily = (json.load(open(OUTPUT_PATH, encoding="utf-8")) or {}).get("daily") or {}
+        except Exception as e:  # noqa: BLE001
+            log(f"previous file unreadable for the recurring backfill ({e})")
+    win_first_day = window_start.astimezone(TZ).date()
+    missing = sorted(d for d, r in prev_daily.items()
+                     if isinstance(r, dict) and r.get("recurring_orders") is None and d < win_first_day.isoformat())
+    recurring_start = window_start
+    backfill_first_day = None
+    if missing:
+        try:
+            first = max(datetime.strptime(missing[0], "%Y-%m-%d").date(), now.astimezone(TZ).date() - timedelta(days=400))
+            backfill_first_day = first
+            recurring_start = datetime(first.year, first.month, first.day, tzinfo=TZ).astimezone(timezone.utc)
+            log(f"Recurring order counts missing on {len(missing)} older day(s) - backfilling from {first.isoformat()}")
+        except ValueError:
+            backfill_first_day = None
+    recurring_backfill = {}   # older days (outside the window): only the recurring fields are refreshed
+    shopify_result = fetch_shopify_recurring_revenue(recurring_start)
     if shopify_result is not None:
         per_day = shopify_result["per_day"]
-        d = window_start.astimezone(TZ).date()
+        detail = shopify_result["per_day_detail"]
+
+        def recurring_fields(dkey):
+            det = detail.get(dkey) or {}
+            return {"recurring_revenue_actual": round(per_day.get(dkey, 0.0), 2),
+                    "recurring_orders": int(det.get("orders") or 0),
+                    "recurring_net_sales": round(det.get("net_sales") or 0.0, 2),
+                    "recurring_discounts": round(det.get("discounts") or 0.0, 2)}
+
+        d = win_first_day
         end_d = now.astimezone(TZ).date()
         while d <= end_d:
-            dkey = d.isoformat()
-            bucket(dkey)["recurring_revenue_actual"] = round(per_day.get(dkey, 0.0), 2)
+            bucket(d.isoformat()).update(recurring_fields(d.isoformat()))
             d += timedelta(days=1)
+        if backfill_first_day:
+            d = backfill_first_day
+            while d < win_first_day:
+                if d.isoformat() in prev_daily:
+                    recurring_backfill[d.isoformat()] = recurring_fields(d.isoformat())
+                d += timedelta(days=1)
         shopify_meta = {
             "status": "ok",
             "orders_seen": shopify_result["orders_seen"],
             "orders_matched": shopify_result["orders_matched"],
             "orders_app_mismatch": shopify_result["orders_app_mismatch"],
+            "backfilled_days": len(recurring_backfill),
         }
     else:
         shopify_meta = {"status": "skipped", "note": "recurring_revenue_actual left untouched this run (see log)"}
@@ -418,6 +471,15 @@ def main():
             log(f"previous file unreadable ({e}) - starting fresh")
     merged_daily = dict(prev.get("daily") or {})
     merged_daily.update(daily)  # window days get refreshed; older history outside the window is kept
+    for d, row in daily.items():   # loop-1.3: a run whose Shopify fetch failed keeps the recurring figures already stored
+        old_row = (prev.get("daily") or {}).get(d)
+        if isinstance(old_row, dict):
+            for k in ("recurring_revenue_actual", "recurring_orders", "recurring_net_sales", "recurring_discounts"):
+                if row.get(k) is None and old_row.get(k) is not None:
+                    row[k] = old_row[k]
+    for d, fields in recurring_backfill.items():   # loop-1.3: one-time backfill of the recurring order counts
+        if d not in daily and isinstance(merged_daily.get(d), dict):
+            merged_daily[d] = dict(merged_daily[d], **fields)
 
     days_sorted = sorted(merged_daily)
     out = {
