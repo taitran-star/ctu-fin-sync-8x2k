@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 4dcea93242).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 746d16a9a9).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -5398,6 +5398,35 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
       ${h(6, tv('Data still to enter', 'Dữ liệu cần nhập để đủ'), tv(`${nMiss} missing`, `${nMiss} mục thiếu`))}<div class="rp-wrap"><table class="rp-table mk-table fin-bod-t"><thead><tr><th>${tv('Item', 'Mục')}</th><th>${tv('Status', 'Trạng thái')}</th><th>${tv('Where / how', 'Ở đâu / cách nhập')}</th></tr></thead><tbody>${ckH}</tbody></table></div>
     </div>`;
   }
+  // V12.20: Shopify orders of a set of days split into recurring (renewals Loop charges by itself) and one-time orders.
+  // Only days that have the renewal count (sync loop-1.3) are counted on both sides, so the two always add up.
+  function finRecurringSplit(rows){
+    const cov = (rows||[]).filter(r=> r.loopReal && r.loopReal.recurringOrders!=null && r.orders && r.orders.shopify!=null);
+    const one = r => { const so = r.orders.shopify||0, sn = Math.max(0, (r.channels.shopify||0) - (r.discounts.shopify||0)); const ro = Math.min(r.loopReal.recurringOrders, so), rn = Math.min(r.loopReal.recurringNet||0, sn); return {iso: r.iso, so, sn, ro, rn, no: so-ro, nn: sn-rn}; };
+    const d = cov.map(one), t = k => sum(d.map(x=>x[k]));
+    return {days: d, covered: d.length, total: (rows||[]).length, so: t('so'), sn: t('sn'), ro: t('ro'), rn: t('rn'), no: t('no'), nn: t('nn')};
+  }
+  function finRecurringCard(rows, pRows, lk){
+    const S = finRecurringSplit(rows); if(!S.covered) return '';
+    const P = pRows && pRows.length ? finRecurringSplit(pRows) : null, pOk = P && P.covered===P.total && P.covered>0;
+    const dm = k => k.slice(8,10)+'/'+k.slice(5,7), aov = (n, o) => o>0 ? money(n/o) : '—';
+    const dl = (v, pv) => { if(!pOk) return '<td class="num mk-muted">—</td>'; if(!(pv>0)) return `<td class="num mk-muted">${v>0 ? tv('new', 'mới') : '—'}</td>`; const x = (v-pv)/pv*100; return `<td class="num ${x>=0 ? 'mk-good' : 'mk-bad'}" title="${finEsc(tv('vs ', 'so với ')+lk+': '+intFmt(pv))}">${x>=0 ? '+' : ''}${Math.abs(x)>=1000 ? Math.round(x).toLocaleString('en-US') : x.toFixed(0)}%</td>`; };
+    const line = (cls, lab, o, n, po) => `<tr${cls ? ' class="'+cls+'"' : ''}><td class="mk-lab">${lab}</td><td class="num">${intFmt(o)}</td><td class="num mk-muted">${finPct(o, S.so)}</td>${dl(o, po)}<td class="num">${money(n)}</td><td class="num mk-muted">${finPct(n, S.sn)}</td><td class="num">${aov(n, o)}</td></tr>`;
+    const body = line('', tv('One-time orders <span class="mk-muted">(normal purchases, incl. the first order of a new subscription)</span>', 'Đơn thường <span class="mk-muted">(khách tự mua, gồm cả đơn đầu của subscription mới)</span>'), S.no, S.nn, P && P.no)
+      + line('', tv('Recurring orders <span class="mk-muted">(renewals Loop charges automatically)</span>', 'Đơn định kỳ <span class="mk-muted">(Loop tự gia hạn và trừ tiền)</span>'), S.ro, S.rn, P && P.ro)
+      + line('rp-tot', tv('All Shopify orders', 'Tổng đơn Shopify'), S.so, S.sn, P && P.so);
+    // by day: every day of a short period, else the days where renewals matter most
+    const big = S.days.filter(x=> x.so>0 && x.ro/x.so>=0.2 && x.ro>=20);
+    let list = S.days.length<=31 ? S.days.slice() : big.slice().sort((x,y)=>y.ro-x.ro).slice(0, 12).sort((x,y)=> x.iso<y.iso ? -1 : 1);
+    const dayRows = list.map(x=>{ const sh = x.so>0 ? x.ro/x.so*100 : 0, hot = sh>=20 && x.ro>=20; return `<tr${hot ? ' class="fin-rec-hot"' : ''}><td class="mk-lab">${dm(x.iso)}${hot ? ' <span class="pill warn">'+tv('renewal batch', 'đợt gia hạn')+'</span>' : ''}</td><td class="num">${intFmt(x.so)}</td><td class="num">${intFmt(x.no)}</td><td class="num">${intFmt(x.ro)}</td><td class="num ${hot ? 'mk-bad' : 'mk-muted'}">${sh.toFixed(0)}%</td><td class="num">${money(x.nn)}</td><td class="num">${money(x.rn)}</td></tr>`; }).join('');
+    const dayH = list.length ? `<div class="rp-ch" style="margin-top:12px;">${S.days.length<=31 ? tv('By day', 'Theo ngày') : tv('Days with a renewal batch (recurring ≥ 20% of the orders)', 'Các ngày có đợt gia hạn (đơn định kỳ ≥ 20% số đơn)')}</div><div class="rp-wrap"><table class="rp-table mk-table" id="finRecDays"><thead><tr><th>${tv('Day', 'Ngày')}</th><th class="num">${tv('Shopify orders', 'Đơn Shopify')}</th><th class="num">${tv('One-time', 'Đơn thường')}</th><th class="num">${tv('Recurring', 'Định kỳ')}</th><th class="num">% ${tv('recurring', 'định kỳ')}</th><th class="num">${tv('One-time net sales', 'DT thuần đơn thường')}</th><th class="num">${tv('Recurring net sales', 'DT thuần định kỳ')}</th></tr></thead><tbody>${dayRows}</tbody></table></div>` : '';
+    const part = S.covered<S.total ? tv(` · ${S.total-S.covered} day(s) of the period have no renewal count yet and are left out of this card`, ` · ${S.total-S.covered} ngày trong kỳ chưa có số đơn định kỳ nên không tính vào thẻ này`) : '';
+    const flag = big.length ? `<div class="fin-rec-note"><b>${tv('Read with care: ', 'Lưu ý khi đọc số: ')}</b>${tv(`${big.length} day(s) in this period carry a renewal batch (${big.slice(0,4).map(x=>dm(x.iso)+': '+intFmt(x.ro)+' of '+intFmt(x.so)+' orders').join(' · ')}). Those orders are charged by Loop on the subscription date — no ad click behind them — so compare ad spend, MER and conversion against the one-time orders only.`, `Kỳ này có ${big.length} ngày dính đợt gia hạn (${big.slice(0,4).map(x=>dm(x.iso)+': '+intFmt(x.ro)+'/'+intFmt(x.so)+' đơn').join(' · ')}). Các đơn đó do Loop tự trừ tiền theo lịch subscription, không đến từ quảng cáo — khi so chi quảng cáo, MER, tỷ lệ chuyển đổi thì chỉ nên nhìn đơn thường.`)}</div>` : '';
+    return `<div class="card mk-card" id="finRecCard"><div class="card-head"><h2>${tv('Recurring vs one-time orders', 'Đơn định kỳ và đơn thường')}</h2><div class="note">${tv('Shopify · selected period · net sales = after discounts, before refunds, shipping and tax (the P&L basis)', 'Shopify · kỳ đang xem · DT thuần = sau giảm giá, trước hoàn tiền, phí ship và thuế (cùng cách tính với P&L)')}${part}</div><button class="btn mini" type="button" data-export="finRecTable" data-name="recurring-vs-one-time">CSV</button></div>
+      ${flag}<div class="rp-wrap"><table class="rp-table mk-table" id="finRecTable"><thead><tr><th>${tv('Order type', 'Loại đơn')}</th><th class="num">${tv('Orders', 'Số đơn')}</th><th class="num">% ${tv('orders', 'đơn')}</th><th class="num">${pOk ? tv('vs ', 'so ')+lk : 'Δ'}</th><th class="num">${tv('Net sales', 'DT thuần')}</th><th class="num">% ${tv('sales', 'DT')}</th><th class="num">AOV</th></tr></thead><tbody>${body}</tbody></table></div>${dayH}
+      <div class="mk-muted" style="font-size:12px;margin-top:10px;">${tv('Recurring = Shopify orders tagged <code>Subscription Recurring Order</code> created by the Loop Subscriptions app (renewal charges), by order day in Los Angeles time. Everything else on Shopify is one-time. Amazon Subscribe &amp; Save is not in this split.', 'Định kỳ = đơn Shopify có tag <code>Subscription Recurring Order</code> do app Loop Subscriptions tạo (lần trừ tiền gia hạn), theo ngày đặt giờ Los Angeles. Mọi đơn Shopify còn lại là đơn thường. Amazon Subscribe &amp; Save chưa nằm trong bảng này.')}</div></div>`;
+  }
+
   function renderFinance(){
     const root = document.getElementById('finRoot'); if(!root) return;
     const rows = currentRows(); if(!rows.length){ root.innerHTML = ''; return; }
@@ -5553,9 +5582,11 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
     notes.sort((x,y)=>(y.w||0)-(x.w||0));
     const notesH = notes.length ? notes.slice(0, 12).map(x=>`<li class="mk-act"><span class="pill ${x.cls}">${x.l}</span><div><b>${finEsc(x.t)}</b><div class="mk-why">${finEsc(x.d)}</div></div><span class="mk-w">${x.amt>0 ? fin$(x.amt)+`<small>${x.amtL||''}</small>` : ''}</span></li>`).join('') : `<li class="mk-act mk-none">${tv('Nothing to flag for this period.', 'Không có gì cần lưu ý trong kỳ này.')}</li>`;
     let bodH = ''; try { bodH = finBodSummary({rows, a, p, L, PL, from, to, nDays, mer, beM, cashTotal, runway, burn, opexLines, inv, lots, rec, dio, ytd, curM, openMs, taxYtd}); } catch(e){ bodH = `<div class="card mk-card"><div class="card-head"><h2>${tv('Board summary', 'Tóm tắt cho BOD')}</h2></div><div class="mk-muted">${tv('Could not compute: ', 'Không tính được: ')+finEsc(String(e && e.message || e))}</div></div>`; }   // V12.17
+    let recH = ''; try { recH = finRecurringCard(rows, cmp==='none' ? null : pRows, lk); } catch(e){ recH = ''; }   // V12.20
     const detailBtn = `<button type="button" class="fb-btn mk-detail" id="finDetail" aria-expanded="${FIN.detail}">${FIN.detail ? tv('Hide the entry tables', 'Ẩn bảng nhập liệu') : tv('Show the entry tables (OpEx by month, manual entries, asset register)', 'Xem bảng nhập liệu (OpEx theo tháng, nhập tay, danh mục tài sản)')}</button>`;
     root.innerHTML = `
       <div class="card mk-card"><div class="card-head"><h2>${tv('Financial snapshot', 'Tổng quan tài chính')}</h2><div class="note">${tv('US GAAP view of the period · same figures as the P&L', 'Theo chuẩn US GAAP cho kỳ đang xem · cùng số với P&L')}</div></div><div class="exec-kpis v126 mk-kpis fin-kpis" id="finKpis">${kpis.map(kp).join('')}</div></div>
+      ${recH}
       ${bodH}
       <div class="card mk-card"><div class="card-head"><h2>${tv('CFO notes — what to raise', 'Ghi chú CFO — việc cần đề xuất')}</h2><div class="note">${tv('Generated from the figures · ranked by money at stake', 'Sinh từ số liệu · xếp theo số tiền liên quan')}</div></div><ul class="mk-acts">${notesH}</ul></div>
       <div class="card mk-card"><div class="card-head"><h2>${tv('Income statement by month', 'Báo cáo kết quả kinh doanh theo tháng')}</h2><div class="note">${tv('Condensed, GAAP order · ≈ = includes estimates · (brackets) = costs', 'Rút gọn, theo thứ tự GAAP · ≈ = có tạm tính · (ngoặc) = chi phí')}</div><button class="btn mini" type="button" data-export="finIsTable" data-name="income-statement">CSV</button></div><div class="rp-wrap"><table class="rp-table mk-table fin-is" id="finIsTable">${isHead}${isBody}</table></div></div>
@@ -6150,6 +6181,9 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
         newSubscribers: Math.round(parseFloat(r.new_subscribers)||0),
         checkoutRevenue: parseFloat(r.checkout_revenue)||0,
         recurringRevenueActual: r.recurring_revenue_actual==null ? null : parseFloat(r.recurring_revenue_actual),
+        // V12.20 (sync loop-1.3): renewal orders Loop charged that day + their net sales (subtotal after discounts, the P&L basis)
+        recurringOrders: r.recurring_orders==null ? null : Math.round(parseFloat(r.recurring_orders)||0),
+        recurringNet: r.recurring_net_sales==null ? null : (parseFloat(r.recurring_net_sales)||0),
       };
       matched++;
     });
