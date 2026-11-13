@@ -68,8 +68,8 @@
         "sales": 1027.8
       },
       "google_ads": {
-        "orders": 1692,
-        "sales": 206624.02
+        "orders": 1693,
+        "sales": 206722.02
       },
       "meta_organic": {
         "orders": 274,
@@ -361663,12 +361663,30 @@
     "2026-11-13": {
       "attribution": {
         "email_detail": {},
-        "first_touch": {},
-        "journeys": {},
-        "last_touch": {},
+        "first_touch": {
+          "google_ads": {
+            "orders": 1,
+            "sales": 98.0
+          }
+        },
+        "journeys": {
+          "google_ads>google_ads": {
+            "orders": 1,
+            "sales": 98.0
+          }
+        },
+        "last_touch": {
+          "google_ads": {
+            "new": 1,
+            "orders": 1,
+            "paid_first": 1,
+            "returning": 0,
+            "sales": 98.0
+          }
+        },
         "no_journey": 0,
         "orders": 1,
-        "pending": 1
+        "pending": 0
       },
       "discounts": 89.0,
       "fees_missing_orders": 0,
@@ -361743,7 +361761,7 @@
       "total_sales": -85.45
     }
   },
-  "generated_at": "2026-11-13T08:37:12Z",
+  "generated_at": "2026-11-13T08:43:07Z",
   "meta": {
     "api_cost_actual": 50258,
     "api_cost_requested_max": 442,
@@ -361758,8 +361776,8 @@
       "journeys_missing": 0,
       "journeys_moments_truncated": 1,
       "journeys_no_session": 802,
-      "journeys_pending": 1,
-      "journeys_ready": 11725,
+      "journeys_pending": 0,
+      "journeys_ready": 11726,
       "journeys_resolved_by_moments": 753,
       "journeys_unresolved": 0,
       "late_orders_scanned": 2495,
@@ -361940,7 +361958,6 @@
     "script_version": "2.2",
     "throttled_waits": 0,
     "warnings": [
-      "1 orders not attributed by Shopify yet (customerJourneySummary.ready=false, normal for the newest orders) - counted as pending, refetched next run",
       "42 orders carry the __snowball attribute but no 'Referral - SS - *' tag (Snowball rejected/untracked them) - not counted as referrals",
       "no rate known for Snowball program 'asher_fitfeline_partner' - using SNOWBALL_DEFAULT_RATE=0",
       "rate for Snowball program '20 % Commision No Discou' inferred from its name (20%) - set SNOWBALL_PROGRAM_RATES to pin it"
