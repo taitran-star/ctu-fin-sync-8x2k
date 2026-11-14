@@ -1,24 +1,24 @@
 {
  "schema": 1,
- "generated_at": "2026-11-14T13:37:44Z",
+ "generated_at": "2026-11-14T18:52:24Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
   "to": "2026-11-14",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 3199,
+  "transactions_read": 3201,
   "charges": 755,
   "stats": {
    "status:posted": 2425,
    "rail:rtp": 8,
-   "rail:ach": 869,
+   "rail:ach": 870,
    "rail:fee": 100,
    "rail:wire": 32,
    "status:failed": 772,
-   "rail:card": 1766,
+   "rail:card": 1767,
    "rail:other": 424,
-   "status:pending": 2
+   "status:pending": 4
   },
   "lines": {
    "SHOP": "Shopify plan + apps billed by Shopify",
@@ -362,7 +362,10 @@
    "MC": 82.5
   }
  },
- "pending": {},
+ "pending": {
+  "KLV": 115.0,
+  "DSP": 8500.0
+ },
  "charges": [
   {
    "d": "2026-04-02",
