@@ -1,24 +1,24 @@
 {
  "schema": 1,
- "generated_at": "2026-11-13T20:39:52Z",
+ "generated_at": "2026-11-14T03:46:07Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
-  "to": "2026-11-13",
+  "to": "2026-11-14",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 3193,
-  "charges": 752,
+  "transactions_read": 3197,
+  "charges": 755,
   "stats": {
-   "status:posted": 2420,
+   "status:posted": 2425,
    "rail:rtp": 8,
-   "rail:ach": 867,
+   "rail:ach": 868,
    "rail:fee": 100,
    "rail:wire": 32,
    "status:failed": 771,
-   "rail:card": 1764,
-   "rail:other": 422,
-   "status:pending": 2
+   "rail:card": 1765,
+   "rail:other": 424,
+   "status:pending": 1
   },
   "lines": {
    "SHOP": "Shopify plan + apps billed by Shopify",
@@ -196,9 +196,9 @@
    "UPW": 1762.21
   },
   "2026-11": {
-   "DSP": 8500.0,
-   "MC": 4562.76,
-   "MT": 1444.79,
+   "DSP": 0.0,
+   "MC": 4802.76,
+   "MT": 1479.28,
    "SBW": 3500.0,
    "SHOP": 4350.43,
    "SUP": 13448.3,
@@ -300,9 +300,9 @@
    "UPW": 1762.21
   },
   "2026-11": {
-   "DSP": 8500.0,
-   "MC": 3763.59,
-   "MT": 1757.55,
+   "DSP": 0.0,
+   "MC": 4003.59,
+   "MT": 1792.04,
    "SBW": 3500.0,
    "SHOP": 4350.43,
    "SUP": 13448.3,
@@ -362,9 +362,7 @@
    "MC": 82.5
   }
  },
- "pending": {
-  "MT": 34.49
- },
+ "pending": {},
  "charges": [
   {
    "d": "2026-04-02",
@@ -7050,11 +7048,38 @@
   },
   {
    "d": "2026-11-13",
+   "v": "Adobe",
+   "l": "MT",
+   "a": 34.49,
+   "k": "card",
+   "cy": "M"
+  },
+  {
+   "d": "2026-11-13",
    "v": "Canva",
    "l": "MT",
    "a": 147.0,
    "k": "card",
    "cy": "M"
+  },
+  {
+   "d": "2026-11-13",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 240.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-11-13",
+   "v": "SparkX (Amazon DSP)",
+   "l": "DSP",
+   "a": -8500.0,
+   "k": "ach",
+   "cy": "U",
+   "memo": "Amazon-DSP Advertising Fee-Prepayment,SparkX AI Platform Annual Fee iNVOICE numb",
+   "desc": "Amazon-DSP Advertising Fee-Prepayment,SparkX AI Platform Annual Fee iN",
+   "payee": "SparkX Marketing Co. Limited"
   }
  ],
  "unclassified_card": [
