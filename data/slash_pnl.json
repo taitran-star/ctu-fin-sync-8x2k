@@ -1,23 +1,23 @@
 {
  "schema": 1,
- "generated_at": "2026-11-14T18:52:24Z",
+ "generated_at": "2026-11-15T13:37:40Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
-  "to": "2026-11-14",
+  "to": "2026-11-15",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 3201,
-  "charges": 755,
+  "transactions_read": 3207,
+  "charges": 758,
   "stats": {
-   "status:posted": 2425,
+   "status:posted": 2430,
    "rail:rtp": 8,
    "rail:ach": 870,
    "rail:fee": 100,
    "rail:wire": 32,
-   "status:failed": 772,
-   "rail:card": 1767,
-   "rail:other": 424,
+   "status:failed": 773,
+   "rail:card": 1771,
+   "rail:other": 426,
    "status:pending": 4
   },
   "lines": {
@@ -197,12 +197,13 @@
   },
   "2026-11": {
    "DSP": 0.0,
+   "KLV": 300.0,
    "MC": 4802.76,
    "MT": 1479.28,
    "SBW": 3500.0,
    "SHOP": 4350.43,
    "SUP": 13448.3,
-   "SW": 1112.49,
+   "SW": 1172.49,
    "TAX": 2775.0,
    "UPW": 1048.75
   }
@@ -301,12 +302,13 @@
   },
   "2026-11": {
    "DSP": 0.0,
+   "KLV": 300.0,
    "MC": 4003.59,
    "MT": 1792.04,
    "SBW": 3500.0,
    "SHOP": 4350.43,
    "SUP": 13448.3,
-   "SW": 1112.49,
+   "SW": 1172.49,
    "TAX": 2831.26,
    "UPW": 1048.75
   },
@@ -363,8 +365,8 @@
   }
  },
  "pending": {
-  "KLV": 115.0,
-  "DSP": 8500.0
+  "DSP": 8500.0,
+  "SW": 57.0
  },
  "charges": [
   {
@@ -7083,6 +7085,30 @@
    "memo": "Amazon-DSP Advertising Fee-Prepayment,SparkX AI Platform Annual Fee iNVOICE numb",
    "desc": "Amazon-DSP Advertising Fee-Prepayment,SparkX AI Platform Annual Fee iN",
    "payee": "SparkX Marketing Co. Limited"
+  },
+  {
+   "d": "2026-11-14",
+   "v": "Klaviyo",
+   "l": "KLV",
+   "a": 115.0,
+   "k": "card",
+   "cy": "M"
+  },
+  {
+   "d": "2026-11-14",
+   "v": "Klaviyo",
+   "l": "KLV",
+   "a": 185.0,
+   "k": "card",
+   "cy": "M"
+  },
+  {
+   "d": "2026-11-14",
+   "v": "n8n Cloud",
+   "l": "SW",
+   "a": 60.0,
+   "k": "card",
+   "cy": "M"
   }
  ],
  "unclassified_card": [
