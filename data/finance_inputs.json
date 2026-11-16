@@ -1,25 +1,30 @@
 {
   "schema": 1,
-  "updated_at": "2026-11-09",
+  "updated_at": "2026-11-16",
   "note": "Nhap tay cho tab Tai chinh (CFO) -> Tom tat cho BOD (V12.17). Sua truc tiep tren GitHub; dashboard doc lai sau ~1 phut. Khong ghi so du ngan hang hay ten nha cung cap vao day (repo public) — so du lay tu kho tien mat rieng (CASH_WRITE_KEY).",
   "fx": {
-    "book_rate": 22000,
-    "accountant_rate": 26100,
+    "book_rate": 26000,
+    "accountant_rate": 26000,
     "vn_keys": ["salary", "office", "other"],
-    "note": "VND per USD. book_rate = ty gia dashboard dang dung trong opex_monthly; accountant_rate = ty gia ke toan dung trong file tuan (CL1). Khi chot mot ty gia chung: dat ca hai bang nhau va ghi lai opex_monthly."
+    "note": "VND per USD. V12.22 (16/11/2026): chu DN chot ty gia tham khao 26.000 d/USD cho moi khoan quy doi VND -> USD (truoc do dashboard 22.000, ke toan 26.100). opex_monthly.json 01-09/2026 da quy doi lai (USD moi = USD cu x 22.000 / 26.000); thang moi nhap theo 26.000. Doi ty gia: sua ca book_rate va accountant_rate o day roi quy doi lai opex_monthly."
   },
   "cash_calendar": {
     "shopify_payout_days": 3,
     "amazon_settlement_days": 14,
     "next_amazon_settlement": null,
-    "shipmonk_pay_lag_days": 21,
+    "shipmonk_pay_lag_days": 15,
     "payroll_day": 5,
     "agency_day": 6,
     "klaviyo_day": 19,
     "numeral_day": 3,
     "factory_deposit_pct": 30,
-    "note": "next_amazon_settlement = ngay ket thuc ky settlement Amazon gan nhat sap toi (YYYY-MM-DD) — lay trong Seller Central > Payments; factory_deposit_pct = % da coc khi dat hang (phan con lai tra truoc khi xuat)."
+    "ads_card_day": 18,
+    "amazon_ads_day": 20,
+    "sales_tax_day": 20,
+    "note": "next_amazon_settlement = ngay ket thuc ky settlement Amazon gan nhat sap toi (YYYY-MM-DD) — lay trong Seller Central > Payments; factory_deposit_pct = % da coc khi dat hang (phan con lai tra truoc khi xuat). V12.22 (16/11/2026): shipmonk_pay_lag_days 21 -> 15 (han tra hoa don ShipMonk = ket ky + 15 ngay, theo due date tren app); ads_card_day = ngay Meta + Google thu tien chi tieu CUA THANG TRUOC (hoa don thang; vd hoa don T7 tra 18/08); amazon_ads_day = ngay tra hoa don Amazon Ads cua thang truoc (ACH tu ngan hang, KHONG tru vao payout); sales_tax_day = ngay Numeral nop sales tax Shopify cua thang truoc."
   },
+  "payables_manual": [],
+  "payables_note": "payables_manual = khoan phai tra nhap tay cho khoi 'Phai tra' tren tab Tai chinh (khoan dashboard khong tu tinh duoc). Moi dong: {\"label\": {\"vi\": \"...\", \"en\": \"...\"}, \"amount\": 12345, \"due\": \"YYYY-MM-DD\", \"note\": \"...\"}. KHONG ghi ten nha cung cap hay so tai khoan (repo public). Xoa dong khi da tra.",
   "opening_cash": null,
   "benchmarks": {
     "gross_margin_min": 55,
