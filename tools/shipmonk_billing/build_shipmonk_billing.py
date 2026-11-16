@@ -51,7 +51,7 @@ import re
 import sys
 from collections import defaultdict
 
-TOOLKIT_VERSION = "1.1"
+TOOLKIT_VERSION = "1.2"
 SCRIPT_VERSION = "1.0"      # kept as in the live files (meta.script_version) so the schema is unchanged
 STORAGE_TOLERANCE = 0.15    # documented max |sum(storage days) - invoice storage| per billing period
 
@@ -137,7 +137,7 @@ def row_from_raw(inv, warnings):
     days = (end - start).days + 1
     if days <= 0 or days > 31:
         warnings.append(f"invoice {inv['number']}: odd billing period {inv['start']}..{inv['end']}")
-    return {
+    row = {
         "number": str(inv["number"]), "id": inv["id"], "start": inv["start"][:10], "end": inv["end"][:10], "days": days,
         "status": inv["status"], "total": r2(inv["total"]),
         "orders_invoiced": inv["shipping"].get("count"),
@@ -147,6 +147,39 @@ def row_from_raw(inv, warnings):
         "line_items_by_type": by_type,
         "big_items": inv["line_items"].get("big") or [],
     }
+    if "paid" in inv:                                   # v1.2: payment state from the invoice list (collector v1.2.0)
+        row.update(payment_fields(inv.get("status"), inv["total"], inv.get("paid"), inv.get("due")))
+    return row
+
+
+PAID_STATUSES = ("status_complete", "complete", "paid", "status_paid")
+
+
+def payment_fields(status, total, paid, due):
+    """paid / balance / due for an invoices[] row. A 'complete' invoice has no balance whatever `paid` says."""
+    paid = r2(paid or 0)
+    balance = 0.0 if str(status or "").lower() in PAID_STATUSES else max(0.0, r2(r2(total) - paid))
+    return {"paid": paid, "balance": r2(balance), "due": (str(due)[:10] if due else None)}
+
+
+def apply_payments(rows_by_number, payments):
+    """v1.2: refresh status / paid / balance / due of every row from the collector's payments[] (invoice list).
+    Returns [(number, old_status, new_status, old_balance, new_balance)] for rows whose payment state changed."""
+    changed = []
+    for p in payments or []:
+        num = str(p.get("number"))
+        row = rows_by_number.get(num)
+        if not row:
+            continue
+        if abs(r2(p.get("total") or 0) - row["total"]) > 0.005:
+            continue                                    # total differs from the stored invoice: leave it to a re-collect
+        new = dict(row)
+        new["status"] = p.get("status") or row["status"]
+        new.update(payment_fields(new["status"], row["total"], p.get("paid"), p.get("due")))
+        if new != row:
+            changed.append((num, row["status"], new["status"], row.get("balance"), new["balance"]))
+            rows_by_number[num] = new
+    return changed
 
 
 def assemble_invoices(rows, current, history_start, generated_at=None):
@@ -510,6 +543,7 @@ def main(argv=None):
         current = current_from_blob(blob.get("current"), (inv_prev or {}).get("meta", {}).get("current_period"), report)
     else:
         current = (inv_prev or {}).get("meta", {}).get("current_period") if inv_prev else None
+    pay_changed = apply_payments(merged, (blob or {}).get("payments")) if blob else []
     rows = list(merged.values())
     if current is None and rows:
         current = period_after(max(r["end"] for r in rows))
@@ -520,6 +554,12 @@ def main(argv=None):
         current = nxt
     inv_doc = assemble_invoices(rows, current, a.history_start, a.generated_at)
     inv_doc["meta"]["warnings"] = inv_doc["meta"]["warnings"] + [w for w in warnings if w not in inv_doc["meta"]["warnings"]]
+    has_pay = [r for r in inv_doc["invoices"] if "balance" in r]
+    if has_pay:                                         # v1.2: open balance on closed invoices (payment state as of the collection)
+        prev_meta = (inv_prev or {}).get("meta", {})
+        inv_doc["meta"]["payments_as_of"] = ((blob or {}).get("collected_at") if (blob or {}).get("payments") else None) or prev_meta.get("payments_as_of")
+        inv_doc["meta"]["open_balance"] = r2(sum(r["balance"] for r in has_pay))
+        inv_doc["meta"]["open_invoices"] = len([r for r in has_pay if r["balance"] > 0.005])
 
     # ---- storage (its processing notes go to st_report, printed under the STORAGE header)
     st_report = []
@@ -564,6 +604,16 @@ def main(argv=None):
             report.append(f"  {num}  {new['start']}..{new['end']} total {old['total']:,.2f} -> {new['total']:,.2f} status {old['status']} -> {new['status']} changed: {', '.join(diffs)[:200]}")
     if unchanged_inv:
         report.append(f"unchanged (re-collected, identical): {', '.join(sorted(unchanged_inv))}")
+    if has_pay:
+        report.append(f"PAYMENT STATE (as of {m.get('payments_as_of')}): {len(has_pay)} invoice(s) with payment data, open balance {m['open_balance']:,.2f} on {m['open_invoices']} invoice(s)")
+        for r in inv_doc["invoices"]:
+            if r.get("balance", 0) > 0.005:
+                report.append(f"  OPEN {r['number']}  {r['start']}..{r['end']} {r['status']:<22} total {r['total']:>12,.2f} paid {r.get('paid', 0):>12,.2f} balance {r['balance']:>12,.2f} due {r.get('due')}")
+        for num, os_, ns, ob, nb in pay_changed:
+            report.append(f"  payment state changed {num}: {os_} -> {ns}, balance {('n/a' if ob is None else format(ob, ',.2f'))} -> {nb:,.2f}")
+    no_pay = [r["number"] for r in inv_doc["invoices"] if "balance" not in r]
+    if has_pay and no_pay:
+        report.append(f"  note: {len(no_pay)} older invoice(s) not in the collector's list keep no payment fields")
     if m["missing_days"]:
         report.append(f"WARNING missing days: {', '.join(m['missing_days'][:20])}{' ...' if m['missing_count'] > 20 else ''}")
     for w in m["warnings"]:

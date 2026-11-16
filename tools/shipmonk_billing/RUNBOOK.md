@@ -4,6 +4,21 @@ Toolkit v1.0 (2026-10-16). For a **fresh Claude session with no memory**, run tw
 closes a billing period: periods are 1–14 and 15–end of month, so run on the **2nd and the 17th**).
 Needs the user's Mac online with the Claude desktop app (built-in browser + the `Documents/ctu-fin` folder).
 
+> **v1.2 (2026-11-16) - payment state, and loading the snippet without pasting it.**
+> The invoice list gives `paid` and `due_date`. The collector returns them (`payments[]` for every closed
+> invoice, one call) and the builder writes `paid`, `balance`, `due` on each invoice row plus
+> `meta.open_balance / open_invoices / payments_as_of`; the Finance tab's "payables" block reads them.
+> `REPORT.txt` has a `PAYMENT STATE` section: its `OPEN` lines must add up to "Amount Due" on the app's
+> Invoices page. Because statuses are refreshed from the list, `SINCE` can stay at the start of the last invoice.
+> Loading the snippet: open
+> `https://raw.githubusercontent.com/taitran-star/ctu-fin-sync-8x2k/main/tools/shipmonk_billing/collect_shipmonk_billing.js`
+> in the tab, run `window.name = document.querySelector('pre').textContent`, navigate back to
+> `https://app.shipmonk.com/billing/-/invoices`, then run (one expression; the leading `await` of the file is
+> dropped because `eval` has no top-level await):
+> `await (0, eval)(window.name.replace(/const SINCE = '[^']*'/, "const SINCE = 'YYYY-MM-DD'").replace(/const STORAGE_MODE = '[^']*'/, "const STORAGE_MODE = 'skip'").replace(/^await \(async/m, '(async'))`
+> and afterwards `window.name = ''`. Storage per day is computed by `fetch_shipmonk.py` (1.7.0+, `storage_model`),
+> so `STORAGE_MODE = 'skip'` is the normal setting and `shipmonk_storage_daily.json` is left as it is.
+
 What you produce: two static files for the dashboard, written to the user's Mac so they can upload them to
 GitHub (the user uploads by hand; you never push):
 

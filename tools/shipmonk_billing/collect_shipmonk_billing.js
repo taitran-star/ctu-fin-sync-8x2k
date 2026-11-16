@@ -1,4 +1,15 @@
-/* collect_shipmonk_billing.js  (toolkit v1.1.0, 2026-11-09)
+/* collect_shipmonk_billing.js  (toolkit v1.2.0, 2026-11-16)
+ *
+ * v1.2.0 changes (seen on app.shipmonk.com 16/11/2026):
+ *   - the invoice LIST item carries `paid` ({amount,currency} or null) and `due_date` (ISO with offset) next to
+ *     status/total. They are now kept: each invoices[] entry gets paid + due, and a new payments[] array lists
+ *     {number,status,total,paid,due} for EVERY closed invoice of the list (one call, no detail requests), so the
+ *     builder can refresh status / paid / balance of older invoices without re-collecting them (SINCE can stay
+ *     at the start of the last invoice). Statuses seen: status_submitted (open, awaiting payment),
+ *     status_pending (payment in progress - `paid` may already equal total), status_partially_paid,
+ *     status_complete (paid).
+ *
+ * (toolkit v1.1.0, 2026-11-09)
  *
  * v1.1.0 changes (seen on app.shipmonk.com 09/11/2026):
  *   - invoice detail no longer embeds line items (charges.line_items = {total,count} only) -> they are now read
@@ -70,13 +81,14 @@ await (async () => {
   const DETAIL_DELAY_MS = 150;         // be polite to the app API
 
   const out = {
-    toolkit: 'collect_shipmonk_billing.js v1.1.0',
+    toolkit: 'collect_shipmonk_billing.js v1.2.0',
     collected_at: new Date().toISOString(),
     since: SINCE,
     storage_since: STORAGE_SINCE,
     today: null,
     origin: location.origin,
     invoices: [],
+    payments: [],
     current: null,
     storage: null,
     diag: { list_pages: 0, list_total: 0, list_item_keys: [], detail_keys: [], charges_keys: [], line_items_source: 'embedded', line_items_pages: 0, skipped: [], warnings: [] },
@@ -215,6 +227,14 @@ await (async () => {
     if (end && end < SINCE) { out.diag.skipped.push({ id: it.id, number, status: statusOf(it), reason: `end ${end} < SINCE` }); continue; }
     wanted.push({ it, number, start, end, total });
   }
+  // v1.2.0: payment state of every closed invoice, straight from the list (status, total, paid, due_date)
+  for (const it of listItems) {
+    if (!isClosed(it)) continue;
+    const total = num(it.total ?? it.amount ?? it.total_amount);
+    if (!total) continue;
+    out.payments.push({ number: invNumber(it), status: statusOf(it), total: r2(total), paid: r2(it.paid ?? it.paid_amount ?? 0),
+                        due: isoDate(it.due_date ?? it.dueDate ?? it.due) });
+  }
   let n = 0;
   for (const w of wanted) {
     n++;
@@ -272,6 +292,8 @@ await (async () => {
         start, end,
         status: statusOf(w.it) || statusOf(d),
         total: r2(w.total || d.total),
+        paid: r2(w.it.paid ?? w.it.paid_amount ?? d.paid ?? 0),            // v1.2.0
+        due: isoDate(w.it.due_date ?? w.it.dueDate ?? d.due_date ?? null), // v1.2.0
         shipping: { total: r2(sh.total), count: int(sh.count) },
         storage: { total: r2(sf.total), by_type: (Array.isArray(sf.items) ? sf.items : []).map((s) => ({ type: String(s.type ?? ''), avg_daily_qty: num(s.average_daily_quantity ?? s.avg_daily_qty ?? s.quantity), total: r2(s.total) })) },
         adjustment: { total: r2(adj.total), count: int(adj.count) },
