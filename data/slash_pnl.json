@@ -1,24 +1,24 @@
 {
  "schema": 1,
- "generated_at": "2026-11-15T19:28:18Z",
+ "generated_at": "2026-11-16T03:15:27Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
-  "to": "2026-11-15",
+  "to": "2026-11-16",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 3207,
-  "charges": 758,
+  "transactions_read": 3216,
+  "charges": 760,
   "stats": {
-   "status:posted": 2430,
+   "status:posted": 2434,
    "rail:rtp": 8,
-   "rail:ach": 870,
+   "rail:ach": 874,
    "rail:fee": 100,
    "rail:wire": 32,
-   "status:failed": 773,
-   "rail:card": 1771,
-   "rail:other": 426,
-   "status:pending": 4
+   "status:failed": 775,
+   "rail:card": 1774,
+   "rail:other": 428,
+   "status:pending": 7
   },
   "lines": {
    "SHOP": "Shopify plan + apps billed by Shopify",
@@ -197,13 +197,13 @@
   },
   "2026-11": {
    "DSP": 0.0,
-   "KLV": 300.0,
+   "KLV": 510.0,
    "MC": 4802.76,
    "MT": 1479.28,
    "SBW": 3500.0,
    "SHOP": 4350.43,
    "SUP": 13448.3,
-   "SW": 1172.49,
+   "SW": 1229.49,
    "TAX": 2775.0,
    "UPW": 1048.75
   }
@@ -302,13 +302,13 @@
   },
   "2026-11": {
    "DSP": 0.0,
-   "KLV": 300.0,
+   "KLV": 510.0,
    "MC": 4003.59,
    "MT": 1792.04,
    "SBW": 3500.0,
    "SHOP": 4350.43,
    "SUP": 13448.3,
-   "SW": 1172.49,
+   "SW": 1229.49,
    "TAX": 2831.26,
    "UPW": 1048.75
   },
@@ -366,7 +366,7 @@
  },
  "pending": {
   "DSP": 8500.0,
-  "SW": 57.0
+  "MC": 240.0
  },
  "charges": [
   {
@@ -7107,6 +7107,22 @@
    "v": "n8n Cloud",
    "l": "SW",
    "a": 60.0,
+   "k": "card",
+   "cy": "M"
+  },
+  {
+   "d": "2026-11-15",
+   "v": "Goodloading",
+   "l": "SW",
+   "a": 57.0,
+   "k": "card",
+   "cy": "M"
+  },
+  {
+   "d": "2026-11-15",
+   "v": "Klaviyo",
+   "l": "KLV",
+   "a": 210.0,
    "k": "card",
    "cy": "M"
   }
