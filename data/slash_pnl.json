@@ -1,24 +1,24 @@
 {
  "schema": 1,
- "generated_at": "2026-11-16T13:37:47Z",
+ "generated_at": "2026-11-16T23:02:37Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
   "to": "2026-11-16",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 3220,
-  "charges": 763,
+  "transactions_read": 3225,
+  "charges": 764,
   "stats": {
-   "status:posted": 2443,
+   "status:posted": 2445,
    "rail:rtp": 8,
-   "rail:ach": 876,
+   "rail:ach": 878,
    "rail:fee": 100,
    "rail:wire": 32,
-   "status:failed": 775,
-   "rail:card": 1776,
+   "status:failed": 776,
+   "rail:card": 1779,
    "rail:other": 428,
-   "status:pending": 2
+   "status:pending": 4
   },
   "lines": {
    "SHOP": "Shopify plan + apps billed by Shopify",
@@ -196,7 +196,7 @@
    "UPW": 1762.21
   },
   "2026-11": {
-   "DSP": 0.0,
+   "DSP": 8500.0,
    "KLV": 510.0,
    "MC": 5302.76,
    "MT": 1479.28,
@@ -301,7 +301,7 @@
    "UPW": 1762.21
   },
   "2026-11": {
-   "DSP": 0.0,
+   "DSP": 8500.0,
    "KLV": 510.0,
    "MC": 4503.59,
    "MT": 1792.04,
@@ -365,7 +365,9 @@
   }
  },
  "pending": {
-  "DSP": 8500.0
+  "UPW": 532.84,
+  "KLV": 175.0,
+  "SHOP": -179378.48
  },
  "charges": [
   {
@@ -7148,6 +7150,17 @@
    "a": 240.0,
    "k": "card",
    "cy": "U"
+  },
+  {
+   "d": "2026-11-16",
+   "v": "SparkX (Amazon DSP)",
+   "l": "DSP",
+   "a": 8500.0,
+   "k": "ach",
+   "cy": "U",
+   "memo": "Amazon-DSP Advertising Fee-Prepayment,SparkX AI Platform Annual Fee iNV M003378",
+   "desc": "Amazon-DSP Advertising Fee-Prepayment,SparkX AI Platform Annual Fee iN",
+   "payee": "SparkX Marketing Co. Limited"
   }
  ],
  "unclassified_card": [
@@ -7268,6 +7281,10 @@
   "2026-10": {
    "count": 4,
    "total": 58251.08
+  },
+  "2026-11": {
+   "count": 1,
+   "total": 5000.0
   }
  }
 }
