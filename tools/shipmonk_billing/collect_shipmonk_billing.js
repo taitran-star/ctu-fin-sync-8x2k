@@ -1,4 +1,7 @@
-/* collect_shipmonk_billing.js  (toolkit v1.2.0, 2026-11-16)
+/* collect_shipmonk_billing.js  (toolkit v1.2.1, 2026-11-16)
+ *
+ * v1.2.1: isClosed() trusts the list's explicit `closed` flag first. status_pending ("Pending Payment") is a
+ *   CLOSED invoice whose payment is in progress - v1.2.0 and earlier skipped it as "not closed".
  *
  * v1.2.0 changes (seen on app.shipmonk.com 16/11/2026):
  *   - the invoice LIST item carries `paid` ({amount,currency} or null) and `due_date` (ISO with offset) next to
@@ -81,7 +84,7 @@ await (async () => {
   const DETAIL_DELAY_MS = 150;         // be polite to the app API
 
   const out = {
-    toolkit: 'collect_shipmonk_billing.js v1.2.0',
+    toolkit: 'collect_shipmonk_billing.js v1.2.1',
     collected_at: new Date().toISOString(),
     since: SINCE,
     storage_since: STORAGE_SINCE,
@@ -187,11 +190,11 @@ await (async () => {
   const invNumber = (o) => String(o.invoice_number ?? o.number ?? o.invoiceNumber ?? o.id ?? '');
   const statusOf = (o) => String(o.status ?? o.state ?? '');
   function isClosed(o) {
-    const st = statusOf(o).toLowerCase();
-    if (/process|open|draft|pending|current|running/.test(st)) return false;
-    if (o.closed === true) return true;
+    if (o.closed === true) return true;          // v1.2.1: the explicit flag wins (status_pending = closed, payment in progress)
     if (o.closed === false) return false;
-    return /complete|submitted|closed|paid|final|issued/.test(st);
+    const st = statusOf(o).toLowerCase();
+    if (/process|open|draft|current|running/.test(st)) return false;
+    return /complete|submitted|closed|paid|final|issued|pending/.test(st);
   }
 
   // ------------------------------------------------------------------ 1. invoice list (paginated)
