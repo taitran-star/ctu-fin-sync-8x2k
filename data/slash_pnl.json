@@ -1,24 +1,24 @@
 {
  "schema": 1,
- "generated_at": "2026-11-17T03:24:55Z",
+ "generated_at": "2026-11-17T13:37:51Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
   "to": "2026-11-17",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 3228,
-  "charges": 765,
+  "transactions_read": 3243,
+  "charges": 771,
   "stats": {
-   "status:posted": 2448,
-   "rail:rtp": 8,
-   "rail:ach": 878,
+   "status:posted": 2460,
+   "rail:rtp": 9,
+   "rail:ach": 887,
    "rail:fee": 100,
    "rail:wire": 32,
-   "status:failed": 777,
-   "rail:card": 1780,
+   "status:failed": 778,
+   "rail:card": 1785,
    "rail:other": 430,
-   "status:pending": 3
+   "status:pending": 5
   },
   "lines": {
    "SHOP": "Shopify plan + apps billed by Shopify",
@@ -198,14 +198,14 @@
   "2026-11": {
    "DSP": 8500.0,
    "KLV": 685.0,
-   "MC": 5302.76,
+   "MC": 6157.74,
    "MT": 1479.28,
    "SBW": 3500.0,
    "SHOP": 4350.43,
    "SUP": 13448.3,
    "SW": 1229.49,
    "TAX": 2775.0,
-   "UPW": 1048.75
+   "UPW": 1581.59
   }
  },
  "accrual": {
@@ -303,14 +303,14 @@
   "2026-11": {
    "DSP": 8500.0,
    "KLV": 685.0,
-   "MC": 4503.59,
+   "MC": 5358.57,
    "MT": 1792.04,
    "SBW": 3500.0,
    "SHOP": 4350.43,
    "SUP": 13448.3,
    "SW": 1229.49,
    "TAX": 2831.26,
-   "UPW": 1048.75
+   "UPW": 1581.59
   },
   "2026-12": {
    "MC": 190.83,
@@ -364,10 +364,7 @@
    "MC": 82.5
   }
  },
- "pending": {
-  "UPW": 532.84,
-  "SHOP": -179378.48
- },
+ "pending": {},
  "charges": [
   {
    "d": "2026-04-02",
@@ -7136,9 +7133,33 @@
   },
   {
    "d": "2026-11-16",
+   "v": "Claude Team",
+   "l": "MC",
+   "a": 24.99,
+   "k": "card",
+   "cy": "M"
+  },
+  {
+   "d": "2026-11-16",
+   "v": "Claude Team",
+   "l": "MC",
+   "a": 24.99,
+   "k": "card",
+   "cy": "M"
+  },
+  {
+   "d": "2026-11-16",
    "v": "Grok / xAI",
    "l": "MC",
    "a": 20.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-11-16",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 240.0,
    "k": "card",
    "cy": "U"
   },
@@ -7168,6 +7189,30 @@
    "memo": "Amazon-DSP Advertising Fee-Prepayment,SparkX AI Platform Annual Fee iNV M003378",
    "desc": "Amazon-DSP Advertising Fee-Prepayment,SparkX AI Platform Annual Fee iN",
    "payee": "SparkX Marketing Co. Limited"
+  },
+  {
+   "d": "2026-11-16",
+   "v": "Upwork",
+   "l": "UPW",
+   "a": 532.84,
+   "k": "card",
+   "cy": "W"
+  },
+  {
+   "d": "2026-11-17",
+   "v": "Claude Team",
+   "l": "MC",
+   "a": 325.0,
+   "k": "card",
+   "cy": "M"
+  },
+  {
+   "d": "2026-11-17",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 240.0,
+   "k": "card",
+   "cy": "U"
   }
  ],
  "unclassified_card": [
