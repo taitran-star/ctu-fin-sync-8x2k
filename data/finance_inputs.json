@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_at": "2026-11-16",
+  "updated_at": "2026-11-17",
   "note": "Nhap tay cho tab Tai chinh (CFO) -> Tom tat cho BOD (V12.17). Sua truc tiep tren GitHub; dashboard doc lai sau ~1 phut. Khong ghi so du ngan hang hay ten nha cung cap vao day (repo public) — so du lay tu kho tien mat rieng (CASH_WRITE_KEY).",
   "fx": {
     "book_rate": 26000,
@@ -22,6 +22,11 @@
     "amazon_ads_day": 20,
     "sales_tax_day": 20,
     "note": "next_amazon_settlement = ngay ket thuc ky settlement Amazon gan nhat sap toi (YYYY-MM-DD) — lay trong Seller Central > Payments; factory_deposit_pct = % da coc khi dat hang (phan con lai tra truoc khi xuat). V12.22 (16/11/2026): shipmonk_pay_lag_days 21 -> 15 (han tra hoa don ShipMonk = ket ky + 15 ngay, theo due date tren app); ads_card_day = ngay Meta + Google thu tien chi tieu CUA THANG TRUOC (hoa don thang; vd hoa don T7 tra 18/08); amazon_ads_day = ngay tra hoa don Amazon Ads cua thang truoc (ACH tu ngan hang, KHONG tru vao payout); sales_tax_day = ngay Numeral nop sales tax Shopify cua thang truoc."
+  },
+  "meta_credit": {
+    "limit": 1054905,
+    "pay_lead_days": 8,
+    "note": "V12.23 (17/11/2026): han muc tin dung Meta (Billing & payments > Credit limit, USD) cho the canh bao 'Han muc tin dung Meta so voi toc do chay ads' tren tab Tai chinh. pay_lead_days = so ngay tu luc chuyen khoan toi luc Meta ghi nhan (Meta: chuyen khoan ~5 ngay + 2-3 ngay hien tren tai khoan). Meta doi han muc thi sua 'limit'."
   },
   "payables_manual": [],
   "payables_note": "payables_manual = khoan phai tra nhap tay cho khoi 'Phai tra' tren tab Tai chinh (khoan dashboard khong tu tinh duoc). Moi dong: {\"label\": {\"vi\": \"...\", \"en\": \"...\"}, \"amount\": 12345, \"due\": \"YYYY-MM-DD\", \"note\": \"...\"}. KHONG ghi ten nha cung cap hay so tai khoan (repo public). Xoa dong khi da tra.",
