@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build b3af26d376).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build c19cc1f2d4).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -5256,9 +5256,12 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
       return {left: spend, how: 'open'};
     };
     const notYet = tv('monthly invoice, not charged yet', 'hoá đơn tháng, chưa trừ tiền'), mtdTxt = tv('this month so far — billed next month', 'tháng này tới hôm nay — trả tiền tháng sau');
+    open.meta = 0; open.metaDue = [];   // V12.23: what is owed to Meta alone (credit-line flag)
     [prev2M, prevM].forEach(m=>{ const spend = mg(m), st = settle(spend, +((sM[finMonthAdd(m,1)]||{}).ADS_CARD)||0, m, adsDayN, 0.9); open.mg[m] = st.left; if(!(st.left>0.5)) return; const due = finDayOf(finMonthAdd(m,1), adsDayN);
+      { const mv = st.how==='part' ? st.left*(spend>0 ? adSum(m,'meta')/spend : 0) : adSum(m,'meta'); if(mv>0.5){ open.meta += mv; open.metaDue.push({m, v: mv, due}); } }
       if(st.how==='part') push({g:'ads', l: 'Meta + Google Ads', per: mLab(m), due, v: st.left, est: true, d: tv(`spend ${fin$(spend)} − ${fin$(st.paid)} already charged on the card (Slash)`, `chi ${fin$(spend)} − ${fin$(st.paid)} đã trừ thẻ (Slash)`)});
       else { push({g:'ads', l: 'Meta Ads', per: mLab(m), due, v: adSum(m,'meta'), d: notYet}); push({g:'ads', l: 'Google Ads', per: mLab(m), due, v: adSum(m,'google'), d: notYet}); } });
+    open.meta += adSum(curM,'meta');
     push({g:'ads', l: 'Meta Ads', per: span(curM), due: finDayOf(nextM, adsDayN), v: adSum(curM,'meta'), d: mtdTxt});
     push({g:'ads', l: 'Google Ads', per: span(curM), due: finDayOf(nextM, adsDayN), v: adSum(curM,'google'), d: mtdTxt});
     // ---- 2. Amazon Sponsored ads: invoice of month m paid by bank transfer in m+1 (Slash: transfers without a recognised payee) ----
@@ -5311,6 +5314,42 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
     const live = items.filter(o=> !o.info), total = sum(live.map(o=>o.v)), in30 = shiftIso(today, -30);
     return {items, com, total, comTotal: sum(com.map(o=>o.v)), due30: sum(live.filter(o=> o.due && o.due<=in30).map(o=>o.v)), overdue: sum(live.filter(o=> o.due && o.due<today).map(o=>o.v)),
       byG: g => sum(live.filter(o=>o.g===g).map(o=>o.v)), open, mtd: {mg: mg(curM), az: adSum(curM,'amazonads')}, sm: {open: smOpen, ends: smEnds, asOf}, np: NP, dep, slashTo: sTo, cal: {adsDayN, azDayN, txDayN, pDayN, lag}};
+  }
+  // V12.23: Meta credit line — balance owed to Meta (open months, same logic as the Payables card) against the credit
+  // limit entered in finance_inputs.json → meta_credit, at the current daily spend: days left, the day the limit is
+  // reached and the latest day to send the bank transfer (transfers take pay_lead_days to show on the Meta account).
+  function finMetaCredit(pay){
+    const mc = finInputs().meta_credit, limit = mc && parseFloat(mc.limit); if(!(limit>0) || !pay || !pay.open) return null;
+    const leadN = parseInt(mc.pay_lead_days,10), lead = leadN>=0 ? leadN : 8;
+    const bal = pay.open.meta||0, avail = limit - bal;
+    const done = days.filter(d=> d.iso<TODAY_ISO && d.ads).slice(-7).map(d=> +d.ads.meta||0), avg = a => a.length ? sum(a)/a.length : 0;
+    const p7 = avg(done), p3 = avg(done.slice(-3)), pace = Math.max(p7, p3);
+    const calc = (mult, extra) => { const p = pace*mult, dl = p>0 ? Math.max(0, avail+(extra||0))/p : Infinity, hit = dl===Infinity ? null : shiftIso(TODAY_ISO, -Math.floor(dl)); return {mult, p, dl, hit, payBy: hit ? shiftIso(hit, lead) : null}; };
+    const now = calc(1), dueV = sum((pay.open.metaDue||[]).map(x=>x.v));
+    return {limit, lead, bal, avail, p7, p3, pace, now, sc: [now, calc(1.5), calc(2)], dueV, dueItems: pay.open.metaDue||[], after: dueV>0.5 ? calc(1, dueV) : null,
+      landed: shiftIso(TODAY_ISO, -lead), cls: now.dl<=lead ? 'bad' : (now.dl<=lead+7 ? 'warn' : 'good'), seen: mc.balance_seen ? {v: +mc.balance_seen, on: mc.seen_on||''} : null};
+  }
+  function finMetaCreditCard(M){
+    if(!M) return '';
+    const dmy = d => d ? finDM(d) : '—', dn = x => x===Infinity ? '—' : (x<10 ? x.toFixed(1).replace('.', tv('.', ',')) : String(Math.floor(x)));
+    const late = M.now.payBy && M.now.payBy<=TODAY_ISO, gap = Math.max(0, Math.ceil(M.lead - M.now.dl));
+    const used = Math.min(100, Math.max(0, M.bal/M.limit*100)), col = M.cls==='bad' ? 'var(--status-critical, #c0392b)' : (M.cls==='warn' ? 'var(--status-serious)' : 'var(--status-good, #2e8b57)');
+    const dueTxt = M.dueItems.map(x=> tv(MONTHS_EN[+x.m.slice(5,7)-1].slice(0,3), 'T'+(+x.m.slice(5,7)))+' '+fin$(x.v)).join(' + ');
+    let head, body;
+    if(M.avail<=0){ head = tv('Meta credit limit reached', 'Đã chạm hạn mức tín dụng Meta'); body = tv('Ads can stop delivering until a payment is credited.', 'Quảng cáo có thể bị dừng cho tới khi Meta ghi nhận thanh toán.'); }
+    else if(M.cls==='bad'){ head = tv(`Pay Meta today — the limit is reached in about ${dn(M.now.dl)} days (${dmy(M.now.hit)})`, `Cần chuyển khoản cho Meta ngay hôm nay — khoảng ${dn(M.now.dl)} ngày nữa (${dmy(M.now.hit)}) chạm hạn mức`);
+      body = tv(`A bank transfer takes about ${M.lead} days to show on the Meta account (≈ ${dmy(M.landed)} if sent today)`, `Chuyển khoản mất khoảng ${M.lead} ngày mới hiện trên tài khoản Meta (≈ ${dmy(M.landed)} nếu chuyển hôm nay)`)+(gap>0 ? tv(` — about ${gap} day(s) short at the current pace: lower the daily spend until the payment lands, or ask Meta for a faster payment method / a higher limit.`, ` — hụt khoảng ${gap} ngày nếu giữ tốc độ chi hiện tại: giảm chi mỗi ngày cho tới khi tiền được ghi nhận, hoặc hỏi Meta cách thanh toán nhanh hơn / nâng hạn mức.`) : '.'); }
+    else if(M.cls==='warn'){ head = tv(`Send the Meta payment by ${dmy(M.now.payBy)} — limit reached around ${dmy(M.now.hit)} (${dn(M.now.dl)} days)`, `Chuyển khoản cho Meta trước ${dmy(M.now.payBy)} — khoảng ${dmy(M.now.hit)} chạm hạn mức (còn ${dn(M.now.dl)} ngày)`); body = tv(`Bank transfers take about ${M.lead} days to show on the Meta account.`, `Chuyển khoản mất khoảng ${M.lead} ngày mới hiện trên tài khoản Meta.`); }
+    else { head = tv(`Meta credit is fine — about ${dn(M.now.dl)} days of spend left (to ${dmy(M.now.hit)})`, `Hạn mức Meta còn ổn — đủ khoảng ${dn(M.now.dl)} ngày chi (tới ${dmy(M.now.hit)})`); body = tv(`Latest day to send a transfer at this pace: ${dmy(M.now.payBy)}.`, `Ngày muộn nhất phải chuyển khoản nếu giữ tốc độ này: ${dmy(M.now.payBy)}.`); }
+    if(M.after && M.avail>0) body += ' '+tv(`Paying the open invoice (${dueTxt}) frees the credit for about ${dn(M.after.dl)} days of spend (to ${dmy(M.after.hit)}).`, `Trả hoá đơn đang mở (${dueTxt}) thì hạn mức đủ cho khoảng ${dn(M.after.dl)} ngày chi (tới ${dmy(M.after.hit)}).`);
+    const scL = [tv('Current pace', 'Tốc độ hiện tại'), tv('× 1.5 (sale days)', '× 1,5 (ngày sale)'), tv('× 2 (BFCM peak)', '× 2 (đỉnh BFCM)')];
+    const scRows = M.sc.map((s,i)=>{ const l = s.payBy && s.payBy<=TODAY_ISO; return `<tr><td class="mk-lab">${scL[i]}</td><td class="num">${fin$(s.p)}</td><td class="num ${s.dl<=M.lead ? 'mk-bad' : ''}">${dn(s.dl)}</td><td class="num">${dmy(s.hit)}</td><td class="num ${l ? 'mk-bad' : ''}">${l ? tv('today', 'hôm nay')+(s.payBy<TODAY_ISO ? tv(' (late)', ' (đã trễ)') : '') : dmy(s.payBy)}</td></tr>`; }).join('');
+    const tiles = `<div class="mk-mini fin-mini4"><div class="mk-m"><span>${tv('Credit limit', 'Hạn mức tín dụng')}</span><b>${fin$(M.limit)}</b><small>${tv('entered in finance_inputs.json', 'nhập trong finance_inputs.json')}</small></div><div class="mk-m"><span>${tv('Owed to Meta (estimate)', 'Đang nợ Meta (ước tính)')}</span><b>${fin$(M.bal)}</b><small>${used.toFixed(0)}% ${tv('of the limit', 'hạn mức')}${dueTxt ? ' · '+tv('invoiced ', 'đã ra hoá đơn ')+fin$(M.dueV) : ''}</small></div><div class="mk-m"><span>${tv('Available', 'Còn trống')}</span><b class="${M.cls==='good' ? '' : 'mk-bad'}">${fin$(Math.max(0, M.avail))}</b><small>${tv('≈ ', '≈ ')+dn(M.now.dl)+tv(' days at the current pace', ' ngày theo tốc độ hiện tại')}</small></div><div class="mk-m"><span>${tv('Meta spend per day', 'Chi Meta mỗi ngày')}</span><b>${fin$(M.pace)}</b><small>${tv('7-day avg ', 'TB 7 ngày ')+fin$(M.p7)+tv(' · 3-day ', ' · 3 ngày ')+fin$(M.p3)}</small></div></div>`;
+    return `<div class="card mk-card" id="finMetaCard"><div class="card-head"><h2>${tv('Meta credit line vs ad pace', 'Hạn mức tín dụng Meta so với tốc độ chạy ads')}</h2><div class="note">${tv('As of today · Los Angeles time', 'Tại hôm nay · giờ Los Angeles')}</div></div>
+      <div class="fin-mc-flag ${M.cls}"><span class="pill ${M.cls==='good' ? 'ok' : (M.cls==='warn' ? 'warn' : 'bad')}">${M.cls==='good' ? 'OK' : (M.cls==='warn' ? tv('Soon', 'Sắp tới hạn') : tv('Urgent', 'Gấp'))}</span><div><b>${finEsc(head)}</b><div>${finEsc(body)}</div></div></div>
+      <div class="fin-mc-bar" title="${used.toFixed(1)}%"><i style="width:${used.toFixed(1)}%;background:${col};"></i></div>${tiles}
+      <div class="rp-wrap"><table class="rp-table mk-table" id="finMetaTable"><thead><tr><th>${tv('If Meta spend runs at', 'Nếu chi Meta ở mức')}</th><th class="num">${tv('Per day', 'Mỗi ngày')}</th><th class="num">${tv('Days left', 'Còn (ngày)')}</th><th class="num">${tv('Limit reached', 'Chạm hạn mức')}</th><th class="num">${tv('Send transfer by', 'Chuyển khoản trước')}</th></tr></thead><tbody>${scRows}</tbody></table></div>
+      <div class="caption">${tv(`Owed to Meta = Meta spend of the months not charged yet (same rule as the Payables card: a month counts as paid once the charge shows on Slash) + this month so far; Meta's own balance can be slightly higher (tax, fees)`, `Đang nợ Meta = chi Meta của các tháng chưa trừ tiền (cùng quy tắc với thẻ Phải trả: một tháng coi là đã trả khi khoản trừ hiện trên Slash) + tháng này tới hôm nay; số dư trên Meta có thể cao hơn chút (thuế, phí)`)}${M.seen ? tv(` — Meta showed ${fin$(M.seen.v)} on ${dmy(M.seen.on)}`, ` — Meta hiện ${fin$(M.seen.v)} ngày ${dmy(M.seen.on)}`) : ''}. ${tv(`Pace = the higher of the 7-day and 3-day average of completed days. "Send transfer by" = the day the limit is reached − ${M.lead} days (pay_lead_days). After a transfer the dashboard counts the invoice as paid when Slash shows it, a few days before Meta frees the credit. Update the limit in data/finance_inputs.json → meta_credit when Meta changes it.`, `Tốc độ = mức cao hơn giữa TB 7 ngày và TB 3 ngày (các ngày đã trọn). "Chuyển khoản trước" = ngày chạm hạn mức − ${M.lead} ngày (pay_lead_days). Sau khi chuyển khoản, dashboard coi hoá đơn đã trả khi Slash hiện khoản chuyển, tức sớm hơn vài ngày so với lúc Meta nhả hạn mức. Khi Meta đổi hạn mức: sửa data/finance_inputs.json → meta_credit.`)}</div></div>`;
   }
   // ---------- V12.17: "Tóm tắt cho BOD" on the Finance tab — scorecard with yardsticks, channel P&L, quantified levers,
   // 13-week cash framework, decisions log and the data-entry checklist. Manual inputs: data/finance_inputs.json. ----------
@@ -5738,6 +5777,8 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
     if(runway!==null && runway!==Infinity && runway<6) notes.push({w: cashTotal, cls:'bad', l: tv('Cash', 'Tiền'), t: tv('Runway under 6 months', 'Runway dưới 6 tháng'), d: tv(`${fin$(cashTotal)} cash ÷ ${fin$(-burn)} average monthly EBITDA loss = ${runway.toFixed(1)} months.`, `${fin$(cashTotal)} tiền ÷ ${fin$(-burn)} lỗ EBITDA bình quân tháng = ${runway.toFixed(1)} tháng.`), amt: cashTotal, amtL: tv('cash', 'tiền')});
     if(a.taxRate>0 && ytd && ytd.ebt>0 && !taxEnt) notes.push({w: taxYtd, cls:'neutral', l: tv('Tax', 'Thuế'), t: tv('Income tax accrued, not yet entered', 'Thuế TNDN tạm tính, chưa nhập'), d: tv(`${fin$(taxYtd)} accrued at ${Math.round(a.taxRate*100)}% of YTD EBT ${fin$(ytd.ebt)}. Enter the instalments actually paid in data/opex_monthly.json (income_tax) when filed.`, `${fin$(taxYtd)} tạm tính ${Math.round(a.taxRate*100)}% trên EBT từ đầu năm ${fin$(ytd.ebt)}. Nhập số thực nộp vào data/opex_monthly.json (income_tax) khi kê khai.`), amt: taxYtd, amtL: tv('accrued', 'trích trước')});
     if(!cash) notes.push({w: 1000, cls:'neutral', l: tv('Setup', 'Cài đặt'), t: tv('Cash store not connected', 'Chưa nối kho tiền mặt'), d: tv('Runway, cash change and the commitments check need the bank balance — see the steps in Cash & liquidity.', 'Runway, biến động tiền và kiểm tra cam kết cần số dư ngân hàng — xem các bước ở Tiền mặt & thanh khoản.'), amt: null});
+    let metaC = null, metaH = ''; try { metaC = finMetaCredit(pay); metaH = finMetaCreditCard(metaC); } catch(e){ metaC = null; metaH = ''; }   // V12.23
+    if(metaC && metaC.cls!=='good') notes.push({w: 1e9, cls: metaC.cls==='bad' ? 'bad' : 'warn', l: tv('Cash', 'Tiền'), t: tv('Meta credit limit', 'Hạn mức tín dụng Meta'), d: tv(`${fin$(Math.max(0, metaC.avail))} of ${fin$(metaC.limit)} left ≈ ${metaC.now.dl===Infinity ? '—' : metaC.now.dl.toFixed(1)} days at ${fin$(metaC.pace)}/day; a transfer takes about ${metaC.lead} days to be credited — `, `Còn trống ${fin$(Math.max(0, metaC.avail))} / ${fin$(metaC.limit)} ≈ ${metaC.now.dl===Infinity ? '—' : metaC.now.dl.toFixed(1).replace('.', ',')} ngày ở mức ${fin$(metaC.pace)}/ngày; chuyển khoản mất khoảng ${metaC.lead} ngày mới được ghi nhận — `)+(metaC.cls==='bad' ? tv('pay today.', 'cần trả ngay hôm nay.') : tv(`send the payment by ${finDM(metaC.now.payBy)}.`, `chuyển khoản trước ${finDM(metaC.now.payBy)}.`)), amt: Math.max(0, metaC.avail), amtL: tv('available', 'còn trống')});
     notes.sort((x,y)=>(y.w||0)-(x.w||0));
     const notesH = notes.length ? notes.slice(0, 12).map(x=>`<li class="mk-act"><span class="pill ${x.cls}">${x.l}</span><div><b>${finEsc(x.t)}</b><div class="mk-why">${finEsc(x.d)}</div></div><span class="mk-w">${x.amt>0 ? fin$(x.amt)+`<small>${x.amtL||''}</small>` : ''}</span></li>`).join('') : `<li class="mk-act mk-none">${tv('Nothing to flag for this period.', 'Không có gì cần lưu ý trong kỳ này.')}</li>`;
     let bodH = ''; try { bodH = finBodSummary({rows, a, p, L, PL, from, to, nDays, mer, beM, cashTotal, runway, burn, opexLines, inv, lots, rec, dio, ytd, curM, openMs, taxYtd, pay}); } catch(e){ bodH = `<div class="card mk-card"><div class="card-head"><h2>${tv('Board summary', 'Tóm tắt cho BOD')}</h2></div><div class="mk-muted">${tv('Could not compute: ', 'Không tính được: ')+finEsc(String(e && e.message || e))}</div></div>`; }   // V12.17
@@ -5759,6 +5800,7 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
       <div class="caption">${payNote}${pay.err ? ' ['+finEsc(pay.err)+']' : ''}</div></div>`;
     root.innerHTML = `
       <div class="card mk-card"><div class="card-head"><h2>${tv('Financial snapshot', 'Tổng quan tài chính')}</h2><div class="note">${tv('US GAAP view of the period · same figures as the P&L', 'Theo chuẩn US GAAP cho kỳ đang xem · cùng số với P&L')}</div></div><div class="exec-kpis v126 mk-kpis fin-kpis" id="finKpis">${kpis.map(kp).join('')}</div></div>
+      ${metaH}
       ${payH}
       ${recH}
       ${bodH}
