@@ -1,24 +1,24 @@
 {
  "schema": 1,
- "generated_at": "2026-11-17T21:55:40Z",
+ "generated_at": "2026-11-18T13:37:58Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
-  "to": "2026-11-17",
+  "to": "2026-11-18",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 3245,
-  "charges": 772,
+  "transactions_read": 3256,
+  "charges": 775,
   "stats": {
-   "status:posted": 2466,
-   "rail:rtp": 9,
-   "rail:ach": 887,
+   "status:posted": 2476,
+   "rail:rtp": 10,
+   "rail:ach": 890,
    "rail:fee": 101,
    "rail:wire": 32,
    "status:failed": 778,
-   "rail:card": 1786,
-   "rail:other": 430,
-   "status:pending": 1
+   "rail:card": 1791,
+   "rail:other": 432,
+   "status:pending": 2
   },
   "lines": {
    "SHOP": "Shopify plan + apps billed by Shopify",
@@ -199,12 +199,12 @@
    "ADS_CARD": 364547.73,
    "DSP": 8500.0,
    "KLV": 895.0,
-   "MC": 6157.74,
+   "MC": 6487.74,
    "MT": 1479.28,
    "SBW": 3500.0,
    "SHOP": 4350.43,
    "SUP": 13448.3,
-   "SW": 1229.49,
+   "SW": 1301.49,
    "TAX": 2775.0,
    "UPW": 1581.59
   }
@@ -304,12 +304,12 @@
   "2026-11": {
    "DSP": 8500.0,
    "KLV": 895.0,
-   "MC": 5358.57,
+   "MC": 5688.57,
    "MT": 1792.04,
    "SBW": 3500.0,
    "SHOP": 4350.43,
    "SUP": 13448.3,
-   "SW": 1229.49,
+   "SW": 1301.49,
    "TAX": 2831.26,
    "UPW": 1581.59
   },
@@ -365,7 +365,9 @@
    "MC": 82.5
   }
  },
- "pending": {},
+ "pending": {
+  "SW": 19.94
+ },
  "charges": [
   {
    "d": "2026-04-02",
@@ -7201,11 +7203,35 @@
   },
   {
    "d": "2026-11-17",
+   "v": "Anthropic / Claude",
+   "l": "MC",
+   "a": 90.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-11-17",
+   "v": "Atlassian",
+   "l": "SW",
+   "a": 72.0,
+   "k": "card",
+   "cy": "M"
+  },
+  {
+   "d": "2026-11-17",
    "v": "Claude Team",
    "l": "MC",
    "a": 325.0,
    "k": "card",
    "cy": "M"
+  },
+  {
+   "d": "2026-11-17",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 240.0,
+   "k": "card",
+   "cy": "U"
   },
   {
    "d": "2026-11-17",
