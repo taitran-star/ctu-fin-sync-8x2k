@@ -60,8 +60,8 @@
         "sales": 55623.15
       },
       "email": {
-        "orders": 1206,
-        "sales": 152019.67
+        "orders": 1207,
+        "sales": 152108.67
       },
       "email_other": {
         "orders": 9,
@@ -76,16 +76,16 @@
         "sales": 38048.25
       },
       "meta_paid": {
-        "orders": 7863,
-        "sales": 909961.59
+        "orders": 7864,
+        "sales": 910070.59
       },
       "meta_shop": {
         "orders": 3,
         "sales": 316.0
       },
       "organic_search": {
-        "orders": 570,
-        "sales": 67497.31
+        "orders": 571,
+        "sales": 67606.31
       },
       "other_channel": {
         "orders": 602,
@@ -100,8 +100,8 @@
         "sales": 3630.4
       },
       "referral": {
-        "orders": 142,
-        "sales": 16350.29
+        "orders": 143,
+        "sales": 16430.39
       },
       "shop_app": {
         "orders": 145,
@@ -362948,9 +362948,9 @@
       "net_sales": 60401.74,
       "orders": 547,
       "orders_cancelled": 7,
-      "orders_fulfilled": 371,
+      "orders_fulfilled": 384,
       "orders_paid": 547,
-      "orders_partially_fulfilled": 13,
+      "orders_partially_fulfilled": 11,
       "orders_placed": 547,
       "orders_refunded": 10,
       "payment_fee_types": {
@@ -363657,9 +363657,9 @@
       "net_sales": 60170.06,
       "orders": 557,
       "orders_cancelled": 3,
-      "orders_fulfilled": 305,
+      "orders_fulfilled": 318,
       "orders_paid": 557,
-      "orders_partially_fulfilled": 18,
+      "orders_partially_fulfilled": 17,
       "orders_placed": 557,
       "orders_refunded": 5,
       "payment_fee_types": {
@@ -365105,6 +365105,11 @@
     "2026-11-18": {
       "attribution": {
         "email_detail": {
+          "Email #1D: General": {
+            "medium": "email",
+            "orders": 1,
+            "sales": 89.0
+          },
           "Email #2": {
             "medium": "email",
             "orders": 1,
@@ -365117,22 +365122,30 @@
             "sales": 109.0
           },
           "google_ads": {
-            "orders": 1,
-            "sales": 122.5
+            "orders": 2,
+            "sales": 211.5
           },
           "meta_organic": {
             "orders": 1,
             "sales": 146.0
           },
           "meta_paid": {
-            "orders": 10,
-            "sales": 1200.0
+            "orders": 12,
+            "sales": 1389.1
+          },
+          "organic_search": {
+            "orders": 1,
+            "sales": 109.0
           }
         },
         "journeys": {
           "email>email": {
             "orders": 1,
             "sales": 109.0
+          },
+          "google_ads>email": {
+            "orders": 1,
+            "sales": 89.0
           },
           "google_ads>google_ads": {
             "orders": 1,
@@ -365143,17 +365156,25 @@
             "sales": 146.0
           },
           "meta_paid>meta_paid": {
-            "orders": 10,
-            "sales": 1200.0
+            "orders": 11,
+            "sales": 1309.0
+          },
+          "meta_paid>referral": {
+            "orders": 1,
+            "sales": 80.1
+          },
+          "organic_search>organic_search": {
+            "orders": 1,
+            "sales": 109.0
           }
         },
         "last_touch": {
           "email": {
-            "new": 1,
-            "orders": 1,
-            "paid_first": 0,
+            "new": 2,
+            "orders": 2,
+            "paid_first": 1,
             "returning": 0,
-            "sales": 109.0
+            "sales": 198.0
           },
           "google_ads": {
             "new": 1,
@@ -365163,56 +365184,74 @@
             "sales": 268.5
           },
           "meta_paid": {
-            "new": 9,
-            "orders": 10,
-            "paid_first": 10,
+            "new": 10,
+            "orders": 11,
+            "paid_first": 11,
             "returning": 1,
-            "sales": 1200.0
+            "sales": 1309.0
+          },
+          "organic_search": {
+            "new": 1,
+            "orders": 1,
+            "paid_first": 0,
+            "returning": 0,
+            "sales": 109.0
+          },
+          "referral": {
+            "new": 1,
+            "orders": 1,
+            "paid_first": 1,
+            "returning": 0,
+            "sales": 80.1
           }
         },
         "no_journey": 0,
-        "orders": 15,
-        "pending": 2
+        "orders": 20,
+        "pending": 3
       },
-      "discounts": 1583.9,
-      "fees_missing_orders": 2,
+      "discounts": 2153.4,
+      "fees_missing_orders": 3,
       "gateways": {
         "paypal": {
           "amount": 103.55,
           "orders": 1
         },
         "shopify_payments": {
-          "amount": 1857.39,
-          "orders": 14
+          "amount": 2439.79,
+          "orders": 19
         }
       },
-      "gross_sales": 3350.5,
+      "gross_sales": 4449.5,
       "markets": {
         "US": {
-          "discounts": 1583.9,
-          "gross_sales": 3350.5,
-          "orders": 15,
-          "refunded_total": 783.72,
-          "returns": 748.01,
+          "discounts": 2153.4,
+          "gross_sales": 4449.5,
+          "orders": 20,
+          "refunded_total": 947.49,
+          "returns": 894.01,
           "sku_refund_units": {
             "CLMDNT-V1-2L-DGR": 1,
             "PKCTCV-JMB-BL": 1,
             "PKCTCV-JMB-PNK": 2,
+            "PKCTCV-L-DGR": 1,
+            "PKCTCV-L-LGR": 1,
             "PKCTCV2Z-L-DGR-2CVRS": 1,
-            "PKCTCV2Z-L-LGR-2CVRS": 2
+            "PKCTCV2Z-L-LGR-2CVRS": 2,
+            "SSWF-4L-90D": 1
           },
           "sku_sales": {
             "(no sku) Premium Upgrade: 12-Month Filter Membership Program": 117.0,
             "(no sku) Wireless 304 Stainless Steel Water Fountain (Welcome Gift) - Silvery": 99.0,
             "AP03": 9.0,
             "AP03-DUO": 13.5,
-            "PKCTCV-JMB-BL": 129.0,
-            "PKCTCV-JMB-BLCK": 129.0,
+            "PKCTCV-JMB-BL": 258.0,
+            "PKCTCV-JMB-BLCK": 258.0,
             "PKCTCV-JMB-BRWN": 258.0,
             "PKCTCV-JMB-SG": 258.0,
             "PKCTCV-L-BL": 99.0,
-            "PKCTCV-L-DGR": 534.0,
-            "PKCTCV-L-GRN": 109.0,
+            "PKCTCV-L-BRWN": 109.0,
+            "PKCTCV-L-DGR": 1157.0,
+            "PKCTCV-L-GRN": 218.0,
             "PKCTCV-L-LGR": 890.0,
             "PKCTCV-L-PNK": 109.0,
             "PKCTCV-L-RNG": 109.0,
@@ -365226,13 +365265,14 @@
             "(no sku) Wireless 304 Stainless Steel Water Fountain (Welcome Gift) - Silvery": 1,
             "AP03": 1,
             "AP03-DUO": 1,
-            "PKCTCV-JMB-BL": 1,
-            "PKCTCV-JMB-BLCK": 1,
+            "PKCTCV-JMB-BL": 2,
+            "PKCTCV-JMB-BLCK": 2,
             "PKCTCV-JMB-BRWN": 2,
             "PKCTCV-JMB-SG": 2,
             "PKCTCV-L-BL": 1,
-            "PKCTCV-L-DGR": 6,
-            "PKCTCV-L-GRN": 1,
+            "PKCTCV-L-BRWN": 1,
+            "PKCTCV-L-DGR": 13,
+            "PKCTCV-L-GRN": 2,
             "PKCTCV-L-LGR": 10,
             "PKCTCV-L-PNK": 1,
             "PKCTCV-L-RNG": 1,
@@ -365243,43 +365283,47 @@
           }
         }
       },
-      "net_sales": 1766.6,
-      "orders": 15,
-      "orders_cancelled": 0,
+      "net_sales": 2296.1,
+      "orders": 20,
+      "orders_cancelled": 1,
       "orders_fulfilled": 0,
-      "orders_paid": 15,
+      "orders_paid": 20,
       "orders_partially_fulfilled": 1,
-      "orders_placed": 15,
-      "orders_refunded": 0,
+      "orders_placed": 20,
+      "orders_refunded": 1,
       "payment_fee_types": {
-        "domestic_card_not_present": 43.86
+        "domestic_card_not_present": 55.91
       },
-      "payment_fees": 43.86,
-      "payment_fees_orders": 13,
-      "refunded_shipping": 0,
-      "refunded_tax": 28.77,
-      "refunded_total": 783.72,
-      "returns": 748.01,
-      "shipping": 64.87,
+      "payment_fees": 55.91,
+      "payment_fees_orders": 17,
+      "refunded_shipping": 4.99,
+      "refunded_tax": 41.55,
+      "refunded_total": 947.49,
+      "returns": 894.01,
+      "shipping": 84.83,
       "sku_refund_units": {
         "CLMDNT-V1-2L-DGR": 1,
         "PKCTCV-JMB-BL": 1,
         "PKCTCV-JMB-PNK": 2,
+        "PKCTCV-L-DGR": 1,
+        "PKCTCV-L-LGR": 1,
         "PKCTCV2Z-L-DGR-2CVRS": 1,
-        "PKCTCV2Z-L-LGR-2CVRS": 2
+        "PKCTCV2Z-L-LGR-2CVRS": 2,
+        "SSWF-4L-90D": 1
       },
       "sku_sales": {
         "(no sku) Premium Upgrade: 12-Month Filter Membership Program": 117.0,
         "(no sku) Wireless 304 Stainless Steel Water Fountain (Welcome Gift) - Silvery": 99.0,
         "AP03": 9.0,
         "AP03-DUO": 13.5,
-        "PKCTCV-JMB-BL": 129.0,
-        "PKCTCV-JMB-BLCK": 129.0,
+        "PKCTCV-JMB-BL": 258.0,
+        "PKCTCV-JMB-BLCK": 258.0,
         "PKCTCV-JMB-BRWN": 258.0,
         "PKCTCV-JMB-SG": 258.0,
         "PKCTCV-L-BL": 99.0,
-        "PKCTCV-L-DGR": 534.0,
-        "PKCTCV-L-GRN": 109.0,
+        "PKCTCV-L-BRWN": 109.0,
+        "PKCTCV-L-DGR": 1157.0,
+        "PKCTCV-L-GRN": 218.0,
         "PKCTCV-L-LGR": 890.0,
         "PKCTCV-L-PNK": 109.0,
         "PKCTCV-L-RNG": 109.0,
@@ -365293,13 +365337,14 @@
         "(no sku) Wireless 304 Stainless Steel Water Fountain (Welcome Gift) - Silvery": 1,
         "AP03": 1,
         "AP03-DUO": 1,
-        "PKCTCV-JMB-BL": 1,
-        "PKCTCV-JMB-BLCK": 1,
+        "PKCTCV-JMB-BL": 2,
+        "PKCTCV-JMB-BLCK": 2,
         "PKCTCV-JMB-BRWN": 2,
         "PKCTCV-JMB-SG": 2,
         "PKCTCV-L-BL": 1,
-        "PKCTCV-L-DGR": 6,
-        "PKCTCV-L-GRN": 1,
+        "PKCTCV-L-BRWN": 1,
+        "PKCTCV-L-DGR": 13,
+        "PKCTCV-L-GRN": 2,
         "PKCTCV-L-LGR": 10,
         "PKCTCV-L-PNK": 1,
         "PKCTCV-L-RNG": 1,
@@ -365313,48 +365358,48 @@
       "snowball_orders": 1,
       "snowball_revenue": 90.2,
       "snowball_reversals": 0,
-      "tax": 114.58,
-      "total_sales": 1169.27
+      "tax": 147.52,
+      "total_sales": 1587.9
     }
   },
-  "generated_at": "2026-11-18T12:07:13Z",
+  "generated_at": "2026-11-18T12:37:13Z",
   "meta": {
-    "api_cost_actual": 62696,
+    "api_cost_actual": 62713,
     "api_cost_requested_max": 442,
-    "api_requests": 534,
+    "api_requests": 535,
     "auth_mode": "client_credentials",
     "counts": {
       "edit_additions_moved": 1282,
       "edit_lists_truncated": 0,
-      "fee_transactions": 11855,
-      "fees_missing_orders": 2095,
+      "fee_transactions": 11859,
+      "fees_missing_orders": 2096,
       "journeys_deferred": 1018,
       "journeys_missing": 0,
       "journeys_moments_truncated": 1,
       "journeys_no_session": 794,
-      "journeys_pending": 2,
-      "journeys_ready": 13459,
+      "journeys_pending": 3,
+      "journeys_ready": 13463,
       "journeys_resolved_by_moments": 887,
       "journeys_unresolved": 0,
       "late_orders_scanned": 4176,
       "late_refund_orders": 138,
-      "line_items_counted": 29301,
+      "line_items_counted": 29312,
       "line_items_pages_failed": 0,
       "line_items_tips": 614,
       "line_items_truncated": 0,
       "line_items_without_sku": 596,
       "line_items_zero_qty": 0,
-      "orders_counted": 13461,
+      "orders_counted": 13466,
       "orders_edited": 1130,
       "orders_outside_window": 279,
-      "orders_seen": 17917,
+      "orders_seen": 17922,
       "orders_skipped_test": 0,
       "orders_skipped_voided": 1,
       "orders_with_shipping_discount": 6,
-      "refund_line_units": 522,
+      "refund_line_units": 525,
       "refund_lists_truncated": 0,
       "refund_tip_lines": 5,
-      "refunds_counted": 470,
+      "refunds_counted": 471,
       "refunds_edit_removals": 66,
       "refunds_outside_window": 138,
       "refunds_with_adjustments": 190,
@@ -365387,9 +365432,9 @@
         "orders": 135
       },
       "shopify_payments": {
-        "amount": 1522393.66,
-        "fees": 36789.55,
-        "orders": 12191
+        "amount": 1522976.06,
+        "fees": 36801.6,
+        "orders": 12196
       }
     },
     "granted_scope": "read_all_orders,read_analytics,read_customers,read_orders,read_reports",
@@ -365480,7 +365525,7 @@
       "orders_by_source": {
         "billing": 18,
         "none": 0,
-        "shipping": 13592
+        "shipping": 13597
       },
       "unknown_market": "XX",
       "window_totals": {
@@ -365492,17 +365537,17 @@
           "returns": 771.51
         },
         "US": {
-          "discounts": 1318538.47,
-          "gross_sales": 2855630.1,
-          "orders": 13399,
-          "refunded_total": 38473.44,
-          "returns": 39026.59
+          "discounts": 1319107.97,
+          "gross_sales": 2856729.1,
+          "orders": 13404,
+          "refunded_total": 38637.21,
+          "returns": 39172.59
         }
       }
     },
     "order_edits": "booked_on_edit_date",
     "orders_visibility": "all",
-    "pages": 532,
+    "pages": 533,
     "payment_fees_basis": "shopify_payments_transaction_fees_on_order_day",
     "returns_basis": "shopify_sales_reversals",
     "schema": 3,
@@ -365514,7 +365559,7 @@
     "script_version": "2.2",
     "throttled_waits": 0,
     "warnings": [
-      "2 orders not attributed by Shopify yet (customerJourneySummary.ready=false, normal for the newest orders) - counted as pending, refetched next run",
+      "3 orders not attributed by Shopify yet (customerJourneySummary.ready=false, normal for the newest orders) - counted as pending, refetched next run",
       "46 orders carry the __snowball attribute but no 'Referral - SS - *' tag (Snowball rejected/untracked them) - not counted as referrals",
       "no rate known for Snowball program 'asher_fitfeline_partner' - using SNOWBALL_DEFAULT_RATE=0",
       "rate for Snowball program '10 % Commision + 20% Dis' inferred from its name (10%) - set SNOWBALL_PROGRAM_RATES to pin it",
@@ -366041,73 +366086,73 @@
   "timezone": "America/Los_Angeles",
   "totals": {
     "last_30d": {
-      "discounts": 1124698.66,
-      "fees_missing_orders": 1755,
+      "discounts": 1125268.16,
+      "fees_missing_orders": 1756,
       "gateways": {},
-      "gross_sales": 2429530.55,
-      "net_sales": 1304831.89,
-      "orders": 11487,
+      "gross_sales": 2430629.55,
+      "net_sales": 1305361.39,
+      "orders": 11492,
       "payment_fee_types": {},
-      "payment_fees": 31100.57,
-      "payment_fees_orders": 9720,
-      "refunded_shipping": 419.61,
-      "refunded_tax": 1638.24,
-      "refunded_total": 30549.34,
-      "returns": 31329.11,
-      "shipping": 35302.36,
+      "payment_fees": 31112.62,
+      "payment_fees_orders": 9724,
+      "refunded_shipping": 424.6,
+      "refunded_tax": 1651.02,
+      "refunded_total": 30713.11,
+      "returns": 31475.11,
+      "shipping": 35322.32,
       "snowball_commission": 8316.61,
       "snowball_commission_net": 8174.41,
       "snowball_orders": 488,
       "snowball_revenue": 61575.01,
       "snowball_reversals": 142.2,
-      "tax": 88265.06,
-      "total_sales": 1395012.35
+      "tax": 88298.0,
+      "total_sales": 1395430.98
     },
     "mtd": {
-      "discounts": 836563.59,
-      "fees_missing_orders": 1290,
+      "discounts": 837133.09,
+      "fees_missing_orders": 1291,
       "gateways": {},
-      "gross_sales": 1791560.17,
-      "net_sales": 954996.58,
-      "orders": 8636,
+      "gross_sales": 1792659.17,
+      "net_sales": 955526.08,
+      "orders": 8641,
       "payment_fee_types": {},
-      "payment_fees": 22923.38,
-      "payment_fees_orders": 7337,
-      "refunded_shipping": 306.85,
-      "refunded_tax": 1081.2,
-      "refunded_total": 19349.4,
-      "returns": 19758.45,
-      "shipping": 27914.78,
+      "payment_fees": 22935.43,
+      "payment_fees_orders": 7341,
+      "refunded_shipping": 311.84,
+      "refunded_tax": 1093.98,
+      "refunded_total": 19513.17,
+      "returns": 19904.45,
+      "shipping": 27934.74,
       "snowball_commission": 6773.63,
       "snowball_commission_net": 6642.72,
       "snowball_orders": 376,
       "snowball_revenue": 46798.0,
       "snowball_reversals": 130.92,
-      "tax": 64588.83,
-      "total_sales": 1026353.69
+      "tax": 64621.77,
+      "total_sales": 1026772.32
     },
     "today": {
-      "discounts": 1583.9,
-      "fees_missing_orders": 2,
+      "discounts": 2153.4,
+      "fees_missing_orders": 3,
       "gateways": {},
-      "gross_sales": 3350.5,
-      "net_sales": 1766.6,
-      "orders": 15,
+      "gross_sales": 4449.5,
+      "net_sales": 2296.1,
+      "orders": 20,
       "payment_fee_types": {},
-      "payment_fees": 43.86,
-      "payment_fees_orders": 13,
-      "refunded_shipping": 0,
-      "refunded_tax": 28.77,
-      "refunded_total": 783.72,
-      "returns": 748.01,
-      "shipping": 64.87,
+      "payment_fees": 55.91,
+      "payment_fees_orders": 17,
+      "refunded_shipping": 4.99,
+      "refunded_tax": 41.55,
+      "refunded_total": 947.49,
+      "returns": 894.01,
+      "shipping": 84.83,
       "snowball_commission": 18.04,
       "snowball_commission_net": 18.04,
       "snowball_orders": 1,
       "snowball_revenue": 90.2,
       "snowball_reversals": 0,
-      "tax": 114.58,
-      "total_sales": 1169.27
+      "tax": 147.52,
+      "total_sales": 1587.9
     }
   },
   "window": {
