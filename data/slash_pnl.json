@@ -1,24 +1,24 @@
 {
  "schema": 1,
- "generated_at": "2026-11-19T13:37:50Z",
+ "generated_at": "2026-11-19T21:50:39Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
   "to": "2026-11-19",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 3270,
-  "charges": 784,
+  "transactions_read": 3277,
+  "charges": 785,
   "stats": {
-   "status:posted": 2490,
+   "status:posted": 2493,
    "rail:rtp": 10,
-   "rail:ach": 893,
-   "rail:fee": 101,
+   "rail:ach": 894,
+   "rail:fee": 102,
    "rail:wire": 32,
-   "status:failed": 779,
-   "rail:card": 1800,
+   "status:failed": 782,
+   "rail:card": 1805,
    "rail:other": 434,
-   "status:pending": 1
+   "status:pending": 2
   },
   "lines": {
    "SHOP": "Shopify plan + apps billed by Shopify",
@@ -198,7 +198,7 @@
   "2026-11": {
    "ADS_CARD": 364547.73,
    "DSP": 8500.0,
-   "KLV": 1210.0,
+   "KLV": 1340.0,
    "MC": 7017.74,
    "MT": 1479.28,
    "SBW": 3500.0,
@@ -303,7 +303,7 @@
   },
   "2026-11": {
    "DSP": 8500.0,
-   "KLV": 1210.0,
+   "KLV": 1340.0,
    "MC": 6218.57,
    "MT": 1792.04,
    "SBW": 3500.0,
@@ -365,7 +365,9 @@
    "MC": 82.5
   }
  },
- "pending": {},
+ "pending": {
+  "KLV": 130.0
+ },
  "charges": [
   {
    "d": "2026-04-02",
@@ -7307,6 +7309,14 @@
   },
   {
    "d": "2026-11-19",
+   "v": "Klaviyo",
+   "l": "KLV",
+   "a": 130.0,
+   "k": "card",
+   "cy": "M"
+  },
+  {
+   "d": "2026-11-19",
    "v": "Uline",
    "l": "SUP",
    "a": 3954.04,
@@ -7411,6 +7421,12 @@
    "v": "Google GOOGLE*ONE 21M",
    "m": "2026-11",
    "a": 97.09,
+   "n": 1
+  },
+  {
+   "v": "WWW.CHANNE* CHANNELREP",
+   "m": "2026-11",
+   "a": 39.0,
    "n": 1
   },
   {
