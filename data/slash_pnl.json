@@ -1,24 +1,23 @@
 {
  "schema": 1,
- "generated_at": "2026-11-19T21:50:39Z",
+ "generated_at": "2026-11-20T13:37:51Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
-  "to": "2026-11-19",
+  "to": "2026-11-20",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 3277,
-  "charges": 785,
+  "transactions_read": 3284,
+  "charges": 790,
   "stats": {
-   "status:posted": 2493,
+   "status:posted": 2502,
    "rail:rtp": 10,
-   "rail:ach": 894,
+   "rail:ach": 895,
    "rail:fee": 102,
    "rail:wire": 32,
    "status:failed": 782,
-   "rail:card": 1805,
-   "rail:other": 434,
-   "status:pending": 2
+   "rail:card": 1809,
+   "rail:other": 436
   },
   "lines": {
    "SHOP": "Shopify plan + apps billed by Shopify",
@@ -198,8 +197,8 @@
   "2026-11": {
    "ADS_CARD": 364547.73,
    "DSP": 8500.0,
-   "KLV": 1340.0,
-   "MC": 7017.74,
+   "KLV": 5775.0,
+   "MC": 7277.74,
    "MT": 1479.28,
    "SBW": 3500.0,
    "SHOP": 4350.43,
@@ -303,8 +302,8 @@
   },
   "2026-11": {
    "DSP": 8500.0,
-   "KLV": 1340.0,
-   "MC": 6218.57,
+   "KLV": 5775.0,
+   "MC": 6478.57,
    "MT": 1792.04,
    "SBW": 3500.0,
    "SHOP": 4350.43,
@@ -365,9 +364,7 @@
    "MC": 82.5
   }
  },
- "pending": {
-  "KLV": 130.0
- },
+ "pending": {},
  "charges": [
   {
    "d": "2026-04-02",
@@ -7309,9 +7306,41 @@
   },
   {
    "d": "2026-11-19",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 240.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-11-19",
    "v": "Klaviyo",
    "l": "KLV",
    "a": 130.0,
+   "k": "card",
+   "cy": "M"
+  },
+  {
+   "d": "2026-11-19",
+   "v": "Klaviyo",
+   "l": "KLV",
+   "a": 130.0,
+   "k": "card",
+   "cy": "M"
+  },
+  {
+   "d": "2026-11-19",
+   "v": "Klaviyo",
+   "l": "KLV",
+   "a": 130.0,
+   "k": "card",
+   "cy": "M"
+  },
+  {
+   "d": "2026-11-19",
+   "v": "Klaviyo",
+   "l": "KLV",
+   "a": 4175.0,
    "k": "card",
    "cy": "M"
   },
@@ -7328,6 +7357,14 @@
    "v": "Uline",
    "l": "SUP",
    "a": 6923.98,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-11-20",
+   "v": "Grok / xAI",
+   "l": "MC",
+   "a": 20.0,
    "k": "card",
    "cy": "U"
   }
