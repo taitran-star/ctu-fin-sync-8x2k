@@ -1,23 +1,23 @@
 {
  "schema": 1,
- "generated_at": "2026-11-20T21:34:06Z",
+ "generated_at": "2026-11-21T13:37:43Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
-  "to": "2026-11-20",
+  "to": "2026-11-21",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 3285,
-  "charges": 790,
+  "transactions_read": 3292,
+  "charges": 791,
   "stats": {
-   "status:posted": 2502,
+   "status:posted": 2505,
    "rail:rtp": 10,
    "rail:ach": 896,
    "rail:fee": 102,
    "rail:wire": 32,
-   "status:failed": 782,
-   "rail:card": 1809,
-   "rail:other": 436,
+   "status:failed": 786,
+   "rail:card": 1814,
+   "rail:other": 438,
    "status:pending": 1
   },
   "lines": {
@@ -199,7 +199,7 @@
    "ADS_CARD": 364547.73,
    "DSP": 8500.0,
    "KLV": 5775.0,
-   "MC": 7277.74,
+   "MC": 7435.99,
    "MT": 1479.28,
    "SBW": 3500.0,
    "SHOP": 4350.43,
@@ -304,7 +304,7 @@
   "2026-11": {
    "DSP": 8500.0,
    "KLV": 5775.0,
-   "MC": 6478.57,
+   "MC": 6636.82,
    "MT": 1792.04,
    "SBW": 3500.0,
    "SHOP": 4350.43,
@@ -7366,6 +7366,14 @@
    "v": "Grok / xAI",
    "l": "MC",
    "a": 20.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-11-21",
+   "v": "OpenRouter",
+   "l": "MC",
+   "a": 158.25,
    "k": "card",
    "cy": "U"
   }
