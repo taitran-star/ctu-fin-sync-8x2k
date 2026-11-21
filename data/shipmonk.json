@@ -1,6 +1,6 @@
 {
   "bom": {
-    "as_of": "2026-11-21T22:40:29Z",
+    "as_of": "2026-11-21T23:09:48Z",
     "bundles": {
       "\bCLMDNT-V1": {
         "\bCLMDNT-V1": 1
@@ -10,6 +10,9 @@
       },
       "1": {
         "AP03": 1
+      },
+      "1B-NNLH-5EA6": {
+        "PKBKBD-M-BG": 1
       },
       "2XPKCTCAV-DRK-DELIVERR": {
         "PKCTCV-L-DGR": 2
@@ -2476,7 +2479,7 @@
       }
     },
     "carried_over": false,
-    "count": 633,
+    "count": 634,
     "note": "bundle_sku (the SKU sold on Shopify/Walmart/FBM) -> component SKU -> units the warehouse picks per bundle sold",
     "source": "product_bundles on POST /v1/integrations/products/search + GET /v1/integrations/products/search/paginate"
   },
@@ -53377,7 +53380,7 @@
         "CAD": 9.51
       },
       "orders": 576,
-      "orders_onhold": 34,
+      "orders_onhold": 36,
       "orders_shipped": 539,
       "orders_unshipped": 37,
       "packages": 541,
@@ -53476,7 +53479,7 @@
         "CAD": 3.17
       },
       "orders": 601,
-      "orders_onhold": 46,
+      "orders_onhold": 48,
       "orders_shipped": 553,
       "orders_unshipped": 48,
       "packages": 558,
@@ -53575,7 +53578,7 @@
         "CAD": 8.51
       },
       "orders": 351,
-      "orders_onhold": 31,
+      "orders_onhold": 33,
       "orders_shipped": 316,
       "orders_unshipped": 35,
       "packages": 318,
@@ -53609,16 +53612,16 @@
           "shipping_cost": 3493.99
         },
         "ShipMonk": {
-          "orders": 30,
-          "shipping_cost": 734.83
+          "orders": 28,
+          "shipping_cost": 693.28
         },
         "SpeedX": {
           "orders": 1,
           "shipping_cost": 12.42
         },
         "UPS": {
-          "orders": 64,
-          "shipping_cost": 1324.65
+          "orders": 66,
+          "shipping_cost": 1366.2
         },
         "USPS": {
           "orders": 1,
@@ -53657,9 +53660,9 @@
         "Cattasaurus - shoproxstore - Shopify": {
           "orders": 291,
           "packaging_cost": 1.6,
-          "pick_pack_cost": 653.45,
+          "pick_pack_cost": 647.15,
           "shipping_cost": 5912.28,
-          "total_cost": 6567.33,
+          "total_cost": 6561.03,
           "units": 595
         }
       },
@@ -53667,9 +53670,9 @@
         "direct_to_consumer": {
           "orders": 342,
           "packaging_cost": 1.6,
-          "pick_pack_cost": 748.43,
+          "pick_pack_cost": 742.13,
           "shipping_cost": 6887.24,
-          "total_cost": 7637.27,
+          "total_cost": 7630.97,
           "units": 648
         }
       },
@@ -53678,10 +53681,10 @@
         "CAD": 3.17
       },
       "orders": 342,
-      "orders_onhold": 21,
-      "orders_shipped": 312,
-      "orders_unshipped": 30,
-      "packages": 314,
+      "orders_onhold": 25,
+      "orders_shipped": 314,
+      "orders_unshipped": 28,
+      "packages": 316,
       "packaging_cost": 1.6,
       "packaging_items": {
         "NEW-PKCTCVBX-SNGL-L": 248,
@@ -53692,9 +53695,9 @@
       "packaging_orders_est": 196,
       "packaging_units": 325,
       "packaging_units_est": 196,
-      "pick_pack_cost": 748.43,
+      "pick_pack_cost": 742.13,
       "shipping_cost": 6887.24,
-      "total_cost": 7637.27,
+      "total_cost": 7630.97,
       "units": 648
     },
     "2026-11-18": {
@@ -53708,12 +53711,12 @@
           "shipping_cost": 3095.57
         },
         "ShipMonk": {
-          "orders": 73,
-          "shipping_cost": 1549.06
+          "orders": 71,
+          "shipping_cost": 1513.25
         },
         "UPS": {
-          "orders": 64,
-          "shipping_cost": 1381.93
+          "orders": 66,
+          "shipping_cost": 1417.74
         },
         "gofoexpress": {
           "orders": 16,
@@ -53748,9 +53751,9 @@
         "Cattasaurus - shoproxstore - Shopify": {
           "orders": 313,
           "packaging_cost": 0.5,
-          "pick_pack_cost": 792.99,
+          "pick_pack_cost": 788.91,
           "shipping_cost": 6296.73,
-          "total_cost": 7090.22,
+          "total_cost": 7086.14,
           "units": 647
         }
       },
@@ -53758,9 +53761,9 @@
         "direct_to_consumer": {
           "orders": 331,
           "packaging_cost": 0.5,
-          "pick_pack_cost": 828.79,
+          "pick_pack_cost": 824.71,
           "shipping_cost": 6642.82,
-          "total_cost": 7472.11,
+          "total_cost": 7468.03,
           "units": 665
         }
       },
@@ -53769,10 +53772,10 @@
         "CAD": 5.84
       },
       "orders": 331,
-      "orders_onhold": 55,
-      "orders_shipped": 258,
-      "orders_unshipped": 73,
-      "packages": 259,
+      "orders_onhold": 57,
+      "orders_shipped": 260,
+      "orders_unshipped": 71,
+      "packages": 261,
       "packaging_cost": 0.5,
       "packaging_items": {
         "NEW-PKCTCVBX-SNGL-L": 203,
@@ -53783,9 +53786,9 @@
       "packaging_orders_est": 186,
       "packaging_units": 342,
       "packaging_units_est": 199,
-      "pick_pack_cost": 828.79,
+      "pick_pack_cost": 824.71,
       "shipping_cost": 6642.82,
-      "total_cost": 7472.11,
+      "total_cost": 7468.03,
       "units": 665
     },
     "2026-11-19": {
@@ -53799,24 +53802,24 @@
           "shipping_cost": 334.17
         },
         "OnTrac": {
-          "orders": 151,
-          "shipping_cost": 3071.47
+          "orders": 154,
+          "shipping_cost": 3118.45
         },
         "ShipMonk": {
-          "orders": 161,
-          "shipping_cost": 3366.95
+          "orders": 156,
+          "shipping_cost": 3286.88
         },
         "SpeedX": {
           "orders": 2,
           "shipping_cost": 13.67
         },
         "UPS": {
-          "orders": 87,
-          "shipping_cost": 1953.92
+          "orders": 88,
+          "shipping_cost": 1972.67
         },
         "gofoexpress": {
-          "orders": 13,
-          "shipping_cost": 161.62
+          "orders": 14,
+          "shipping_cost": 175.96
         }
       },
       "by_store": {
@@ -53847,9 +53850,9 @@
         "Cattasaurus - shoproxstore - Shopify": {
           "orders": 387,
           "packaging_cost": 7.6,
-          "pick_pack_cost": 1072.23,
+          "pick_pack_cost": 1061.21,
           "shipping_cost": 8048.27,
-          "total_cost": 9128.1,
+          "total_cost": 9117.08,
           "units": 797
         }
       },
@@ -53857,9 +53860,9 @@
         "direct_to_consumer": {
           "orders": 431,
           "packaging_cost": 7.6,
-          "pick_pack_cost": 1159.65,
+          "pick_pack_cost": 1148.63,
           "shipping_cost": 8915.72,
-          "total_cost": 10082.97,
+          "total_cost": 10071.95,
           "units": 842
         }
       },
@@ -53869,9 +53872,9 @@
       },
       "orders": 431,
       "orders_onhold": 114,
-      "orders_shipped": 270,
-      "orders_unshipped": 161,
-      "packages": 273,
+      "orders_shipped": 275,
+      "orders_unshipped": 156,
+      "packages": 278,
       "packaging_cost": 7.6,
       "packaging_items": {
         "NEW-PKCTCVBX-SNGL-L": 237,
@@ -53882,9 +53885,9 @@
       "packaging_orders_est": 246,
       "packaging_units": 424,
       "packaging_units_est": 248,
-      "pick_pack_cost": 1159.65,
+      "pick_pack_cost": 1148.63,
       "shipping_cost": 8915.72,
-      "total_cost": 10082.97,
+      "total_cost": 10071.95,
       "units": 842
     },
     "2026-11-20": {
@@ -53894,12 +53897,12 @@
           "shipping_cost": 133.5
         },
         "OnTrac": {
-          "orders": 67,
-          "shipping_cost": 1335.16
+          "orders": 68,
+          "shipping_cost": 1350.19
         },
         "ShipMonk": {
-          "orders": 382,
-          "shipping_cost": 8076.68
+          "orders": 381,
+          "shipping_cost": 8051.03
         },
         "UPS": {
           "orders": 22,
@@ -53942,9 +53945,9 @@
         "Cattasaurus - shoproxstore - Shopify": {
           "orders": 462,
           "packaging_cost": 0.0,
-          "pick_pack_cost": 1607.81,
-          "shipping_cost": 8545.64,
-          "total_cost": 10153.45,
+          "pick_pack_cost": 1606.87,
+          "shipping_cost": 8535.02,
+          "total_cost": 10141.89,
           "units": 1127
         }
       },
@@ -53952,9 +53955,9 @@
         "direct_to_consumer": {
           "orders": 537,
           "packaging_cost": 6.5,
-          "pick_pack_cost": 1757.99,
-          "shipping_cost": 10016.42,
-          "total_cost": 11780.91,
+          "pick_pack_cost": 1757.05,
+          "shipping_cost": 10005.8,
+          "total_cost": 11769.35,
           "units": 1202
         }
       },
@@ -53963,10 +53966,10 @@
         "CAD": 10.18
       },
       "orders": 537,
-      "orders_onhold": 124,
-      "orders_shipped": 94,
-      "orders_unshipped": 443,
-      "packages": 95,
+      "orders_onhold": 125,
+      "orders_shipped": 95,
+      "orders_unshipped": 442,
+      "packages": 96,
       "packaging_cost": 6.5,
       "packaging_items": {
         "NEW-PKCTCVBX-SNGL-L": 294,
@@ -53974,12 +53977,12 @@
         "PKCTCVBX-SNGL-L": 28,
         "PKCTCVBX-TRIO-L": 11
       },
-      "packaging_orders_est": 342,
+      "packaging_orders_est": 341,
       "packaging_units": 546,
-      "packaging_units_est": 393,
-      "pick_pack_cost": 1757.99,
-      "shipping_cost": 10016.42,
-      "total_cost": 11780.91,
+      "packaging_units_est": 392,
+      "pick_pack_cost": 1757.05,
+      "shipping_cost": 10005.8,
+      "total_cost": 11769.35,
       "units": 1202
     },
     "2026-11-21": {
@@ -53989,12 +53992,12 @@
           "shipping_cost": 162.06
         },
         "OnTrac": {
-          "orders": 14,
-          "shipping_cost": 242.61
+          "orders": 15,
+          "shipping_cost": 260.33
         },
         "ShipMonk": {
-          "orders": 297,
-          "shipping_cost": 5994.69
+          "orders": 309,
+          "shipping_cost": 6162.7
         },
         "UPS": {
           "orders": 11,
@@ -54009,17 +54012,17 @@
         "Cattasaurus - Amazon USA": {
           "orders": 19,
           "packaging_cost": 0.0,
-          "pick_pack_cost": 44.38,
+          "pick_pack_cost": 45.02,
           "shipping_cost": 404.33,
-          "total_cost": 448.71,
+          "total_cost": 449.35,
           "units": 19
         },
         "Cattasaurus - Manual Store": {
           "orders": 36,
           "packaging_cost": 0.0,
-          "pick_pack_cost": 66.18,
-          "shipping_cost": 842.06,
-          "total_cost": 908.24,
+          "pick_pack_cost": 67.76,
+          "shipping_cost": 853.6,
+          "total_cost": 921.36,
           "units": 36
         },
         "Cattasaurus - Walmart": {
@@ -54031,47 +54034,47 @@
           "units": 1
         },
         "Cattasaurus - shoproxstore - Shopify": {
-          "orders": 308,
+          "orders": 321,
           "packaging_cost": 0.0,
-          "pick_pack_cost": 1132.92,
-          "shipping_cost": 5373.8,
-          "total_cost": 6506.72,
-          "units": 769
+          "pick_pack_cost": 1184.12,
+          "shipping_cost": 5547.99,
+          "total_cost": 6732.11,
+          "units": 799
         }
       },
       "by_type": {
         "direct_to_consumer": {
-          "orders": 364,
+          "orders": 377,
           "packaging_cost": 0.0,
-          "pick_pack_cost": 1248.22,
-          "shipping_cost": 6639.73,
-          "total_cost": 7887.95,
-          "units": 825
+          "pick_pack_cost": 1301.64,
+          "shipping_cost": 6825.46,
+          "total_cost": 8127.1,
+          "units": 855
         }
       },
       "cost_missing_orders": 37,
       "foreign_cost": {
         "CAD": 10.85
       },
-      "orders": 364,
-      "orders_onhold": 45,
-      "orders_shipped": 27,
-      "orders_unshipped": 337,
-      "packages": 45,
+      "orders": 377,
+      "orders_onhold": 52,
+      "orders_shipped": 28,
+      "orders_unshipped": 349,
+      "packages": 46,
       "packaging_cost": 0.0,
       "packaging_items": {
-        "NEW-PKCTCVBX-SNGL-L": 188,
-        "PKCTCVBX-SNGL-J": 162,
-        "PKCTCVBX-SNGL-L": 19,
+        "NEW-PKCTCVBX-SNGL-L": 199,
+        "PKCTCVBX-SNGL-J": 165,
+        "PKCTCVBX-SNGL-L": 20,
         "PKCTCVBX-TRIO-L": 10
       },
-      "packaging_orders_est": 188,
-      "packaging_units": 379,
-      "packaging_units_est": 232,
-      "pick_pack_cost": 1248.22,
-      "shipping_cost": 6639.73,
-      "total_cost": 7887.95,
-      "units": 825
+      "packaging_orders_est": 193,
+      "packaging_units": 394,
+      "packaging_units_est": 240,
+      "pick_pack_cost": 1301.64,
+      "shipping_cost": 6825.46,
+      "total_cost": 8127.1,
+      "units": 855
     }
   },
   "daily_shipped": {
@@ -98920,16 +98923,16 @@
     "2026-10-07": {
       "by_carrier": {
         "FedEx": {
-          "orders": 20,
-          "shipping_cost": 800.03
+          "orders": 22,
+          "shipping_cost": 866.13
         },
         "OnTrac": {
-          "orders": 67,
-          "shipping_cost": 1518.75
+          "orders": 74,
+          "shipping_cost": 1739.18
         },
         "UPS": {
-          "orders": 16,
-          "shipping_cost": 389.51
+          "orders": 17,
+          "shipping_cost": 422.25
         },
         "gofoexpress": {
           "orders": 3,
@@ -98954,52 +98957,53 @@
           "units": 31
         },
         "Cattasaurus - shoproxstore - Shopify": {
-          "orders": 61,
+          "orders": 71,
           "packaging_cost": 0.0,
-          "pick_pack_cost": 138.73,
-          "shipping_cost": 1830.09,
-          "total_cost": 1968.82,
-          "units": 132
+          "pick_pack_cost": 159.65,
+          "shipping_cost": 2149.36,
+          "total_cost": 2309.01,
+          "units": 147
         }
       },
       "by_type": {
         "direct_to_consumer": {
-          "orders": 106,
+          "orders": 116,
           "packaging_cost": 19.8,
-          "pick_pack_cost": 226.15,
-          "shipping_cost": 2746.98,
-          "total_cost": 2992.93,
-          "units": 177
+          "pick_pack_cost": 247.07,
+          "shipping_cost": 3066.25,
+          "total_cost": 3333.12,
+          "units": 192
         }
       },
       "cost_missing_orders": 0,
       "foreign_cost": {
         "CAD": 6.34
       },
-      "orders": 106,
+      "orders": 116,
       "orders_onhold": 0,
-      "orders_shipped": 106,
+      "orders_shipped": 116,
       "orders_unshipped": 0,
-      "packages": 110,
+      "packages": 120,
       "packaging_cost": 19.8,
       "packaging_items": {
         "NEW-PKCTCVBX-SNGL-L": 66,
-        "PKCTCVBX-SNGL-J": 37,
-        "PKCTCVBX-SNGL-L": 10
+        "PKCTCVBX-SNGL-J": 46,
+        "PKCTCVBX-SNGL-L": 10,
+        "PKCTCVBX-TRIO-L": 1
       },
-      "packaging_orders_est": 80,
-      "packaging_units": 113,
-      "packaging_units_est": 89,
-      "pick_pack_cost": 226.15,
-      "shipping_cost": 2746.98,
-      "total_cost": 2992.93,
-      "units": 177
+      "packaging_orders_est": 89,
+      "packaging_units": 123,
+      "packaging_units_est": 98,
+      "pick_pack_cost": 247.07,
+      "shipping_cost": 3066.25,
+      "total_cost": 3333.12,
+      "units": 192
     },
     "2026-10-08": {
       "by_carrier": {
         "FedEx": {
-          "orders": 18,
-          "shipping_cost": 493.47
+          "orders": 19,
+          "shipping_cost": 529.32
         },
         "OnTrac": {
           "orders": 48,
@@ -99040,47 +99044,47 @@
           "units": 1
         },
         "Cattasaurus - shoproxstore - Shopify": {
-          "orders": 56,
+          "orders": 57,
           "packaging_cost": 2.5,
-          "pick_pack_cost": 127.73,
-          "shipping_cost": 1326.56,
-          "total_cost": 1456.79,
-          "units": 114
+          "pick_pack_cost": 130.05,
+          "shipping_cost": 1362.41,
+          "total_cost": 1494.96,
+          "units": 116
         }
       },
       "by_type": {
         "direct_to_consumer": {
-          "orders": 71,
+          "orders": 72,
           "packaging_cost": 3.1,
-          "pick_pack_cost": 158.15,
-          "shipping_cost": 1577.24,
-          "total_cost": 1738.49,
-          "units": 129
+          "pick_pack_cost": 160.47,
+          "shipping_cost": 1613.09,
+          "total_cost": 1776.66,
+          "units": 131
         }
       },
       "cost_missing_orders": 0,
       "foreign_cost": {
-        "CAD": 30.7
+        "CAD": 33.87
       },
-      "orders": 71,
+      "orders": 72,
       "orders_onhold": 0,
-      "orders_shipped": 71,
+      "orders_shipped": 72,
       "orders_unshipped": 0,
-      "packages": 71,
+      "packages": 72,
       "packaging_cost": 3.1,
       "packaging_items": {
-        "NEW-PKCTCVBX-SNGL-L": 35,
+        "NEW-PKCTCVBX-SNGL-L": 36,
         "PKCTCVBX-SNGL-J": 20,
         "PKCTCVBX-SNGL-L": 10,
         "PKCTCVBX-TRIO-L": 1
       },
       "packaging_orders_est": 42,
-      "packaging_units": 66,
+      "packaging_units": 67,
       "packaging_units_est": 42,
-      "pick_pack_cost": 158.15,
-      "shipping_cost": 1577.24,
-      "total_cost": 1738.49,
-      "units": 129
+      "pick_pack_cost": 160.47,
+      "shipping_cost": 1613.09,
+      "total_cost": 1776.66,
+      "units": 131
     },
     "2026-10-09": {
       "by_carrier": {
@@ -102852,30 +102856,30 @@
           "shipping_cost": 355.09
         },
         "OnTrac": {
-          "orders": 161,
-          "shipping_cost": 3262.18
+          "orders": 166,
+          "shipping_cost": 3341.91
         },
         "SpeedX": {
           "orders": 3,
           "shipping_cost": 20.83
         },
         "UPS": {
-          "orders": 105,
-          "shipping_cost": 2321.94
+          "orders": 110,
+          "shipping_cost": 2418.05
         },
         "gofoexpress": {
-          "orders": 13,
-          "shipping_cost": 163.47
+          "orders": 14,
+          "shipping_cost": 177.81
         }
       },
       "by_store": {
         "Cattasaurus - Amazon USA": {
-          "orders": 34,
+          "orders": 35,
           "packaging_cost": 0.0,
-          "pick_pack_cost": 77.04,
-          "shipping_cost": 661.86,
-          "total_cost": 738.9,
-          "units": 34
+          "pick_pack_cost": 79.26,
+          "shipping_cost": 679.58,
+          "total_cost": 758.84,
+          "units": 35
         },
         "Cattasaurus - Manual Store": {
           "orders": 11,
@@ -102894,52 +102898,52 @@
           "units": 4
         },
         "Cattasaurus - shoproxstore - Shopify": {
-          "orders": 247,
+          "orders": 257,
           "packaging_cost": 7.3,
-          "pick_pack_cost": 528.52,
-          "shipping_cost": 5164.35,
-          "total_cost": 5700.17,
-          "units": 505
+          "pick_pack_cost": 552.0,
+          "shipping_cost": 5336.81,
+          "total_cost": 5896.11,
+          "units": 527
         }
       },
       "by_type": {
         "direct_to_consumer": {
-          "orders": 296,
+          "orders": 307,
           "packaging_cost": 13.8,
-          "pick_pack_cost": 633.74,
-          "shipping_cost": 6123.51,
-          "total_cost": 6771.05,
-          "units": 554
+          "pick_pack_cost": 659.44,
+          "shipping_cost": 6313.69,
+          "total_cost": 6986.93,
+          "units": 577
         }
       },
       "cost_missing_orders": 0,
       "foreign_cost": {
         "CAD": 14.35
       },
-      "orders": 296,
+      "orders": 307,
       "orders_onhold": 0,
-      "orders_shipped": 296,
+      "orders_shipped": 307,
       "orders_unshipped": 0,
-      "packages": 298,
+      "packages": 309,
       "packaging_cost": 13.8,
       "packaging_items": {
-        "NEW-PKCTCVBX-SNGL-L": 186,
+        "NEW-PKCTCVBX-SNGL-L": 193,
         "PKCTCVBX-SNGL-J": 75,
-        "PKCTCVBX-SNGL-L": 27,
-        "PKCTCVBX-TRIO-L": 1
+        "PKCTCVBX-SNGL-L": 29,
+        "PKCTCVBX-TRIO-L": 3
       },
       "packaging_orders_est": 176,
-      "packaging_units": 289,
+      "packaging_units": 300,
       "packaging_units_est": 176,
-      "pick_pack_cost": 633.74,
-      "shipping_cost": 6123.51,
-      "total_cost": 6771.05,
-      "units": 554
+      "pick_pack_cost": 659.44,
+      "shipping_cost": 6313.69,
+      "total_cost": 6986.93,
+      "units": 577
     }
   },
-  "generated_at": "2026-11-21T22:37:18Z",
+  "generated_at": "2026-11-21T23:07:20Z",
   "inventory": {
-    "as_of": "2026-11-21T22:40:29Z",
+    "as_of": "2026-11-21T23:09:48Z",
     "fields": {
       "allocated": "derived: on_hand - available - quarantined - unavailable (reserved for open orders)",
       "available": "quantity_total_available - units ShipMonk can allocate to new orders (use as 'available to sell')",
@@ -102959,9 +102963,9 @@
     "packaging": {
       "NEW-PKCTCVBX-SNGL-L": {
         "active": true,
-        "available": 10377,
+        "available": 10373,
         "name": "Peekaboo's Box Single Large (23)",
-        "on_hand": 10457
+        "on_hand": 10450
       },
       "PKCTCVBX-DUO-J": {
         "active": false,
@@ -102977,7 +102981,7 @@
       },
       "PKCTCVBX-SNGL-J": {
         "active": true,
-        "available": 4135,
+        "available": 4134,
         "name": "Peekaboo's Box Single Jumbo",
         "on_hand": 4200
       },
@@ -102985,7 +102989,7 @@
         "active": true,
         "available": 7715,
         "name": "Peekaboo's Box Single Large",
-        "on_hand": 7738
+        "on_hand": 7736
       },
       "PKCTCVBX-TRIO-J": {
         "active": true,
@@ -102997,7 +103001,7 @@
         "active": true,
         "available": 3464,
         "name": "Peekaboo's Box Trio Large",
-        "on_hand": 3470
+        "on_hand": 3467
       },
       "UL-PKCTCVBX-DUO-J": {
         "active": false,
@@ -106088,8 +106092,8 @@
       },
       "PKBKBD-M-BG": {
         "active": true,
-        "allocated": 0,
-        "available": 607,
+        "allocated": 1,
+        "available": 606,
         "backordered": 0,
         "by_warehouse": {
           "CA1": {
@@ -106133,10 +106137,10 @@
             "unavailable": 0
           },
           "PA2": {
-            "allocated": 0,
-            "available": 374,
+            "allocated": 1,
+            "available": 373,
             "backordered": 0,
-            "final": 374,
+            "final": 373,
             "incoming": 0,
             "on_hand": 374,
             "quarantined": 0,
@@ -106163,7 +106167,7 @@
             "unavailable": 0
           }
         },
-        "final": 607,
+        "final": 606,
         "incoming": 0,
         "name": "Peekaboo Bunk Bed, Medium, Beige",
         "on_hand": 607,
@@ -107124,7 +107128,7 @@
         "incoming": 4472,
         "name": "Peekaboo Cat Cave - Jumbo - Blue",
         "on_hand": 843,
-        "on_hand_updated_at": "2026-11-21T16:32:08-05:00",
+        "on_hand_updated_at": "2026-11-21T17:55:02-05:00",
         "quarantined": 0,
         "stock_out_days": 29,
         "type": "pick_and_pack",
@@ -107160,7 +107164,7 @@
             "allocated": 11,
             "available": 65,
             "backordered": 0,
-            "final": 60,
+            "final": 61,
             "incoming": 372,
             "on_hand": 76,
             "quarantined": 0,
@@ -107179,8 +107183,8 @@
           "PA2": {
             "allocated": 0,
             "available": 0,
-            "backordered": 1,
-            "final": -1,
+            "backordered": 0,
+            "final": 0,
             "incoming": 798,
             "on_hand": 0,
             "quarantined": 0,
@@ -107207,7 +107211,7 @@
             "unavailable": 0
           }
         },
-        "final": 59,
+        "final": 61,
         "incoming": 1170,
         "name": "Peekaboo, Jumbo, Black",
         "on_hand": 76,
@@ -107393,8 +107397,8 @@
       },
       "PKCTCV-JMB-DGR": {
         "active": true,
-        "allocated": 147,
-        "available": 855,
+        "allocated": 150,
+        "available": 852,
         "backordered": 0,
         "by_warehouse": {
           "CA1": {
@@ -107421,7 +107425,7 @@
             "allocated": 87,
             "available": 507,
             "backordered": 0,
-            "final": 501,
+            "final": 502,
             "incoming": 2894,
             "on_hand": 594,
             "quarantined": 0,
@@ -107438,10 +107442,10 @@
             "unavailable": 0
           },
           "PA2": {
-            "allocated": 60,
-            "available": 343,
+            "allocated": 63,
+            "available": 340,
             "backordered": 0,
-            "final": 329,
+            "final": 326,
             "incoming": 5322,
             "on_hand": 403,
             "quarantined": 0,
@@ -107468,11 +107472,11 @@
             "unavailable": 0
           }
         },
-        "final": 835,
+        "final": 833,
         "incoming": 8216,
         "name": "Peekaboo Cat Cave - Jumbo - Dark Grey",
         "on_hand": 1002,
-        "on_hand_updated_at": "2026-11-21T17:23:17-05:00",
+        "on_hand_updated_at": "2026-11-21T17:50:13-05:00",
         "quarantined": 0,
         "stock_out_days": 10,
         "type": "pick_and_pack",
@@ -107733,7 +107737,7 @@
         "incoming": 9316,
         "name": "Peekaboo Cat Cave - Jumbo - Light Grey",
         "on_hand": 1226,
-        "on_hand_updated_at": "2026-11-21T17:35:08-05:00",
+        "on_hand_updated_at": "2026-11-21T17:56:38-05:00",
         "quarantined": 0,
         "stock_out_days": 14,
         "type": "pick_and_pack",
@@ -107768,8 +107772,8 @@
           "NV3": {
             "allocated": 0,
             "available": 0,
-            "backordered": 7,
-            "final": -7,
+            "backordered": 6,
+            "final": -6,
             "incoming": 1008,
             "on_hand": 0,
             "quarantined": 0,
@@ -107789,7 +107793,7 @@
             "allocated": 3,
             "available": 19,
             "backordered": 0,
-            "final": 14,
+            "final": 15,
             "incoming": 1596,
             "on_hand": 22,
             "quarantined": 0,
@@ -107816,7 +107820,7 @@
             "unavailable": 0
           }
         },
-        "final": 124,
+        "final": 126,
         "incoming": 2604,
         "name": "Peekaboo Cat Cave - Jumbo - Pink",
         "on_hand": 139,
@@ -107943,7 +107947,7 @@
             "allocated": 9,
             "available": 57,
             "backordered": 0,
-            "final": 47,
+            "final": 51,
             "incoming": 374,
             "on_hand": 66,
             "quarantined": 0,
@@ -107990,7 +107994,7 @@
             "unavailable": 0
           }
         },
-        "final": 44,
+        "final": 48,
         "incoming": 1172,
         "name": "Peekaboo, Jumbo, Orange",
         "on_hand": 66,
@@ -108117,7 +108121,7 @@
             "allocated": 16,
             "available": 60,
             "backordered": 0,
-            "final": 48,
+            "final": 52,
             "incoming": 372,
             "on_hand": 76,
             "quarantined": 0,
@@ -108136,8 +108140,8 @@
           "PA2": {
             "allocated": 0,
             "available": 0,
-            "backordered": 4,
-            "final": -4,
+            "backordered": 3,
+            "final": -3,
             "incoming": 798,
             "on_hand": 0,
             "quarantined": 0,
@@ -108164,7 +108168,7 @@
             "unavailable": 0
           }
         },
-        "final": 44,
+        "final": 49,
         "incoming": 1170,
         "name": "Peekaboo, Jumbo, Sage Mist",
         "on_hand": 76,
@@ -108437,7 +108441,7 @@
       },
       "PKCTCV-L-BL": {
         "active": true,
-        "allocated": 29,
+        "allocated": 28,
         "available": 2168,
         "backordered": 0,
         "by_warehouse": {
@@ -108462,10 +108466,10 @@
             "unavailable": 0
           },
           "NV3": {
-            "allocated": 21,
-            "available": 1475,
+            "allocated": 20,
+            "available": 1476,
             "backordered": 0,
-            "final": 1474,
+            "final": 1475,
             "incoming": 2708,
             "on_hand": 1496,
             "quarantined": 0,
@@ -108483,11 +108487,11 @@
           },
           "PA2": {
             "allocated": 7,
-            "available": 503,
+            "available": 502,
             "backordered": 0,
-            "final": 501,
+            "final": 500,
             "incoming": 4928,
-            "on_hand": 510,
+            "on_hand": 509,
             "quarantined": 0,
             "unavailable": 0
           },
@@ -108515,8 +108519,8 @@
         "final": 2165,
         "incoming": 7636,
         "name": "Peekaboo Cat Cave - Large - Blue",
-        "on_hand": 2197,
-        "on_hand_updated_at": "2026-11-21T17:22:43-05:00",
+        "on_hand": 2196,
+        "on_hand_updated_at": "2026-11-21T17:43:31-05:00",
         "quarantined": 0,
         "stock_out_days": 70,
         "type": "pick_and_pack",
@@ -108552,7 +108556,7 @@
             "allocated": 8,
             "available": 258,
             "backordered": 0,
-            "final": 254,
+            "final": 255,
             "incoming": 880,
             "on_hand": 266,
             "quarantined": 0,
@@ -108599,7 +108603,7 @@
             "unavailable": 0
           }
         },
-        "final": 253,
+        "final": 254,
         "incoming": 2780,
         "name": "Peekaboo, Large, Black",
         "on_hand": 266,
@@ -108611,8 +108615,8 @@
       },
       "PKCTCV-L-BRWN": {
         "active": true,
-        "allocated": 8,
-        "available": 165,
+        "allocated": 6,
+        "available": 167,
         "backordered": 0,
         "by_warehouse": {
           "CA1": {
@@ -108656,10 +108660,10 @@
             "unavailable": 0
           },
           "PA2": {
-            "allocated": 8,
-            "available": 93,
+            "allocated": 6,
+            "available": 95,
             "backordered": 0,
-            "final": 93,
+            "final": 95,
             "incoming": 1796,
             "on_hand": 101,
             "quarantined": 0,
@@ -108686,11 +108690,11 @@
             "unavailable": 0
           }
         },
-        "final": 164,
+        "final": 166,
         "incoming": 2996,
         "name": "Peekaboo Cat Cave - Large - Brown",
         "on_hand": 173,
-        "on_hand_updated_at": "2026-11-21T17:02:54-05:00",
+        "on_hand_updated_at": "2026-11-21T17:56:37-05:00",
         "quarantined": 0,
         "stock_out_days": 31,
         "type": "pick_and_pack",
@@ -108698,8 +108702,8 @@
       },
       "PKCTCV-L-DGR": {
         "active": true,
-        "allocated": 303,
-        "available": 2387,
+        "allocated": 301,
+        "available": 2380,
         "backordered": 0,
         "by_warehouse": {
           "CA1": {
@@ -108743,12 +108747,12 @@
             "unavailable": 0
           },
           "PA2": {
-            "allocated": 59,
-            "available": 784,
+            "allocated": 57,
+            "available": 777,
             "backordered": 0,
-            "final": 775,
+            "final": 768,
             "incoming": 11152,
-            "on_hand": 845,
+            "on_hand": 836,
             "quarantined": 0,
             "unavailable": 2
           },
@@ -108773,11 +108777,11 @@
             "unavailable": 0
           }
         },
-        "final": 2375,
+        "final": 2368,
         "incoming": 17114,
         "name": "Peekaboo Cat Cave - Large - Dark Grey",
-        "on_hand": 2693,
-        "on_hand_updated_at": "2026-11-21T17:40:00-05:00",
+        "on_hand": 2684,
+        "on_hand_updated_at": "2026-11-21T18:00:39-05:00",
         "quarantined": 0,
         "stock_out_days": 15,
         "type": "pick_and_pack",
@@ -108785,8 +108789,8 @@
       },
       "PKCTCV-L-GRN": {
         "active": true,
-        "allocated": 12,
-        "available": 122,
+        "allocated": 7,
+        "available": 123,
         "backordered": 0,
         "by_warehouse": {
           "CA1": {
@@ -108830,12 +108834,12 @@
             "unavailable": 0
           },
           "PA2": {
-            "allocated": 11,
-            "available": 108,
+            "allocated": 6,
+            "available": 109,
             "backordered": 0,
-            "final": 105,
+            "final": 106,
             "incoming": 1800,
-            "on_hand": 119,
+            "on_hand": 115,
             "quarantined": 0,
             "unavailable": 0
           },
@@ -108860,11 +108864,11 @@
             "unavailable": 0
           }
         },
-        "final": 117,
+        "final": 118,
         "incoming": 3000,
         "name": "Peekaboo Cat Cave - Large - Green",
-        "on_hand": 135,
-        "on_hand_updated_at": "2026-11-21T17:34:02-05:00",
+        "on_hand": 131,
+        "on_hand_updated_at": "2026-11-21T17:50:32-05:00",
         "quarantined": 0,
         "stock_out_days": 13,
         "type": "pick_and_pack",
@@ -108959,8 +108963,8 @@
       },
       "PKCTCV-L-LGR": {
         "active": true,
-        "allocated": 347,
-        "available": 2361,
+        "allocated": 343,
+        "available": 2358,
         "backordered": 0,
         "by_warehouse": {
           "CA1": {
@@ -109004,12 +109008,12 @@
             "unavailable": 0
           },
           "PA2": {
-            "allocated": 62,
-            "available": 980,
+            "allocated": 58,
+            "available": 977,
             "backordered": 0,
-            "final": 965,
+            "final": 962,
             "incoming": 12630,
-            "on_hand": 1042,
+            "on_hand": 1035,
             "quarantined": 0,
             "unavailable": 0
           },
@@ -109034,11 +109038,11 @@
             "unavailable": 0
           }
         },
-        "final": 2342,
+        "final": 2339,
         "incoming": 19330,
         "name": "Peekaboo Cat Cave - Large - Light Grey",
-        "on_hand": 2708,
-        "on_hand_updated_at": "2026-11-21T17:40:22-05:00",
+        "on_hand": 2701,
+        "on_hand_updated_at": "2026-11-21T18:00:39-05:00",
         "quarantined": 0,
         "stock_out_days": 9,
         "type": "pick_and_pack",
@@ -109125,7 +109129,7 @@
         "incoming": 4464,
         "name": "Peekaboo Cat Cave - Large - Pink",
         "on_hand": 178,
-        "on_hand_updated_at": "2026-11-21T12:48:41-05:00",
+        "on_hand_updated_at": "2026-11-21T17:58:54-05:00",
         "quarantined": 0,
         "stock_out_days": 23,
         "type": "pick_and_pack",
@@ -109220,8 +109224,8 @@
       },
       "PKCTCV-L-RNG": {
         "active": true,
-        "allocated": 11,
-        "available": 485,
+        "allocated": 9,
+        "available": 486,
         "backordered": 0,
         "by_warehouse": {
           "CA1": {
@@ -109245,10 +109249,10 @@
             "unavailable": 0
           },
           "NV3": {
-            "allocated": 6,
-            "available": 391,
+            "allocated": 5,
+            "available": 392,
             "backordered": 0,
-            "final": 390,
+            "final": 391,
             "incoming": 878,
             "on_hand": 397,
             "quarantined": 0,
@@ -109265,12 +109269,12 @@
             "unavailable": 0
           },
           "PA2": {
-            "allocated": 5,
+            "allocated": 4,
             "available": 94,
             "backordered": 0,
             "final": 94,
             "incoming": 1900,
-            "on_hand": 99,
+            "on_hand": 98,
             "quarantined": 0,
             "unavailable": 0
           },
@@ -109295,11 +109299,11 @@
             "unavailable": 0
           }
         },
-        "final": 484,
+        "final": 485,
         "incoming": 2778,
         "name": "Peekaboo, Large, Orange",
-        "on_hand": 496,
-        "on_hand_updated_at": "2026-11-21T17:36:19-05:00",
+        "on_hand": 495,
+        "on_hand_updated_at": "2026-11-21T17:53:07-05:00",
         "quarantined": 0,
         "stock_out_days": 96,
         "type": "pick_and_pack",
@@ -109307,7 +109311,7 @@
       },
       "PKCTCV-L-RNW": {
         "active": true,
-        "allocated": 20,
+        "allocated": 19,
         "available": 1794,
         "backordered": 0,
         "by_warehouse": {
@@ -109352,12 +109356,12 @@
             "unavailable": 0
           },
           "PA2": {
-            "allocated": 4,
+            "allocated": 3,
             "available": 667,
             "backordered": 0,
             "final": 665,
             "incoming": 1602,
-            "on_hand": 671,
+            "on_hand": 670,
             "quarantined": 0,
             "unavailable": 0
           },
@@ -109385,8 +109389,8 @@
         "final": 1792,
         "incoming": 2482,
         "name": "Peekaboo Cat Cave- Large - Red & White",
-        "on_hand": 1814,
-        "on_hand_updated_at": "2026-11-21T17:37:54-05:00",
+        "on_hand": 1813,
+        "on_hand_updated_at": "2026-11-21T17:59:16-05:00",
         "quarantined": 0,
         "stock_out_days": 54,
         "type": "pick_and_pack",
@@ -109742,7 +109746,7 @@
       },
       "PKCTCV2Z-L-DGR": {
         "active": true,
-        "allocated": 16,
+        "allocated": 15,
         "available": 1086,
         "backordered": 0,
         "by_warehouse": {
@@ -109787,12 +109791,12 @@
             "unavailable": 0
           },
           "PA2": {
-            "allocated": 11,
+            "allocated": 10,
             "available": 456,
             "backordered": 0,
             "final": 455,
             "incoming": 0,
-            "on_hand": 467,
+            "on_hand": 466,
             "quarantined": 0,
             "unavailable": 0
           },
@@ -109820,8 +109824,8 @@
         "final": 1085,
         "incoming": 0,
         "name": "Peekaboo Cat Cave V.2 - Large - Dark Grey",
-        "on_hand": 1102,
-        "on_hand_updated_at": "2026-11-21T17:39:44-05:00",
+        "on_hand": 1101,
+        "on_hand_updated_at": "2026-11-21T17:54:43-05:00",
         "quarantined": 0,
         "stock_out_days": 136,
         "type": "pick_and_pack",
@@ -109916,7 +109920,7 @@
       },
       "PKCTCV2Z-L-LGR": {
         "active": true,
-        "allocated": 26,
+        "allocated": 24,
         "available": 5044,
         "backordered": 0,
         "by_warehouse": {
@@ -109961,12 +109965,12 @@
             "unavailable": 0
           },
           "PA2": {
-            "allocated": 15,
+            "allocated": 13,
             "available": 2824,
             "backordered": 0,
             "final": 2824,
             "incoming": 0,
-            "on_hand": 2840,
+            "on_hand": 2838,
             "quarantined": 0,
             "unavailable": 1
           },
@@ -109994,8 +109998,8 @@
         "final": 5044,
         "incoming": 0,
         "name": "Peekaboo Cat Cave V.2 - Large - Light Grey",
-        "on_hand": 5071,
-        "on_hand_updated_at": "2026-11-21T17:28:16-05:00",
+        "on_hand": 5069,
+        "on_hand_updated_at": "2026-11-21T17:41:27-05:00",
         "quarantined": 0,
         "stock_out_days": 545,
         "type": "pick_and_pack",
@@ -112875,8 +112879,8 @@
     },
     "source_endpoint": "POST /v1/integrations/products/search + GET /v1/integrations/products/search/paginate",
     "totals": {
-      "allocated": 1127,
-      "available": 23899,
+      "allocated": 1111,
+      "available": 23889,
       "backordered": 700,
       "by_warehouse": {
         "CA1": {
@@ -112900,10 +112904,10 @@
           "unavailable": 0
         },
         "NV3": {
-          "allocated": 824,
-          "available": 11116,
-          "backordered": 18,
-          "final": 11049,
+          "allocated": 822,
+          "available": 11118,
+          "backordered": 17,
+          "final": 11063,
           "incoming": 47161,
           "on_hand": 11943,
           "quarantined": 0,
@@ -112920,12 +112924,12 @@
           "unavailable": 0
         },
         "PA2": {
-          "allocated": 301,
-          "available": 10808,
-          "backordered": 724,
-          "final": 9979,
+          "allocated": 287,
+          "available": 10796,
+          "backordered": 722,
+          "final": 9970,
           "incoming": 64030,
-          "on_hand": 11112,
+          "on_hand": 11086,
           "quarantined": 19,
           "unavailable": 3
         },
@@ -112950,9 +112954,9 @@
           "unavailable": 0
         }
       },
-      "final": 23003,
+      "final": 23008,
       "incoming": 111191,
-      "on_hand": 25032,
+      "on_hand": 25006,
       "quarantined": 19,
       "skus": 113,
       "skus_in_stock": 36,
@@ -113579,7 +113583,7 @@
         "src": "sync"
       },
       "2026-11-21": {
-        "as_of": "2026-11-21T22:40:29Z",
+        "as_of": "2026-11-21T23:09:48Z",
         "at_dock": {},
         "incoming": {
           "NV3": 47161,
@@ -113595,11 +113599,11 @@
         },
         "on_hand": {
           "NV3": 11943,
-          "PA2": 11112,
+          "PA2": 11086,
           "TO1": 1977
         },
-        "packaging_on_hand": 29338,
-        "samples": 36,
+        "packaging_on_hand": 29326,
+        "samples": 37,
         "src": "sync"
       }
     },
@@ -113615,7 +113619,7 @@
     "last_day": "2026-11-21"
   },
   "meta": {
-    "api_requests": 174,
+    "api_requests": 175,
     "api_retries": 0,
     "chunks": 1,
     "cost_basis": "shipmonk_estimated_order_costs_by_ordered_at",
@@ -113627,29 +113631,29 @@
     ],
     "counts": {
       "cost_missing_orders": 96,
-      "fx_converted_charges": 133,
+      "fx_converted_charges": 135,
       "fx_unknown_currency_charges": 0,
-      "orders_counted": 15659,
+      "orders_counted": 15672,
       "orders_duplicate": 0,
       "orders_fulfilled_outside": 188,
-      "orders_onhold_counted": 1280,
-      "orders_outside_window": 177,
-      "orders_seen": 17400,
-      "orders_shipped_series_only": 184,
-      "orders_skipped_cancelled": 1192,
+      "orders_onhold_counted": 1300,
+      "orders_outside_window": 240,
+      "orders_seen": 17500,
+      "orders_shipped_series_only": 195,
+      "orders_skipped_cancelled": 1205,
       "orders_skipped_store": 0,
       "orders_skipped_type": 0,
       "orders_skipped_unshipped": 0,
-      "orders_unshipped_counted": 1988,
+      "orders_unshipped_counted": 1990,
       "shipping_from_shipment_estimate": 0
     },
     "currencies_seen": {
-      "CAD": 133,
-      "USD": 45206
+      "CAD": 135,
+      "USD": 45274
     },
     "fx": {
       "native_converted_this_run": {
-        "CAD": 211.24
+        "CAD": 214.41
       },
       "note": "costs in daily/by_* are USD; foreign_cost per day holds the native amounts before conversion",
       "rates_to_usd": {
@@ -113684,11 +113688,11 @@
     "inventory": {
       "api_requests": 4,
       "api_retries": 0,
-      "as_of": "2026-11-21T22:40:29Z",
-      "bundles": 633,
+      "as_of": "2026-11-21T23:09:48Z",
+      "bundles": 634,
       "carried_over": false,
       "counts": {
-        "bundles": 633,
+        "bundles": 634,
         "duplicates": 2,
         "incoming_receivings_open": 31,
         "incoming_unknown_sku": 4,
@@ -113698,7 +113702,7 @@
         "products_seen": 138,
         "skus": 113
       },
-      "elapsed_s": 1.7,
+      "elapsed_s": 1.1,
       "error": null,
       "fetched": true,
       "incoming": {
@@ -113745,10 +113749,10 @@
     ],
     "oldest_order_day_seen": "2026-08-27",
     "order_currencies_seen": {
-      "USD": 15843
+      "USD": 15867
     },
     "order_types_seen": {
-      "direct_to_consumer": 17367,
+      "direct_to_consumer": 17467,
       "unknown": 33
     },
     "orders_csv": "data/shipmonk_orders/",
@@ -113758,28 +113762,28 @@
     ],
     "packaging_inference": {
       "bom_bundles_used": 633,
-      "boxes_estimated": 6260,
+      "boxes_estimated": 6276,
       "by_basis": {
-        "fallback": 151,
+        "fallback": 153,
         "rule_any": 93,
-        "rule_warehouse": 5743
+        "rule_warehouse": 5754
       },
       "by_warehouse": {
         "NV3": {
-          "boxes_estimated": 6027,
-          "orders_estimated": 5897,
-          "orders_without_line": 6016
+          "boxes_estimated": 6043,
+          "orders_estimated": 5910,
+          "orders_without_line": 6029
         },
         "PA2": {
           "boxes_estimated": 233,
           "orders_estimated": 90,
-          "orders_without_line": 756
+          "orders_without_line": 757
         }
       },
       "note": "orders with no packaging line in the API get the box inferred from orders of the same composition (warehouse first, then any), else one box per cave/donut; counted in packaging_units_est / packaging_orders_est",
-      "orders_estimated": 5987,
-      "orders_no_box": 785,
-      "orders_with_lines": 9071,
+      "orders_estimated": 6000,
+      "orders_no_box": 786,
+      "orders_with_lines": 9081,
       "rules_learned_this_run": 311,
       "rules_prior": 400
     },
@@ -113803,7 +113807,7 @@
         "PKCTCVBX-SNGL-Jx1": 17
       },
       "*|B\u00d71|L\u00d71|O:AP14\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 188
+        "PKCTCVBX-SNGL-Jx1": 189
       },
       "*|B\u00d71|L\u00d71|O:NOF\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 10
@@ -113815,88 +113819,88 @@
         "PKCTCVBX-SNGL-Jx1": 46
       },
       "*|B\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 673
+        "NEW-PKCTCVBX-SNGL-Lx1": 674
       },
       "*|J\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 271833
+        "PKCTCVBX-SNGL-Jx1": 272283
       },
       "*|J\u00d71|O:AP03\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 6801
+        "PKCTCVBX-SNGL-Jx1": 6810
       },
       "*|J\u00d71|O:AP03\u00d71|O:AP14\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1342
+        "PKCTCVBX-SNGL-Jx1": 1344
       },
       "*|J\u00d71|O:AP03\u00d71|O:AP14\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1971
+        "PKCTCVBX-SNGL-Jx1": 1974
       },
       "*|J\u00d71|O:AP03\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1775
+        "PKCTCVBX-SNGL-Jx1": 1778
       },
       "*|J\u00d71|O:AP03\u00d72|O:PT07C\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 673
+        "PKCTCVBX-SNGL-Jx1": 674
       },
       "*|J\u00d71|O:AP03\u00d73|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 37
       },
       "*|J\u00d71|O:AP03\u00d73|O:PT07C\u00d73": {
-        "PKCTCVBX-SNGL-Jx1": 673
+        "PKCTCVBX-SNGL-Jx1": 674
       },
       "*|J\u00d71|O:AP14\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1796
+        "PKCTCVBX-SNGL-Jx1": 1798
       },
       "*|J\u00d71|O:AP14\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 820
+        "PKCTCVBX-SNGL-Jx1": 821
       },
       "*|J\u00d71|O:AP15\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 89
       },
       "*|J\u00d71|O:FCNT01\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1388
+        "PKCTCVBX-SNGL-Jx1": 1390
       },
       "*|J\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 86
       },
       "*|J\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1944
+        "PKCTCVBX-SNGL-Jx1": 1947
       },
       "*|J\u00d71|O:PT07C\u00d73": {
-        "PKCTCVBX-SNGL-Jx1": 641
+        "PKCTCVBX-SNGL-Jx1": 642
       },
       "*|J\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 990
+        "PKCTCVBX-SNGL-Jx1": 991
       },
       "*|J\u00d71|O:SLFRLL\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 673
+        "PKCTCVBX-SNGL-Jx1": 674
       },
       "*|J\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 1288527
+        "PKCTCVBX-SNGL-Jx1": 1290763
       },
       "*|J\u00d72|O:AP03\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 69118
+        "PKCTCVBX-SNGL-Jx1": 69247
       },
       "*|J\u00d72|O:AP03\u00d71|O:AP14\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 5572
+        "PKCTCVBX-SNGL-Jx1": 5582
       },
       "*|J\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 8838
+        "PKCTCVBX-SNGL-Jx1": 8849
       },
       "*|J\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 5685
+        "PKCTCVBX-SNGL-Jx1": 5694
       },
       "*|J\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:PT07C\u00d73": {
-        "PKCTCVBX-SNGL-Jx1": 660
+        "PKCTCVBX-SNGL-Jx1": 661
       },
       "*|J\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:SSWF\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 11
       },
       "*|J\u00d72|O:AP03\u00d71|O:AP14\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 1277
+        "PKCTCVBX-SNGL-Jx1": 1279
       },
       "*|J\u00d72|O:AP03\u00d71|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 59
       },
       "*|J\u00d72|O:AP03\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 8276
+        "PKCTCVBX-SNGL-Jx1": 8290
       },
       "*|J\u00d72|O:AP03\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 397
@@ -113905,31 +113909,31 @@
         "PKCTCVBX-SNGL-Jx1": 106
       },
       "*|J\u00d72|O:AP03\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 11674
+        "PKCTCVBX-SNGL-Jx1": 11694
       },
       "*|J\u00d72|O:AP03\u00d72|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1227
+        "PKCTCVBX-SNGL-Jx1": 1229
       },
       "*|J\u00d72|O:AP03\u00d72|O:PT07C\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 667
+        "PKCTCVBX-SNGL-Jx1": 668
       },
       "*|J\u00d72|O:AP03\u00d73": {
-        "PKCTCVBX-SNGL-Jx1": 3241
+        "PKCTCVBX-SNGL-Jx1": 3245
       },
       "*|J\u00d72|O:AP03\u00d73|O:AP14\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 673
+        "PKCTCVBX-SNGL-Jx1": 674
       },
       "*|J\u00d72|O:AP03\u00d73|O:FCNT01\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 651
+        "PKCTCVBX-SNGL-Jx1": 652
       },
       "*|J\u00d72|O:AP14\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 19141
+        "PKCTCVBX-SNGL-Jx1": 19173
       },
       "*|J\u00d72|O:AP14\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 2660
+        "PKCTCVBX-SNGL-Jx1": 2665
       },
       "*|J\u00d72|O:AP14\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 1411
+        "PKCTCVBX-SNGL-Jx1": 1413
       },
       "*|J\u00d72|O:AP14\u00d73|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 11
@@ -113944,13 +113948,13 @@
         "PKCTCVBX-SNGL-Jx1": 170
       },
       "*|J\u00d72|O:FCNT01\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 8909
+        "PKCTCVBX-SNGL-Jx1": 8923
       },
       "*|J\u00d72|O:FCNT01\u00d71|O:PT07C\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 91
       },
       "*|J\u00d72|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 2182
+        "PKCTCVBX-SNGL-Jx1": 2185
       },
       "*|J\u00d72|O:FCNT01\u00d71|O:SLFRLL\u00d72": {
         "PKCTCVBX-SNGL-Jx1": 82
@@ -113959,22 +113963,22 @@
         "PKCTCVBX-SNGL-Jx1": 59
       },
       "*|J\u00d72|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 19344
+        "PKCTCVBX-SNGL-Jx1": 19376
       },
       "*|J\u00d72|O:PT07C\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 1499
+        "PKCTCVBX-SNGL-Jx1": 1503
       },
       "*|J\u00d72|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 8041
+        "PKCTCVBX-SNGL-Jx1": 8056
       },
       "*|J\u00d72|O:SSWF\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 322
       },
       "*|J\u00d73": {
-        "PKCTCVBX-SNGL-Jx1": 40733
+        "PKCTCVBX-SNGL-Jx1": 40804
       },
       "*|J\u00d73|O:AP03\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 2800
+        "PKCTCVBX-SNGL-Jx1": 2804
       },
       "*|J\u00d73|O:AP03\u00d71|O:AP14\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 78
@@ -113983,64 +113987,64 @@
         "PKCTCVBX-SNGL-Jx1": 436
       },
       "*|J\u00d73|O:AP03\u00d71|O:AP14\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 612
+        "PKCTCVBX-SNGL-Jx1": 613
       },
       "*|J\u00d73|O:AP03\u00d71|O:AP14\u00d72|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 22
       },
       "*|J\u00d73|O:AP03\u00d71|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 785
+        "PKCTCVBX-SNGL-Jx1": 786
       },
       "*|J\u00d73|O:AP03\u00d73": {
         "PKCTCVBX-SNGL-Jx1": 18
       },
       "*|J\u00d73|O:AP14\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 2612
+        "PKCTCVBX-SNGL-Jx1": 2616
       },
       "*|J\u00d73|O:FCNT01\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1194
+        "PKCTCVBX-SNGL-Jx1": 1196
       },
       "*|J\u00d73|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1940
+        "PKCTCVBX-SNGL-Jx1": 1941
       },
       "*|J\u00d73|O:FCNT01\u00d72|O:SLFRLL\u00d72": {
         "PKCTCVBX-SNGL-Jx1": 64
       },
       "*|L\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 472905
+        "NEW-PKCTCVBX-SNGL-Lx1": 473658
       },
       "*|L\u00d71|O:AP03\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 14469
+        "NEW-PKCTCVBX-SNGL-Lx1": 14491
       },
       "*|L\u00d71|O:AP03\u00d71|O:AP14\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 341
       },
       "*|L\u00d71|O:AP03\u00d71|O:CLMDNT\u00d71": {
-        "PKCTCVBX-SNGL-Lx1": 743
+        "PKCTCVBX-SNGL-Lx1": 744
       },
       "*|L\u00d71|O:AP03\u00d71|O:CLMDNT\u00d71|O:PT07C\u00d71": {
         "PKCTCVBX-SNGL-Lx1": 341
       },
       "*|L\u00d71|O:AP03\u00d71|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 2523
+        "NEW-PKCTCVBX-SNGL-Lx1": 2527
       },
       "*|L\u00d71|O:AP03\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 605
+        "NEW-PKCTCVBX-SNGL-Lx1": 606
       },
       "*|L\u00d71|O:AP03\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 759
+        "NEW-PKCTCVBX-SNGL-Lx1": 760
       },
       "*|L\u00d71|O:AP03\u00d72|O:PT07C\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 641
+        "NEW-PKCTCVBX-SNGL-Lx1": 642
       },
       "*|L\u00d71|O:AP03\u00d73": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1943
+        "NEW-PKCTCVBX-SNGL-Lx1": 1946
       },
       "*|L\u00d71|O:AP03\u00d73|O:FCNT01\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 98
       },
       "*|L\u00d71|O:AP14\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 5341
+        "NEW-PKCTCVBX-SNGL-Lx1": 5349
       },
       "*|L\u00d71|O:AP14\u00d71|O:PT07C\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 471
@@ -114049,113 +114053,113 @@
         "NEW-PKCTCVBX-SNGL-Lx1": 360
       },
       "*|L\u00d71|O:CLMDNT\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 580,
-        "PKCTCVBX-SNGL-Lx1": 130436
+        "NEW-PKCTCVBX-SNGL-Lx1": 581,
+        "PKCTCVBX-SNGL-Lx1": 130677
       },
       "*|L\u00d71|O:CLMDNT\u00d71|O:FCNT01\u00d71": {
-        "PKCTCVBX-SNGL-Lx1": 1833
+        "PKCTCVBX-SNGL-Lx1": 1836
       },
       "*|L\u00d71|O:FCNT01\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1987
+        "NEW-PKCTCVBX-SNGL-Lx1": 1990
       },
       "*|L\u00d71|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 6726
+        "NEW-PKCTCVBX-SNGL-Lx1": 6736
       },
       "*|L\u00d71|O:PT07C\u00d73": {
         "NEW-PKCTCVBX-SNGL-Lx1": 30
       },
       "*|L\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 4403
+        "NEW-PKCTCVBX-SNGL-Lx1": 4410
       },
       "*|L\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 2180252
+        "NEW-PKCTCVBX-SNGL-Lx1": 2184061
       },
       "*|L\u00d72|O:AP03\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 103855
+        "NEW-PKCTCVBX-SNGL-Lx1": 104041
       },
       "*|L\u00d72|O:AP03\u00d71|O:AP14\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 6567
+        "NEW-PKCTCVBX-SNGL-Lx1": 6578
       },
       "*|L\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 9331
+        "NEW-PKCTCVBX-SNGL-Lx1": 9346
       },
       "*|L\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 10985
+        "NEW-PKCTCVBX-SNGL-Lx1": 11004
       },
       "*|L\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:PT07C\u00d71|O:SSWF\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 8
       },
       "*|L\u00d72|O:AP03\u00d71|O:AP14\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 270
+        "NEW-PKCTCVBX-SNGL-Lx1": 271
       },
       "*|L\u00d72|O:AP03\u00d71|O:AP15\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 20
       },
       "*|L\u00d72|O:AP03\u00d71|O:CLMDNT\u00d72": {
-        "PKCTCVBX-SNGL-Lx1": 7084
+        "PKCTCVBX-SNGL-Lx1": 7100
       },
       "*|L\u00d72|O:AP03\u00d71|O:CLMDNT\u00d72|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Lx1": 4221
+        "PKCTCVBX-SNGL-Lx1": 4228
       },
       "*|L\u00d72|O:AP03\u00d71|O:FCNT01\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1495
+        "NEW-PKCTCVBX-SNGL-Lx1": 1496
       },
       "*|L\u00d72|O:AP03\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1322
+        "NEW-PKCTCVBX-SNGL-Lx1": 1324
       },
       "*|L\u00d72|O:AP03\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d72": {
         "NEW-PKCTCVBX-SNGL-Lx1": 78
       },
       "*|L\u00d72|O:AP03\u00d71|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 23217
+        "NEW-PKCTCVBX-SNGL-Lx1": 23254
       },
       "*|L\u00d72|O:AP03\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1608
+        "NEW-PKCTCVBX-SNGL-Lx1": 1611
       },
       "*|L\u00d72|O:AP03\u00d71|O:PT07C\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 643
+        "NEW-PKCTCVBX-SNGL-Lx1": 644
       },
       "*|L\u00d72|O:AP03\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 5422
+        "NEW-PKCTCVBX-SNGL-Lx1": 5433
       },
       "*|L\u00d72|O:AP03\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 15594
+        "NEW-PKCTCVBX-SNGL-Lx1": 15622
       },
       "*|L\u00d72|O:AP03\u00d72|O:AP14\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 651
+        "NEW-PKCTCVBX-SNGL-Lx1": 652
       },
       "*|L\u00d72|O:AP03\u00d72|O:CLMDNT\u00d72": {
-        "PKCTCVBX-SNGL-Lx1": 1140
+        "PKCTCVBX-SNGL-Lx1": 1142
       },
       "*|L\u00d72|O:AP03\u00d72|O:FCNT01\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1200
+        "NEW-PKCTCVBX-SNGL-Lx1": 1202
       },
       "*|L\u00d72|O:AP03\u00d72|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 5197
+        "NEW-PKCTCVBX-SNGL-Lx1": 5206
       },
       "*|L\u00d72|O:AP03\u00d72|O:PT07C\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 593
+        "NEW-PKCTCVBX-SNGL-Lx1": 594
       },
       "*|L\u00d72|O:AP03\u00d73": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 2178
+        "NEW-PKCTCVBX-SNGL-Lx1": 2181
       },
       "*|L\u00d72|O:AP14\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 21904
+        "NEW-PKCTCVBX-SNGL-Lx1": 21943
       },
       "*|L\u00d72|O:AP14\u00d71|O:AP15\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 69
       },
       "*|L\u00d72|O:AP14\u00d71|O:CLMDNT\u00d72": {
-        "PKCTCVBX-SNGL-Lx1": 2423
+        "PKCTCVBX-SNGL-Lx1": 2427
       },
       "*|L\u00d72|O:AP14\u00d71|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 7904
+        "NEW-PKCTCVBX-SNGL-Lx1": 7917
       },
       "*|L\u00d72|O:AP14\u00d71|O:PT07C\u00d73": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1146
+        "NEW-PKCTCVBX-SNGL-Lx1": 1148
       },
       "*|L\u00d72|O:AP14\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1300
+        "NEW-PKCTCVBX-SNGL-Lx1": 1302
       },
       "*|L\u00d72|O:AP15\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 2510
@@ -114170,56 +114174,56 @@
         "NEW-PKCTCVBX-SNGL-Lx1": 30
       },
       "*|L\u00d72|O:CLMDNT\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 826,
-        "PKCTCVBX-SNGL-Lx1": 101599
+        "NEW-PKCTCVBX-SNGL-Lx1": 828,
+        "PKCTCVBX-SNGL-Lx1": 101806
       },
       "*|L\u00d72|O:CLMDNT\u00d72|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Lx1": 2666
+        "PKCTCVBX-SNGL-Lx1": 2672
       },
       "*|L\u00d72|O:CLMDNT\u00d72|O:PT07C\u00d72": {
-        "PKCTCVBX-SNGL-Lx1": 229
+        "PKCTCVBX-SNGL-Lx1": 231
       },
       "*|L\u00d72|O:CLMDNT\u00d72|O:PT07C\u00d73|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Lx1": 673
+        "PKCTCVBX-SNGL-Lx1": 674
       },
       "*|L\u00d72|O:EMRCRD\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 55
       },
       "*|L\u00d72|O:FCNT01\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 18389
+        "NEW-PKCTCVBX-SNGL-Lx1": 18420
       },
       "*|L\u00d72|O:FCNT01\u00d71|O:PT07C\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 144
       },
       "*|L\u00d72|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 2749
+        "NEW-PKCTCVBX-SNGL-Lx1": 2753
       },
       "*|L\u00d72|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 39425
+        "NEW-PKCTCVBX-SNGL-Lx1": 39493
       },
       "*|L\u00d72|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1968
+        "NEW-PKCTCVBX-SNGL-Lx1": 1972
       },
       "*|L\u00d72|O:PT07C\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 6681
+        "NEW-PKCTCVBX-SNGL-Lx1": 6693
       },
       "*|L\u00d72|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 16421
+        "NEW-PKCTCVBX-SNGL-Lx1": 16457
       },
       "*|L\u00d72|O:SSWF\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 399
       },
       "*|L\u00d73": {
-        "PKCTCVBX-TRIO-Lx1": 125703
+        "PKCTCVBX-TRIO-Lx1": 125933
       },
       "*|L\u00d73|O:AP03\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 4290
+        "PKCTCVBX-TRIO-Lx1": 4298
       },
       "*|L\u00d73|O:AP03\u00d71|O:AP14\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71": {
         "PKCTCVBX-TRIO-Lx1": 341
       },
       "*|L\u00d73|O:AP03\u00d71|O:AP14\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 1616
+        "PKCTCVBX-TRIO-Lx1": 1618
       },
       "*|L\u00d73|O:AP03\u00d71|O:AP15\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-TRIO-Lx1": 86
@@ -114228,7 +114232,7 @@
         "PKCTCVBX-TRIO-Lx1": 30
       },
       "*|L\u00d73|O:AP03\u00d71|O:FCNT01\u00d71|O:PT07C\u00d72|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 633
+        "PKCTCVBX-TRIO-Lx1": 634
       },
       "*|L\u00d73|O:AP03\u00d71|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-TRIO-Lx1": 30
@@ -114237,25 +114241,25 @@
         "PKCTCVBX-TRIO-Lx1": 41
       },
       "*|L\u00d73|O:AP03\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 964
+        "PKCTCVBX-TRIO-Lx1": 966
       },
       "*|L\u00d73|O:AP03\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 660
+        "PKCTCVBX-TRIO-Lx1": 661
       },
       "*|L\u00d73|O:AP03\u00d72": {
-        "PKCTCVBX-TRIO-Lx1": 2259
+        "PKCTCVBX-TRIO-Lx1": 2262
       },
       "*|L\u00d73|O:AP03\u00d72|O:AP14\u00d72|O:PT07C\u00d72": {
-        "PKCTCVBX-TRIO-Lx1": 673
+        "PKCTCVBX-TRIO-Lx1": 674
       },
       "*|L\u00d73|O:AP03\u00d72|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 673
+        "PKCTCVBX-TRIO-Lx1": 674
       },
       "*|L\u00d73|O:AP03\u00d73": {
-        "PKCTCVBX-TRIO-Lx1": 817
+        "PKCTCVBX-TRIO-Lx1": 818
       },
       "*|L\u00d73|O:AP14\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 1899
+        "PKCTCVBX-TRIO-Lx1": 1902
       },
       "*|L\u00d73|O:AP14\u00d71|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-TRIO-Lx1": 65
@@ -114273,13 +114277,13 @@
         "PKCTCVBX-TRIO-Lx1": 55
       },
       "*|L\u00d73|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 3226
+        "PKCTCVBX-TRIO-Lx1": 3229
       },
       "*|L\u00d73|O:PT07C\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 1319
+        "PKCTCVBX-TRIO-Lx1": 1321
       },
       "*|L\u00d73|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 641
+        "PKCTCVBX-TRIO-Lx1": 642
       },
       "*|L\u00d74|O:AP03\u00d71|O:AP14\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71|O:SSWF\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 6
@@ -114399,7 +114403,7 @@
         "NEW-PKCTCVBX-SNGL-Lx1": 86
       },
       "NV3|L\u00d71|O:CLMDNT\u00d71": {
-        "PKCTCVBX-SNGL-Lx1": 4321
+        "PKCTCVBX-SNGL-Lx1": 4333
       },
       "NV3|L\u00d71|O:FCNT01\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 559
@@ -114453,7 +114457,7 @@
         "NEW-PKCTCVBX-SNGL-Lx1": 78
       },
       "NV3|L\u00d72|O:CLMDNT\u00d72": {
-        "PKCTCVBX-SNGL-Lx1": 1567
+        "PKCTCVBX-SNGL-Lx1": 1574
       },
       "NV3|L\u00d72|O:CLMDNT\u00d72|O:PT07C\u00d72": {
         "PKCTCVBX-SNGL-Lx1": 30
@@ -114477,19 +114481,19 @@
         "NEW-PKCTCVBX-SNGL-Lx1": 492
       },
       "NV3|L\u00d73": {
-        "PKCTCVBX-TRIO-Lx1": 57696
+        "PKCTCVBX-TRIO-Lx1": 57800
       },
       "NV3|L\u00d73|O:AP03\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 1338
+        "PKCTCVBX-TRIO-Lx1": 1340
       },
       "NV3|L\u00d73|O:AP03\u00d71|O:AP14\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71": {
         "PKCTCVBX-TRIO-Lx1": 341
       },
       "NV3|L\u00d73|O:AP03\u00d71|O:AP14\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 1501
+        "PKCTCVBX-TRIO-Lx1": 1503
       },
       "NV3|L\u00d73|O:AP03\u00d71|O:FCNT01\u00d71|O:PT07C\u00d72|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 633
+        "PKCTCVBX-TRIO-Lx1": 634
       },
       "NV3|L\u00d73|O:AP03\u00d71|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-TRIO-Lx1": 30
@@ -114498,22 +114502,22 @@
         "PKCTCVBX-TRIO-Lx1": 41
       },
       "NV3|L\u00d73|O:AP03\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 660
+        "PKCTCVBX-TRIO-Lx1": 661
       },
       "NV3|L\u00d73|O:AP03\u00d72": {
-        "PKCTCVBX-TRIO-Lx1": 1128
+        "PKCTCVBX-TRIO-Lx1": 1130
       },
       "NV3|L\u00d73|O:AP03\u00d72|O:AP14\u00d72|O:PT07C\u00d72": {
-        "PKCTCVBX-TRIO-Lx1": 673
+        "PKCTCVBX-TRIO-Lx1": 674
       },
       "NV3|L\u00d73|O:AP03\u00d72|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 673
+        "PKCTCVBX-TRIO-Lx1": 674
       },
       "NV3|L\u00d73|O:AP03\u00d73": {
-        "PKCTCVBX-TRIO-Lx1": 817
+        "PKCTCVBX-TRIO-Lx1": 818
       },
       "NV3|L\u00d73|O:AP14\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 641
+        "PKCTCVBX-TRIO-Lx1": 642
       },
       "NV3|L\u00d73|O:AP14\u00d71|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-TRIO-Lx1": 65
@@ -114528,10 +114532,10 @@
         "PKCTCVBX-TRIO-Lx1": 55
       },
       "NV3|L\u00d73|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 1357
+        "PKCTCVBX-TRIO-Lx1": 1358
       },
       "NV3|L\u00d73|O:PT07C\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 1319
+        "PKCTCVBX-TRIO-Lx1": 1321
       },
       "NV3|L\u00d73|O:SLFRLL\u00d71": {
         "PKCTCVBX-TRIO-Lx1": 19
@@ -114555,7 +114559,7 @@
         "PKCTCVBX-SNGL-Jx1": 17
       },
       "PA2|B\u00d71|L\u00d71|O:AP14\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 188
+        "PKCTCVBX-SNGL-Jx1": 189
       },
       "PA2|B\u00d71|L\u00d71|O:NOF\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 10
@@ -114567,85 +114571,85 @@
         "PKCTCVBX-SNGL-Jx1": 46
       },
       "PA2|B\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 673
+        "NEW-PKCTCVBX-SNGL-Lx1": 674
       },
       "PA2|J\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 258657
+        "PKCTCVBX-SNGL-Jx1": 259098
       },
       "PA2|J\u00d71|O:AP03\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 6298
+        "PKCTCVBX-SNGL-Jx1": 6307
       },
       "PA2|J\u00d71|O:AP03\u00d71|O:AP14\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1342
+        "PKCTCVBX-SNGL-Jx1": 1344
       },
       "PA2|J\u00d71|O:AP03\u00d71|O:AP14\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1971
+        "PKCTCVBX-SNGL-Jx1": 1974
       },
       "PA2|J\u00d71|O:AP03\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1725
+        "PKCTCVBX-SNGL-Jx1": 1728
       },
       "PA2|J\u00d71|O:AP03\u00d72|O:PT07C\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 673
+        "PKCTCVBX-SNGL-Jx1": 674
       },
       "PA2|J\u00d71|O:AP03\u00d73|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 37
       },
       "PA2|J\u00d71|O:AP03\u00d73|O:PT07C\u00d73": {
-        "PKCTCVBX-SNGL-Jx1": 673
+        "PKCTCVBX-SNGL-Jx1": 674
       },
       "PA2|J\u00d71|O:AP14\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1710
+        "PKCTCVBX-SNGL-Jx1": 1712
       },
       "PA2|J\u00d71|O:AP14\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 820
+        "PKCTCVBX-SNGL-Jx1": 821
       },
       "PA2|J\u00d71|O:AP15\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 17
       },
       "PA2|J\u00d71|O:FCNT01\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1338
+        "PKCTCVBX-SNGL-Jx1": 1340
       },
       "PA2|J\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1943
+        "PKCTCVBX-SNGL-Jx1": 1946
       },
       "PA2|J\u00d71|O:PT07C\u00d73": {
-        "PKCTCVBX-SNGL-Jx1": 641
+        "PKCTCVBX-SNGL-Jx1": 642
       },
       "PA2|J\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 649
+        "PKCTCVBX-SNGL-Jx1": 650
       },
       "PA2|J\u00d71|O:SLFRLL\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 673
+        "PKCTCVBX-SNGL-Jx1": 674
       },
       "PA2|J\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 1243006
+        "PKCTCVBX-SNGL-Jx1": 1245223
       },
       "PA2|J\u00d72|O:AP03\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 68100
+        "PKCTCVBX-SNGL-Jx1": 68229
       },
       "PA2|J\u00d72|O:AP03\u00d71|O:AP14\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 5490
+        "PKCTCVBX-SNGL-Jx1": 5500
       },
       "PA2|J\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 8146
+        "PKCTCVBX-SNGL-Jx1": 8157
       },
       "PA2|J\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 5344
+        "PKCTCVBX-SNGL-Jx1": 5353
       },
       "PA2|J\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:PT07C\u00d73": {
-        "PKCTCVBX-SNGL-Jx1": 660
+        "PKCTCVBX-SNGL-Jx1": 661
       },
       "PA2|J\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:SSWF\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 11
       },
       "PA2|J\u00d72|O:AP03\u00d71|O:AP14\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 1277
+        "PKCTCVBX-SNGL-Jx1": 1279
       },
       "PA2|J\u00d72|O:AP03\u00d71|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 59
       },
       "PA2|J\u00d72|O:AP03\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 7951
+        "PKCTCVBX-SNGL-Jx1": 7965
       },
       "PA2|J\u00d72|O:AP03\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 397
@@ -114654,31 +114658,31 @@
         "PKCTCVBX-SNGL-Jx1": 106
       },
       "PA2|J\u00d72|O:AP03\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 11624
+        "PKCTCVBX-SNGL-Jx1": 11644
       },
       "PA2|J\u00d72|O:AP03\u00d72|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1227
+        "PKCTCVBX-SNGL-Jx1": 1229
       },
       "PA2|J\u00d72|O:AP03\u00d72|O:PT07C\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 608
+        "PKCTCVBX-SNGL-Jx1": 609
       },
       "PA2|J\u00d72|O:AP03\u00d73": {
-        "PKCTCVBX-SNGL-Jx1": 3069
+        "PKCTCVBX-SNGL-Jx1": 3073
       },
       "PA2|J\u00d72|O:AP03\u00d73|O:AP14\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 673
+        "PKCTCVBX-SNGL-Jx1": 674
       },
       "PA2|J\u00d72|O:AP03\u00d73|O:FCNT01\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 651
+        "PKCTCVBX-SNGL-Jx1": 652
       },
       "PA2|J\u00d72|O:AP14\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 18996
+        "PKCTCVBX-SNGL-Jx1": 19028
       },
       "PA2|J\u00d72|O:AP14\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 2660
+        "PKCTCVBX-SNGL-Jx1": 2665
       },
       "PA2|J\u00d72|O:AP14\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 1411
+        "PKCTCVBX-SNGL-Jx1": 1413
       },
       "PA2|J\u00d72|O:AP15\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 964
@@ -114690,31 +114694,31 @@
         "PKCTCVBX-SNGL-Jx1": 170
       },
       "PA2|J\u00d72|O:FCNT01\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 8637
+        "PKCTCVBX-SNGL-Jx1": 8651
       },
       "PA2|J\u00d72|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1940
+        "PKCTCVBX-SNGL-Jx1": 1943
       },
       "PA2|J\u00d72|O:FCNT01\u00d72|O:SLFRLL\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 59
       },
       "PA2|J\u00d72|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 18979
+        "PKCTCVBX-SNGL-Jx1": 19011
       },
       "PA2|J\u00d72|O:PT07C\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 1498
+        "PKCTCVBX-SNGL-Jx1": 1502
       },
       "PA2|J\u00d72|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 8041
+        "PKCTCVBX-SNGL-Jx1": 8056
       },
       "PA2|J\u00d72|O:SSWF\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 322
       },
       "PA2|J\u00d73": {
-        "PKCTCVBX-SNGL-Jx1": 40097
+        "PKCTCVBX-SNGL-Jx1": 40168
       },
       "PA2|J\u00d73|O:AP03\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 2800
+        "PKCTCVBX-SNGL-Jx1": 2804
       },
       "PA2|J\u00d73|O:AP03\u00d71|O:AP14\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 78
@@ -114723,58 +114727,58 @@
         "PKCTCVBX-SNGL-Jx1": 46
       },
       "PA2|J\u00d73|O:AP03\u00d71|O:AP14\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 612
+        "PKCTCVBX-SNGL-Jx1": 613
       },
       "PA2|J\u00d73|O:AP03\u00d71|O:AP14\u00d72|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 22
       },
       "PA2|J\u00d73|O:AP03\u00d71|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 679
+        "PKCTCVBX-SNGL-Jx1": 680
       },
       "PA2|J\u00d73|O:AP03\u00d73": {
         "PKCTCVBX-SNGL-Jx1": 18
       },
       "PA2|J\u00d73|O:AP14\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 2612
+        "PKCTCVBX-SNGL-Jx1": 2616
       },
       "PA2|J\u00d73|O:FCNT01\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1205
+        "PKCTCVBX-SNGL-Jx1": 1207
       },
       "PA2|J\u00d73|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1316
+        "PKCTCVBX-SNGL-Jx1": 1317
       },
       "PA2|L\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 442211
+        "NEW-PKCTCVBX-SNGL-Lx1": 442954
       },
       "PA2|L\u00d71|O:AP03\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 13719
+        "NEW-PKCTCVBX-SNGL-Lx1": 13741
       },
       "PA2|L\u00d71|O:AP03\u00d71|O:AP14\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 341
       },
       "PA2|L\u00d71|O:AP03\u00d71|O:CLMDNT\u00d71": {
-        "PKCTCVBX-SNGL-Lx1": 607
+        "PKCTCVBX-SNGL-Lx1": 608
       },
       "PA2|L\u00d71|O:AP03\u00d71|O:CLMDNT\u00d71|O:PT07C\u00d71": {
         "PKCTCVBX-SNGL-Lx1": 341
       },
       "PA2|L\u00d71|O:AP03\u00d71|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 2523
+        "NEW-PKCTCVBX-SNGL-Lx1": 2527
       },
       "PA2|L\u00d71|O:AP03\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 605
+        "NEW-PKCTCVBX-SNGL-Lx1": 606
       },
       "PA2|L\u00d71|O:AP03\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 673
+        "NEW-PKCTCVBX-SNGL-Lx1": 674
       },
       "PA2|L\u00d71|O:AP03\u00d72|O:PT07C\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 641
+        "NEW-PKCTCVBX-SNGL-Lx1": 642
       },
       "PA2|L\u00d71|O:AP03\u00d73": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1943
+        "NEW-PKCTCVBX-SNGL-Lx1": 1946
       },
       "PA2|L\u00d71|O:AP14\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 5125
+        "NEW-PKCTCVBX-SNGL-Lx1": 5133
       },
       "PA2|L\u00d71|O:AP14\u00d71|O:PT07C\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 471
@@ -114783,104 +114787,104 @@
         "NEW-PKCTCVBX-SNGL-Lx1": 274
       },
       "PA2|L\u00d71|O:CLMDNT\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 580,
-        "PKCTCVBX-SNGL-Lx1": 125229
+        "NEW-PKCTCVBX-SNGL-Lx1": 581,
+        "PKCTCVBX-SNGL-Lx1": 125457
       },
       "PA2|L\u00d71|O:CLMDNT\u00d71|O:FCNT01\u00d71": {
-        "PKCTCVBX-SNGL-Lx1": 1833
+        "PKCTCVBX-SNGL-Lx1": 1836
       },
       "PA2|L\u00d71|O:FCNT01\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1428
+        "NEW-PKCTCVBX-SNGL-Lx1": 1431
       },
       "PA2|L\u00d71|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 6556
+        "NEW-PKCTCVBX-SNGL-Lx1": 6566
       },
       "PA2|L\u00d71|O:PT07C\u00d73": {
         "NEW-PKCTCVBX-SNGL-Lx1": 30
       },
       "PA2|L\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 4258
+        "NEW-PKCTCVBX-SNGL-Lx1": 4265
       },
       "PA2|L\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 2093421
+        "NEW-PKCTCVBX-SNGL-Lx1": 2097200
       },
       "PA2|L\u00d72|O:AP03\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 101550
+        "NEW-PKCTCVBX-SNGL-Lx1": 101736
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:AP14\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 6567
+        "NEW-PKCTCVBX-SNGL-Lx1": 6578
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 8329
+        "NEW-PKCTCVBX-SNGL-Lx1": 8344
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 10985
+        "NEW-PKCTCVBX-SNGL-Lx1": 11004
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:PT07C\u00d71|O:SSWF\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 8
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:AP14\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 270
+        "NEW-PKCTCVBX-SNGL-Lx1": 271
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:AP15\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 20
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:CLMDNT\u00d72": {
-        "PKCTCVBX-SNGL-Lx1": 6989
+        "PKCTCVBX-SNGL-Lx1": 7005
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:CLMDNT\u00d72|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Lx1": 4221
+        "PKCTCVBX-SNGL-Lx1": 4228
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:FCNT01\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1397
+        "NEW-PKCTCVBX-SNGL-Lx1": 1398
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1322
+        "NEW-PKCTCVBX-SNGL-Lx1": 1324
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 22429
+        "NEW-PKCTCVBX-SNGL-Lx1": 22466
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1608
+        "NEW-PKCTCVBX-SNGL-Lx1": 1611
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:PT07C\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 643
+        "NEW-PKCTCVBX-SNGL-Lx1": 644
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 5308
+        "NEW-PKCTCVBX-SNGL-Lx1": 5319
       },
       "PA2|L\u00d72|O:AP03\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 15176
+        "NEW-PKCTCVBX-SNGL-Lx1": 15204
       },
       "PA2|L\u00d72|O:AP03\u00d72|O:AP14\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 651
+        "NEW-PKCTCVBX-SNGL-Lx1": 652
       },
       "PA2|L\u00d72|O:AP03\u00d72|O:CLMDNT\u00d72": {
-        "PKCTCVBX-SNGL-Lx1": 1140
+        "PKCTCVBX-SNGL-Lx1": 1142
       },
       "PA2|L\u00d72|O:AP03\u00d72|O:FCNT01\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1200
+        "NEW-PKCTCVBX-SNGL-Lx1": 1202
       },
       "PA2|L\u00d72|O:AP03\u00d72|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 5197
+        "NEW-PKCTCVBX-SNGL-Lx1": 5206
       },
       "PA2|L\u00d72|O:AP03\u00d73": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 2178
+        "NEW-PKCTCVBX-SNGL-Lx1": 2181
       },
       "PA2|L\u00d72|O:AP14\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 20997
+        "NEW-PKCTCVBX-SNGL-Lx1": 21036
       },
       "PA2|L\u00d72|O:AP14\u00d71|O:CLMDNT\u00d72": {
-        "PKCTCVBX-SNGL-Lx1": 2423
+        "PKCTCVBX-SNGL-Lx1": 2427
       },
       "PA2|L\u00d72|O:AP14\u00d71|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 7904
+        "NEW-PKCTCVBX-SNGL-Lx1": 7917
       },
       "PA2|L\u00d72|O:AP14\u00d71|O:PT07C\u00d73": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1146
+        "NEW-PKCTCVBX-SNGL-Lx1": 1148
       },
       "PA2|L\u00d72|O:AP14\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1300
+        "NEW-PKCTCVBX-SNGL-Lx1": 1302
       },
       "PA2|L\u00d72|O:AP15\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 1355
@@ -114895,44 +114899,44 @@
         "NEW-PKCTCVBX-SNGL-Lx1": 30
       },
       "PA2|L\u00d72|O:CLMDNT\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 826,
-        "PKCTCVBX-SNGL-Lx1": 99995
+        "NEW-PKCTCVBX-SNGL-Lx1": 828,
+        "PKCTCVBX-SNGL-Lx1": 100195
       },
       "PA2|L\u00d72|O:CLMDNT\u00d72|O:FCNT01\u00d71": {
-        "PKCTCVBX-SNGL-Lx1": 1518
+        "PKCTCVBX-SNGL-Lx1": 1523
       },
       "PA2|L\u00d72|O:CLMDNT\u00d72|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Lx1": 2642
+        "PKCTCVBX-SNGL-Lx1": 2647
       },
       "PA2|L\u00d72|O:CLMDNT\u00d72|O:PT07C\u00d73|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Lx1": 673
+        "PKCTCVBX-SNGL-Lx1": 674
       },
       "PA2|L\u00d72|O:FCNT01\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 16164
+        "NEW-PKCTCVBX-SNGL-Lx1": 16195
       },
       "PA2|L\u00d72|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 2592
+        "NEW-PKCTCVBX-SNGL-Lx1": 2596
       },
       "PA2|L\u00d72|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 38519
+        "NEW-PKCTCVBX-SNGL-Lx1": 38587
       },
       "PA2|L\u00d72|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1968
+        "NEW-PKCTCVBX-SNGL-Lx1": 1972
       },
       "PA2|L\u00d72|O:PT07C\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 6681
+        "NEW-PKCTCVBX-SNGL-Lx1": 6693
       },
       "PA2|L\u00d72|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 15929
+        "NEW-PKCTCVBX-SNGL-Lx1": 15965
       },
       "PA2|L\u00d72|O:SSWF\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 396
       },
       "PA2|L\u00d73": {
-        "PKCTCVBX-TRIO-Lx1": 68000
+        "PKCTCVBX-TRIO-Lx1": 68126
       },
       "PA2|L\u00d73|O:AP03\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 2952
+        "PKCTCVBX-TRIO-Lx1": 2958
       },
       "PA2|L\u00d73|O:AP03\u00d71|O:AP14\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-TRIO-Lx1": 115
@@ -114944,13 +114948,13 @@
         "PKCTCVBX-TRIO-Lx1": 30
       },
       "PA2|L\u00d73|O:AP03\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 964
+        "PKCTCVBX-TRIO-Lx1": 966
       },
       "PA2|L\u00d73|O:AP03\u00d72": {
-        "PKCTCVBX-TRIO-Lx1": 1131
+        "PKCTCVBX-TRIO-Lx1": 1132
       },
       "PA2|L\u00d73|O:AP14\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 1258
+        "PKCTCVBX-TRIO-Lx1": 1260
       },
       "PA2|L\u00d73|O:AP15\u00d71|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-TRIO-Lx1": 59
@@ -114959,10 +114963,10 @@
         "PKCTCVBX-TRIO-Lx1": 64
       },
       "PA2|L\u00d73|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 1869
+        "PKCTCVBX-TRIO-Lx1": 1871
       },
       "PA2|L\u00d73|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 622
+        "PKCTCVBX-TRIO-Lx1": 623
       },
       "PA2|L\u00d74|O:AP03\u00d71|O:AP14\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71|O:SSWF\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 6
@@ -114971,25 +114975,25 @@
         "NEW-PKCTCVBX-SNGL-Lx1": 16
       },
       "TO1|J\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 6412
+        "PKCTCVBX-SNGL-Jx1": 6421
       },
       "TO1|J\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 22692
+        "PKCTCVBX-SNGL-Jx1": 22711
       },
       "TO1|L\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 7408
+        "NEW-PKCTCVBX-SNGL-Lx1": 7418
       },
       "TO1|L\u00d71|O:CLMDNT\u00d71": {
-        "PKCTCVBX-SNGL-Lx1": 886
+        "PKCTCVBX-SNGL-Lx1": 887
       },
       "TO1|L\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 33303
+        "NEW-PKCTCVBX-SNGL-Lx1": 33333
       },
       "TO1|L\u00d72|O:CLMDNT\u00d72": {
         "PKCTCVBX-SNGL-Lx1": 37
       }
     },
-    "pages": 174,
+    "pages": 175,
     "schema": 1,
     "script_version": "1.7.0",
     "storage_model": {
@@ -115012,9 +115016,9 @@
     },
     "warnings": [
       "33 orders came back with no order_type (counted as D2C); samples: [{'order_number': '269201', 'store': 'Cattasaurus - shoproxstore - Shopify', 'status': 'fulfilled', 'shipped': False}, {'order_number': '114-3313788-1804268', 'store': 'Cattasaurus - Amazon USA', 'status': 'cancelled', 'shipped': False}, {'order_number': '268409', 'store': 'Cattasaurus - shoproxstore - Shopify', 'status': 'fulfilled', 'shipped': False}, {'order_number': '268041', 'store': 'Cattasaurus - shoproxstore - Shopify', 'status': 'fulfilled', 'shipped': False}, {'order_number': '268014', 'store': 'Cattasaurus - shoproxstore - Shopify', 'status': 'cancelled', 'shipped': False}]",
-      "5987 orders had no packaging line in the API - their box (6260 boxes) was inferred from the orders that list it (NV3 5897/6016, PA2 90/756)",
+      "6000 orders had no packaging line in the API - their box (6276 boxes) was inferred from the orders that list it (NV3 5910/6029, PA2 90/757)",
       "96 orders had no cost estimate from ShipMonk yet - their cost is $0 until ShipMonk fills it in (re-fetched every run)",
-      "charges stated in CAD (211.24 CAD this run) converted to USD at 0.73 - set SHIPMONK_FX_TO_USD to the rate on ShipMonk's invoice if it differs"
+      "charges stated in CAD (214.41 CAD this run) converted to USD at 0.73 - set SHIPMONK_FX_TO_USD to the rate on ShipMonk's invoice if it differs"
     ]
   },
   "source": "shipmonk_public_api",
@@ -115110,51 +115114,51 @@
   "totals": {
     "last_30d": {
       "cost_missing_orders": 95,
-      "orders": 13191,
-      "orders_onhold": 945,
-      "orders_shipped": 11538,
-      "orders_unshipped": 1653,
-      "packages": 11699,
+      "orders": 13204,
+      "orders_onhold": 965,
+      "orders_shipped": 11549,
+      "orders_unshipped": 1655,
+      "packages": 11710,
       "packaging_cost": 58.0,
-      "packaging_orders_est": 4915,
-      "packaging_units": 12891,
-      "packaging_units_est": 5143,
-      "pick_pack_cost": 31424.95,
-      "shipping_cost": 249010.47,
-      "total_cost": 280493.42,
-      "units": 26360
+      "packaging_orders_est": 4919,
+      "packaging_units": 12906,
+      "packaging_units_est": 5150,
+      "pick_pack_cost": 31456.03,
+      "shipping_cost": 249185.58,
+      "total_cost": 280699.61,
+      "units": 26390
     },
     "mtd": {
       "cost_missing_orders": 95,
-      "orders": 10660,
-      "orders_onhold": 785,
-      "orders_shipped": 9170,
-      "orders_unshipped": 1490,
-      "packages": 9299,
+      "orders": 10673,
+      "orders_onhold": 805,
+      "orders_shipped": 9181,
+      "orders_unshipped": 1492,
+      "packages": 9310,
       "packaging_cost": 51.7,
-      "packaging_orders_est": 4058,
-      "packaging_units": 10524,
-      "packaging_units_est": 4264,
-      "pick_pack_cost": 25593.37,
-      "shipping_cost": 202473.78,
-      "total_cost": 228118.85,
-      "units": 21583
+      "packaging_orders_est": 4062,
+      "packaging_units": 10539,
+      "packaging_units_est": 4271,
+      "pick_pack_cost": 25624.45,
+      "shipping_cost": 202648.89,
+      "total_cost": 228325.04,
+      "units": 21613
     },
     "today": {
       "cost_missing_orders": 37,
-      "orders": 364,
-      "orders_onhold": 45,
-      "orders_shipped": 27,
-      "orders_unshipped": 337,
-      "packages": 45,
+      "orders": 377,
+      "orders_onhold": 52,
+      "orders_shipped": 28,
+      "orders_unshipped": 349,
+      "packages": 46,
       "packaging_cost": 0.0,
-      "packaging_orders_est": 188,
-      "packaging_units": 379,
-      "packaging_units_est": 232,
-      "pick_pack_cost": 1248.22,
-      "shipping_cost": 6639.73,
-      "total_cost": 7887.95,
-      "units": 825
+      "packaging_orders_est": 193,
+      "packaging_units": 394,
+      "packaging_units_est": 240,
+      "pick_pack_cost": 1301.64,
+      "shipping_cost": 6825.46,
+      "total_cost": 8127.1,
+      "units": 855
     }
   },
   "window": {
