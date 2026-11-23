@@ -1,24 +1,24 @@
 {
  "schema": 1,
- "generated_at": "2026-11-22T20:29:30Z",
+ "generated_at": "2026-11-23T13:37:51Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
-  "to": "2026-11-22",
+  "to": "2026-11-23",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 3302,
-  "charges": 794,
+  "transactions_read": 3317,
+  "charges": 799,
   "stats": {
-   "status:posted": 2510,
+   "status:posted": 2521,
    "rail:rtp": 10,
-   "rail:ach": 896,
+   "rail:ach": 899,
    "rail:fee": 102,
    "rail:wire": 32,
-   "status:failed": 790,
-   "rail:card": 1822,
-   "rail:other": 440,
-   "status:pending": 2
+   "status:failed": 795,
+   "rail:card": 1832,
+   "rail:other": 442,
+   "status:pending": 1
   },
   "lines": {
    "SHOP": "Shopify plan + apps billed by Shopify",
@@ -199,12 +199,12 @@
    "ADS_CARD": 364547.73,
    "DSP": 8500.0,
    "KLV": 5775.0,
-   "MC": 7675.99,
-   "MT": 1479.28,
+   "MC": 7795.99,
+   "MT": 2539.64,
    "SBW": 3500.0,
    "SHOP": 4350.43,
    "SUP": 24326.32,
-   "SW": 1343.2,
+   "SW": 1354.6,
    "TAX": 2775.0,
    "UPW": 1581.59
   }
@@ -304,12 +304,12 @@
   "2026-11": {
    "DSP": 8500.0,
    "KLV": 5775.0,
-   "MC": 6876.82,
-   "MT": 1792.04,
+   "MC": 6996.82,
+   "MT": 2852.4,
    "SBW": 3500.0,
    "SHOP": 4350.43,
    "SUP": 24326.32,
-   "SW": 1343.2,
+   "SW": 1354.6,
    "TAX": 2831.26,
    "UPW": 1581.59
   },
@@ -366,7 +366,7 @@
   }
  },
  "pending": {
-  "SW": 11.4
+  "SHOP": 4019.9
  },
  "charges": [
   {
@@ -7389,6 +7389,30 @@
   },
   {
    "d": "2026-11-22",
+   "v": "Elevar",
+   "l": "MT",
+   "a": 531.36,
+   "k": "card",
+   "cy": "M"
+  },
+  {
+   "d": "2026-11-22",
+   "v": "Elevar",
+   "l": "MT",
+   "a": 450.0,
+   "k": "card",
+   "cy": "M"
+  },
+  {
+   "d": "2026-11-22",
+   "v": "QuickBooks",
+   "l": "SW",
+   "a": 11.4,
+   "k": "card",
+   "cy": "M"
+  },
+  {
+   "d": "2026-11-22",
    "v": "Squarespace / Google Workspace",
    "l": "SW",
    "a": 7.75,
@@ -7404,6 +7428,22 @@
    "k": "card",
    "cy": "M",
    "fx": "VND"
+  },
+  {
+   "d": "2026-11-23",
+   "v": "BrandSearch",
+   "l": "MT",
+   "a": 79.0,
+   "k": "card",
+   "cy": "M"
+  },
+  {
+   "d": "2026-11-23",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 120.0,
+   "k": "card",
+   "cy": "U"
   }
  ],
  "unclassified_card": [
