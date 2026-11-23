@@ -1,0 +1,69 @@
+name: Cattasaurus Shopify Payments payouts
+
+on:
+  schedule:
+    # Every 3 hours at :50 UTC - away from Shopify P&L (:05/:35), Amazon (:00/:30) and Meta (:15/:45).
+    - cron: "50 */3 * * *"
+  push:                # run once whenever this script or this workflow file changes
+    branches: [main]
+    paths:
+      - fetch_shopify_payouts.py
+      - .github/workflows/shopify_payouts.yml
+  workflow_dispatch:   # "Run workflow" by hand; fill the date to refetch from an earlier day
+    inputs:
+      backfill_start:
+        description: "Refetch payouts from (YYYY-MM-DD). Leave empty for the normal run (last 45 days; first run starts 2026-05-01)."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: shopify-payouts-sync
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Sync to the latest main
+        run: |
+          git fetch --depth=1 origin main
+          git reset --hard origin/main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch Shopify Payments payouts
+        env:
+          REPORT_TIMEZONE: America/Los_Angeles
+          BACKFILL_START: ${{ github.event.inputs.backfill_start }}
+          SHOPIFY_SHOP: ${{ secrets.SHOPIFY_SHOP }}
+          SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_CLIENT_ID }}
+          SHOPIFY_CLIENT_SECRET: ${{ secrets.SHOPIFY_CLIENT_SECRET }}
+        run: python fetch_shopify_payouts.py
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/shopify_payouts.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Update Shopify Payments payouts ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            git rebase --abort 2>/dev/null || true
+            echo "Push attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "Could not push after 5 attempts." && exit 1
