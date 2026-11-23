@@ -1,0 +1,69 @@
+name: Cattasaurus Amazon settlements
+
+on:
+  schedule:
+    # Every 6 hours at :20 UTC - away from the Amazon P&L run (:00/:30) that shares the same API limits.
+    - cron: "20 */6 * * *"
+  push:                # run once whenever this script or this workflow file changes
+    branches: [main]
+    paths:
+      - fetch_amazon_settlements.py
+      - .github/workflows/amazon_settlements.yml
+  workflow_dispatch:   # "Run workflow" by hand; fill the date to refetch from an earlier day
+    inputs:
+      backfill_start:
+        description: "Refetch settlement periods started from (YYYY-MM-DD). Leave empty for the normal run (last 45 days; first run starts 2026-04-15)."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: amazon-settlements-sync
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Sync to the latest main
+        run: |
+          git fetch --depth=1 origin main
+          git reset --hard origin/main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch Amazon settlement periods
+        env:
+          REPORT_TIMEZONE: America/Los_Angeles
+          BACKFILL_START: ${{ github.event.inputs.backfill_start }}
+          AMAZON_SP_API_CLIENT_ID: ${{ secrets.AMAZON_SP_API_CLIENT_ID }}
+          AMAZON_SP_API_CLIENT_SECRET: ${{ secrets.AMAZON_SP_API_CLIENT_SECRET }}
+          AMAZON_SP_API_REFRESH_TOKEN: ${{ secrets.AMAZON_SP_API_REFRESH_TOKEN }}
+        run: python fetch_amazon_settlements.py
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/amazon_settlements.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Update Amazon settlements ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            git rebase --abort 2>/dev/null || true
+            echo "Push attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "Could not push after 5 attempts." && exit 1
