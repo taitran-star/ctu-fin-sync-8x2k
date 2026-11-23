@@ -1,0 +1,68 @@
+name: Cattasaurus ShipMonk manual-store orders
+
+on:
+  schedule:
+    # Once a day at 05:33 UTC - between two runs of the 30-minute ShipMonk sync (:10 / :40), same API key.
+    - cron: "33 5 * * *"
+  push:                # run once whenever this script or this workflow file changes
+    branches: [main]
+    paths:
+      - fetch_shipmonk_manual.py
+      - .github/workflows/shipmonk_manual.yml
+  workflow_dispatch:
+    inputs:
+      start:
+        description: "Read every order shipped since this day (YYYY-MM-DD). Leave empty for the normal run (last 60 days; the first run reads from 2025-01-01)."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: shipmonk-manual-sync
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Sync to the latest main
+        run: |
+          git fetch --depth=1 origin main
+          git reset --hard origin/main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch manual-store orders with their SKUs
+        env:
+          REPORT_TIMEZONE: America/Los_Angeles
+          MANUAL_START: ${{ github.event.inputs.start }}
+          SHIPMONK_API_KEY: ${{ secrets.SHIPMONK_API_KEY }}
+        run: python fetch_shipmonk_manual.py
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ ! -f data/shipmonk_manual_orders.csv ]; then echo "No output file."; exit 0; fi
+          git add data/shipmonk_manual_orders.csv
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Update ShipMonk manual-store orders ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            git rebase --abort 2>/dev/null || true
+            echo "Push attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "Could not push after 5 attempts." && exit 1
