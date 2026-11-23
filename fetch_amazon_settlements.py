@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""fetch_amazon_settlements.py v1.0 - Amazon settlement periods -> data/amazon_settlements.json
+"""fetch_amazon_settlements.py v1.1 - Amazon settlement periods -> data/amazon_settlements.json
 
 One row per Amazon "financial event group" (= one settlement period, the unit Amazon pays out):
   id, start, end, status (Open/Closed), transfer_status, transfer_date, original_total,
@@ -7,7 +7,10 @@ One row per Amazon "financial event group" (= one settlement period, the unit Am
   fetch_amazon_pnl.py (gross_sales, refunds, referral_fees, fba_fulfillment_fees, service_fees, ...),
   net_classified, diff (= original_total - beginning_balance - net_classified; 0.00 = the period is
   fully explained), by_month{YYYY-MM:{...}} (the same events by the month they posted),
-  event_lists{name: count} and unhandled[] for diagnostics.
+  event_lists{name: count} and unhandled[] for diagnostics,
+  raw{label: amount} = EVERY money amount of the period's events summed by event list and charge /
+  fee / adjustment type (no classification), and raw_total = their sum. A period's payout is
+  original_total = beginning_balance + raw_total - the reserve Amazon keeps (next period's beginning_balance).
 No order ids, no bank account digits, no transfer trace ids are written (public repo).
 
 Reuses fetch_amazon_pnl.py for the token, the rate limiter and the event classification.
@@ -21,7 +24,7 @@ from datetime import datetime, timedelta, timezone
 
 import fetch_amazon_pnl as ap
 
-SCRIPT_VERSION = "1.0"
+SCRIPT_VERSION = "1.1"
 OUT = os.environ.get("SETTLEMENTS_OUT", "data/amazon_settlements.json")
 HISTORY_START = os.environ.get("SETTLEMENTS_HISTORY_START", "2026-04-15").strip()
 ROLLING_DAYS = int(os.environ.get("SETTLEMENTS_ROLLING_DAYS", "45") or 45)
@@ -93,9 +96,84 @@ def numeric_totals(daily):
     return rnd(tot), {m: rnd(v) for m, v in sorted(by_month.items())}
 
 
+ITEM_LISTS = ("ShipmentItemList", "ShipmentItemAdjustmentList")
+TYPED = (  # (list key, type key, amount key, label)
+    ("ItemChargeList", "ChargeType", "ChargeAmount", "charge"), ("ItemChargeAdjustmentList", "ChargeType", "ChargeAmount", "charge"),
+    ("ItemFeeList", "FeeType", "FeeAmount", "fee"), ("ItemFeeAdjustmentList", "FeeType", "FeeAmount", "fee"),
+    ("PromotionList", "PromotionType", "PromotionAmount", "promo"), ("PromotionAdjustmentList", "PromotionType", "PromotionAmount", "promo"),
+    ("OrderChargeList", "ChargeType", "ChargeAmount", "order_charge"), ("OrderChargeAdjustmentList", "ChargeType", "ChargeAmount", "order_charge"),
+    ("OrderFeeList", "FeeType", "FeeAmount", "order_fee"), ("OrderFeeAdjustmentList", "FeeType", "FeeAmount", "order_fee"),
+    ("ShipmentFeeList", "FeeType", "FeeAmount", "shipment_fee"), ("ShipmentFeeAdjustmentList", "FeeType", "FeeAmount", "shipment_fee"),
+    ("DirectPaymentList", "DirectPaymentType", "DirectPaymentAmount", "direct_payment"),
+    ("FeeList", "FeeType", "FeeAmount", "fee"),
+)
+SHORT = {"ShipmentEventList": "Shipment", "RefundEventList": "Refund", "GuaranteeClaimEventList": "GuaranteeClaim",
+         "ChargebackEventList": "Chargeback", "ServiceFeeEventList": "ServiceFee", "AdjustmentEventList": "Adjustment",
+         "RemovalShipmentEventList": "Removal", "RemovalShipmentAdjustmentEventList": "RemovalAdjustment",
+         "DebtRecoveryEventList": "DebtRecovery", "RetrochargeEventList": "Retrocharge",
+         "ProductAdsPaymentEventList": "ProductAds", "SAFETReimbursementEventList": "SAFET"}
+
+
+def _is_money(v):
+    return isinstance(v, dict) and "CurrencyAmount" in v
+
+
+def _radd(raw, label, v):
+    raw[label] = raw.get(label, 0.0) + money(v)
+
+
+def _typed(raw, name, node):
+    for lk, tk, ak, lab in TYPED:
+        for it in node.get(lk) or []:
+            _radd(raw, f"{name}:{lab}:{it.get(tk) or '?'}", it.get(ak))
+    for w in node.get("ItemTaxWithheldList") or []:
+        for it in w.get("TaxesWithheld") or []:
+            _radd(raw, f"{name}:tax_withheld:{it.get('ChargeType') or '?'}", it.get("ChargeAmount"))
+    for k in ("CostOfPointsGranted", "CostOfPointsReturned"):
+        if _is_money(node.get(k)):
+            _radd(raw, f"{name}:{k}", node[k])
+
+
+def raw_breakdown(list_name, ev, raw):
+    """Sum every money amount of one event by type, without classifying it."""
+    name = SHORT.get(list_name, list_name)
+    if list_name in ("ShipmentEventList", "RefundEventList", "GuaranteeClaimEventList", "ChargebackEventList", "ServiceFeeEventList"):
+        _typed(raw, name, ev)
+        for lk in ITEM_LISTS:
+            for item in ev.get(lk) or []:
+                _typed(raw, name, item)
+    elif list_name == "AdjustmentEventList":
+        _radd(raw, f"{name}:{ev.get('AdjustmentType') or '?'}", ev.get("AdjustmentAmount"))
+    elif list_name == "RemovalShipmentEventList":
+        for item in ev.get("RemovalShipmentItemList") or []:
+            for k in ("Revenue", "FeeAmount", "TaxAmount", "TaxWithheld"):
+                if _is_money(item.get(k)):
+                    _radd(raw, f"{name}:{k}", item[k])
+    elif list_name == "RemovalShipmentAdjustmentEventList":
+        for item in ev.get("RemovalShipmentItemAdjustmentList") or []:
+            for k in ("RevenueAdjustment", "TaxAmountAdjustment", "TaxWithheldAdjustment"):
+                if _is_money(item.get(k)):
+                    _radd(raw, f"{name}:{k}", item[k])
+    elif list_name == "DebtRecoveryEventList":
+        for k in ("RecoveryAmount", "OverPaymentCredit"):
+            if _is_money(ev.get(k)):
+                _radd(raw, f"{name}:{k}", ev[k])
+    elif list_name == "RetrochargeEventList":
+        for k in ("BaseTax", "ShippingTax"):
+            if _is_money(ev.get(k)):
+                _radd(raw, f"{name}:{k}", ev[k])
+        for w in ev.get("RetrochargeTaxWithheldList") or []:
+            for it in w.get("TaxesWithheld") or []:
+                _radd(raw, f"{name}:tax_withheld:{it.get('ChargeType') or '?'}", it.get("ChargeAmount"))
+    else:                                    # unknown list: every top-level money field of the event
+        for k, v in ev.items():
+            if _is_money(v):
+                _radd(raw, f"{name}:{k}", v)
+
+
 def fetch_group_events(token, gid, fallback_day):
     """All financial events of one settlement period, classified by the P&L script's handlers."""
-    daily, warnings, lists, unhandled = {}, set(), {}, {}
+    daily, warnings, lists, unhandled, raw = {}, set(), {}, {}, {}
     ap._current_day = fallback_day          # events without a PostedDate (storage, subscription) land here
     path = f"/finances/v0/financialEventGroups/{gid}/financialEvents"
     next_token, pages, events = None, 0, 0
@@ -108,6 +186,8 @@ def fetch_group_events(token, gid, fallback_day):
             if not isinstance(val, list) or not val:
                 continue
             lists[key] = lists.get(key, 0) + len(val)
+            for ev in val:
+                raw_breakdown(key, ev, raw)
             fn = HANDLERS.get(key)
             if fn is None:
                 unhandled[key] = unhandled.get(key, 0) + len(val)
@@ -120,7 +200,8 @@ def fetch_group_events(token, gid, fallback_day):
             break
     ap._current_day = None
     totals, by_month = numeric_totals(daily)
-    return {"totals": totals, "by_month": by_month, "event_lists": dict(sorted(lists.items())),
+    raw = {k: round(v, 2) for k, v in sorted(raw.items()) if abs(v) >= 0.005}
+    return {"totals": totals, "by_month": by_month, "raw": raw, "raw_total": round(sum(raw.values()), 2), "event_lists": dict(sorted(lists.items())),
             "unhandled": dict(sorted(unhandled.items())), "pages": pages, "events": events,
             "warnings": sorted(warnings)[:20]}
 
@@ -171,8 +252,11 @@ def main():
         }
         prev = stored.get(gid) or {}
         closed = (row["status"] or "").lower() == "closed"
-        if prev.get("events_done") and closed and mode != "backfill":
-            for k in ("totals", "by_month", "event_lists", "unhandled", "pages", "events", "warnings",
+        too_old = (row["start_day"] or "9999") < (datetime.strptime(start, "%Y-%m-%d") - timedelta(days=400)).strftime("%Y-%m-%d")
+        if too_old:
+            pass                                 # an ancient open period: Amazon no longer serves its events
+        elif prev.get("events_done") and closed and "raw" in prev and mode != "backfill":
+            for k in ("totals", "by_month", "raw", "raw_total", "event_lists", "unhandled", "pages", "events", "warnings",
                       "net_classified", "diff", "events_done"):
                 if k in prev:
                     row[k] = prev[k]
