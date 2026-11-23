@@ -1,0 +1,69 @@
+name: Cattasaurus Walmart settlements
+
+on:
+  schedule:
+    # Every 6 hours at :53 UTC - away from the Walmart sync (:17/:47) that uses the same API key.
+    - cron: "53 */6 * * *"
+  push:                # run once whenever this script or this workflow file changes
+    branches: [main]
+    paths:
+      - fetch_walmart_settlements.py
+      - .github/workflows/walmart_settlements.yml
+  workflow_dispatch:   # "Run workflow" by hand; tick the box to download every report again
+    inputs:
+      force_all:
+        description: "Type 1 to download every available report again. Leave empty for the normal run (new reports + the last 2)."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: walmart-settlements-sync
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Sync to the latest main
+        run: |
+          git fetch --depth=1 origin main
+          git reset --hard origin/main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch Walmart payment periods
+        env:
+          REPORT_TIMEZONE: America/Los_Angeles
+          SETTLEMENTS_FORCE_ALL: ${{ github.event.inputs.force_all }}
+          WALMART_CLIENT_ID: ${{ secrets.WALMART_CLIENT_ID }}
+          WALMART_CLIENT_SECRET: ${{ secrets.WALMART_CLIENT_SECRET }}
+        run: python fetch_walmart_settlements.py
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ ! -f data/walmart_settlements.json ]; then echo "No output file."; exit 0; fi
+          git add data/walmart_settlements.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Update Walmart settlements ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            git rebase --abort 2>/dev/null || true
+            echo "Push attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "Could not push after 5 attempts." && exit 1
