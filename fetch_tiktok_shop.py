@@ -61,7 +61,7 @@ try:
 except ImportError:  # pragma: no cover
     ZoneInfo = None
 
-SCRIPT_VERSION = "tiktok_shop-2.4.1"   # 2.4.1 (23/10/2026): author_type "AFFILIATE_ACCOUNTS"/"OFFICIAL_ACCOUNTS" normalised; 2.4 (22/10/2026): shoppable videos (Analytics API) + affiliate orders / creators (Affiliate Seller API); 2.3: orders_daily[].sku_units / sku_sales per seller SKU
+SCRIPT_VERSION = "tiktok_shop-2.5"   # 2.5 (24/11/2026): samples_sku_daily = free sample orders per day and seller SKU (cancelled ones left out) so the dashboard can book their product cost as marketing; 2.4.1 (23/10/2026): author_type "AFFILIATE_ACCOUNTS"/"OFFICIAL_ACCOUNTS" normalised; 2.4 (22/10/2026): shoppable videos (Analytics API) + affiliate orders / creators (Affiliate Seller API); 2.3: orders_daily[].sku_units / sku_sales per seller SKU
 SCHEMA = 2
 
 AUTH_HOST = "https://auth.tiktok-shops.com"
@@ -1020,6 +1020,8 @@ def main():
     merged_orders = {o: r for o, r in ((prev or {}).get("orders") or {}).items() if not r.get("is_sample")}
     merged_samples = dict((prev or {}).get("samples_daily") or {})
     samples_new = {}
+    merged_samples_sku = dict((prev or {}).get("samples_sku_daily") or {})   # v2.5: {day: {seller_sku: units}}
+    samples_sku_new = {}
     orders_fetched = 0
     order_fields = {}
     try:
@@ -1044,11 +1046,22 @@ def main():
                     if o.get("is_sample_order") and o.get("create_time"):
                         k = day_key(o["create_time"])
                         samples_new[k] = samples_new.get(k, 0) + 1
+                        # v2.5: units per seller SKU of the samples that really ship (one line item = one unit)
+                        if str(o.get("status") or "").upper() not in ("CANCELLED", "UNPAID"):
+                            for li in o.get("line_items") or []:
+                                if str(li.get("display_status") or "").upper() == "CANCELLED":
+                                    continue
+                                sku = str(li.get("seller_sku") or li.get("sku_id") or "").strip() or "(no sku)"
+                                b = samples_sku_new.setdefault(k, {})
+                                b[sku] = b.get(sku, 0) + 1
                 merged_orders = orders_merge(prev, {str(o["id"]): order_row(o) for o in real_orders},
                                              fetched_start, fetched_end)
                 merged_samples = {d: n for d, n in ((prev or {}).get("samples_daily") or {}).items()
                                   if d >= HISTORY_START and (d < fetched_start or d > fetched_end)}
                 merged_samples.update(samples_new)
+                merged_samples_sku = {d: v for d, v in ((prev or {}).get("samples_sku_daily") or {}).items()
+                                      if d >= HISTORY_START and (d < fetched_start or d > fetched_end)}
+                merged_samples_sku.update({d: dict(sorted(v.items())) for d, v in samples_sku_new.items()})
             # Per-order finance breakdown: every unsettled order + every order in the rolling window
             # (a refund can land after settlement). Unsettled / newest first, capped per run.
             todo = [oid for oid, r in merged_orders.items() if r.get("status") != "UNPAID" and not r.get("is_sample")
@@ -1123,6 +1136,7 @@ def main():
         "orders_daily": orders_daily,
         "refunds_daily": refunds_daily,
         "samples_daily": dict(sorted(merged_samples.items())),
+        "samples_sku_daily": dict(sorted(merged_samples_sku.items())),
         "orders": merged_orders,
         "videos": merged_videos,
         "videos_daily": videos_daily,

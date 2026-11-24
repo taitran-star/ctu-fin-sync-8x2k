@@ -54,6 +54,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if [ ! -f data/shipmonk_manual_orders.csv ]; then echo "No output file."; exit 0; fi
           git add data/shipmonk_manual_orders.csv
+          if [ -f data/nonrevenue_shipments.json ]; then git add data/nonrevenue_shipments.json; fi
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0

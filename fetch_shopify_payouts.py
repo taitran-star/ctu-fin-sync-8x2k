@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""fetch_shopify_payouts.py v1.0 - Shopify Payments payouts -> data/shopify_payouts.json
+"""fetch_shopify_payouts.py v1.1 - Shopify Payments payouts -> data/shopify_payouts.json
 
 What it writes (no order ids, no customer data - the repo is public):
   payouts[]: one row per Shopify Payments payout: id, issued_at, date (REPORT_TIMEZONE), status,
@@ -10,10 +10,16 @@ What it writes (no order ids, no customer data - the repo is public):
     adjustments{reason:{n, amount}}, tx_net and tx_diff (= tx_net - net, should be 0.00).
   pending{TYPE:{...}}: balance transactions not in a payout yet (money still on its way).
   monthly{YYYY-MM:{TYPE:{...}}}: the same transactions by the month they happened (REPORT_TIMEZONE).
+  daily{YYYY-MM-DD:{fee, by{CHARGE, DISPUTE, SHOP_CASH, OTHER}, charges, n, refunds}} (v1.1): what Shopify
+    Payments really charged per transaction day (REPORT_TIMEZONE): fee = every fee of the day (card and
+    Shop Pay Installments processing on CHARGE, the Shop Cash fee, the $15 chargeback fee less the ones
+    handed back when a dispute is won); charges / n = money and count of the CHARGE transactions;
+    refunds = REFUND amount (negative). The dashboard books `fee` as the Shopify Payments fee of the day.
+    A file written by v1.0 has no daily yet: the first v1.1 run reads the whole history once to build it.
 
 Needs the app scopes read_shopify_payments_accounts, read_shopify_payments_payouts,
 read_shopify_payments_disputes. Secrets (names only): SHOPIFY_SHOP, SHOPIFY_CLIENT_ID,
-SHOPIFY_CLIENT_SECRET. Optional env: BACKFILL_START (YYYY-MM-DD), PAYOUTS_HISTORY_START,
+SHOPIFY_CLIENT_SECRET. Optional env: BACKFILL_START (YYYY-MM-DD), PAYOUTS_HISTORY_START, PAYOUTS_DAILY_HISTORY_START,
 PAYOUTS_ROLLING_DAYS, PAYOUTS_FETCH_TRANSACTIONS=0 to skip the per-transaction part.
 """
 import json
@@ -26,13 +32,14 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
-SCRIPT_VERSION = "1.0"
+SCRIPT_VERSION = "1.1"
 SHOP = os.environ.get("SHOPIFY_SHOP", "").strip().lower().replace("https://", "").rstrip("/")
 API_VERSION = os.environ.get("SHOPIFY_API_VERSION", "2026-07").strip()
 TZ_NAME = os.environ.get("REPORT_TIMEZONE", "America/Los_Angeles").strip() or "America/Los_Angeles"
 TZ = ZoneInfo(TZ_NAME)
 OUT = os.environ.get("PAYOUTS_OUT", "data/shopify_payouts.json")
 HISTORY_START = os.environ.get("PAYOUTS_HISTORY_START", "2026-05-01").strip()
+DAILY_HISTORY_START = os.environ.get("PAYOUTS_DAILY_HISTORY_START", "2026-01-01").strip()   # daily{} fees go back further than the payout list
 ROLLING_DAYS = int(os.environ.get("PAYOUTS_ROLLING_DAYS", "45") or 45)
 BACKFILL_START = os.environ.get("BACKFILL_START", "").strip()
 FETCH_TX = os.environ.get("PAYOUTS_FETCH_TRANSACTIONS", "1").strip().lower() not in ("0", "false", "no")
@@ -193,9 +200,39 @@ def rounded(bucket):
     return {k: {a: (round(v, 2) if a != "n" else v) for a, v in b.items()} for k, b in sorted(bucket.items())}
 
 
+def fee_group(t):
+    """Bucket of a balance-transaction type inside daily[day].by."""
+    if t == "CHARGE":
+        return "CHARGE"
+    if t.startswith("DISPUTE") or t.startswith("CHARGEBACK"):
+        return "DISPUTE"
+    if t.startswith("SHOP_CASH"):
+        return "SHOP_CASH"
+    return "OTHER"
+
+
+def add_daily(daily, day, t, a, f):
+    d = daily.setdefault(day, {"fee": 0.0, "by": {}, "charges": 0.0, "n": 0, "refunds": 0.0})
+    d["fee"] += f
+    if f:
+        g = fee_group(t)
+        d["by"][g] = d["by"].get(g, 0.0) + f
+    if t == "CHARGE":
+        d["charges"] += a
+        d["n"] += 1
+    elif t == "REFUND":
+        d["refunds"] += a
+
+
+def rounded_daily(daily):
+    return {day: {"fee": round(d["fee"], 2), "by": {k: round(v, 2) for k, v in sorted(d["by"].items()) if abs(v) >= 0.005},
+                  "charges": round(d["charges"], 2), "n": d["n"], "refunds": round(d["refunds"], 2)}
+            for day, d in sorted(daily.items())}
+
+
 def fetch_transactions(token, since):
-    """Balance transactions processed on/after `since`, grouped by payout, by type and by month."""
-    by_payout, adj, pending, monthly = {}, {}, {}, {}
+    """Balance transactions processed on/after `since`, grouped by payout, by type, by month and by day."""
+    by_payout, adj, pending, monthly, daily = {}, {}, {}, {}, {}
     after, pages, count = None, 0, 0
     while True:
         data, errors = gql(token, TX_Q, {"first": 100, "after": after, "q": f"processed_at:>={since}"})
@@ -219,14 +256,16 @@ def fetch_transactions(token, since):
                     r["amount"] += a
             else:
                 add(pending, t, a, f, net)
-            add(monthly.setdefault(local_dt(n["transactionDate"]).strftime("%Y-%m"), {}), t, a, f, net)
+            when = local_dt(n["transactionDate"])
+            add(monthly.setdefault(when.strftime("%Y-%m"), {}), t, a, f, net)
+            add_daily(daily, when.strftime("%Y-%m-%d"), t, a, f)
         page = conn.get("pageInfo") or {}
         if not page.get("hasNextPage"):
             break
         after = page.get("endCursor")
         if pages % 50 == 0:
             log(f"  balance transactions: {count} so far ({pages} pages)")
-    return {"by_payout": by_payout, "adj": adj, "pending": pending, "monthly": monthly}, None, pages, count
+    return {"by_payout": by_payout, "adj": adj, "pending": pending, "monthly": monthly, "daily": daily}, None, pages, count
 
 
 def main():
@@ -242,6 +281,8 @@ def main():
         start, mode = BACKFILL_START, "backfill"
     elif not old.get("payouts"):
         start, mode = HISTORY_START, "first_run"
+    elif not old.get("daily") and FETCH_TX:
+        start, mode = HISTORY_START, "backfill_daily"      # a v1.0 file: read the history once to build daily{}
     else:
         start, mode = (today - timedelta(days=ROLLING_DAYS)).strftime("%Y-%m-%d"), "rolling"
     datetime.strptime(start, "%Y-%m-%d")      # fail early on a bad date
@@ -258,9 +299,11 @@ def main():
     log(f"payouts fetched: {len(payouts)} (summary: {'yes' if summary_access else 'NO'})")
 
     tx_meta = {"enabled": FETCH_TX, "ok": False, "error": None, "pages": 0, "count": 0, "since": None}
-    pending, monthly_new = None, {}
+    pending, monthly_new, daily_new = None, {}, {}
     if FETCH_TX:
         since = (datetime.strptime(start, "%Y-%m-%d") - timedelta(days=TX_LOOKBACK_DAYS)).strftime("%Y-%m-%d")
+        if mode in ("first_run", "backfill_daily") and DAILY_HISTORY_START and DAILY_HISTORY_START < since:
+            since = DAILY_HISTORY_START         # one long read so the fees per day cover the whole year
         tx_meta["since"] = since
         try:
             tx, err, pages, count = fetch_transactions(token, since)
@@ -285,6 +328,9 @@ def main():
             first_full = (datetime.strptime(start, "%Y-%m-%d").replace(day=1) + timedelta(days=32)).strftime("%Y-%m") \
                 if start[8:] != "01" else start[:7]
             monthly_new = {m: rounded(g) for m, g in tx["monthly"].items() if m >= first_full}
+            # days fully inside this run's window replace the stored ones (the query starts TX_LOOKBACK_DAYS before
+            # `start`; its first day can be cut by the time zone, so it is left as stored)
+            daily_new = {d: v for d, v in rounded_daily(tx["daily"]).items() if d > since}
 
     merged = {p["id"]: p for p in (old.get("payouts") or []) if isinstance(p, dict) and p.get("id")}
     for p in payouts:
@@ -296,6 +342,8 @@ def main():
     rows = sorted(merged.values(), key=lambda p: (p.get("date") or "", p.get("id") or ""), reverse=True)
     monthly = dict(old.get("monthly") or {})
     monthly.update(monthly_new)
+    daily = dict(old.get("daily") or {})
+    daily.update(daily_new)
     out = {
         "schema": 1, "script_version": SCRIPT_VERSION, "source": "shopify_payments_payouts",
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -303,15 +351,17 @@ def main():
         "meta": {"mode": mode, "start": start, "granted_scope": scope, "summary_access": summary_access,
                  "summary_error": payout_err, "transactions": tx_meta, "requests": STATS["requests"],
                  "throttled_waits": STATS["throttled_waits"], "payouts_in_run": len(payouts), "payouts_total": len(rows),
+                 "daily_from": min(daily) if daily else None, "daily_to": max(daily) if daily else None,
                  "note": "amounts in USD; tx_diff = sum of the payout's balance transactions minus the payout amount (0.00 = fully explained)"},
         "pending": pending if pending is not None else old.get("pending"),
         "monthly": dict(sorted(monthly.items())),
+        "daily": dict(sorted(daily.items())),
         "payouts": rows,
     }
     os.makedirs(os.path.dirname(OUT) or ".", exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as fh:
         json.dump(out, fh, ensure_ascii=False, separators=(",", ":"))
-    log(f"wrote {OUT}: {len(rows)} payouts, {STATS['requests']} requests")
+    log(f"wrote {OUT}: {len(rows)} payouts, {len(daily)} days of fees, {STATS['requests']} requests")
 
 
 if __name__ == "__main__":
