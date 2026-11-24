@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build c19cc1f2d4).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build d286cc598d).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -594,6 +594,37 @@
   // TikTok Shop (Open API, data/tiktok_shop.json schema 2): orders by ORDER date (LA) + real fees of settled orders.
   const TIKTOK_SHOP_LIVE_DATA = (window.__LIVE && window.__LIVE["tiktok_shop"]) || null; /*TIKTOK_SHOP_INJECT*/
   let tiktokMeta = null;
+  // V12.24: Shopify Payments balance transactions per day (data/shopify_payouts.json, fetch_shopify_payouts.py 1.1+) = the
+  // fees Shopify really took (cards, Shop Pay Installments, Shop Cash, chargeback fees); and the products shipped with
+  // no revenue (data/nonrevenue_shipments.json, fetch_shipmonk_manual.py 1.1+: influencer / campaign / reship orders of
+  // ShipMonk's Manual Store) - TikTok Shop samples come from data/tiktok_shop.json samples_sku_daily (tiktok_shop-2.5+).
+  const SHOPIFY_PAYOUTS_LIVE_DATA = (window.__LIVE && window.__LIVE["shopify_payouts"]) || null;
+  const NONREV_LIVE_DATA = (window.__LIVE && window.__LIVE["nonrev"]) || null;
+  let payoutFeeMeta = null;
+  const NONREV_CH = {tiktok_sample:'tiktok', influencer:'shopify', campaign:'shopify', reship:'shopify', other:'shopify'};   // channel each give-away belongs to (channel filter, CM by channel)
+  const NONREV_CATS = ['tiktok_sample','influencer','campaign','reship','other'];
+  // products given away per day: {iso: {category: {SKU: units}}}. TikTok samples: from TikTok's own order list from its
+  // first day on (it also sees the samples that do not ship from ShipMonk: Amazon MCF, the fountain warehouse); before
+  // that day, the TikTok sample orders ShipMonk shipped.
+  let _nonrevDays = null;
+  function nonrevDays(){
+    if(_nonrevDays) return _nonrevDays;
+    const out = {days:{}, fee:{}, tkFrom:null, tkTo:null, smTo:null};
+    const tk = (TIKTOK_SHOP_LIVE_DATA && TIKTOK_SHOP_LIVE_DATA.samples_sku_daily) || null;
+    const tkDays = tk ? Object.keys(tk).filter(d=> tk[d] && Object.keys(tk[d]).length).sort() : [];
+    if(tkDays.length){ out.tkFrom = tkDays[0]; out.tkTo = tkDays[tkDays.length-1]; }
+    const put = (iso, cat, sku, n) => { n = parseFloat(n)||0; if(n<=0 || !sku) return; const d = out.days[iso] = out.days[iso] || {}, c = d[cat] = d[cat] || {}; c[sku] = (c[sku]||0) + n; };
+    const nr = (NONREV_LIVE_DATA && NONREV_LIVE_DATA.daily) || null;
+    if(nr) Object.keys(nr).forEach(iso=>{ const cats = nr[iso]||{}; Object.keys(cats).forEach(cat=>{
+      if(!NONREV_CH[cat]) return;
+      if(cat==='tiktok_sample' && out.tkFrom && iso>=out.tkFrom) return;   // TikTok's own list covers these days
+      const v = cats[cat]||{}; Object.keys(v.sku||{}).forEach(s=>put(iso, cat, s, v.sku[s]));
+      const f = out.fee[iso] = out.fee[iso] || {}; f[cat] = (f[cat]||0) + (parseFloat(v.fee)||0);
+      if(!out.smTo || iso>out.smTo) out.smTo = iso;
+    }); });
+    tkDays.forEach(iso=> Object.keys(tk[iso]).forEach(s=>put(iso, 'tiktok_sample', s, tk[iso][s])));
+    return (_nonrevDays = out);
+  }
   // Walmart Marketplace (data/walmart.json schema 1): orders by ORDER date (LA) + real commission from the reconciliation report.
   const WALMART_LIVE_DATA = (window.__LIVE && window.__LIVE["walmart"]) || null; /*WALMART_INJECT*/
   let walmartMeta = null;
@@ -883,12 +914,16 @@
     const refundsTotal = sum(CH_KEYS.map(k=>refund[k]));
     // V12.1: shipping the customer paid (Shopify), net of shipping refunded — real money collected, so revenue
     // (Shopify Analytics keeps it out of gross / net sales and only inside "Total sales"; the P&L now counts it)
-    const shippingIncome = sum(rows.map(r=> r.shopifyReal ? ((r.shopifyReal.shipping||0) - (r.shopifyReal.refundedShipping||0)) : 0));
+    // V12.24 (owner OK 24/11/2026): + shipping and gift wrap Amazon customers paid (All Orders report, order day) - the
+    // "shipping credits" of Amazon's payment report. Merchant-fulfilled orders keep it; on FBA orders Amazon takes it
+    // back as ShippingChargeback, which is already a cost inside the Amazon fees, and shipping refunded is inside refunds.
+    const shipBy = {shopify: sum(rows.map(r=> r.shopifyReal ? ((r.shopifyReal.shipping||0) - (r.shopifyReal.refundedShipping||0)) : 0)), amazon: sum(rows.map(r=> r.amazonReal ? (r.amazonReal.shipping||0) : 0))};
+    const shippingIncome = shipBy.shopify + shipBy.amazon;
     const netRevenue = grossSales - discount - refundsTotal + shippingIncome;
     const totalOrders = sum(CH_KEYS.map(k=>orders[k]));
     // V8 channel filter: the selected channels' share of the period's net revenue = allocation key for shared costs
     let allocShare = 1;
-    if(partial){ const fullNet = sum(rowsIn.map(r=> sum(CH_KEYS.map(k=> r.channels[k] - r.discounts[k] - r.refunds[k])) + (r.shopifyReal ? ((r.shopifyReal.shipping||0) - (r.shopifyReal.refundedShipping||0)) : 0))); allocShare = fullNet>0.005 ? Math.min(1, Math.max(0, netRevenue)/fullNet) : 0; }
+    if(partial){ const fullNet = sum(rowsIn.map(r=> sum(CH_KEYS.map(k=> r.channels[k] - r.discounts[k] - r.refunds[k])) + (r.shopifyReal ? ((r.shopifyReal.shipping||0) - (r.shopifyReal.refundedShipping||0)) : 0) + (r.amazonReal ? (r.amazonReal.shipping||0) : 0))); allocShare = fullNet>0.005 ? Math.min(1, Math.max(0, netRevenue)/fullNet) : 0; }
 
     // ---- Amazon: use real SP-API Finances fees on days we have them, estimate the rest ----
     let amazonOrdersReal=0, amazonOrdersEst=0, amazonRevenueEst=0;
@@ -1033,6 +1068,13 @@
     const paymentFees = sum(feeDays.map(r=>r.shopifyReal.paymentFees));
     const paymentFeeOrders = sum(feeDays.map(r=>r.shopifyReal.paymentFeesOrders));
     const feesMissingOrders = sum(feeDays.map(r=>r.shopifyReal.feesMissingOrders));
+    // V12.24: days where the fee is what Shopify Payments really charged (balance transactions, data/shopify_payouts.json)
+    const payoutFeeRows = feeDays.filter(r=> r.shopifyReal.feesActual);
+    const payoutFeeDays = payoutFeeRows.length, payoutFeeLiveDays = payoutFeeRows.filter(r=> r.shopifyReal.feesActualPartial).length;
+    const payoutFees = sum(payoutFeeRows.map(r=> r.shopifyReal.paymentFees));
+    const payoutFeesByOrder = sum(payoutFeeRows.map(r=> r.shopifyReal.paymentFeesByOrder||0));   // what the per-order figures gave on those days (memo)
+    const payoutFeeBy = {};
+    payoutFeeRows.forEach(r=>{ Object.entries(r.shopifyReal.payoutFeeBy||{}).forEach(([k,v])=>{ payoutFeeBy[k] = (payoutFeeBy[k]||0) + (parseFloat(v)||0); }); });
     const gatewayMix = {};
     feeDays.forEach(r=>{ Object.entries(r.shopifyReal.gateways).forEach(([g,v])=>{ const t = gatewayMix[g] = gatewayMix[g] || {orders:0, amount:0}; t.orders += v.orders||0; t.amount += v.amount||0; }); });
     const feeTypeMix = {};
@@ -1099,8 +1141,25 @@
     const dspRecent = rows.some(r=> r.dspReal && dspMeta && dspMeta.recentFrom && r.iso >= dspMeta.recentFrom);   // the last 2 days Xnurta may still revise
     const dspEstDays = rows.filter(r=> r.dspReal && r.dspReal.est).length, dspEstAmt = sum(rows.map(r=> (r.dspReal && r.dspReal.est) ? r.dspReal.paid : 0));   // V12.3
     const mktManual = mktAgency + mktCreator + mktDsp + mktOther + dspLive;
+    // V12.24 (owner 24/11/2026: US GAAP - products given away to promote are advertising expense, ASC 720-35): product cost
+    // of the units shipped with no revenue, at the lot cost of the shipping day (see buildFifo). Their ShipMonk postage
+    // and pick & pack stay in the ShipMonk lines (memo mktSamplesFee).
+    let mktSamples = 0, mktSamplesUnits = 0, mktSamplesUnpriced = 0, mktSamplesFee = 0, mktSamplesDays = 0;
+    const mktSamplesBy = {}, mktSamplesCh = {};
+    if(FX && FX.ok){ const NRD = nonrevDays(); rows.forEach(r=>{
+      const nv = FX.day[r.iso] && FX.day[r.iso].nonrev; if(!nv) return;
+      const Fm = r._factors || null; let hit = false;
+      Object.keys(nv.cats).forEach(c=>{
+        const ch = NONREV_CH[c] || 'shopify', f = Fm ? (Fm[ch]||0) : 1; if(!(f>0)) return;
+        const v = nv.cats[c], b = mktSamplesBy[c] = mktSamplesBy[c] || {cost:0, units:0, unpriced:0};
+        b.cost += v.cost*f; b.units += v.units*f; b.unpriced += v.unpriced*f;
+        mktSamples += v.cost*f; mktSamplesUnits += v.units*f; mktSamplesUnpriced += v.unpriced*f; mktSamplesCh[ch] = (mktSamplesCh[ch]||0) + v.cost*f;
+        mktSamplesFee += ((NRD.fee[r.iso]||{})[c]||0)*f; hit = true;
+      });
+      if(hit) mktSamplesDays++;
+    }); }
     const feesTotal = paymentFeesAll + marketplaceFees;               // payment gateways + marketplace selling fees
-    const marketingTotal = adSpend + snowballCommission + tiktokAffiliate + tiktokSmart + walmartAds + mktManual;   // paid ads + affiliate commissions + manual marketing (V11.8)
+    const marketingTotal = adSpend + snowballCommission + tiktokAffiliate + tiktokSmart + walmartAds + mktManual + mktSamples;   // paid ads + affiliate commissions + manual marketing (V11.8) + products given away (V12.24)
     const otherVarTotal = feesTotal + marketingTotal;
     const cmBeforeMarketing = grossProfit - feesTotal;                 // CM2: what is left to pay for marketing
     const contributionProfit = cmBeforeMarketing - marketingTotal;     // CM3: after marketing
@@ -1196,14 +1255,14 @@
     const shopifyRealDays = rows.filter(r=>r.shopifyReal).length;
     const amazonRealDays = rows.filter(r=>r.amazonReal).length;
 
-    return {n, gross, refund, discountBy, orders, ads, adsAttr, grossSales, discount, refundsTotal, shippingIncome, netRevenue, totalOrders, allocShare, maskPartial: partial, unknownDays,
+    return {n, gross, refund, discountBy, orders, ads, adsAttr, grossSales, discount, refundsTotal, shippingIncome, shipBy, netRevenue, totalOrders, allocShare, maskPartial: partial, unknownDays,
       productCost, productCostEst, cogsEstRate, productCostBy, productCostActual, productCostEstAmount, productCostHasActual, productCostLots, productCostFallback, productCostHasLots, productCostLotUnits, productCostFbUnits, productCostEstUnits, productCostUnits, packaging, fulfillment, postage, cogs, grossProfit, nonAmazonOrders, shopifyTax, shopifyRealDays, amazonRealDays,
       boxCost, boxLots, boxFb, boxUnits, boxLotUnits, boxFbUnits, boxEstUnits, boxDays, boxMode, smPackagingMemo, boxBySku, boxEstDays, boxEstBoxes, boxEstCost, boxInferred,
       shipmonkRealDays, shipmonkOrders, shipmonkUnshipped, shipmonkUnits, shipmonkPickPack, shipmonkByStore, shipmonkByChannel,
       smInvDays, smInv, smInvOther, smInvAdjCredits, smStorageOpen, smStorageOpenDays, smStorageCarryDays, smStorageAvgDays, smStorageRateDays, smStorageRateInv, smStorageReportDays, smStorageModelDays, smStorageModelInv, smInvShipCmp, smApiShipCmp, smCmpDays, smCmpMissingDays, smTrueUp, shipmonkInvoiceExtras, shipmonkLogistics, amazonLogistics, logisticsTotal, feesTotal, marketingTotal, cmBeforeMarketing,
-      paymentFees, afterpayFees, afterpayAmount, afterpayOrders, paymentFeeDays, paymentFeeOrders, feesMissingOrders, gatewayMix, feeTypeMix, paypalDays, paypalFees, paypalPayments, paypalPaymentsCount, paypalCompare, paymentFeesAll, marketplaceFees, adSpend, otherVarTotal, contributionProfit,
+      paymentFees, afterpayFees, afterpayAmount, afterpayOrders, paymentFeeDays, paymentFeeOrders, feesMissingOrders, payoutFeeDays, payoutFeeLiveDays, payoutFees, payoutFeesByOrder, payoutFeeBy, gatewayMix, feeTypeMix, paypalDays, paypalFees, paypalPayments, paypalPaymentsCount, paypalCompare, paymentFeesAll, marketplaceFees, adSpend, otherVarTotal, contributionProfit,
       gaItems, gaTotal, inventoryHolding, fixedTotal, netProfit, klaviyoCost, klaviyoCostDays, klaviyoCostParts,
-      mktItems, mktAgency, mktCreator, mktDsp, mktManual, dspLive, dspBonus, dspLiveDays, dspRecent, dspEstDays, dspEstAmt, mktOther, cogsOther, cogsAdj, cogsTooling,
+      mktItems, mktAgency, mktCreator, mktDsp, mktManual, mktSamples, mktSamplesBy, mktSamplesCh, mktSamplesUnits, mktSamplesUnpriced, mktSamplesFee, mktSamplesDays, dspLive, dspBonus, dspLiveDays, dspRecent, dspEstDays, dspEstAmt, mktOther, cogsOther, cogsAdj, cogsTooling,
       opexDays, opexCarriedDays, opexEstDays, opexEstMonths, opexEstAmount, opexNote, salaryEntered, depreciation, interest, depreciationEntered, interestEntered, taxEntered, taxRate, ebit, ebt, incomeTax, incomeTaxEstimated, netIncome, belowEbitdaEntered,
       variableTotal, variableRatio, cmRatio, breakEvenRevenue, blendedAOV, breakEvenOrders,
       merValue, merSpend, attrRevenueSum,
@@ -1459,7 +1518,7 @@
       unconnected: !!CH_UNCONNECTED[k] || (k==='shopify' && !shopifyMatched) || (k==='amazon' && !amazonMatched),
       liveDays: k==='shopify' ? a.shopifyRealDays : k==='amazon' ? a.amazonRealDays : 0,
     });
-    const netBy = k => a.gross[k] - a.discountBy[k] - a.refund[k] + (k==='shopify' ? (a.shippingIncome||0) : 0);   // V12.1: Shopify's net includes the shipping customers paid
+    const netBy = k => a.gross[k] - a.discountBy[k] - a.refund[k] + ((a.shipBy && a.shipBy[k])||0);   // V12.1: Shopify's net includes the shipping customers paid; V12.24: Amazon's too
     [...CH_KEYS].sort((x,y)=>a.gross[y]-a.gross[x]).forEach(k=>{
       const {unconnected, liveDays} = chState(k);
       let label = CH_LABEL[k]+' · '+a.orders[k].toLocaleString('en-US')+' '+tx('u.orders');
@@ -1477,15 +1536,16 @@
       const note = k==='shopify' ? tv(' — returned goods + extra refunds, on the day Shopify processed the refund (= Returns in Shopify Analytics)', ' — hàng trả + tiền hoàn thêm, theo ngày Shopify xử lý hoàn (= Returns trên Shopify Analytics)') : k==='amazon' ? tv(' — booked on the day Amazon refunded', ' — ghi ngày Amazon hoàn tiền') : '';
       rows.push({...stLine(CH_LABEL[k]+note, -a.refund[k], nr, null, 'ref'), detail:true, neg: a.refund[k]>0, hget: x=>-x.refund[k]});
     });
-    if(a.shopifyRealDays>0 || Math.abs(a.shippingIncome)>0.005) rows.push({...stLine(tv('Shipping charged to customers — Shopify (what customers paid for shipping, net of shipping refunded; Shopify Analytics keeps it outside gross / net sales)', 'Phí ship khách trả — Shopify (khách trả phí vận chuyển, đã trừ phần hoàn lại; Shopify Analytics để ngoài gross / net sales)'), a.shippingIncome, nr, 'var', 'shipinc'), live: a.shopifyRealDays>0, hget: x=>x.shippingIncome});
+    if(a.shopifyRealDays>0 || Math.abs(a.shipBy.shopify)>0.005) rows.push({...stLine(tv('Shipping charged to customers — Shopify (what customers paid for shipping, net of shipping refunded; Shopify Analytics keeps it outside gross / net sales)', 'Phí ship khách trả — Shopify (khách trả phí vận chuyển, đã trừ phần hoàn lại; Shopify Analytics để ngoài gross / net sales)'), a.shipBy.shopify, nr, 'var', 'shipinc'), live: a.shopifyRealDays>0, hget: x=>(x.shipBy ? x.shipBy.shopify : 0)});
+    if(Math.abs(a.shipBy.amazon)>0.005) rows.push({...stLine(tv('Shipping charged to customers — Amazon (shipping + gift wrap buyers paid, by order date = "shipping credits" in Amazon\'s payment report; kept on merchant-fulfilled orders, taken back by Amazon on FBA orders inside the Amazon fees below)', 'Phí ship khách trả — Amazon (phí ship + gói quà khách trả, theo ngày đặt = "shipping credits" trên báo cáo thanh toán Amazon; đơn tự giao (FBM) được giữ, đơn FBA Amazon thu lại trong phí Amazon bên dưới)'), a.shipBy.amazon, nr, 'var', 'shipinc'), live: a.amazonRealDays>0, hget: x=>(x.shipBy ? x.shipBy.amazon : 0)});
     rows.push({...stSub(tv('= Net revenue', '= Doanh thu thuần (Net Revenue)'), nr, nr, 'nr'), hget: x=>x.netRevenue});
     // Same split as Gross Sales: each channel's net = its gross - its discounts - its refunds; the four add up to the subtotal.
     [...CH_KEYS].sort((x,y)=>netBy(y)-netBy(x)).forEach(k=>{
       const {unconnected, liveDays} = chState(k);
       let label = CH_LABEL[k]+tv(' — net (gross − discounts − refunds)', ' — thuần (gộp − giảm giá − hoàn tiền)');
       if(k==='shopify' && !unconnected) label = tv('Shopify — net = Net sales in Shopify Analytics + shipping charged to customers', 'Shopify — thuần = Net sales trên Shopify Analytics + phí ship khách trả');
-      if(k==='amazon' && !unconnected) label = tv('Amazon — net (selling price − promotions − refunds)', 'Amazon — thuần (giá bán − promotions − hoàn tiền)');
-      rows.push({...stLine(label, netBy(k), nr, null, 'nr'), detail:true, gap: unconnected, live: !unconnected && liveDays>0, hget: x=>x.gross[k]-x.discountBy[k]-x.refund[k]+(k==='shopify' ? (x.shippingIncome||0) : 0)});
+      if(k==='amazon' && !unconnected) label = tv('Amazon — net (selling price − promotions − refunds + shipping charged to customers)', 'Amazon — thuần (giá bán − promotions − hoàn tiền + phí ship khách trả)');
+      rows.push({...stLine(label, netBy(k), nr, null, 'nr'), detail:true, gap: unconnected, live: !unconnected && liveDays>0, hget: x=>x.gross[k]-x.discountBy[k]-x.refund[k]+((x.shipBy && x.shipBy[k])||0)});
     });
 
     rows.push(stSection(tv('Cost of goods sold — COGS (product cost + fulfillment)', 'Giá vốn hàng bán — COGS (giá vốn sản phẩm + fulfillment)'),'cogs'));
@@ -1604,8 +1664,18 @@
       // Gateways that never carry a per-transaction fee: gift cards, Shop Cash rewards and manual/COD orders.
       const GW_NO_FEE = new Set(['gift_card','shop_cash','manual']);
       let lbl = tv('Payment processing fees — Shopify Payments, actual fee per transaction (', 'Phí cổng thanh toán — Shopify Payments, phí thật theo từng giao dịch (')+a.paymentFeeOrders.toLocaleString('en-US')+' '+tx('u.orders')+')';
+      if(a.payoutFeeDays>0){
+        lbl = tv('Payment processing fees — Shopify Payments, as charged by Shopify (balance transactions: cards, Shop Pay, Shop Pay Installments, Shop Cash, chargeback fees)', 'Phí cổng thanh toán — Shopify Payments, phí thực tế Shopify đã trừ (sao kê Shopify Payments: thẻ, Shop Pay, Shop Pay Installments, Shop Cash, phí chargeback)');
+        if(a.payoutFeeDays<a.paymentFeeDays) lbl += tv(` — ${a.paymentFeeDays-a.payoutFeeDays} ${dayWord(a.paymentFeeDays-a.payoutFeeDays)} before the statement data: fee per order`, ` — ${a.paymentFeeDays-a.payoutFeeDays} ngày trước khi có sao kê: phí theo từng đơn`);
+      }
       if(a.paymentFeeDays<a.n) lbl += tx('st.outsideSync', {n: a.n-a.paymentFeeDays, d: dayWord(a.n-a.paymentFeeDays)});
-      rows.push({...stLine(lbl, -a.paymentFees, nr, 'var', 'opvar'), neg:true, live:true, hget: x=>-x.paymentFees});
+      rows.push({...stLine(lbl, -a.paymentFees, nr, 'var', 'opvar'), neg:true, live:true, est: a.payoutFeeLiveDays>0, estTitle: tv('The latest day is still filling in: the statement is read every 3 hours, so that day takes the higher of the statement and the per-order fee until the next read', 'Ngày mới nhất còn đang về: sao kê đọc 3 giờ/lần nên ngày đó tạm lấy số cao hơn giữa sao kê và phí theo đơn, tới lần đọc kế'), hget: x=>-x.paymentFees});
+      if(a.payoutFeeDays>0){
+        const PF = {CHARGE: tv('card & Shop Pay processing, incl. Shop Pay Installments', 'phí xử lý thẻ & Shop Pay, gồm Shop Pay Installments'), DISPUTE: tv('chargeback fees ($15 each, less the ones returned when a dispute is won)', 'phí chargeback ($15/vụ, đã trừ phần hoàn khi thắng tranh chấp)'), SHOP_CASH: tv('Shop Cash fee', 'phí Shop Cash'), OTHER: tv('other Shopify Payments fees', 'phí Shopify Payments khác')};
+        Object.entries(a.payoutFeeBy).filter(([k,v])=>Math.abs(v)>=0.005).sort((x,y)=>y[1]-x[1]).forEach(([k,v])=>{ rows.push({...stLine(PF[k]||k, -v, nr, null, 'opvar'), detail:true, neg: v>=0, live:true}); });
+        const gap = a.payoutFees - a.payoutFeesByOrder;
+        if(Math.abs(gap)>=0.5) rows.push({...stLine(tv('Memo — the per-order fee Shopify shows on the orders gave ', 'Memo — phí Shopify ghi trên từng đơn chỉ ra ')+money(a.payoutFeesByOrder)+tv(' for these days: ', ' cho các ngày này: thiếu ')+money(gap)+tv(' more on the statement (mostly Shop Pay Installments, which carry no fee on the order)', ' so với sao kê (chủ yếu Shop Pay Installments — không có phí trên đơn)'), 0, nr, null, 'opvar'), detail:true, memo:true, live:true});
+      }
       Object.entries(a.feeTypeMix).sort((x,y)=>y[1]-x[1]).forEach(([k,v])=>{
         const FT = {domestic_card_not_present: tv('domestic cards 2.25% + $0.30', 'thẻ nội địa 2.25% + $0.30'), premium_domestic_card_not_present: tv('premium cards 2.95% + $0.30', 'thẻ premium 2.95% + $0.30'), amex_card_not_present:'Amex 2.95% + $0.30', international_card_not_present: tv('international cards 3.25% + $0.42', 'thẻ quốc tế 3.25% + $0.42'), foreign_exchange_fee: tv('foreign exchange fee 1.5%', 'phí quy đổi ngoại tệ 1.5%'), amazon_pay_base:'Amazon Pay', amex_international_card_not_present: tv('international Amex', 'Amex quốc tế'), premium_international_card_not_present: tv('premium international cards', 'thẻ premium quốc tế'), shop_pay_installments:'Shop Pay Installments'};
         rows.push({...stLine((FT[k]||k), -v, nr, null, 'opvar'), detail:true, neg:true, live:true});
@@ -1702,6 +1772,14 @@
       const label = MKT_LABEL[it.key] + (allEst ? '' : tx('st.manualMonthly')) + (it.estDays>0 ? (allEst ? tv(' — estimated',' — tạm tính') : tv(` — ${it.estDays} days estimated`, ` — ${it.estDays} ngày tạm tính`)) + (estT ? ': '+estT : '') : '');
       rows.push({...stLine(label, -it.value, nr, it.key==='mkt_agency' ? 'fix' : 'var', 'mkt'), neg: it.value>=0, live: allEst ? false : 'manual', est: it.estDays>0, estTitle: tv('Month not closed yet — estimated on the basis written in the label; replaced once the month is entered in data/opex_monthly.json', 'Tháng chưa chốt sổ — tạm tính theo cơ sở ghi trong nhãn; tự thay khi nhập tháng vào data/opex_monthly.json'), hget: x=>-((x.mktItems.find(g=>g.key===it.key)||{}).value||0)});
     });
+    if(a.mktSamplesUnits>0.005){   // V12.24
+      const NRL = {tiktok_sample: tv('TikTok Shop samples to creators', 'Mẫu gửi creator qua TikTok Shop'), influencer: tv('Influencer shipments (INF…)', 'Hàng gửi influencer (INF…)'), campaign: tv('Campaign / agency / creator shipments (HLW, Adcrate, Goodo, raffles…)', 'Chiến dịch / agency / creator (HLW, Adcrate, Goodo, raffle…)'), reship: tv('Reships / replacements of marketplace orders', 'Gửi lại / thay thế đơn'), other: tv('Other shipments without revenue', 'Hàng gửi không doanh thu khác')};
+      const up = Math.round(a.mktSamplesUnpriced);
+      const lb = tv('Products given away — samples, influencer & campaign shipments, at the receipt-lot cost of the shipping day (', 'Hàng gửi không doanh thu — mẫu TikTok, influencer, chiến dịch: giá vốn theo lô của ngày gửi (')+Math.round(a.mktSamplesUnits).toLocaleString('en-US')+tv(' units; US GAAP: advertising expense', ' sản phẩm; theo GAAP là chi phí quảng cáo')+(up>0 ? tv('; '+up+' units without a lot cost yet, not counted', '; '+up+' sản phẩm chưa có giá lô, chưa tính') : '')+')';
+      rows.push({...stLine(lb, -a.mktSamples, nr, 'var', 'mkt'), neg: a.mktSamples>=0, live:true, est: up>0, estTitle: tv('Units whose SKU has no receipt lot and no cost in data/cogs_skus.json are left at $0 until the lot is entered in Notion', 'Sản phẩm mà mã chưa có lô nhập lẫn giá trong data/cogs_skus.json đang để $0 cho tới khi nhập lô trong Notion'), hget: x=>-(x.mktSamples||0)});
+      NONREV_CATS.forEach(c=>{ const b = a.mktSamplesBy[c]; if(!b || !(b.units>0.005)) return; rows.push({...stLine((NRL[c]||c)+' — '+Math.round(b.units).toLocaleString('en-US')+tv(' units', ' sản phẩm'), -b.cost, nr, null, 'mkt'), detail:true, neg: b.cost>=0, live:true}); });
+      if(a.mktSamplesFee>=0.5) rows.push({...stLine(tv('Memo — ShipMonk postage + pick & pack of these shipments ', 'Memo — cước + pick & pack ShipMonk của các đơn này ')+money(a.mktSamplesFee)+tv(' is already inside the ShipMonk lines of COGS (not moved here)', ' đã nằm trong các dòng ShipMonk ở COGS (chưa chuyển sang đây)'), 0, nr, null, 'mkt'), detail:true, memo:true, live:true});
+    }
     if(a.dspLiveDays>0 && (Math.abs(a.dspLive)>=0.005 || a.dspBonus>=0.005)){   // V12.2
       const lb = tv('Amazon DSP — daily spend from Xnurta (paid SparkX orders', 'Amazon DSP — chi phí theo ngày từ Xnurta (order SparkX trả phí') + (a.dspBonus>=0.005 ? tv('; Amazon bonus media ', '; không gồm media tặng của Amazon ') + money(a.dspBonus) + tv(' is free, not included', '') : '') + ')'
         + (a.dspEstDays>0 ? tv(' — '+a.dspEstDays+' '+dayWord(a.dspEstDays)+' estimated '+money(a.dspEstAmt)+' at the last 7 days\' average ', ' — '+a.dspEstDays+' ngày tạm tính '+money(a.dspEstAmt)+' theo TB 7 ngày ')+money(dspMeta.avgPaid)+tx('u.perDay') : '');
@@ -1910,7 +1988,7 @@
   function renderChannelCosts(){
     const grid = document.getElementById('channelCostGrid'); if(!grid) return;
     const a = aggregate(currentRows());
-    const netOf = ch => a.gross[ch] - a.discountBy[ch] - a.refund[ch] + (ch==='shopify' ? (a.shippingIncome||0) : 0);   // V12.1
+    const netOf = ch => a.gross[ch] - a.discountBy[ch] - a.refund[ch] + ((a.shipBy && a.shipBy[ch])||0);   // V12.1, V12.24
     const smCh = {...a.shipmonkByChannel};
     const smAll = a.postage + a.shipmonkPickPack + a.packaging;
     if(smCh.shopify + smCh.amazon + smCh.walmart < 0.01 && smAll > 0.01) smCh.shopify = smAll;   // ShipMonk JSON without by_store: all D2C
@@ -1946,6 +2024,7 @@
         ...(a.mktAgency>0.005 ? [{n: tv('Agency creative (Goodo, Adcrate)', 'Agency creative (Goodo, Adcrate)'), s: tv('entered monthly', 'nhập tay theo tháng'), v: a.mktAgency}] : []),
         ...(a.mktCreator>0.005 ? [{n: tv('Creators / UGC (Insense, Billo, MossCreator…)', 'Creator / UGC (Insense, Billo, MossCreator…)'), s: tv('entered monthly', 'nhập tay theo tháng'), v: a.mktCreator}] : []),
         ...(a.mktOther>0.005 ? [{n: tv('Other marketing (Microsoft Ads, branding)', 'Marketing khác (Microsoft Ads, branding)'), s: tv('entered monthly', 'nhập tay theo tháng'), v: a.mktOther}] : []),
+        ...(((a.mktSamplesCh && a.mktSamplesCh.shopify)||0)>0.005 ? [{n: tv('Products given away (influencers, campaigns)', 'Hàng gửi không doanh thu (influencer, chiến dịch)'), s: tv('lot cost of the shipping day', 'giá lô của ngày gửi'), v: a.mktSamplesCh.shopify}] : []),
         {n: tv('D2C tools: Klaviyo + Social Snowball plan', 'Công cụ D2C: Klaviyo + gói Social Snowball'), s: tv('sits under G&A on the P&L', 'trên P&L nằm ở G&A'), v: a.klaviyoCost + snowballSub},
       ]},
     ]});
@@ -3513,14 +3592,14 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
     const smCh = {...a.shipmonkByChannel};
     const smAll = a.postage + a.shipmonkPickPack + a.packaging;
     if((smCh.shopify||0) + (smCh.amazon||0) + (smCh.walmart||0) < 0.01 && smAll > 0.01) smCh.shopify = smAll;
-    const netOf = k => a.gross[k] - a.discountBy[k] - a.refund[k] + (k==='shopify' ? (a.shippingIncome||0) : 0);   // V12.1
+    const netOf = k => a.gross[k] - a.discountBy[k] - a.refund[k] + ((a.shipBy && a.shipBy[k])||0);   // V12.1, V12.24
     const cogsOf = k => (a.productCostBy && a.productCostBy[k]) || 0;
     const out = {};
     // same cost lines as the P&L down to CM3 (warehousing / storage stay below CM3 as OpEx, so the channel total = the CM3 tile)
     out.amazon = {net: netOf('amazon'), orders: a.orders.amazon, fees: a.amazonMarketplaceFeesReal + a.amazonMarketplaceFeesEst, fulfil: a.fulfillment + (smCh.amazon||0), ads: a.ads.amazonads + (a.mktDsp||0) + (a.dspLive||0), aff: 0};   // V12.8: + Amazon DSP read daily from Xnurta (was left out, so CM3 by channel was above the P&L)
-    out.shopify = {net: netOf('shopify'), orders: a.orders.shopify, fees: a.paymentFeesAll, fulfil: (smCh.shopify||0) + a.shipmonkInvoiceExtras + (a.cogsOther||0), ads: a.ads.meta + a.ads.google + a.ads.applovin + (a.mktAgency||0) + (a.mktOther||0), aff: a.snowballCommission + (a.mktCreator||0)};
+    out.shopify = {net: netOf('shopify'), orders: a.orders.shopify, fees: a.paymentFeesAll, fulfil: (smCh.shopify||0) + a.shipmonkInvoiceExtras + (a.cogsOther||0), ads: a.ads.meta + a.ads.google + a.ads.applovin + (a.mktAgency||0) + (a.mktOther||0), aff: a.snowballCommission + (a.mktCreator||0) + ((a.mktSamplesCh && a.mktSamplesCh.shopify)||0)};   // V12.24: + products given away
     out.walmart = {net: netOf('walmart'), orders: a.orders.walmart, fees: a.walmartFees, fulfil: smCh.walmart||0, ads: a.walmartAds, aff: 0};
-    out.tiktok = {net: netOf('tiktok'), orders: a.orders.tiktok, fees: a.tiktokFees, fulfil: 0, ads: a.ads.tiktokads, aff: a.tiktokAffiliate + a.tiktokSmart};
+    out.tiktok = {net: netOf('tiktok'), orders: a.orders.tiktok, fees: a.tiktokFees, fulfil: 0, ads: a.ads.tiktokads, aff: a.tiktokAffiliate + a.tiktokSmart + ((a.mktSamplesCh && a.mktSamplesCh.tiktok)||0)};
     CH_KEYS.forEach(k=>{ const c = out[k]; c.cogs = cogsOf(k); c.cm = c.net - c.cogs - c.fees - c.fulfil - c.ads - c.aff; c.adsAll = c.ads + c.aff; });
     return out;
   }
@@ -3691,7 +3770,7 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
   function fifoState(){
     let ready = false; try{ ready = booted; }catch(e){ ready = false; }   // booted is declared further down (TDZ before boot)
     if(!ready) return null;
-    const sig = days.length+'|'+days.filter(r=>r.sku).length+'|'+(SHIPMONK_BOM ? Object.keys(SHIPMONK_BOM.bundles).length : 0)+'|'+days.filter(r=>r.shipmonkReal && (r.shipmonkReal.packagingItems || r.shipmonkReal.boxDataWeak)).length;
+    const sig = days.length+'|'+days.filter(r=>r.sku).length+'|'+(SHIPMONK_BOM ? Object.keys(SHIPMONK_BOM.bundles).length : 0)+'|'+days.filter(r=>r.shipmonkReal && (r.shipmonkReal.packagingItems || r.shipmonkReal.boxDataWeak)).length+'|'+Object.keys(nonrevDays().days).length;
     if(_fifo && _fifo.sig===sig) return _fifo;
     try{ _fifo = buildFifo(); }catch(e){ _fifo = {ok:false, error: String(e && e.message || e), day:{}, Q:{}, meta:{}}; }
     _fifo.sig = sig;
@@ -3781,9 +3860,29 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
       if(ps && ps.size>1){ const other = Q[c+'|'+(FIFO_CH_POOL[k]==='fba' ? 'd2c' : 'fba')]; if(other){ const y = other.layers.find(z=> z.cost!==null && z.left>0); if(y) return y.cost; if(other.last!==null) return other.last; } }
       const sc = skuCost(c); return sc!==null ? sc : null;
     };
+    // V12.24: products shipped with no revenue (TikTok samples, influencer / campaign / reship orders) are priced at the
+    // cost of the receipt lot their SKU is drawing from on the shipping day - the same lot price the day's sales take;
+    // they are read off the queue, not taken from it, so the cost of goods sold is unchanged. Booked as marketing.
+    const NRD = nonrevDays(), nrIso = Object.keys(NRD.days).filter(x=> x>=st.first).sort(); let nrI = 0;
+    const peekCost = (c, d) => { const key = keyOf(c, 'shopify'), q = key ? Q[key] : null; if(q){ const y = q.layers.find(z=> z.day<=d && z.avail && z.left>1e-9 && z.cost!==null); if(y) return y.cost; } return fallbackCost(c, 'shopify', q, d); };
+    const priceNonrev = d => {
+      const cats = NRD.days[d], o = {cats:{}, cost:0, units:0, unpriced:0};
+      Object.keys(cats).forEach(cat=>{
+        const v = o.cats[cat] = {cost:0, units:0, unpriced:0};
+        Object.keys(cats[cat]).forEach(x=>{
+          const n = cats[cat][x]; if(fifoSkip(x)){ v.units += n; v.unpriced += n; return; }
+          let cost = 0, ok = true;
+          partsFor(x, 'shopify').forEach(([c,qq])=>{ const uc = peekCost(c, d); if(uc===null) ok = false; else cost += n*qq*uc; });
+          v.units += n; if(ok) v.cost += cost; else v.unpriced += n;
+        });
+        o.cost += v.cost; o.units += v.units; o.unpriced += v.unpriced;
+      });
+      (st.day[d] = st.day[d] || {}).nonrev = o;
+    };
     const tot = {lot:0, fb:0, units:0, lotUnits:0, fbUnits:0, estUnits:0};
     sales.forEach(r=>{
-      const d = r.iso, rec = st.day[d] = {};
+      const d = r.iso, rec = st.day[d] = st.day[d] || {};
+      while(nrI<nrIso.length && nrIso[nrI]<d) priceNonrev(nrIso[nrI++]);   // give-away days with no sales row: priced on the queue as it stands
       Object.keys(r.sku).forEach(k=>{
         if(!FIFO_CH_POOL[k]) return;
         const u = r.sku[k].units||{}, o = rec[k] = {c:{}, lot:0, fb:0, units:0, lotUnits:0, fbUnits:0, estUnits:0};
@@ -3803,7 +3902,9 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
         });
         ['lot','fb','units','lotUnits','fbUnits','estUnits'].forEach(f=>{ tot[f] += o[f]; });
       });
+      if(nrI<nrIso.length && nrIso[nrI]===d) priceNonrev(nrIso[nrI++]);   // after the day's sales: same lots, same day
     });
+    while(nrI<nrIso.length) priceNonrev(nrIso[nrI++]);
     st.meta.replay = tot; st.meta.salesDays = sales.length;
     // V11.1: replay the boxes day by day (their queues are separate SKUs, so the order against the products does not matter)
     const btot = {lot:0, fb:0, units:0, lotU:0, fbU:0, estU:0, days:0, skus:{}, estDays:0, estBoxes:0, estCost:0};
@@ -4305,7 +4406,7 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
       return {title: tv('Profit by channel', 'Lãi theo kênh'), desc: tv('Each sales channel down to CM3 (after its own fees, fulfillment and marketing). Warehousing and G&A cannot be tied to one channel, so they are not deducted here — the CM3 total equals CM3 on the P&L.', 'Từng kênh bán tới CM3 (sau phí, fulfillment và marketing của chính kênh đó). Kho bãi và G&A không gán được cho một kênh nên không trừ ở đây — tổng CM3 bằng CM3 trên P&L.'),
         cols: [{k:'label', l:tv('Channel', 'Kênh'), t:'text'}, {k:'net', l:tv('Net revenue', 'Doanh thu thuần'), t:'money'}, {k:'orders', l:tv('Orders', 'Đơn'), t:'int'}, {k:'cogs', l:tv('Product cost', 'Giá vốn SP'), t:'money'}, {k:'fulfil', l:'Fulfillment', t:'money'}, {k:'fees', l:tv('Marketplace & payment fees', 'Phí sàn & thanh toán'), t:'money'}, {k:'mkt', l:'Marketing', t:'money'}, {k:'cm', l:'CM3', t:'money', sign:true}, {k:'margin', l:tv('CM3 margin', 'Biên CM3'), t:'pct', sign:true}],
         rows, total: {v: null}, defSort: {k: 'net', dir: -1},
-        detail: r => { const k = r.ch, c = ce[k]; return rpPanel([[tv('Revenue', 'Doanh thu'), [[tv('Gross sales', 'Doanh thu gộp'), a.gross[k]], [tv('Discounts', 'Giảm giá'), -a.discountBy[k]], [tv('Refunds', 'Hoàn tiền'), -a.refund[k]], ...(k==='shopify' ? [[tv('Shipping charged to customers', 'Phí ship khách trả'), a.shippingIncome||0]] : []), [tv('Net revenue', 'Doanh thu thuần'), c.net, 1], [tv('Orders', 'Đơn hàng'), a.orders[k], 0, 'int'], ['AOV', a.orders[k]>0 ? c.net/a.orders[k] : null]]], [tv('Costs', 'Chi phí'), [[tv('Product cost', 'Giá vốn sản phẩm'), -c.cogs], ['Fulfillment', -c.fulfil], [tv('Marketplace & payment fees', 'Phí sàn & thanh toán'), -c.fees], [tv('Ads', 'Quảng cáo'), -c.ads], [tv('Affiliates & creators', 'Affiliate & creator'), -c.aff]]], [tv('Profit', 'Lợi nhuận'), [['CM3', c.cm, 1], [tv('CM3 margin', 'Biên CM3'), rpRatio(c.cm, c.net), 0, 'pct']]]]); }};
+        detail: r => { const k = r.ch, c = ce[k]; return rpPanel([[tv('Revenue', 'Doanh thu'), [[tv('Gross sales', 'Doanh thu gộp'), a.gross[k]], [tv('Discounts', 'Giảm giá'), -a.discountBy[k]], [tv('Refunds', 'Hoàn tiền'), -a.refund[k]], ...(Math.abs((a.shipBy && a.shipBy[k])||0)>0.005 ? [[tv('Shipping charged to customers', 'Phí ship khách trả'), a.shipBy[k]]] : []), [tv('Net revenue', 'Doanh thu thuần'), c.net, 1], [tv('Orders', 'Đơn hàng'), a.orders[k], 0, 'int'], ['AOV', a.orders[k]>0 ? c.net/a.orders[k] : null]]], [tv('Costs', 'Chi phí'), [[tv('Product cost', 'Giá vốn sản phẩm'), -c.cogs], ['Fulfillment', -c.fulfil], [tv('Marketplace & payment fees', 'Phí sàn & thanh toán'), -c.fees], [tv('Ads', 'Quảng cáo'), -c.ads], [tv('Affiliates & creators', 'Affiliate & creator'), -c.aff]]], [tv('Profit', 'Lợi nhuận'), [['CM3', c.cm, 1], [tv('CM3 margin', 'Biên CM3'), rpRatio(c.cm, c.net), 0, 'pct']]]]); }};
     },
     line: () => {
       const le = lineEconomics(currentRows());
@@ -4448,7 +4549,7 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
   const SLASH_LIVE_DATA = (window.__LIVE && window.__LIVE["slash"]) || null;
   const MK = {sort: {}, detail: false};
   const MK_SALES_CH = {meta:'shopify', google:'shopify', applovin:'shopify', tiktokads:'tiktok', amazonads:'amazon', dsp:'amazon', walmart:'walmart'};
-  const MK_COLOR = {meta:'var(--series-1)', google:'var(--series-2)', amazonads:'var(--series-4)', tiktokads:'var(--series-3)', applovin:'var(--series-5)', dsp:'var(--series-6)', walmart:'var(--series-5)', aff:'var(--series-2)', agency:'var(--series-6)', creator:'var(--series-6)', tools:'var(--ink-muted)', ai:'var(--ink-muted)', email:'var(--series-4)', other:'var(--ink-muted)'};
+  const MK_COLOR = {meta:'var(--series-1)', google:'var(--series-2)', amazonads:'var(--series-4)', tiktokads:'var(--series-3)', applovin:'var(--series-5)', dsp:'var(--series-6)', walmart:'var(--series-5)', aff:'var(--series-2)', agency:'var(--series-6)', creator:'var(--series-6)', samples:'var(--series-3)', tools:'var(--ink-muted)', ai:'var(--ink-muted)', email:'var(--series-4)', other:'var(--ink-muted)'};
   const MK_TOOL_GROUP = {   // same-purpose tools: more than one in the same group is worth a look
     'Northbeam': 'attribution', 'Elevar': 'attribution', 'Foreplay': 'ad research', 'AdSpy': 'ad research', 'Adnova.ai': 'ad research', 'Scrape Creators': 'ad research', 'AdsPower': 'ad research',
     'Intelligems': 'CRO / testing', 'Replo': 'CRO / testing', 'Higgsfield': 'AI video', 'CapCut': 'AI video', 'Twelve Labs': 'AI video', 'Suno': 'AI audio', 'Kling': 'AI video', 'Midjourney': 'AI image',
@@ -4767,6 +4868,7 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
       {k:'agency', l:tv('Agency (Adcrate)', 'Agency (Adcrate)'), v:a.mktAgency, pv:p&&p.mktAgency, line:'mkt', note: tv('fixed retainer, entered monthly', 'phí cố định, nhập theo tháng')},
       {k:'creator', l:tv('Creators / UGC (Insense, Billo, MossCreator…)', 'Creator / UGC (Insense, Billo, MossCreator…)'), v:a.mktCreator, pv:p&&p.mktCreator, line:'mkt', note: sl.ok && sl.creator>0.005 ? tv('card/ACH in the period ', 'thẻ/ACH trong kỳ ')+mk$(sl.creator) : tv('entered monthly', 'nhập theo tháng')},
       {k:'other', l:tv('Other marketing', 'Marketing khác'), v:a.mktOther, pv:p&&p.mktOther, line:'mkt'},
+      {k:'samples', l:tv('Products given away (TikTok samples, influencers, campaigns)', 'Hàng gửi không doanh thu (mẫu TikTok, influencer, chiến dịch)'), v:a.mktSamples||0, pv:p&&(p.mktSamples||0), line:'mkt', note: tv('product cost at the lot cost of the shipping day', 'giá vốn sản phẩm theo lô của ngày gửi')},
       {k:'email', l:tv('Email platform (Klaviyo)', 'Nền tảng email (Klaviyo)'), v:a.klaviyoCost||0, pv:p&&(p.klaviyoCost||0), line:'ga', note: tv('invoices', 'theo hoá đơn')},
       {k:'tools', l:tv('Marketing tools (tracking, attribution, ad research, design, web)', 'Công cụ marketing (tracking, attribution, nghiên cứu QC, thiết kế, web)'), v:sl.tools, pv:pSl&&pSl.tools, line:'ga', note: sl.ok ? tv('card charges by service month (yearly / 6-month plans spread evenly)', 'trừ thẻ theo tháng dịch vụ (gói năm / 6 tháng chia đều)') : tv('needs data/slash_pnl.json', 'cần data/slash_pnl.json')},
       {k:'ai', l:tv('AI content & AI APIs (video / image / audio / LLM)', 'AI làm content & AI API (video / ảnh / audio / LLM)'), v:sl.ai, pv:pSl&&pSl.ai, line:'ga', note: sl.ok ? tv('card charges by service month (yearly / 6-month plans spread evenly)', 'trừ thẻ theo tháng dịch vụ (gói năm / 6 tháng chia đều)') : ''},
@@ -5210,7 +5312,7 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
   function finReceivables(){   // marketplace money not paid out yet — estimates from the order data (settlement cycles), until the payout APIs are wired
     const last = n => days.slice(-n);
     const amz = aggregate(last(14)), sh = aggregate(last(3));
-    const amzNet = (amz.gross.amazon||0) - (amz.discountBy.amazon||0) - (amz.refund.amazon||0) - amz.amazonMarketplaceFeesReal - amz.amazonMarketplaceFeesEst - amz.fulfillment;
+    const amzNet = (amz.gross.amazon||0) - (amz.discountBy.amazon||0) - (amz.refund.amazon||0) + ((amz.shipBy && amz.shipBy.amazon)||0) - amz.amazonMarketplaceFeesReal - amz.amazonMarketplaceFeesEst - amz.fulfillment;
     const shNet = (sh.gross.shopify||0) - (sh.discountBy.shopify||0) - (sh.refund.shopify||0) - sh.paymentFeesAll;
     const tt = aggregate(last(60)).tiktokNetUnsettled || 0;
     return {amazon: Math.max(0, amzNet), shopify: Math.max(0, shNet), tiktok: Math.max(0, tt), total: Math.max(0, amzNet) + Math.max(0, shNet) + Math.max(0, tt)};
@@ -6136,6 +6238,7 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
   const cogsMatched = COGS_LIVE_DATA ? applyCogsActual(COGS_LIVE_DATA) : false;
   // Shopify + Snowball baked in by the same hourly sync.
   const shopifyMatched = SHOPIFY_LIVE_DATA ? applyShopifyLive(SHOPIFY_LIVE_DATA) : false;
+  const payoutFeesMatched = (shopifyMatched && SHOPIFY_PAYOUTS_LIVE_DATA) ? applyShopifyPayoutFees(SHOPIFY_PAYOUTS_LIVE_DATA) : false;   // V12.24: after the Shopify rows - it replaces their fee
   // V10: the "age" line of every baked-in source (Data page) is text in the active language, so it is written here
   // once at boot and again at the start of every renderAll() (the language toggle re-renders everything).
   function applySourceAges(){
@@ -6659,6 +6762,30 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
       matched++; sumGross += gross;
     });
     return matched>0;
+  }
+
+  // V12.24 (owner 24/11/2026: "book the Shop Pay fee as it really is"): the fee of a day = every fee on Shopify Payments'
+  // balance transactions of that day (data/shopify_payouts.json -> daily, Los Angeles days): card / Shop Pay processing
+  // INCLUDING Shop Pay Installments (Shopify shows no fee for those on the order, so the per-order figure missed ~12 %),
+  // the Shop Cash fee and the $15 chargeback fee net of the ones returned. Days the file does not cover keep the
+  // per-order fee. The newest day in the file is still filling in (read every 3 hours): it takes the higher of the two.
+  function applyShopifyPayoutFees(data){
+    const dl = data && data.daily; if(!dl || typeof dl!=='object') return false;
+    const keys = Object.keys(dl).sort(); if(!keys.length) return false;
+    const last = keys[keys.length-1];
+    payoutFeeMeta = {from: keys[0], to: last, generated_at: data.generated_at||null, days: 0};
+    days.forEach(d=>{
+      const sr = d.shopifyReal, r = dl[d.iso]; if(!sr || !r || d.iso<keys[0]) return;
+      const fee = parseFloat(r.fee)||0, byOrder = sr.paymentFees===null ? 0 : sr.paymentFees;
+      const partial = d.iso>=last;
+      sr.paymentFeesByOrder = byOrder;
+      sr.paymentFees = partial ? Math.max(fee, byOrder) : fee;
+      sr.feesActual = true; sr.feesActualPartial = partial && byOrder>fee;
+      sr.payoutFeeBy = (partial && byOrder>fee) ? {CHARGE: byOrder} : Object.assign({}, r.by||{});
+      sr.feeTypes = {};   // the per-order fee types no longer add up to the line
+      payoutFeeMeta.days++;
+    });
+    return payoutFeeMeta.days>0;
   }
 
   // ---------- live data: Klaviyo (email + SMS) attributed orders per day, campaigns, flows ----------
@@ -7378,6 +7505,7 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
         // anything the script could not map - folded into marketplace fees so no dollar is dropped.
         otherNet: (r.unclassified_other||0) + (r.adjustments||0),
         orderBasis,
+        shipping: orderBasis ? (parseFloat(r.ordered_shipping)||0) : 0,   // V12.24: shipping + gift wrap the customer paid (order day); the non-order basis already has shipping_credits inside gross
         postedGross: (r.gross_sales||0) + (r.shipping_credits||0) + (r.giftwrap_credits||0),
         pendingUnits: r.ordered_pending_units||0,
         mcfUnits: r.mcf_units||0,
