@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 8185056398).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 67dabe3326).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -566,7 +566,8 @@
   const OPEX_COGS_KEYS = ['ful_other','cogs_adj','tooling_exp'];   // V12.5: + tooling_exp (moulds below the capitalisation threshold, expensed)
   const OPEX_MKT_CH = {mkt_agency:'shopify', mkt_creator:'shopify', mkt_dsp:'amazon', mkt_other:'shopify', ful_other:'shopify'};   // channel each one belongs to (channel filter, take-rate card)
   const OPEX_ALL_KEYS = OPEX_GA_KEYS.concat(OPEX_BELOW_KEYS, OPEX_MKT_KEYS, OPEX_COGS_KEYS);
-  const OPEX_HIDE_ZERO = ['other_us','cashback','cert'];   // V12.4: these G&A rows only show when the period has an amount; V12.5: + cert
+  const OPEX_HIDE_ZERO = ['other_us','cashback','cert','training'];   // V12.24.1: + training (owner 24/11/2026: no Daily Mentor / Skool any more - the row only shows when there is an amount)
+  //   // V12.4: these G&A rows only show when the period has an amount; V12.5: + cert
   // V12.5: one-off items are not carried into an estimated month (a month not entered yet takes the last closed month otherwise)
   const OPEX_NO_AVG = ['cogs_adj','cashback','mkt_other','cert','tooling_exp'];
   let ASSET_REG = null;   // V12.5: fixed-asset register from data/opex_monthly.json -> assets (see buildAssetReg)
