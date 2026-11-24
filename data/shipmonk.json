@@ -1,6 +1,6 @@
 {
   "bom": {
-    "as_of": "2026-11-24T22:10:01Z",
+    "as_of": "2026-11-24T22:41:13Z",
     "bundles": {
       "\bCLMDNT-V1": {
         "\bCLMDNT-V1": 1
@@ -54281,8 +54281,8 @@
           "shipping_cost": 306.2
         },
         "ShipMonk": {
-          "orders": 234,
-          "shipping_cost": 4304.02
+          "orders": 246,
+          "shipping_cost": 4520.64
         },
         "UPS": {
           "orders": 10,
@@ -54295,12 +54295,12 @@
       },
       "by_store": {
         "Cattasaurus - Amazon USA": {
-          "orders": 36,
+          "orders": 38,
           "packaging_cost": 0.0,
-          "pick_pack_cost": 72.82,
-          "shipping_cost": 684.52,
-          "total_cost": 757.34,
-          "units": 40
+          "pick_pack_cost": 76.62,
+          "shipping_cost": 730.01,
+          "total_cost": 806.63,
+          "units": 42
         },
         "Cattasaurus - Walmart": {
           "orders": 2,
@@ -54311,45 +54311,45 @@
           "units": 2
         },
         "Cattasaurus - shoproxstore - Shopify": {
-          "orders": 245,
+          "orders": 255,
           "packaging_cost": 0.0,
-          "pick_pack_cost": 921.5,
-          "shipping_cost": 4102.96,
-          "total_cost": 5024.46,
-          "units": 552
+          "pick_pack_cost": 964.48,
+          "shipping_cost": 4274.09,
+          "total_cost": 5238.57,
+          "units": 574
         }
       },
       "by_type": {
         "direct_to_consumer": {
-          "orders": 283,
+          "orders": 295,
           "packaging_cost": 0.0,
-          "pick_pack_cost": 998.44,
-          "shipping_cost": 4824.81,
-          "total_cost": 5823.25,
-          "units": 594
+          "pick_pack_cost": 1045.22,
+          "shipping_cost": 5041.43,
+          "total_cost": 6086.65,
+          "units": 618
         }
       },
       "cost_missing_orders": 21,
       "foreign_cost": {},
-      "orders": 283,
-      "orders_onhold": 21,
+      "orders": 295,
+      "orders_onhold": 25,
       "orders_shipped": 27,
-      "orders_unshipped": 256,
-      "packages": 29,
+      "orders_unshipped": 268,
+      "packages": 30,
       "packaging_cost": 0.0,
       "packaging_items": {
-        "NEW-PKCTCVBX-SNGL-L": 164,
-        "PKCTCVBX-SNGL-J": 101,
-        "PKCTCVBX-SNGL-L": 12,
+        "NEW-PKCTCVBX-SNGL-L": 171,
+        "PKCTCVBX-SNGL-J": 107,
+        "PKCTCVBX-SNGL-L": 14,
         "PKCTCVBX-TRIO-L": 7
       },
-      "packaging_orders_est": 79,
-      "packaging_units": 284,
-      "packaging_units_est": 98,
-      "pick_pack_cost": 998.44,
-      "shipping_cost": 4824.81,
-      "total_cost": 5823.25,
-      "units": 594
+      "packaging_orders_est": 83,
+      "packaging_units": 299,
+      "packaging_units_est": 105,
+      "pick_pack_cost": 1045.22,
+      "shipping_cost": 5041.43,
+      "total_cost": 6086.65,
+      "units": 618
     }
   },
   "daily_shipped": {
@@ -103490,9 +103490,9 @@
       "units": 814
     }
   },
-  "generated_at": "2026-11-24T22:07:18Z",
+  "generated_at": "2026-11-24T22:37:17Z",
   "inventory": {
-    "as_of": "2026-11-24T22:10:01Z",
+    "as_of": "2026-11-24T22:41:13Z",
     "fields": {
       "allocated": "derived: on_hand - available - quarantined - unavailable (reserved for open orders)",
       "available": "quantity_total_available - units ShipMonk can allocate to new orders (use as 'available to sell')",
@@ -103512,7 +103512,7 @@
     "packaging": {
       "NEW-PKCTCVBX-SNGL-L": {
         "active": true,
-        "available": 9380,
+        "available": 9377,
         "name": "Peekaboo's Box Single Large (23)",
         "on_hand": 9632
       },
@@ -103536,7 +103536,7 @@
       },
       "PKCTCVBX-SNGL-L": {
         "active": true,
-        "available": 7697,
+        "available": 7695,
         "name": "Peekaboo's Box Single Large",
         "on_hand": 7705
       },
@@ -106809,7 +106809,7 @@
         "on_hand": 237,
         "on_hand_updated_at": "2026-11-24T01:32:16-05:00",
         "quarantined": 0,
-        "stock_out_days": 291,
+        "stock_out_days": 288,
         "type": "pick_and_pack",
         "unavailable": 0
       },
@@ -106989,8 +106989,8 @@
       },
       "PKBKBD-M-LGR": {
         "active": true,
-        "allocated": 0,
-        "available": 685,
+        "allocated": 1,
+        "available": 684,
         "backordered": 0,
         "by_warehouse": {
           "CA1": {
@@ -107034,10 +107034,10 @@
             "unavailable": 0
           },
           "PA2": {
-            "allocated": 0,
-            "available": 426,
+            "allocated": 1,
+            "available": 425,
             "backordered": 0,
-            "final": 426,
+            "final": 425,
             "incoming": 0,
             "on_hand": 426,
             "quarantined": 0,
@@ -107064,13 +107064,13 @@
             "unavailable": 0
           }
         },
-        "final": 685,
+        "final": 684,
         "incoming": 0,
         "name": "Peekaboo Bunk Bed, Medium, Light Grey",
         "on_hand": 685,
         "on_hand_updated_at": "2026-11-24T07:20:10-05:00",
         "quarantined": 0,
-        "stock_out_days": 1046,
+        "stock_out_days": 1044,
         "type": "pick_and_pack",
         "unavailable": 0
       },
@@ -107598,8 +107598,8 @@
       },
       "PKCTCV-JMB-BL": {
         "active": true,
-        "allocated": 9,
-        "available": 1516,
+        "allocated": 11,
+        "available": 1514,
         "backordered": 0,
         "by_warehouse": {
           "CA1": {
@@ -107623,10 +107623,10 @@
             "unavailable": 0
           },
           "NV3": {
-            "allocated": 2,
-            "available": 489,
+            "allocated": 4,
+            "available": 487,
             "backordered": 0,
-            "final": 489,
+            "final": 487,
             "incoming": 1600,
             "on_hand": 491,
             "quarantined": 0,
@@ -107673,7 +107673,7 @@
             "unavailable": 0
           }
         },
-        "final": 1516,
+        "final": 1514,
         "incoming": 3734,
         "name": "Peekaboo Cat Cave - Jumbo - Blue",
         "on_hand": 1525,
@@ -107764,7 +107764,7 @@
         "incoming": 1126,
         "name": "Peekaboo, Jumbo, Black",
         "on_hand": 75,
-        "on_hand_updated_at": "2026-11-24T16:04:15-05:00",
+        "on_hand_updated_at": "2026-11-24T17:19:14-05:00",
         "quarantined": 0,
         "stock_out_days": 44,
         "type": "pick_and_pack",
@@ -108373,7 +108373,7 @@
         "incoming": 2352,
         "name": "Peekaboo Cat Cave - Jumbo - Pink",
         "on_hand": 373,
-        "on_hand_updated_at": "2026-11-24T16:08:49-05:00",
+        "on_hand_updated_at": "2026-11-24T17:19:31-05:00",
         "quarantined": 0,
         "stock_out_days": 35,
         "type": "pick_and_pack",
@@ -108468,8 +108468,8 @@
       },
       "PKCTCV-JMB-RNG": {
         "active": true,
-        "allocated": 8,
-        "available": 67,
+        "allocated": 9,
+        "available": 66,
         "backordered": 0,
         "by_warehouse": {
           "CA1": {
@@ -108493,10 +108493,10 @@
             "unavailable": 0
           },
           "NV3": {
-            "allocated": 2,
-            "available": 41,
+            "allocated": 3,
+            "available": 40,
             "backordered": 0,
-            "final": 40,
+            "final": 39,
             "incoming": 374,
             "on_hand": 43,
             "quarantined": 0,
@@ -108543,7 +108543,7 @@
             "unavailable": 0
           }
         },
-        "final": 65,
+        "final": 64,
         "incoming": 1116,
         "name": "Peekaboo, Jumbo, Orange",
         "on_hand": 75,
@@ -108721,7 +108721,7 @@
         "incoming": 1128,
         "name": "Peekaboo, Jumbo, Sage Mist",
         "on_hand": 63,
-        "on_hand_updated_at": "2026-11-24T16:23:39-05:00",
+        "on_hand_updated_at": "2026-11-24T17:24:04-05:00",
         "quarantined": 0,
         "stock_out_days": 13,
         "type": "pick_and_pack",
@@ -108990,8 +108990,8 @@
       },
       "PKCTCV-L-BL": {
         "active": true,
-        "allocated": 27,
-        "available": 3259,
+        "allocated": 28,
+        "available": 3258,
         "backordered": 0,
         "by_warehouse": {
           "CA1": {
@@ -109035,10 +109035,10 @@
             "unavailable": 0
           },
           "PA2": {
-            "allocated": 22,
-            "available": 1608,
+            "allocated": 23,
+            "available": 1607,
             "backordered": 0,
-            "final": 1608,
+            "final": 1607,
             "incoming": 3766,
             "on_hand": 1632,
             "quarantined": 0,
@@ -109065,11 +109065,11 @@
             "unavailable": 0
           }
         },
-        "final": 3259,
+        "final": 3258,
         "incoming": 6474,
         "name": "Peekaboo Cat Cave - Large - Blue",
         "on_hand": 3288,
-        "on_hand_updated_at": "2026-11-24T15:32:54-05:00",
+        "on_hand_updated_at": "2026-11-24T17:22:12-05:00",
         "quarantined": 0,
         "stock_out_days": 112,
         "type": "pick_and_pack",
@@ -109251,8 +109251,8 @@
       },
       "PKCTCV-L-DGR": {
         "active": true,
-        "allocated": 254,
-        "available": 4074,
+        "allocated": 258,
+        "available": 4070,
         "backordered": 0,
         "by_warehouse": {
           "CA1": {
@@ -109276,10 +109276,10 @@
             "unavailable": 0
           },
           "NV3": {
-            "allocated": 51,
-            "available": 1037,
+            "allocated": 54,
+            "available": 1034,
             "backordered": 0,
-            "final": 1035,
+            "final": 1032,
             "incoming": 5962,
             "on_hand": 1089,
             "quarantined": 0,
@@ -109296,10 +109296,10 @@
             "unavailable": 0
           },
           "PA2": {
-            "allocated": 203,
-            "available": 2666,
+            "allocated": 204,
+            "available": 2665,
             "backordered": 0,
-            "final": 2661,
+            "final": 2660,
             "incoming": 8780,
             "on_hand": 2869,
             "quarantined": 0,
@@ -109326,11 +109326,11 @@
             "unavailable": 0
           }
         },
-        "final": 4067,
+        "final": 4063,
         "incoming": 14742,
         "name": "Peekaboo Cat Cave - Large - Dark Grey",
         "on_hand": 4329,
-        "on_hand_updated_at": "2026-11-24T17:05:43-05:00",
+        "on_hand_updated_at": "2026-11-24T17:36:31-05:00",
         "quarantined": 0,
         "stock_out_days": 26,
         "type": "pick_and_pack",
@@ -109512,8 +109512,8 @@
       },
       "PKCTCV-L-LGR": {
         "active": true,
-        "allocated": 283,
-        "available": 3746,
+        "allocated": 287,
+        "available": 3744,
         "backordered": 0,
         "by_warehouse": {
           "CA1": {
@@ -109537,10 +109537,10 @@
             "unavailable": 0
           },
           "NV3": {
-            "allocated": 68,
-            "available": 1083,
+            "allocated": 69,
+            "available": 1082,
             "backordered": 0,
-            "final": 1077,
+            "final": 1076,
             "incoming": 6700,
             "on_hand": 1160,
             "quarantined": 0,
@@ -109557,14 +109557,14 @@
             "unavailable": 0
           },
           "PA2": {
-            "allocated": 215,
-            "available": 2574,
+            "allocated": 218,
+            "available": 2573,
             "backordered": 0,
-            "final": 2563,
+            "final": 2562,
             "incoming": 10510,
             "on_hand": 2791,
             "quarantined": 0,
-            "unavailable": 2
+            "unavailable": 0
           },
           "TO1": {
             "allocated": 0,
@@ -109587,15 +109587,15 @@
             "unavailable": 0
           }
         },
-        "final": 3729,
+        "final": 3727,
         "incoming": 17210,
         "name": "Peekaboo Cat Cave - Large - Light Grey",
         "on_hand": 4040,
-        "on_hand_updated_at": "2026-11-24T16:46:47-05:00",
+        "on_hand_updated_at": "2026-11-24T17:14:56-05:00",
         "quarantined": 0,
         "stock_out_days": 16,
         "type": "pick_and_pack",
-        "unavailable": 11
+        "unavailable": 9
       },
       "PKCTCV-L-PNK": {
         "active": true,
@@ -110035,7 +110035,7 @@
       "PKCTCV-L-TN": {
         "active": true,
         "allocated": 5,
-        "available": 285,
+        "available": 286,
         "backordered": 0,
         "by_warehouse": {
           "CA1": {
@@ -110060,11 +110060,11 @@
           },
           "NV3": {
             "allocated": 1,
-            "available": 22,
+            "available": 23,
             "backordered": 0,
-            "final": 22,
+            "final": 23,
             "incoming": 1200,
-            "on_hand": 23,
+            "on_hand": 24,
             "quarantined": 0,
             "unavailable": 0
           },
@@ -110109,11 +110109,11 @@
             "unavailable": 0
           }
         },
-        "final": 285,
+        "final": 286,
         "incoming": 3000,
         "name": "Peekaboo Cat Cave - Large - Tan",
-        "on_hand": 290,
-        "on_hand_updated_at": "2026-11-24T15:54:52-05:00",
+        "on_hand": 291,
+        "on_hand_updated_at": "2026-11-24T17:11:10-05:00",
         "quarantined": 0,
         "stock_out_days": 46,
         "type": "pick_and_pack",
@@ -110295,8 +110295,8 @@
       },
       "PKCTCV2Z-L-DGR": {
         "active": true,
-        "allocated": 6,
-        "available": 1067,
+        "allocated": 8,
+        "available": 1065,
         "backordered": 0,
         "by_warehouse": {
           "CA1": {
@@ -110320,10 +110320,10 @@
             "unavailable": 0
           },
           "NV3": {
-            "allocated": 0,
-            "available": 440,
+            "allocated": 1,
+            "available": 439,
             "backordered": 0,
-            "final": 440,
+            "final": 439,
             "incoming": 0,
             "on_hand": 440,
             "quarantined": 0,
@@ -110340,10 +110340,10 @@
             "unavailable": 0
           },
           "PA2": {
-            "allocated": 6,
-            "available": 444,
+            "allocated": 7,
+            "available": 443,
             "backordered": 0,
-            "final": 444,
+            "final": 443,
             "incoming": 0,
             "on_hand": 450,
             "quarantined": 0,
@@ -110370,7 +110370,7 @@
             "unavailable": 0
           }
         },
-        "final": 1067,
+        "final": 1065,
         "incoming": 0,
         "name": "Peekaboo Cat Cave V.2 - Large - Dark Grey",
         "on_hand": 1073,
@@ -110469,8 +110469,8 @@
       },
       "PKCTCV2Z-L-LGR": {
         "active": true,
-        "allocated": 7,
-        "available": 4968,
+        "allocated": 9,
+        "available": 4966,
         "backordered": 0,
         "by_warehouse": {
           "CA1": {
@@ -110494,10 +110494,10 @@
             "unavailable": 0
           },
           "NV3": {
-            "allocated": 2,
-            "available": 1826,
+            "allocated": 3,
+            "available": 1825,
             "backordered": 0,
-            "final": 1826,
+            "final": 1825,
             "incoming": 0,
             "on_hand": 1828,
             "quarantined": 0,
@@ -110514,10 +110514,10 @@
             "unavailable": 0
           },
           "PA2": {
-            "allocated": 5,
-            "available": 2782,
+            "allocated": 6,
+            "available": 2781,
             "backordered": 0,
-            "final": 2782,
+            "final": 2781,
             "incoming": 0,
             "on_hand": 2787,
             "quarantined": 0,
@@ -110544,11 +110544,11 @@
             "unavailable": 0
           }
         },
-        "final": 4968,
+        "final": 4966,
         "incoming": 0,
         "name": "Peekaboo Cat Cave V.2 - Large - Light Grey",
         "on_hand": 4975,
-        "on_hand_updated_at": "2026-11-24T16:33:32-05:00",
+        "on_hand_updated_at": "2026-11-24T17:13:12-05:00",
         "quarantined": 0,
         "stock_out_days": 489,
         "type": "pick_and_pack",
@@ -113428,8 +113428,8 @@
     },
     "source_endpoint": "POST /v1/integrations/products/search + GET /v1/integrations/products/search/paginate",
     "totals": {
-      "allocated": 975,
-      "available": 31722,
+      "allocated": 992,
+      "available": 31708,
       "backordered": 654,
       "by_warehouse": {
         "CA1": {
@@ -113453,12 +113453,12 @@
           "unavailable": 0
         },
         "NV3": {
-          "allocated": 216,
-          "available": 10299,
+          "allocated": 225,
+          "available": 10291,
           "backordered": 8,
-          "final": 10276,
+          "final": 10268,
           "incoming": 34981,
-          "on_hand": 10527,
+          "on_hand": 10528,
           "quarantined": 0,
           "unavailable": 12
         },
@@ -113473,14 +113473,14 @@
           "unavailable": 0
         },
         "PA2": {
-          "allocated": 759,
-          "available": 19452,
+          "allocated": 767,
+          "available": 19446,
           "backordered": 663,
-          "final": 18706,
+          "final": 18700,
           "incoming": 52750,
           "on_hand": 20251,
           "quarantined": 22,
-          "unavailable": 40
+          "unavailable": 38
         },
         "TO1": {
           "allocated": 0,
@@ -113503,14 +113503,14 @@
           "unavailable": 0
         }
       },
-      "final": 30953,
+      "final": 30939,
       "incoming": 87731,
-      "on_hand": 32749,
+      "on_hand": 32750,
       "quarantined": 22,
       "skus": 113,
       "skus_in_stock": 36,
       "skus_out_of_stock": 77,
-      "unavailable": 52
+      "unavailable": 50
     },
     "unit": "units",
     "warehouses": [
@@ -114204,7 +114204,7 @@
         "src": "sync"
       },
       "2026-11-24": {
-        "as_of": "2026-11-24T22:10:01Z",
+        "as_of": "2026-11-24T22:41:13Z",
         "at_dock": {},
         "incoming": {
           "NV3": 34981,
@@ -114219,12 +114219,12 @@
           }
         },
         "on_hand": {
-          "NV3": 10527,
+          "NV3": 10528,
           "PA2": 20251,
           "TO1": 1971
         },
         "packaging_on_hand": 27557,
-        "samples": 33,
+        "samples": 34,
         "src": "sync"
       }
     },
@@ -114254,23 +114254,23 @@
       "cost_missing_orders": 60,
       "fx_converted_charges": 109,
       "fx_unknown_currency_charges": 0,
-      "orders_counted": 16737,
-      "orders_duplicate": 7,
+      "orders_counted": 16749,
+      "orders_duplicate": 8,
       "orders_fulfilled_outside": 184,
-      "orders_onhold_counted": 1178,
-      "orders_outside_window": 226,
+      "orders_onhold_counted": 1182,
+      "orders_outside_window": 215,
       "orders_seen": 18700,
       "orders_shipped_series_only": 216,
-      "orders_skipped_cancelled": 1330,
+      "orders_skipped_cancelled": 1328,
       "orders_skipped_store": 0,
       "orders_skipped_type": 0,
       "orders_skipped_unshipped": 0,
-      "orders_unshipped_counted": 1752,
+      "orders_unshipped_counted": 1764,
       "shipping_from_shipment_estimate": 0
     },
     "currencies_seen": {
       "CAD": 109,
-      "USD": 48868
+      "USD": 48892
     },
     "fx": {
       "native_converted_this_run": {
@@ -114309,7 +114309,7 @@
     "inventory": {
       "api_requests": 4,
       "api_retries": 0,
-      "as_of": "2026-11-24T22:10:01Z",
+      "as_of": "2026-11-24T22:41:13Z",
       "bundles": 636,
       "carried_over": false,
       "counts": {
@@ -114323,7 +114323,7 @@
         "products_seen": 138,
         "skus": 113
       },
-      "elapsed_s": 1.5,
+      "elapsed_s": 1.7,
       "error": null,
       "fetched": true,
       "incoming": {
@@ -114370,10 +114370,10 @@
     ],
     "oldest_order_day_seen": "2026-08-27",
     "order_currencies_seen": {
-      "USD": 16953
+      "USD": 16965
     },
     "order_types_seen": {
-      "direct_to_consumer": 18658,
+      "direct_to_consumer": 18657,
       "unknown": 35
     },
     "orders_csv": "data/shipmonk_orders/",
@@ -114383,28 +114383,28 @@
     ],
     "packaging_inference": {
       "bom_bundles_used": 636,
-      "boxes_estimated": 6494,
+      "boxes_estimated": 6501,
       "by_basis": {
-        "fallback": 172,
+        "fallback": 173,
         "rule_any": 89,
-        "rule_warehouse": 5912
+        "rule_warehouse": 5915
       },
       "by_warehouse": {
         "NV3": {
-          "boxes_estimated": 6192,
-          "orders_estimated": 6062,
-          "orders_without_line": 6178
+          "boxes_estimated": 6198,
+          "orders_estimated": 6065,
+          "orders_without_line": 6181
         },
         "PA2": {
-          "boxes_estimated": 302,
-          "orders_estimated": 111,
-          "orders_without_line": 759
+          "boxes_estimated": 303,
+          "orders_estimated": 112,
+          "orders_without_line": 760
         }
       },
       "note": "orders with no packaging line in the API get the box inferred from orders of the same composition (warehouse first, then any), else one box per cave/donut; counted in packaging_units_est / packaging_orders_est",
-      "orders_estimated": 6173,
+      "orders_estimated": 6177,
       "orders_no_box": 764,
-      "orders_with_lines": 10016,
+      "orders_with_lines": 10024,
       "rules_learned_this_run": 327,
       "rules_prior": 400
     },
@@ -114428,7 +114428,7 @@
         "PKCTCVBX-SNGL-Jx1": 17
       },
       "*|B\u00d71|L\u00d71|O:AP14\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 353
+        "PKCTCVBX-SNGL-Jx1": 354
       },
       "*|B\u00d71|L\u00d71|O:NOF\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 10
@@ -114440,88 +114440,88 @@
         "PKCTCVBX-SNGL-Jx1": 46
       },
       "*|B\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 838
+        "NEW-PKCTCVBX-SNGL-Lx1": 839
       },
       "*|J\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 348323
+        "PKCTCVBX-SNGL-Jx1": 348804
       },
       "*|J\u00d71|O:AP03\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 8286
+        "PKCTCVBX-SNGL-Jx1": 8295
       },
       "*|J\u00d71|O:AP03\u00d71|O:AP14\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1672
+        "PKCTCVBX-SNGL-Jx1": 1674
       },
       "*|J\u00d71|O:AP03\u00d71|O:AP14\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 2466
+        "PKCTCVBX-SNGL-Jx1": 2469
       },
       "*|J\u00d71|O:AP03\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 2270
+        "PKCTCVBX-SNGL-Jx1": 2273
       },
       "*|J\u00d71|O:AP03\u00d72|O:PT07C\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 838
+        "PKCTCVBX-SNGL-Jx1": 839
       },
       "*|J\u00d71|O:AP03\u00d73|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 37
       },
       "*|J\u00d71|O:AP03\u00d73|O:PT07C\u00d73": {
-        "PKCTCVBX-SNGL-Jx1": 838
+        "PKCTCVBX-SNGL-Jx1": 839
       },
       "*|J\u00d71|O:AP14\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 2126
+        "PKCTCVBX-SNGL-Jx1": 2128
       },
       "*|J\u00d71|O:AP14\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 985
+        "PKCTCVBX-SNGL-Jx1": 986
       },
       "*|J\u00d71|O:AP15\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 89
       },
       "*|J\u00d71|O:FCNT01\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1718
+        "PKCTCVBX-SNGL-Jx1": 1720
       },
       "*|J\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 86
       },
       "*|J\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 2439
+        "PKCTCVBX-SNGL-Jx1": 2442
       },
       "*|J\u00d71|O:PT07C\u00d73": {
-        "PKCTCVBX-SNGL-Jx1": 806
+        "PKCTCVBX-SNGL-Jx1": 807
       },
       "*|J\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1155
+        "PKCTCVBX-SNGL-Jx1": 1156
       },
       "*|J\u00d71|O:SLFRLL\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 838
+        "PKCTCVBX-SNGL-Jx1": 839
       },
       "*|J\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 1678468
+        "PKCTCVBX-SNGL-Jx1": 1680992
       },
       "*|J\u00d72|O:AP03\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 91074
+        "PKCTCVBX-SNGL-Jx1": 91215
       },
       "*|J\u00d72|O:AP03\u00d71|O:AP14\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 7285
+        "PKCTCVBX-SNGL-Jx1": 7296
       },
       "*|J\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 10653
+        "PKCTCVBX-SNGL-Jx1": 10664
       },
       "*|J\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 7335
+        "PKCTCVBX-SNGL-Jx1": 7347
       },
       "*|J\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:PT07C\u00d73": {
-        "PKCTCVBX-SNGL-Jx1": 825
+        "PKCTCVBX-SNGL-Jx1": 826
       },
       "*|J\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:SSWF\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 11
       },
       "*|J\u00d72|O:AP03\u00d71|O:AP14\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 1607
+        "PKCTCVBX-SNGL-Jx1": 1609
       },
       "*|J\u00d72|O:AP03\u00d71|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 59
       },
       "*|J\u00d72|O:AP03\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 10717
+        "PKCTCVBX-SNGL-Jx1": 10733
       },
       "*|J\u00d72|O:AP03\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 397
@@ -114530,31 +114530,31 @@
         "PKCTCVBX-SNGL-Jx1": 106
       },
       "*|J\u00d72|O:AP03\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 14952
+        "PKCTCVBX-SNGL-Jx1": 14973
       },
       "*|J\u00d72|O:AP03\u00d72|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1557
+        "PKCTCVBX-SNGL-Jx1": 1559
       },
       "*|J\u00d72|O:AP03\u00d72|O:PT07C\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 832
+        "PKCTCVBX-SNGL-Jx1": 833
       },
       "*|J\u00d72|O:AP03\u00d73": {
-        "PKCTCVBX-SNGL-Jx1": 3982
+        "PKCTCVBX-SNGL-Jx1": 3988
       },
       "*|J\u00d72|O:AP03\u00d73|O:AP14\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 838
+        "PKCTCVBX-SNGL-Jx1": 839
       },
       "*|J\u00d72|O:AP03\u00d73|O:FCNT01\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 816
+        "PKCTCVBX-SNGL-Jx1": 817
       },
       "*|J\u00d72|O:AP14\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 24352
+        "PKCTCVBX-SNGL-Jx1": 24384
       },
       "*|J\u00d72|O:AP14\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 3485
+        "PKCTCVBX-SNGL-Jx1": 3490
       },
       "*|J\u00d72|O:AP14\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 1741
+        "PKCTCVBX-SNGL-Jx1": 1743
       },
       "*|J\u00d72|O:AP14\u00d73|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 11
@@ -114569,13 +114569,13 @@
         "PKCTCVBX-SNGL-Jx1": 170
       },
       "*|J\u00d72|O:FCNT01\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 11440
+        "PKCTCVBX-SNGL-Jx1": 11456
       },
       "*|J\u00d72|O:FCNT01\u00d71|O:PT07C\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 91
       },
       "*|J\u00d72|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 2677
+        "PKCTCVBX-SNGL-Jx1": 2680
       },
       "*|J\u00d72|O:FCNT01\u00d71|O:SLFRLL\u00d72": {
         "PKCTCVBX-SNGL-Jx1": 82
@@ -114584,22 +114584,22 @@
         "PKCTCVBX-SNGL-Jx1": 59
       },
       "*|J\u00d72|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 24672
+        "PKCTCVBX-SNGL-Jx1": 24705
       },
       "*|J\u00d72|O:PT07C\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 2222
+        "PKCTCVBX-SNGL-Jx1": 2227
       },
       "*|J\u00d72|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 10596
+        "PKCTCVBX-SNGL-Jx1": 10612
       },
       "*|J\u00d72|O:SSWF\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 322
       },
       "*|J\u00d73": {
-        "PKCTCVBX-SNGL-Jx1": 52125
+        "PKCTCVBX-SNGL-Jx1": 52197
       },
       "*|J\u00d73|O:AP03\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 3484
+        "PKCTCVBX-SNGL-Jx1": 3489
       },
       "*|J\u00d73|O:AP03\u00d71|O:AP14\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 78
@@ -114608,64 +114608,64 @@
         "PKCTCVBX-SNGL-Jx1": 436
       },
       "*|J\u00d73|O:AP03\u00d71|O:AP14\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 777
+        "PKCTCVBX-SNGL-Jx1": 778
       },
       "*|J\u00d73|O:AP03\u00d71|O:AP14\u00d72|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 22
       },
       "*|J\u00d73|O:AP03\u00d71|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 950
+        "PKCTCVBX-SNGL-Jx1": 951
       },
       "*|J\u00d73|O:AP03\u00d73": {
         "PKCTCVBX-SNGL-Jx1": 18
       },
       "*|J\u00d73|O:AP14\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 3272
+        "PKCTCVBX-SNGL-Jx1": 3276
       },
       "*|J\u00d73|O:FCNT01\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1524
+        "PKCTCVBX-SNGL-Jx1": 1526
       },
       "*|J\u00d73|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 2176
+        "PKCTCVBX-SNGL-Jx1": 2178
       },
       "*|J\u00d73|O:FCNT01\u00d72|O:SLFRLL\u00d72": {
         "PKCTCVBX-SNGL-Jx1": 64
       },
       "*|L\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 599606
+        "NEW-PKCTCVBX-SNGL-Lx1": 600413
       },
       "*|L\u00d71|O:AP03\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 18174
+        "NEW-PKCTCVBX-SNGL-Lx1": 18197
       },
       "*|L\u00d71|O:AP03\u00d71|O:AP14\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 341
       },
       "*|L\u00d71|O:AP03\u00d71|O:CLMDNT\u00d71": {
-        "PKCTCVBX-SNGL-Lx1": 908
+        "PKCTCVBX-SNGL-Lx1": 909
       },
       "*|L\u00d71|O:AP03\u00d71|O:CLMDNT\u00d71|O:PT07C\u00d71": {
         "PKCTCVBX-SNGL-Lx1": 341
       },
       "*|L\u00d71|O:AP03\u00d71|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 3183
+        "NEW-PKCTCVBX-SNGL-Lx1": 3187
       },
       "*|L\u00d71|O:AP03\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 770
+        "NEW-PKCTCVBX-SNGL-Lx1": 771
       },
       "*|L\u00d71|O:AP03\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 924
+        "NEW-PKCTCVBX-SNGL-Lx1": 925
       },
       "*|L\u00d71|O:AP03\u00d72|O:PT07C\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 806
+        "NEW-PKCTCVBX-SNGL-Lx1": 807
       },
       "*|L\u00d71|O:AP03\u00d73": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 2438
+        "NEW-PKCTCVBX-SNGL-Lx1": 2441
       },
       "*|L\u00d71|O:AP03\u00d73|O:FCNT01\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 98
       },
       "*|L\u00d71|O:AP14\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 6581
+        "NEW-PKCTCVBX-SNGL-Lx1": 6588
       },
       "*|L\u00d71|O:AP14\u00d71|O:PT07C\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 471
@@ -114674,113 +114674,113 @@
         "NEW-PKCTCVBX-SNGL-Lx1": 360
       },
       "*|L\u00d71|O:CLMDNT\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 745,
-        "PKCTCVBX-SNGL-Lx1": 170734
+        "NEW-PKCTCVBX-SNGL-Lx1": 746,
+        "PKCTCVBX-SNGL-Lx1": 170991
       },
       "*|L\u00d71|O:CLMDNT\u00d71|O:FCNT01\u00d71": {
-        "PKCTCVBX-SNGL-Lx1": 2328
+        "PKCTCVBX-SNGL-Lx1": 2331
       },
       "*|L\u00d71|O:FCNT01\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 2482
+        "NEW-PKCTCVBX-SNGL-Lx1": 2485
       },
       "*|L\u00d71|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 8376
+        "NEW-PKCTCVBX-SNGL-Lx1": 8386
       },
       "*|L\u00d71|O:PT07C\u00d73": {
         "NEW-PKCTCVBX-SNGL-Lx1": 30
       },
       "*|L\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 5558
+        "NEW-PKCTCVBX-SNGL-Lx1": 5565
       },
       "*|L\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 2842532
+        "NEW-PKCTCVBX-SNGL-Lx1": 2846775
       },
       "*|L\u00d72|O:AP03\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 136069
+        "NEW-PKCTCVBX-SNGL-Lx1": 136269
       },
       "*|L\u00d72|O:AP03\u00d71|O:AP14\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 8475
+        "NEW-PKCTCVBX-SNGL-Lx1": 8487
       },
       "*|L\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 11806
+        "NEW-PKCTCVBX-SNGL-Lx1": 11821
       },
       "*|L\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 14346
+        "NEW-PKCTCVBX-SNGL-Lx1": 14367
       },
       "*|L\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:PT07C\u00d71|O:SSWF\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 8
       },
       "*|L\u00d72|O:AP03\u00d71|O:AP14\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 435
+        "NEW-PKCTCVBX-SNGL-Lx1": 436
       },
       "*|L\u00d72|O:AP03\u00d71|O:AP15\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 20
       },
       "*|L\u00d72|O:AP03\u00d71|O:CLMDNT\u00d72": {
-        "PKCTCVBX-SNGL-Lx1": 9724
+        "PKCTCVBX-SNGL-Lx1": 9740
       },
       "*|L\u00d72|O:AP03\u00d71|O:CLMDNT\u00d72|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Lx1": 5376
+        "PKCTCVBX-SNGL-Lx1": 5383
       },
       "*|L\u00d72|O:AP03\u00d71|O:FCNT01\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1676
+        "NEW-PKCTCVBX-SNGL-Lx1": 1678
       },
       "*|L\u00d72|O:AP03\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1652
+        "NEW-PKCTCVBX-SNGL-Lx1": 1654
       },
       "*|L\u00d72|O:AP03\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d72": {
         "NEW-PKCTCVBX-SNGL-Lx1": 78
       },
       "*|L\u00d72|O:AP03\u00d71|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 29574
+        "NEW-PKCTCVBX-SNGL-Lx1": 29613
       },
       "*|L\u00d72|O:AP03\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 2103
+        "NEW-PKCTCVBX-SNGL-Lx1": 2106
       },
       "*|L\u00d72|O:AP03\u00d71|O:PT07C\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 808
+        "NEW-PKCTCVBX-SNGL-Lx1": 809
       },
       "*|L\u00d72|O:AP03\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 7237
+        "NEW-PKCTCVBX-SNGL-Lx1": 7248
       },
       "*|L\u00d72|O:AP03\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 20177
+        "NEW-PKCTCVBX-SNGL-Lx1": 20205
       },
       "*|L\u00d72|O:AP03\u00d72|O:AP14\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 816
+        "NEW-PKCTCVBX-SNGL-Lx1": 817
       },
       "*|L\u00d72|O:AP03\u00d72|O:CLMDNT\u00d72": {
-        "PKCTCVBX-SNGL-Lx1": 1470
+        "PKCTCVBX-SNGL-Lx1": 1472
       },
       "*|L\u00d72|O:AP03\u00d72|O:FCNT01\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1530
+        "NEW-PKCTCVBX-SNGL-Lx1": 1532
       },
       "*|L\u00d72|O:AP03\u00d72|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 6763
+        "NEW-PKCTCVBX-SNGL-Lx1": 6773
       },
       "*|L\u00d72|O:AP03\u00d72|O:PT07C\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 758
+        "NEW-PKCTCVBX-SNGL-Lx1": 759
       },
       "*|L\u00d72|O:AP03\u00d73": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 2673
+        "NEW-PKCTCVBX-SNGL-Lx1": 2676
       },
       "*|L\u00d72|O:AP14\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 28431
+        "NEW-PKCTCVBX-SNGL-Lx1": 28472
       },
       "*|L\u00d72|O:AP14\u00d71|O:AP15\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 69
       },
       "*|L\u00d72|O:AP14\u00d71|O:CLMDNT\u00d72": {
-        "PKCTCVBX-SNGL-Lx1": 3083
+        "PKCTCVBX-SNGL-Lx1": 3087
       },
       "*|L\u00d72|O:AP14\u00d71|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 10049
+        "NEW-PKCTCVBX-SNGL-Lx1": 10062
       },
       "*|L\u00d72|O:AP14\u00d71|O:PT07C\u00d73": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1476
+        "NEW-PKCTCVBX-SNGL-Lx1": 1478
       },
       "*|L\u00d72|O:AP14\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1630
+        "NEW-PKCTCVBX-SNGL-Lx1": 1632
       },
       "*|L\u00d72|O:AP15\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 2510
@@ -114795,14 +114795,14 @@
         "NEW-PKCTCVBX-SNGL-Lx1": 30
       },
       "*|L\u00d72|O:CLMDNT\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1056,
-        "PKCTCVBX-SNGL-Lx1": 137501
+        "NEW-PKCTCVBX-SNGL-Lx1": 1057,
+        "PKCTCVBX-SNGL-Lx1": 137730
       },
       "*|L\u00d72|O:CLMDNT\u00d72|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Lx1": 3656
+        "PKCTCVBX-SNGL-Lx1": 3662
       },
       "*|L\u00d72|O:CLMDNT\u00d72|O:PT07C\u00d72": {
-        "PKCTCVBX-SNGL-Lx1": 559
+        "PKCTCVBX-SNGL-Lx1": 561
       },
       "*|L\u00d72|O:CLMDNT\u00d72|O:PT07C\u00d73|O:SLFRLL\u00d71": {
         "PKCTCVBX-SNGL-Lx1": 805
@@ -114811,40 +114811,40 @@
         "NEW-PKCTCVBX-SNGL-Lx1": 55
       },
       "*|L\u00d72|O:FCNT01\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 23585
+        "NEW-PKCTCVBX-SNGL-Lx1": 23617
       },
       "*|L\u00d72|O:FCNT01\u00d71|O:PT07C\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 144
       },
       "*|L\u00d72|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 3488
+        "NEW-PKCTCVBX-SNGL-Lx1": 3494
       },
       "*|L\u00d72|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 51054
+        "NEW-PKCTCVBX-SNGL-Lx1": 51126
       },
       "*|L\u00d72|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 2628
+        "NEW-PKCTCVBX-SNGL-Lx1": 2632
       },
       "*|L\u00d72|O:PT07C\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 8694
+        "NEW-PKCTCVBX-SNGL-Lx1": 8707
       },
       "*|L\u00d72|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 22512
+        "NEW-PKCTCVBX-SNGL-Lx1": 22552
       },
       "*|L\u00d72|O:SSWF\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 399
       },
       "*|L\u00d73": {
-        "PKCTCVBX-TRIO-Lx1": 164710
+        "PKCTCVBX-TRIO-Lx1": 164955
       },
       "*|L\u00d73|O:AP03\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 5682
+        "PKCTCVBX-TRIO-Lx1": 5691
       },
       "*|L\u00d73|O:AP03\u00d71|O:AP14\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71": {
         "PKCTCVBX-TRIO-Lx1": 341
       },
       "*|L\u00d73|O:AP03\u00d71|O:AP14\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 2026
+        "PKCTCVBX-TRIO-Lx1": 2029
       },
       "*|L\u00d73|O:AP03\u00d71|O:AP15\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-TRIO-Lx1": 86
@@ -114853,7 +114853,7 @@
         "PKCTCVBX-TRIO-Lx1": 30
       },
       "*|L\u00d73|O:AP03\u00d71|O:FCNT01\u00d71|O:PT07C\u00d72|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 798
+        "PKCTCVBX-TRIO-Lx1": 799
       },
       "*|L\u00d73|O:AP03\u00d71|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-TRIO-Lx1": 30
@@ -114862,28 +114862,28 @@
         "PKCTCVBX-TRIO-Lx1": 41
       },
       "*|L\u00d73|O:AP03\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 1294
+        "PKCTCVBX-TRIO-Lx1": 1296
       },
       "*|L\u00d73|O:AP03\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 825
+        "PKCTCVBX-TRIO-Lx1": 826
       },
       "*|L\u00d73|O:AP03\u00d72": {
-        "PKCTCVBX-TRIO-Lx1": 2825
+        "PKCTCVBX-TRIO-Lx1": 2828
       },
       "*|L\u00d73|O:AP03\u00d72|O:AP14\u00d72|O:PT07C\u00d72": {
-        "PKCTCVBX-TRIO-Lx1": 838
+        "PKCTCVBX-TRIO-Lx1": 839
       },
       "*|L\u00d73|O:AP03\u00d72|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 838
+        "PKCTCVBX-TRIO-Lx1": 839
       },
       "*|L\u00d73|O:AP03\u00d73": {
-        "PKCTCVBX-TRIO-Lx1": 982
+        "PKCTCVBX-TRIO-Lx1": 983
       },
       "*|L\u00d73|O:AP14\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 2394
+        "PKCTCVBX-TRIO-Lx1": 2397
       },
       "*|L\u00d73|O:AP14\u00d71|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 147
+        "PKCTCVBX-TRIO-Lx1": 148
       },
       "*|L\u00d73|O:AP15\u00d71": {
         "PKCTCVBX-TRIO-Lx1": 237
@@ -114892,19 +114892,19 @@
         "PKCTCVBX-TRIO-Lx1": 223
       },
       "*|L\u00d73|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 145
+        "PKCTCVBX-TRIO-Lx1": 146
       },
       "*|L\u00d73|O:FCNT01\u00d71|O:PT07C\u00d72|O:SLFRLL\u00d71": {
         "PKCTCVBX-TRIO-Lx1": 55
       },
       "*|L\u00d73|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 3965
+        "PKCTCVBX-TRIO-Lx1": 3971
       },
       "*|L\u00d73|O:PT07C\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 1649
+        "PKCTCVBX-TRIO-Lx1": 1651
       },
       "*|L\u00d73|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 806
+        "PKCTCVBX-TRIO-Lx1": 807
       },
       "*|L\u00d74|O:AP03\u00d71|O:AP14\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71|O:SSWF\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 6
@@ -115024,7 +115024,7 @@
         "NEW-PKCTCVBX-SNGL-Lx1": 86
       },
       "NV3|L\u00d71|O:CLMDNT\u00d71": {
-        "PKCTCVBX-SNGL-Lx1": 7537
+        "PKCTCVBX-SNGL-Lx1": 7564
       },
       "NV3|L\u00d71|O:FCNT01\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 559
@@ -115078,7 +115078,7 @@
         "NEW-PKCTCVBX-SNGL-Lx1": 78
       },
       "NV3|L\u00d72|O:CLMDNT\u00d72": {
-        "PKCTCVBX-SNGL-Lx1": 3538
+        "PKCTCVBX-SNGL-Lx1": 3555
       },
       "NV3|L\u00d72|O:CLMDNT\u00d72|O:PT07C\u00d72": {
         "PKCTCVBX-SNGL-Lx1": 30
@@ -115102,19 +115102,19 @@
         "NEW-PKCTCVBX-SNGL-Lx1": 492
       },
       "NV3|L\u00d73": {
-        "PKCTCVBX-TRIO-Lx1": 74813
+        "PKCTCVBX-TRIO-Lx1": 74916
       },
       "NV3|L\u00d73|O:AP03\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 1668
+        "PKCTCVBX-TRIO-Lx1": 1670
       },
       "NV3|L\u00d73|O:AP03\u00d71|O:AP14\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71": {
         "PKCTCVBX-TRIO-Lx1": 341
       },
       "NV3|L\u00d73|O:AP03\u00d71|O:AP14\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 1831
+        "PKCTCVBX-TRIO-Lx1": 1833
       },
       "NV3|L\u00d73|O:AP03\u00d71|O:FCNT01\u00d71|O:PT07C\u00d72|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 798
+        "PKCTCVBX-TRIO-Lx1": 799
       },
       "NV3|L\u00d73|O:AP03\u00d71|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-TRIO-Lx1": 30
@@ -115123,22 +115123,22 @@
         "PKCTCVBX-TRIO-Lx1": 41
       },
       "NV3|L\u00d73|O:AP03\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 825
+        "PKCTCVBX-TRIO-Lx1": 826
       },
       "NV3|L\u00d73|O:AP03\u00d72": {
-        "PKCTCVBX-TRIO-Lx1": 1370
+        "PKCTCVBX-TRIO-Lx1": 1371
       },
       "NV3|L\u00d73|O:AP03\u00d72|O:AP14\u00d72|O:PT07C\u00d72": {
-        "PKCTCVBX-TRIO-Lx1": 838
+        "PKCTCVBX-TRIO-Lx1": 839
       },
       "NV3|L\u00d73|O:AP03\u00d72|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 838
+        "PKCTCVBX-TRIO-Lx1": 839
       },
       "NV3|L\u00d73|O:AP03\u00d73": {
-        "PKCTCVBX-TRIO-Lx1": 982
+        "PKCTCVBX-TRIO-Lx1": 983
       },
       "NV3|L\u00d73|O:AP14\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 806
+        "PKCTCVBX-TRIO-Lx1": 807
       },
       "NV3|L\u00d73|O:AP14\u00d71|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-TRIO-Lx1": 65
@@ -115153,10 +115153,10 @@
         "PKCTCVBX-TRIO-Lx1": 55
       },
       "NV3|L\u00d73|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 1522
+        "PKCTCVBX-TRIO-Lx1": 1523
       },
       "NV3|L\u00d73|O:PT07C\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 1649
+        "PKCTCVBX-TRIO-Lx1": 1651
       },
       "NV3|L\u00d73|O:SLFRLL\u00d71": {
         "PKCTCVBX-TRIO-Lx1": 19
@@ -115180,7 +115180,7 @@
         "PKCTCVBX-SNGL-Jx1": 17
       },
       "PA2|B\u00d71|L\u00d71|O:AP14\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 353
+        "PKCTCVBX-SNGL-Jx1": 354
       },
       "PA2|B\u00d71|L\u00d71|O:NOF\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 10
@@ -115192,85 +115192,85 @@
         "PKCTCVBX-SNGL-Jx1": 46
       },
       "PA2|B\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 838
+        "NEW-PKCTCVBX-SNGL-Lx1": 839
       },
       "PA2|J\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 333783
+        "PKCTCVBX-SNGL-Jx1": 334256
       },
       "PA2|J\u00d71|O:AP03\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 7783
+        "PKCTCVBX-SNGL-Jx1": 7792
       },
       "PA2|J\u00d71|O:AP03\u00d71|O:AP14\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1672
+        "PKCTCVBX-SNGL-Jx1": 1674
       },
       "PA2|J\u00d71|O:AP03\u00d71|O:AP14\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 2466
+        "PKCTCVBX-SNGL-Jx1": 2469
       },
       "PA2|J\u00d71|O:AP03\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 2220
+        "PKCTCVBX-SNGL-Jx1": 2223
       },
       "PA2|J\u00d71|O:AP03\u00d72|O:PT07C\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 838
+        "PKCTCVBX-SNGL-Jx1": 839
       },
       "PA2|J\u00d71|O:AP03\u00d73|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 37
       },
       "PA2|J\u00d71|O:AP03\u00d73|O:PT07C\u00d73": {
-        "PKCTCVBX-SNGL-Jx1": 838
+        "PKCTCVBX-SNGL-Jx1": 839
       },
       "PA2|J\u00d71|O:AP14\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 2040
+        "PKCTCVBX-SNGL-Jx1": 2042
       },
       "PA2|J\u00d71|O:AP14\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 985
+        "PKCTCVBX-SNGL-Jx1": 986
       },
       "PA2|J\u00d71|O:AP15\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 17
       },
       "PA2|J\u00d71|O:FCNT01\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1668
+        "PKCTCVBX-SNGL-Jx1": 1670
       },
       "PA2|J\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 2438
+        "PKCTCVBX-SNGL-Jx1": 2441
       },
       "PA2|J\u00d71|O:PT07C\u00d73": {
-        "PKCTCVBX-SNGL-Jx1": 806
+        "PKCTCVBX-SNGL-Jx1": 807
       },
       "PA2|J\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 814
+        "PKCTCVBX-SNGL-Jx1": 815
       },
       "PA2|J\u00d71|O:SLFRLL\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 838
+        "PKCTCVBX-SNGL-Jx1": 839
       },
       "PA2|J\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 1630261
+        "PKCTCVBX-SNGL-Jx1": 1632771
       },
       "PA2|J\u00d72|O:AP03\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 90056
+        "PKCTCVBX-SNGL-Jx1": 90197
       },
       "PA2|J\u00d72|O:AP03\u00d71|O:AP14\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 7203
+        "PKCTCVBX-SNGL-Jx1": 7214
       },
       "PA2|J\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 9961
+        "PKCTCVBX-SNGL-Jx1": 9972
       },
       "PA2|J\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 6994
+        "PKCTCVBX-SNGL-Jx1": 7006
       },
       "PA2|J\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:PT07C\u00d73": {
-        "PKCTCVBX-SNGL-Jx1": 825
+        "PKCTCVBX-SNGL-Jx1": 826
       },
       "PA2|J\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:SSWF\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 11
       },
       "PA2|J\u00d72|O:AP03\u00d71|O:AP14\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 1607
+        "PKCTCVBX-SNGL-Jx1": 1609
       },
       "PA2|J\u00d72|O:AP03\u00d71|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 59
       },
       "PA2|J\u00d72|O:AP03\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 10392
+        "PKCTCVBX-SNGL-Jx1": 10408
       },
       "PA2|J\u00d72|O:AP03\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 397
@@ -115279,31 +115279,31 @@
         "PKCTCVBX-SNGL-Jx1": 106
       },
       "PA2|J\u00d72|O:AP03\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 14902
+        "PKCTCVBX-SNGL-Jx1": 14923
       },
       "PA2|J\u00d72|O:AP03\u00d72|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1557
+        "PKCTCVBX-SNGL-Jx1": 1559
       },
       "PA2|J\u00d72|O:AP03\u00d72|O:PT07C\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 773
+        "PKCTCVBX-SNGL-Jx1": 774
       },
       "PA2|J\u00d72|O:AP03\u00d73": {
-        "PKCTCVBX-SNGL-Jx1": 3810
+        "PKCTCVBX-SNGL-Jx1": 3816
       },
       "PA2|J\u00d72|O:AP03\u00d73|O:AP14\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 838
+        "PKCTCVBX-SNGL-Jx1": 839
       },
       "PA2|J\u00d72|O:AP03\u00d73|O:FCNT01\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 816
+        "PKCTCVBX-SNGL-Jx1": 817
       },
       "PA2|J\u00d72|O:AP14\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 24207
+        "PKCTCVBX-SNGL-Jx1": 24239
       },
       "PA2|J\u00d72|O:AP14\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 3485
+        "PKCTCVBX-SNGL-Jx1": 3490
       },
       "PA2|J\u00d72|O:AP14\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 1741
+        "PKCTCVBX-SNGL-Jx1": 1743
       },
       "PA2|J\u00d72|O:AP15\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 964
@@ -115315,31 +115315,31 @@
         "PKCTCVBX-SNGL-Jx1": 170
       },
       "PA2|J\u00d72|O:FCNT01\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 11168
+        "PKCTCVBX-SNGL-Jx1": 11184
       },
       "PA2|J\u00d72|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 2435
+        "PKCTCVBX-SNGL-Jx1": 2438
       },
       "PA2|J\u00d72|O:FCNT01\u00d72|O:SLFRLL\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 59
       },
       "PA2|J\u00d72|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 24307
+        "PKCTCVBX-SNGL-Jx1": 24340
       },
       "PA2|J\u00d72|O:PT07C\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 2221
+        "PKCTCVBX-SNGL-Jx1": 2226
       },
       "PA2|J\u00d72|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 10596
+        "PKCTCVBX-SNGL-Jx1": 10612
       },
       "PA2|J\u00d72|O:SSWF\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 322
       },
       "PA2|J\u00d73": {
-        "PKCTCVBX-SNGL-Jx1": 51489
+        "PKCTCVBX-SNGL-Jx1": 51561
       },
       "PA2|J\u00d73|O:AP03\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 3484
+        "PKCTCVBX-SNGL-Jx1": 3489
       },
       "PA2|J\u00d73|O:AP03\u00d71|O:AP14\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 78
@@ -115348,58 +115348,58 @@
         "PKCTCVBX-SNGL-Jx1": 46
       },
       "PA2|J\u00d73|O:AP03\u00d71|O:AP14\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 777
+        "PKCTCVBX-SNGL-Jx1": 778
       },
       "PA2|J\u00d73|O:AP03\u00d71|O:AP14\u00d72|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-SNGL-Jx1": 22
       },
       "PA2|J\u00d73|O:AP03\u00d71|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 844
+        "PKCTCVBX-SNGL-Jx1": 845
       },
       "PA2|J\u00d73|O:AP03\u00d73": {
         "PKCTCVBX-SNGL-Jx1": 18
       },
       "PA2|J\u00d73|O:AP14\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 3272
+        "PKCTCVBX-SNGL-Jx1": 3276
       },
       "PA2|J\u00d73|O:FCNT01\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1535
+        "PKCTCVBX-SNGL-Jx1": 1537
       },
       "PA2|J\u00d73|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 1552
+        "PKCTCVBX-SNGL-Jx1": 1554
       },
       "PA2|L\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 567262
+        "NEW-PKCTCVBX-SNGL-Lx1": 568059
       },
       "PA2|L\u00d71|O:AP03\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 17424
+        "NEW-PKCTCVBX-SNGL-Lx1": 17447
       },
       "PA2|L\u00d71|O:AP03\u00d71|O:AP14\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 341
       },
       "PA2|L\u00d71|O:AP03\u00d71|O:CLMDNT\u00d71": {
-        "PKCTCVBX-SNGL-Lx1": 772
+        "PKCTCVBX-SNGL-Lx1": 773
       },
       "PA2|L\u00d71|O:AP03\u00d71|O:CLMDNT\u00d71|O:PT07C\u00d71": {
         "PKCTCVBX-SNGL-Lx1": 341
       },
       "PA2|L\u00d71|O:AP03\u00d71|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 3183
+        "NEW-PKCTCVBX-SNGL-Lx1": 3187
       },
       "PA2|L\u00d71|O:AP03\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 770
+        "NEW-PKCTCVBX-SNGL-Lx1": 771
       },
       "PA2|L\u00d71|O:AP03\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 838
+        "NEW-PKCTCVBX-SNGL-Lx1": 839
       },
       "PA2|L\u00d71|O:AP03\u00d72|O:PT07C\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 806
+        "NEW-PKCTCVBX-SNGL-Lx1": 807
       },
       "PA2|L\u00d71|O:AP03\u00d73": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 2438
+        "NEW-PKCTCVBX-SNGL-Lx1": 2441
       },
       "PA2|L\u00d71|O:AP14\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 6365
+        "NEW-PKCTCVBX-SNGL-Lx1": 6372
       },
       "PA2|L\u00d71|O:AP14\u00d71|O:PT07C\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 471
@@ -115408,104 +115408,104 @@
         "NEW-PKCTCVBX-SNGL-Lx1": 274
       },
       "PA2|L\u00d71|O:CLMDNT\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 745,
-        "PKCTCVBX-SNGL-Lx1": 162146
+        "NEW-PKCTCVBX-SNGL-Lx1": 746,
+        "PKCTCVBX-SNGL-Lx1": 162375
       },
       "PA2|L\u00d71|O:CLMDNT\u00d71|O:FCNT01\u00d71": {
-        "PKCTCVBX-SNGL-Lx1": 2328
+        "PKCTCVBX-SNGL-Lx1": 2331
       },
       "PA2|L\u00d71|O:FCNT01\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1923
+        "NEW-PKCTCVBX-SNGL-Lx1": 1926
       },
       "PA2|L\u00d71|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 8206
+        "NEW-PKCTCVBX-SNGL-Lx1": 8216
       },
       "PA2|L\u00d71|O:PT07C\u00d73": {
         "NEW-PKCTCVBX-SNGL-Lx1": 30
       },
       "PA2|L\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 5413
+        "NEW-PKCTCVBX-SNGL-Lx1": 5420
       },
       "PA2|L\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 2751570
+        "NEW-PKCTCVBX-SNGL-Lx1": 2755791
       },
       "PA2|L\u00d72|O:AP03\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 133764
+        "NEW-PKCTCVBX-SNGL-Lx1": 133964
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:AP14\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 8475
+        "NEW-PKCTCVBX-SNGL-Lx1": 8487
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 10804
+        "NEW-PKCTCVBX-SNGL-Lx1": 10819
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 14346
+        "NEW-PKCTCVBX-SNGL-Lx1": 14367
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:AP14\u00d71|O:PT07C\u00d71|O:SSWF\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 8
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:AP14\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 435
+        "NEW-PKCTCVBX-SNGL-Lx1": 436
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:AP15\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 20
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:CLMDNT\u00d72": {
-        "PKCTCVBX-SNGL-Lx1": 9629
+        "PKCTCVBX-SNGL-Lx1": 9645
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:CLMDNT\u00d72|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Lx1": 5376
+        "PKCTCVBX-SNGL-Lx1": 5383
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:FCNT01\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1578
+        "NEW-PKCTCVBX-SNGL-Lx1": 1580
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1652
+        "NEW-PKCTCVBX-SNGL-Lx1": 1654
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 28786
+        "NEW-PKCTCVBX-SNGL-Lx1": 28825
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 2103
+        "NEW-PKCTCVBX-SNGL-Lx1": 2106
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:PT07C\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 808
+        "NEW-PKCTCVBX-SNGL-Lx1": 809
       },
       "PA2|L\u00d72|O:AP03\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 7123
+        "NEW-PKCTCVBX-SNGL-Lx1": 7134
       },
       "PA2|L\u00d72|O:AP03\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 19759
+        "NEW-PKCTCVBX-SNGL-Lx1": 19787
       },
       "PA2|L\u00d72|O:AP03\u00d72|O:AP14\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 816
+        "NEW-PKCTCVBX-SNGL-Lx1": 817
       },
       "PA2|L\u00d72|O:AP03\u00d72|O:CLMDNT\u00d72": {
-        "PKCTCVBX-SNGL-Lx1": 1470
+        "PKCTCVBX-SNGL-Lx1": 1472
       },
       "PA2|L\u00d72|O:AP03\u00d72|O:FCNT01\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1530
+        "NEW-PKCTCVBX-SNGL-Lx1": 1532
       },
       "PA2|L\u00d72|O:AP03\u00d72|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 6763
+        "NEW-PKCTCVBX-SNGL-Lx1": 6773
       },
       "PA2|L\u00d72|O:AP03\u00d73": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 2673
+        "NEW-PKCTCVBX-SNGL-Lx1": 2676
       },
       "PA2|L\u00d72|O:AP14\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 27524
+        "NEW-PKCTCVBX-SNGL-Lx1": 27565
       },
       "PA2|L\u00d72|O:AP14\u00d71|O:CLMDNT\u00d72": {
-        "PKCTCVBX-SNGL-Lx1": 3083
+        "PKCTCVBX-SNGL-Lx1": 3087
       },
       "PA2|L\u00d72|O:AP14\u00d71|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 10049
+        "NEW-PKCTCVBX-SNGL-Lx1": 10062
       },
       "PA2|L\u00d72|O:AP14\u00d71|O:PT07C\u00d73": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1476
+        "NEW-PKCTCVBX-SNGL-Lx1": 1478
       },
       "PA2|L\u00d72|O:AP14\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1630
+        "NEW-PKCTCVBX-SNGL-Lx1": 1632
       },
       "PA2|L\u00d72|O:AP15\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 1355
@@ -115520,47 +115520,47 @@
         "NEW-PKCTCVBX-SNGL-Lx1": 30
       },
       "PA2|L\u00d72|O:CLMDNT\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 1056,
-        "PKCTCVBX-SNGL-Lx1": 133926
+        "NEW-PKCTCVBX-SNGL-Lx1": 1057,
+        "PKCTCVBX-SNGL-Lx1": 134138
       },
       "PA2|L\u00d72|O:CLMDNT\u00d72|O:FCNT01\u00d71": {
-        "PKCTCVBX-SNGL-Lx1": 2343
+        "PKCTCVBX-SNGL-Lx1": 2348
       },
       "PA2|L\u00d72|O:CLMDNT\u00d72|O:PT07C\u00d71": {
-        "PKCTCVBX-SNGL-Lx1": 3467
+        "PKCTCVBX-SNGL-Lx1": 3472
       },
       "PA2|L\u00d72|O:CLMDNT\u00d72|O:PT07C\u00d73|O:SLFRLL\u00d71": {
         "PKCTCVBX-SNGL-Lx1": 805
       },
       "PA2|L\u00d72|O:FCNT01\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 21360
+        "NEW-PKCTCVBX-SNGL-Lx1": 21392
       },
       "PA2|L\u00d72|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 3331
+        "NEW-PKCTCVBX-SNGL-Lx1": 3337
       },
       "PA2|L\u00d72|O:PT07C\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 50148
+        "NEW-PKCTCVBX-SNGL-Lx1": 50220
       },
       "PA2|L\u00d72|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 2628
+        "NEW-PKCTCVBX-SNGL-Lx1": 2632
       },
       "PA2|L\u00d72|O:PT07C\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 8694
+        "NEW-PKCTCVBX-SNGL-Lx1": 8707
       },
       "PA2|L\u00d72|O:SLFRLL\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 22020
+        "NEW-PKCTCVBX-SNGL-Lx1": 22060
       },
       "PA2|L\u00d72|O:SSWF\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 396
       },
       "PA2|L\u00d73": {
-        "PKCTCVBX-TRIO-Lx1": 89890
+        "PKCTCVBX-TRIO-Lx1": 90032
       },
       "PA2|L\u00d73|O:AP03\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 4014
+        "PKCTCVBX-TRIO-Lx1": 4021
       },
       "PA2|L\u00d73|O:AP03\u00d71|O:AP14\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 195
+        "PKCTCVBX-TRIO-Lx1": 196
       },
       "PA2|L\u00d73|O:AP03\u00d71|O:AP15\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-TRIO-Lx1": 86
@@ -115569,13 +115569,13 @@
         "PKCTCVBX-TRIO-Lx1": 30
       },
       "PA2|L\u00d73|O:AP03\u00d71|O:PT07C\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 1294
+        "PKCTCVBX-TRIO-Lx1": 1296
       },
       "PA2|L\u00d73|O:AP03\u00d72": {
-        "PKCTCVBX-TRIO-Lx1": 1455
+        "PKCTCVBX-TRIO-Lx1": 1457
       },
       "PA2|L\u00d73|O:AP14\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 1588
+        "PKCTCVBX-TRIO-Lx1": 1590
       },
       "PA2|L\u00d73|O:AP15\u00d71|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
         "PKCTCVBX-TRIO-Lx1": 59
@@ -115584,10 +115584,10 @@
         "PKCTCVBX-TRIO-Lx1": 64
       },
       "PA2|L\u00d73|O:FCNT01\u00d71|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 2443
+        "PKCTCVBX-TRIO-Lx1": 2448
       },
       "PA2|L\u00d73|O:SLFRLL\u00d71": {
-        "PKCTCVBX-TRIO-Lx1": 787
+        "PKCTCVBX-TRIO-Lx1": 788
       },
       "PA2|L\u00d74|O:AP03\u00d71|O:AP14\u00d71|O:FCNT01\u00d71|O:PT07C\u00d71|O:SLFRLL\u00d71|O:SSWF\u00d71": {
         "NEW-PKCTCVBX-SNGL-Lx1": 6
@@ -115596,19 +115596,19 @@
         "NEW-PKCTCVBX-SNGL-Lx1": 16
       },
       "TO1|J\u00d71": {
-        "PKCTCVBX-SNGL-Jx1": 7776
+        "PKCTCVBX-SNGL-Jx1": 7784
       },
       "TO1|J\u00d72": {
-        "PKCTCVBX-SNGL-Jx1": 25378
+        "PKCTCVBX-SNGL-Jx1": 25392
       },
       "TO1|L\u00d71": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 9058
+        "NEW-PKCTCVBX-SNGL-Lx1": 9068
       },
       "TO1|L\u00d71|O:CLMDNT\u00d71": {
-        "PKCTCVBX-SNGL-Lx1": 1051
+        "PKCTCVBX-SNGL-Lx1": 1052
       },
       "TO1|L\u00d72": {
-        "NEW-PKCTCVBX-SNGL-Lx1": 37434
+        "NEW-PKCTCVBX-SNGL-Lx1": 37456
       },
       "TO1|L\u00d72|O:CLMDNT\u00d72": {
         "PKCTCVBX-SNGL-Lx1": 37
@@ -115638,7 +115638,7 @@
     "warnings": [
       "35 orders came back with no order_type (counted as D2C); samples: [{'order_number': '270998', 'store': 'Cattasaurus - shoproxstore - Shopify', 'status': 'cancelled', 'shipped': False}, {'order_number': '270934', 'store': 'Cattasaurus - shoproxstore - Shopify', 'status': 'fulfilled', 'shipped': False}, {'order_number': '269201', 'store': 'Cattasaurus - shoproxstore - Shopify', 'status': 'fulfilled', 'shipped': False}, {'order_number': '114-3313788-1804268', 'store': 'Cattasaurus - Amazon USA', 'status': 'cancelled', 'shipped': False}, {'order_number': '268409', 'store': 'Cattasaurus - shoproxstore - Shopify', 'status': 'fulfilled', 'shipped': False}]",
       "60 orders had no cost estimate from ShipMonk yet - their cost is $0 until ShipMonk fills it in (re-fetched every run)",
-      "6173 orders had no packaging line in the API - their box (6494 boxes) was inferred from the orders that list it (NV3 6062/6178, PA2 111/759)",
+      "6177 orders had no packaging line in the API - their box (6501 boxes) was inferred from the orders that list it (NV3 6065/6181, PA2 112/760)",
       "charges stated in CAD (164.85 CAD this run) converted to USD at 0.73 - set SHIPMONK_FX_TO_USD to the rate on ShipMonk's invoice if it differs"
     ]
   },
@@ -115750,51 +115750,51 @@
   "totals": {
     "last_30d": {
       "cost_missing_orders": 60,
-      "orders": 13896,
-      "orders_onhold": 878,
+      "orders": 13908,
+      "orders_onhold": 882,
       "orders_shipped": 12445,
-      "orders_unshipped": 1451,
-      "packages": 12641,
+      "orders_unshipped": 1463,
+      "packages": 12642,
       "packaging_cost": 66.5,
-      "packaging_orders_est": 5063,
-      "packaging_units": 13723,
-      "packaging_units_est": 5357,
-      "pick_pack_cost": 32945.73,
-      "shipping_cost": 262488.83,
-      "total_cost": 295501.06,
-      "units": 27723
+      "packaging_orders_est": 5067,
+      "packaging_units": 13738,
+      "packaging_units_est": 5364,
+      "pick_pack_cost": 32992.51,
+      "shipping_cost": 262705.45,
+      "total_cost": 295764.46,
+      "units": 27747
     },
     "mtd": {
       "cost_missing_orders": 60,
-      "orders": 12091,
-      "orders_onhold": 765,
+      "orders": 12103,
+      "orders_onhold": 769,
       "orders_shipped": 10755,
-      "orders_unshipped": 1336,
-      "packages": 10931,
+      "orders_unshipped": 1348,
+      "packages": 10932,
       "packaging_cost": 61.1,
-      "packaging_orders_est": 4432,
-      "packaging_units": 12040,
-      "packaging_units_est": 4712,
-      "pick_pack_cost": 28811.91,
-      "shipping_cost": 229291.35,
-      "total_cost": 258164.36,
-      "units": 24357
+      "packaging_orders_est": 4436,
+      "packaging_units": 12055,
+      "packaging_units_est": 4719,
+      "pick_pack_cost": 28858.69,
+      "shipping_cost": 229507.97,
+      "total_cost": 258427.76,
+      "units": 24381
     },
     "today": {
       "cost_missing_orders": 21,
-      "orders": 283,
-      "orders_onhold": 21,
+      "orders": 295,
+      "orders_onhold": 25,
       "orders_shipped": 27,
-      "orders_unshipped": 256,
-      "packages": 29,
+      "orders_unshipped": 268,
+      "packages": 30,
       "packaging_cost": 0.0,
-      "packaging_orders_est": 79,
-      "packaging_units": 284,
-      "packaging_units_est": 98,
-      "pick_pack_cost": 998.44,
-      "shipping_cost": 4824.81,
-      "total_cost": 5823.25,
-      "units": 594
+      "packaging_orders_est": 83,
+      "packaging_units": 299,
+      "packaging_units_est": 105,
+      "pick_pack_cost": 1045.22,
+      "shipping_cost": 5041.43,
+      "total_cost": 6086.65,
+      "units": 618
     }
   },
   "window": {
