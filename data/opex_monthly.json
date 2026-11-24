@@ -1,7 +1,7 @@
 {
  "schema": 1,
  "currency": "USD",
- "updated_at": "2026-11-16",
+ "updated_at": "2026-11-24",
  "note": "Chi phi nhap tay theo thang (USD/thang), bang P&L tu rai deu theo ngay trong thang. Muc G&A (tren EBITDA): salary = luong & nhan su gian tiep (van hanh, quan ly) = luong VN (CP VN - 2026.xlsx) + nhan su thue ngoai qua Upwork (CSKH, fulfillment/logistics, copywriter; ghi theo tuan hoa don Upwork, da gom phi Upwork + VAT, phi dang tin) - xem Upwork_theo_hop_dong_2025-2026.xlsx; software = phan mem & cong cu: Shopify goi+app, phan mem/cong cu, AI, cong cu marketing, san xuat noi dung AI, tu sao ke the Mercury (2025-04/2026) + Slash (04/2026->) - xem Phan_mem_Mercury_Slash_2025-2026.xlsx (KHONG gom Snowball $350 va Klaviyo - da co san); office = van phong & van hanh; accounting = ke toan, thue & phap ly (GAAP: professional fees) = phi dich vu Numeral khai sales tax ($75/to khai + dang ky bang) ghi theo THANG LAM TO KHAI (phi tru cuoi thang / dau thang sau; lan tru bi tu choi khong tinh) - KHONG gom tien thue sales tax nop cho cac bang (thu ho, khong vao P&L); ke toan VN da nam trong chi phi VN; insurance = bao hiem; other = khac. Muc duoi EBITDA: depreciation = khau hao & phan bo (khuon, thiet bi, phan mem mua dut); interest = lai vay & chi phi tai chinh (am neu lai tien gui > lai vay); income_tax = thue TNDN theo thang (bo trong/null de bang uoc tinh theo tax_rate x loi nhuan truoc thue duong; 0 = khong co thue). salary_vn + upwork = tach cua salary (luong VN / nhan su Upwork), dung de tam tinh thang dang mo. Thang dang mo (\"status\": \"open\") hoac chua co dong: bang tu tam tinh - chi phi VN = trung binh 6 thang da chot gan nhat; software / upwork = actual_to_date (so thuc te toi nay {amount, from, to}, rai theo ngay); so ghi truc tiep trong thang dang mo luon duoc uu tien. mkt_agency / mkt_creator / mkt_dsp = Marketing nhap tay (duoi CM3 nhu quang cao, US GAAP ASC 720-35): agency creative (Goodo, Adcrate) theo thang dich vu; creator/UGC (Insense, Billo, MossCreator, tra creator truc tiep) theo ngay tra - KHONG gom Tremendous (nap vi de Snowball tra hoa hong referral; hoa hong da co tren P&L tu tag Shopify x1,04 phi Tremendous); Amazon DSP (nap qua SparkX, gom phi) theo ngay nap. software tu V11.8 ghi theo ky thanh toan: goi nam/6 thang/quy chia deu cho so thang cua goi. training = dao tao & cong dong (Daily Mentor, Skool, Whop, Disrupter School): GAAP chi phi khi nhan dich vu, khoa tra truoc chia deu theo thoi gian hoc (Daily Mentor 7 thang). accounting gom them phi luat su Morris Nichols ghi theo thang phat sinh dich vu (2025). Them thang moi = them mot dong \"YYYY-MM\": {...}. | V12.4 (21/10/2026) - khoan tren sao ke Mercury/Slash chua co tren P&L, ghi theo ngay thanh toan: ful_other (gia von) = fulfillment 3PL khac: Big Sky Fulfillment (Junebug Cache LLC, kho thu 2 nam 2025, 01-09/2025; lenh keo tien 24/12/2025 da duoc Mercury hoan 12/01/2026 nen khong ghi), Deliverr (01-04/2025), phi fulfillment SSWF tra Andejian (03-06/2026, gom mot it phi QA/cuoc lo chua tach), cuoc gui le; cogs_adj (gia von, so am = giam) = hoan thue nhap khau IEEPA (tariff) nhan 29/06/2026 tu Bo Tai chinh My (TCS TREAS, da co lenh thu $0 ngay 12/05/2026); mkt_other (marketing, kenh Shopify) = Microsoft Ads 2025 + branding Ten Ten Ten Collective; other_us (G&A) = cong tac, phi ngan hang/ngoai te, khoan nho; cashback (G&A, so am = giam chi phi) = hoan tien the Mercury IO Cashback; income_tax 2025 = IRS thue TNDN nam 2025 tra 17/03/2026 chia deu 12 thang. Khong ghi: Sondax (chu DN bo qua), WA DOR trich tien $8.169 (tien sales tax WA chua nop do lenh tru tien cua Numeral bi tra lai - thue thu ho, chua tach duoc tien phat), FASPECT/RELQIK. Chi tiet: Doi_chieu_Mercury_Slash_vs_PL_2025-2026.xlsx. | V12.5 (21/10/2026): ful_other + phí fulfillment đài nước SSWF từ hoá đơn 21/06→05/10/2026 theo kỳ dịch vụ (chia theo số ngày; trước đó theo ngày trả); other_us + phí ngân hàng Slash 13/07→20/10; cert (G&A) = chứng nhận & thử nghiệm sản phẩm OEKO-TEX (phí thử nghiệm ghi ngay; license + gói QA phân bổ 12 tháng qua assets.prepaid); tooling_exp (giá vốn) = khuôn dưới ngưỡng vốn hoá $2.500 ghi chi phí tháng trả (2024 nằm ngoài phạm vi dashboard); assets = danh mục tài sản cố định theo US GAAP: khấu hao (D&A) và phân bổ trả trước được dashboard tự tính theo tháng — KHÔNG nhập depreciation tay cho các tài sản này. | V12.22 (16/11/2026): TY GIA - moi khoan VND quy doi sang USD theo ty gia tham khao 26.000 d/USD (chu DN quyet dinh 16/11/2026; truoc do 22.000). Da quy doi lai salary_vn / office / other cua 01-09/2026 (USD moi = USD cu x 22.000 / 26.000) va salary = salary_vn + upwork. Thang moi nhap theo 26.000; finance_inputs.json fx.book_rate = fx.accountant_rate = 26000.",
  "tax_rate": 0,
  "months": {
@@ -547,6 +547,22 @@
    "cert": 720.0,
    "tooling_exp": 0,
    "mkt_creator": 0
+  },
+  "2026-11": {
+   "status": "open",
+   "mkt_agency": 0,
+   "training": 0,
+   "basis_notes": {
+    "mkt_agency": {
+     "en": "No agency retainer: the owner confirmed on 24/11/2026 that Goodo and Adcrate are no longer used",
+     "vi": "Không còn phí agency: anh Tài xác nhận 24/11/2026 đã ngừng dùng Goodo và Adcrate"
+    },
+    "training": {
+     "en": "Slash card: no Daily Mentor / Skool / Whop charge from 01/11 (Daily Mentor's 7-month term ended 10/2026; Skool Evolve cancelled 10/08, God Tier Ecom cancelled 15/07)",
+     "vi": "Thẻ Slash: từ 01/11 không có khoản Daily Mentor / Skool / Whop nào (Daily Mentor hết kỳ 7 tháng ở 10/2026; Skool Evolve huỷ 10/08, God Tier Ecom huỷ 15/07)"
+    }
+   },
+   "note": "T11/2026 DANG MO (chua chot so). 24/11/2026 (anh Tai): mkt_agency = 0 vi da ngung dung Goodo va Adcrate (truoc do bang P&L tu lay bang thang 9 = $10.000); training = thuc te the Slash tu 01/11 = $0 (truoc do tu lay bang thang 9 = $1.604,24, trong do co $1.457,57 Daily Mentor da het ky). Cac khoan khac van tam tinh nhu thang chua co dong. LUU Y: Adcrate van phat hanh hoa don $10.000/thang (INV-1741 han 15/10, INV-1757 han 11/11, chua tra) va Goodo van phat hanh hoa don tu dong qua Anchor (ANC-00017, ANC-00025, ANC-00037) - neu phai tra thi nhap lai vao thang dich vu."
   }
  },
  "assets": {
