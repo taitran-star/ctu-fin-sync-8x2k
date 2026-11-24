@@ -1,22 +1,22 @@
 {
  "schema": 1,
- "generated_at": "2026-11-23T13:37:51Z",
+ "generated_at": "2026-11-24T01:14:24Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
-  "to": "2026-11-23",
+  "to": "2026-11-24",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 3317,
-  "charges": 799,
+  "transactions_read": 3318,
+  "charges": 800,
   "stats": {
-   "status:posted": 2521,
+   "status:posted": 2522,
    "rail:rtp": 10,
    "rail:ach": 899,
    "rail:fee": 102,
    "rail:wire": 32,
    "status:failed": 795,
-   "rail:card": 1832,
+   "rail:card": 1833,
    "rail:other": 442,
    "status:pending": 1
   },
@@ -202,7 +202,7 @@
    "MC": 7795.99,
    "MT": 2539.64,
    "SBW": 3500.0,
-   "SHOP": 4350.43,
+   "SHOP": 8370.33,
    "SUP": 24326.32,
    "SW": 1354.6,
    "TAX": 2775.0,
@@ -307,7 +307,7 @@
    "MC": 6996.82,
    "MT": 2852.4,
    "SBW": 3500.0,
-   "SHOP": 4350.43,
+   "SHOP": 8370.33,
    "SUP": 24326.32,
    "SW": 1354.6,
    "TAX": 2831.26,
@@ -366,7 +366,7 @@
   }
  },
  "pending": {
-  "SHOP": 4019.9
+  "UPW": 532.84
  },
  "charges": [
   {
@@ -7444,6 +7444,14 @@
    "a": 120.0,
    "k": "card",
    "cy": "U"
+  },
+  {
+   "d": "2026-11-23",
+   "v": "Shopify",
+   "l": "SHOP",
+   "a": 4019.9,
+   "k": "card",
+   "cy": "M"
   }
  ],
  "unclassified_card": [
