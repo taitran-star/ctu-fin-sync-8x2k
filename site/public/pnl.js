@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 67dabe3326).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 141edbf3b0).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -602,6 +602,7 @@
   const SHOPIFY_PAYOUTS_LIVE_DATA = (window.__LIVE && window.__LIVE["shopify_payouts"]) || null;
   const NONREV_LIVE_DATA = (window.__LIVE && window.__LIVE["nonrev"]) || null;
   let payoutFeeMeta = null;
+  const AMAZON_SETTLEMENTS_LIVE_DATA = (window.__LIVE && window.__LIVE["amazon_settlements"]) || null;   // V12.24.2: settlement periods + transfer status (money held at Amazon)
   const NONREV_CH = {tiktok_sample:'tiktok', influencer:'shopify', campaign:'shopify', reship:'shopify', other:'shopify'};   // channel each give-away belongs to (channel filter, CM by channel)
   const NONREV_CATS = ['tiktok_sample','influencer','campaign','reship','other'];
   // products given away per day: {iso: {category: {SKU: units}}}. TikTok samples: from TikTok's own order list from its
@@ -5312,13 +5313,65 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
     stockRows().forEach(s=>{ if(!s.known || !(s.stock>0)) return; const uc = skuCost(s.sku); units += s.stock; if(uc===null){ unpriced += s.stock; return; } cost += uc*s.stock; if(s.perDay>0 && s.cover!==null){ if(s.cover>180 && uc*s.stock>=2000) slow.push({sku:s.sku, v: uc*s.stock, cover: s.cover}); if(s.cover<30 && s.perDay>=0.5){ const all = (s.stock + s.fbaInbound + s.smkIncoming)/s.perDay; if(all<30) low.push({sku:s.sku, cover: s.cover, lost: Math.max(0, 30-all)*s.perDay*s.price}); else waiting++; } } });
     return {cost, units, unpriced, slow: slow.sort((x,y)=>y.v-x.v), low: low.sort((x,y)=>y.lost-x.lost), waiting};
   }
-  function finReceivables(){   // marketplace money not paid out yet — estimates from the order data (settlement cycles), until the payout APIs are wired
+  // V12.24.2 (owner 24/11/2026: "what is really sitting at each gateway"): money sold but not in the bank yet, gateway by
+  // gateway, from the gateways' own figures where the sync has them - Shopify Payments (payouts on their way + balance not
+  // in a payout yet, data/shopify_payouts.json), Amazon (transfers in progress + the open settlement, data/amazon_settlements.json;
+  // orders Amazon has not posted yet are an estimate from the order data), TikTok Shop (statements issued and still
+  // unpaid). PayPal and Afterpay have no balance in the sync yet: estimates. The old order-data estimates stay as fallback.
+  function finReceivables(){
     const last = n => days.slice(-n);
     const amz = aggregate(last(14)), sh = aggregate(last(3));
     const amzNet = (amz.gross.amazon||0) - (amz.discountBy.amazon||0) - (amz.refund.amazon||0) + ((amz.shipBy && amz.shipBy.amazon)||0) - amz.amazonMarketplaceFeesReal - amz.amazonMarketplaceFeesEst - amz.fulfillment;
     const shNet = (sh.gross.shopify||0) - (sh.discountBy.shopify||0) - (sh.refund.shopify||0) - sh.paymentFeesAll;
-    const tt = aggregate(last(60)).tiktokNetUnsettled || 0;
-    return {amazon: Math.max(0, amzNet), shopify: Math.max(0, shNet), tiktok: Math.max(0, tt), total: Math.max(0, amzNet) + Math.max(0, shNet) + Math.max(0, tt)};
+    const tt = Math.max(0, aggregate(last(60)).tiktokNetUnsettled || 0);
+    const items = [], dm = z => z ? String(z).slice(8,10)+'/'+String(z).slice(5,7) : '';
+    const asRead = d => (d && d.generated_at) ? tv('as read ', 'đọc lúc ')+dm(d.generated_at)+' '+String(d.generated_at).slice(11,16)+' UTC' : '';
+    // Shopify Payments
+    let shopify = Math.max(0, shNet); const SP = SHOPIFY_PAYOUTS_LIVE_DATA;
+    if(SP && Array.isArray(SP.payouts) && SP.pending && typeof SP.pending==='object'){
+      const open = SP.payouts.filter(x=> x && !/^(PAID|FAILED|CANCELED|CANCELLED)$/i.test(String(x.status||'PAID')));
+      const sched = sum(open.map(x=>+x.net||0)), pend = sum(Object.values(SP.pending).map(v=>+(v && v.net)||0));
+      shopify = sched + pend;
+      if(open.length) items.push({l: tv('Shopify Payments — payouts on their way to the bank', 'Shopify Payments — payout đang về ngân hàng'), per: open.map(x=>dm(x.date)).join(', '), v: sched, d: tv(open.length+' payout(s) scheduled / in transit · ', open.length+' payout đã lên lịch / đang chuyển · ')+asRead(SP)});
+      items.push({l: tv('Shopify Payments — balance not in a payout yet', 'Shopify Payments — số dư chưa vào payout'), v: pend, d: tv('charges less fees, refunds and disputes since the last payout · ', 'tiền thu trừ phí, hoàn tiền, tranh chấp từ payout gần nhất · ')+asRead(SP)});
+    } else items.push({l: tv('Shopify Payments — last 3 days of sales net of fees', 'Shopify Payments — doanh thu 3 ngày gần nhất trừ phí'), v: shopify, est: true});
+    // Amazon
+    let amazon = Math.max(0, amzNet); const AS = AMAZON_SETTLEMENTS_LIVE_DATA, AD = AMAZON_LIVE_DATA && AMAZON_LIVE_DATA.daily;
+    const SL = (AS ? (Array.isArray(AS.settlements) ? AS.settlements : Object.values(AS.settlements||{})) : []).filter(x=> x && (!x.currency || x.currency==='USD'));   // the MX/CA accounts carry a few dollars of negative balance in their own currency: left out
+    if(SL.length){
+      const tr = SL.filter(x=> x && x.status==='Closed' && /^(Processing|Pending|Initiated|Requested)$/i.test(String(x.transfer_status||'')) && (+x.original_total||0)>0 && x.end_day && dayDiff(x.end_day, TODAY_ISO)<=21);
+      const op = SL.filter(x=> x && x.status==='Open');
+      const transit = sum(tr.map(x=>+x.original_total||0)), openBal = sum(op.map(x=>+x.original_total||0));
+      let unposted = 0, unU = 0;
+      if(AD) Object.keys(AD).forEach(iso=>{ if(iso>TODAY_ISO || dayDiff(iso, TODAY_ISO)>45) return; const r = AD[iso]||{}, u = +r.ordered_units||0, pu = +r.ordered_units_pending_fees||0; if(!(u>0) || !(pu>0)) return; const f = Math.min(1, pu/u);
+        unposted += ((+r.ordered_sales||0) - (+r.ordered_promotions||0) + (+r.ordered_shipping||0))*f + (+r.ordered_referral_fees_pending||0) + (+r.ordered_fba_fulfillment_fees_pending||0); unU += pu; });
+      unposted = Math.max(0, unposted);
+      amazon = transit + openBal + unposted;
+      if(tr.length) items.push({l: tv('Amazon — transfer to the bank in progress', 'Amazon — đang chuyển về ngân hàng'), per: tr.map(x=>dm(x.start_day)+'–'+dm(x.end_day)).join(', '), v: transit, d: tv('settlement closed, transfer not confirmed yet · ', 'kỳ thanh toán đã đóng, chưa xác nhận tiền về · ')+asRead(AS)});
+      items.push({l: tv('Amazon — balance of the open settlement', 'Amazon — số dư kỳ thanh toán đang mở'), per: op.length ? tv('from ', 'từ ')+dm(op[0].start_day) : '', v: openBal, d: tv('what Amazon has posted so far (includes its reserve) · ', 'phần Amazon đã ghi vào số dư (gồm khoản giữ lại) · ')+asRead(AS)});
+      items.push({l: tv('Amazon — orders sold, not posted to the balance yet', 'Amazon — đơn đã bán, Amazon chưa ghi vào số dư'), v: unposted, est: true, d: tv(Math.round(unU).toLocaleString('en-US')+' units of the last 45 days with no fee posted yet: selling price less the expected referral and FBA fees (Amazon posts an order after delivery)', Math.round(unU).toLocaleString('en-US')+' sản phẩm 45 ngày gần nhất chưa có phí: giá bán trừ phí referral và FBA dự kiến (Amazon ghi đơn sau khi giao)')});
+    } else items.push({l: tv('Amazon — last 14 days of sales net of fees', 'Amazon — doanh thu 14 ngày gần nhất trừ phí'), v: amazon, est: true});
+    // TikTok Shop
+    let tiktok = tt; const TS = TIKTOK_SHOP_LIVE_DATA && TIKTOK_SHOP_LIVE_DATA.statements;
+    if(TS && typeof TS==='object'){
+      const un = Object.values(TS).filter(x=> x && String(x.payment_status||'').toUpperCase()!=='PAID');
+      const held = sum(un.map(x=>parseFloat(x.settlement_amount)||0));
+      tiktok = held + tt;
+      if(un.length) items.push({l: tv('TikTok Shop — statements issued, payout not received', 'TikTok Shop — đã ra statement, chưa trả tiền'), v: held, d: un.length+tv(' statements still "processing" at TikTok', ' statement TikTok còn "processing"')});
+    }
+    if(tt>0.5) items.push({l: tv('TikTok Shop — orders not settled yet', 'TikTok Shop — đơn chưa quyết toán'), v: tt, est: true});
+    // PayPal: no balance in the sync - payments less refunds, fees and withdrawals since the file starts
+    let paypal = 0; const PD = PAYPAL_LIVE_DATA && PAYPAL_LIVE_DATA.daily;
+    if(PD && typeof PD==='object'){ Object.values(PD).forEach(r=>{ if(!r) return; paypal += (+r.payments||0) - (+r.refunds||0) - (+r.fees||0) + (+r.fees_credited||0) + (+r.other||0) - (+r.withdrawals||0); }); paypal = Math.max(0, paypal);
+      items.push({l: tv('PayPal — balance not withdrawn', 'PayPal — số dư chưa rút'), v: paypal, est: true, d: tv('payments less refunds, fees and withdrawals in the PayPal transaction feed (the real balance is not read yet)', 'tiền thu trừ hoàn, phí và các lần rút theo giao dịch PayPal (chưa đọc số dư thật)')}); }
+    // Afterpay: pays an order day 2-5 days later
+    const ap = aggregate(last(5)); const afterpay = Math.max(0, (ap.afterpayAmount||0) - (ap.afterpayFees||0));
+    if(afterpay>0.5) items.push({l: tv('Afterpay — orders of the last 5 days, net of its fee', 'Afterpay — đơn 5 ngày gần nhất, đã trừ phí'), v: afterpay, est: true});
+    // Walmart: orders not in a Walmart reconciliation report yet, less the commission at the measured rate
+    let walmart = 0; last(45).forEach(r=>{ const w = r.walmartReal; if(w) walmart += (w.netUnsettled||0) - (w.commissionEst||0); }); walmart = Math.max(0, walmart);
+    if(walmart>0.5) items.push({l: tv('Walmart — orders not in a settlement report yet, net of commission', 'Walmart — đơn chưa vào báo cáo quyết toán, đã trừ hoa hồng'), v: walmart, est: true});
+    const total = shopify + amazon + tiktok + paypal + afterpay + walmart;
+    return {amazon, shopify, tiktok, paypal, afterpay, walmart, total, items};
   }
   // ---------- V12.22: payables — what has been incurred up to today and has not left the bank yet, item by item.
   // Ads are billed monthly: Meta + Google charge the month's spend the month after (one card charge, seen in the Slash
@@ -5741,7 +5794,7 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
     const closed3 = MONTHS.filter(m=> m<to.slice(0,7) && finClosed(m)).slice(-3), ebitda3 = closed3.map(m=>{ const x = finMonthAgg(m); return x ? x.netProfit : 0; });
     const burn = ebitda3.length ? sum(ebitda3)/ebitda3.length : null;
     const runway = (cashTotal!==null && burn!==null) ? (burn<0 ? cashTotal/(-burn) : Infinity) : null;
-    const payLots = finLots(), payRec = (()=>{ const keep = Object.assign({}, CH_MASK); CH_KEYS.forEach(k=>{ CH_MASK[k] = true; }); _maskVer++; let r; try { r = finReceivables(); } catch(e){ r = {amazon: 0, shopify: 0, tiktok: 0, total: 0}; } CH_KEYS.forEach(k=>{ CH_MASK[k] = keep[k]; }); _maskVer++; return r; })(); let pay; try { pay = finPayables(payLots); } catch(e){ pay = {items: [], com: [], total: 0, comTotal: 0, due30: 0, overdue: 0, byG: () => 0, open: {mg: {}, az: {}}, mtd: {mg: 0, az: 0}, sm: {open: [], ends: {}, asOf: ''}, np: null, dep: 0.3, err: String(e && e.message || e)}; }   // V12.22
+    const payLots = finLots(), payRec = (()=>{ const keep = Object.assign({}, CH_MASK); CH_KEYS.forEach(k=>{ CH_MASK[k] = true; }); _maskVer++; let r; try { r = finReceivables(); } catch(e){ r = {amazon: 0, shopify: 0, tiktok: 0, paypal: 0, afterpay: 0, walmart: 0, total: 0, items: []}; } CH_KEYS.forEach(k=>{ CH_MASK[k] = keep[k]; }); _maskVer++; return r; })(); let pay; try { pay = finPayables(payLots); } catch(e){ pay = {items: [], com: [], total: 0, comTotal: 0, due30: 0, overdue: 0, byG: () => 0, open: {mg: {}, az: {}}, mtd: {mg: 0, az: 0}, sm: {open: [], ends: {}, asOf: ''}, np: null, dep: 0.3, err: String(e && e.message || e)}; }   // V12.22
     // ---- KPI strip ----
     const kp = c => {
       let cmpH = '';
@@ -5806,7 +5859,7 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
     const payrollNext = (()=>{ const rr = finRunRate('salary', curM); return rr ? rr.avg : (a.gaItems.find(x=>x.key==='salary')||{value:0}).value/nDays*30; })();
     const wcRows = [
       {g:'a', l: tv('Cash at bank', 'Tiền tại ngân hàng'), v: cashTotal, n: cash ? tv('Slash, private store', 'Slash, kho riêng') : tv('not connected — see Cash & liquidity', 'chưa nối — xem Tiền mặt & thanh khoản')},
-      {g:'a', l: tv('Marketplace receivables (estimate)', 'Phải thu sàn (ước tính)'), v: rec.total, n: tv(`Amazon last 14 days ${fin$(rec.amazon)} · Shopify Payments last 3 days ${fin$(rec.shopify)} · TikTok unsettled ${fin$(rec.tiktok)}`, `Amazon 14 ngày gần nhất ${fin$(rec.amazon)} · Shopify Payments 3 ngày ${fin$(rec.shopify)} · TikTok chưa quyết toán ${fin$(rec.tiktok)}`)},
+      {g:'a', l: tv('Money held at the gateways (Amazon, Shopify Payments, PayPal, TikTok, Afterpay)', 'Tiền đang ở các cổng (Amazon, Shopify Payments, PayPal, TikTok, Afterpay)'), v: rec.total, n: tv(`Amazon ${fin$(rec.amazon)} · Shopify Payments ${fin$(rec.shopify)} · PayPal ${fin$(rec.paypal||0)} · TikTok ${fin$(rec.tiktok)} · Afterpay ${fin$(rec.afterpay||0)} — per gateway in the Payables card`, `Amazon ${fin$(rec.amazon)} · Shopify Payments ${fin$(rec.shopify)} · PayPal ${fin$(rec.paypal||0)} · TikTok ${fin$(rec.tiktok)} · Afterpay ${fin$(rec.afterpay||0)} — từng cổng xem ở thẻ Phải trả`)},
       {g:'a', l: tv('Inventory on hand, at cost', 'Hàng tồn kho, theo giá vốn'), v: inv.cost, n: intFmt(inv.units)+tv(' units · FIFO landed cost', ' units · giá vốn landed FIFO')+(inv.unpriced ? tv(` · ${intFmt(inv.unpriced)} units without a cost`, ` · ${intFmt(inv.unpriced)} units chưa có giá vốn`) : '')+(dio ? tv(' · DIO ', ' · số ngày tồn ')+Math.round(dio)+tv(' days', ' ngày') : '')},
       {g:'a', l: tv('Inventory in transit (owned, not received)', 'Hàng đang về (đã sở hữu, chưa nhập kho)'), v: lots.transit, n: intFmt(lots.transitUnits)+tv(' units · ', ' units · ')+lots.transitConts.size+tv(' containers (Notion: in transit / at port / receiving)', ' cont (Notion: in transit / at port / receiving)')},
       {g:'a', l: tv('Prepaid expenses', 'Chi phí trả trước'), v: prepaidLeft, n: tv('unamortised balance (asset register)', 'phần chưa phân bổ (danh mục tài sản)')},
@@ -5897,10 +5950,11 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
     const payGL = {ads: tv('Advertising — billed the month after', 'Quảng cáo — trả tiền tháng sau'), sm: tv('Fulfilment — ShipMonk', 'Fulfillment — ShipMonk'), tax: tv('Sales tax held for the states', 'Thuế bán hàng giữ hộ các bang'), ops: tv('Payroll & agency', 'Lương & agency'), man: tv('Entered by hand', 'Nhập tay')};
     const payBody = ['ads','sm','tax','ops','man'].map(g=>{ const it = pay.items.filter(o=>o.g===g); if(!it.length) return ''; return `<tr class="fin-pay-g"><td>${payGL[g]}</td><td class="fin-pay-c2"></td><td></td><td class="num">${money(pay.byG(g))}</td></tr>`+it.map(payRow).join(''); }).join('');
     const comBody = pay.com.map(o=>`<tr><td class="mk-lab">${finEsc(o.l)}${o.est ? payEst : ''}${o.per ? `<span class="fin-pay-per"> · ${finEsc(o.per)}</span>` : ''}${o.d ? `<small>${finEsc(o.d)}</small>` : ''}</td><td class="fin-pay-c2">${finEsc(o.per||'')}</td><td class="num">—</td><td class="num">${money(o.v)}</td></tr>`).join('');
-    const payTiles = `<div class="mk-mini fin-mini4"><div class="mk-m"><span>${tv('Cash at bank', 'Tiền tại ngân hàng')}</span><b>${cashTotal!==null ? fin$(cashTotal) : '—'}</b><small>${cash ? tv('card balance already deducted · ', 'đã trừ số nợ thẻ · ')+String(cash.as_of).slice(8,10)+'/'+String(cash.as_of).slice(5,7) : tv('cash store not connected', 'chưa nối kho tiền mặt')}</small></div><div class="mk-m"><span>${tv('Payables now', 'Phải trả hiện tại')}</span><b>${fin$(pay.total)}</b><small>${tv('due within 30 days ', 'tới hạn trong 30 ngày ')+fin$(pay.due30)+(pay.overdue>0.5 ? tv(' · past due ', ' · quá hạn ')+fin$(pay.overdue) : '')}</small></div><div class="mk-m"><span>${tv('Cash after payables', 'Tiền sau khi trừ phải trả')}</span><b class="${payAfter!==null && payAfter<0 ? 'mk-bad' : ''}">${payAfter!==null ? fin$(payAfter) : '—'}</b><small>${payAfter!==null ? tv('+ marketplace receivables ', '+ phải thu sàn ')+fin$(payRec.total)+' → '+fin$(payAfter + payRec.total) : tv('needs the cash store', 'cần kho tiền mặt')}</small></div><div class="mk-m"><span>${tv('Inbound goods still to pay', 'Hàng nhập còn phải trả')}</span><b>${fin$(pay.comTotal)}</b><small>${payAfter!==null ? tv('after them: ', 'sau các khoản này: ')+fin$(payAfter + payRec.total - pay.comTotal) : tv('factories, freight, duties — estimate', 'nhà máy, cước, thuế nhập — ước tính')}</small></div></div>`;
+    const payTiles = `<div class="mk-mini fin-mini4"><div class="mk-m"><span>${tv('Cash at bank', 'Tiền tại ngân hàng')}</span><b>${cashTotal!==null ? fin$(cashTotal) : '—'}</b><small>${cash ? tv('card balance already deducted · ', 'đã trừ số nợ thẻ · ')+String(cash.as_of).slice(8,10)+'/'+String(cash.as_of).slice(5,7) : tv('cash store not connected', 'chưa nối kho tiền mặt')}</small></div><div class="mk-m"><span>${tv('Payables now', 'Phải trả hiện tại')}</span><b>${fin$(pay.total)}</b><small>${tv('due within 30 days ', 'tới hạn trong 30 ngày ')+fin$(pay.due30)+(pay.overdue>0.5 ? tv(' · past due ', ' · quá hạn ')+fin$(pay.overdue) : '')}</small></div><div class="mk-m"><span>${tv('Cash after payables', 'Tiền sau khi trừ phải trả')}</span><b class="${payAfter!==null && payAfter<0 ? 'mk-bad' : ''}">${payAfter!==null ? fin$(payAfter) : '—'}</b><small>${payAfter!==null ? tv('+ held at the gateways ', '+ tiền đang ở các cổng ')+fin$(payRec.total)+' → '+fin$(payAfter + payRec.total) : tv('needs the cash store', 'cần kho tiền mặt')}</small></div><div class="mk-m"><span>${tv('Inbound goods still to pay', 'Hàng nhập còn phải trả')}</span><b>${fin$(pay.comTotal)}</b><small>${payAfter!==null ? tv('after them: ', 'sau các khoản này: ')+fin$(payAfter + payRec.total - pay.comTotal) : tv('factories, freight, duties — estimate', 'nhà máy, cước, thuế nhập — ước tính')}</small></div></div>`;
     const payNote = tv(`Meta and Google charge a month's spend the month after (one card charge in the Slash month totals); Amazon Sponsored ads are invoiced and paid by bank transfer the month after — they are not deducted from the Amazon payout. A month counts as paid once the charge shows on Slash (bank data to ${pay.slashTo ? finDM(pay.slashTo) : '—'}). ShipMonk balances are as read on its Invoices page (${pay.sm.asOf ? finDM(pay.sm.asOf) : '—'}). No payable for TikTok Ads (prepaid wallet), Amazon DSP and Tremendous (prepaid), Klaviyo, software and Upwork (charged on the card — the card balance is already deducted from cash). Inbound goods: factory balance = product cost at EXW of lots in production / order placed × (1 − deposit %); freight and duties are Notion's per-unit estimates for lots not received yet — an upper bound, part may already be paid.`,
       `Meta và Google trừ tiền chi tiêu của một tháng vào tháng sau (một lần trừ thẻ, thấy trong tổng tháng của Slash); Amazon Ads (SP/SB/SD) xuất hoá đơn và trả bằng chuyển khoản vào tháng sau — không trừ vào payout Amazon. Một tháng được coi là đã trả khi khoản trừ hiện trên Slash (dữ liệu ngân hàng tới ${pay.slashTo ? finDM(pay.slashTo) : '—'}). Số nợ ShipMonk theo trang Invoices của ShipMonk (đọc ${pay.sm.asOf ? finDM(pay.sm.asOf) : '—'}). Không có công nợ với TikTok Ads (ví trả trước), Amazon DSP và Tremendous (nạp trước), Klaviyo, phần mềm, Upwork (trừ thẻ ngay — số nợ thẻ đã trừ trong tiền mặt). Hàng nhập: còn phải trả nhà máy = tiền hàng giá EXW của lô đang sản xuất / đã đặt × (1 − % cọc); cước và thuế nhập khẩu là ước tính theo unit của Notion cho lô chưa nhận — mức trần, một phần có thể đã trả.`);
     const payH = `<div class="card mk-card" id="finPayCard"><div class="card-head"><h2>${tv('Payables — incurred, not paid yet', 'Phải trả — đã phát sinh, chưa trả tiền')}</h2><div class="note">${tv('As of today · all sales channels · ≈ = estimate', 'Tại hôm nay · mọi kênh bán · ≈ = ước tính')}</div><button class="btn mini" type="button" data-export="finPayTable" data-name="payables">CSV</button></div>${payTiles}
+      ${(payRec.items && payRec.items.length) ? `<div class="rp-wrap"><table class="rp-table mk-table fin-pay" id="finRecTable"><thead><tr><th>${tv('Money held at the gateways — sold, not in the bank yet', 'Tiền đang ở các cổng — đã bán, chưa về ngân hàng')}</th><th class="fin-pay-c2">${tv('For', 'Cho kỳ')}</th><th class="num"></th><th class="num">${tv('Amount', 'Số tiền')}</th></tr></thead><tbody>${payRec.items.map(payRow).join('')}<tr class="rp-tot"><td>${tv('Held at the gateways', 'Tổng tiền đang ở các cổng')}</td><td class="fin-pay-c2"></td><td></td><td class="num">${money(payRec.total)}</td></tr>${cashTotal!==null ? `<tr class="rp-tot"><td>${tv('Cash at bank + held at the gateways', 'Tiền ngân hàng + tiền ở các cổng')}</td><td class="fin-pay-c2"></td><td></td><td class="num">${money(cashTotal + payRec.total)}</td></tr>` : ''}</tbody></table></div>` : ''}
       <div class="rp-wrap"><table class="rp-table mk-table fin-pay" id="finPayTable"><thead><tr><th>${tv('Item', 'Khoản')}</th><th class="fin-pay-c2">${tv('For', 'Cho kỳ')}</th><th class="num">${tv('Pay date', 'Ngày trả')}</th><th class="num">${tv('Amount', 'Số tiền')}</th></tr></thead><tbody>${payBody}<tr class="rp-tot"><td>${tv('Payables now', 'Tổng phải trả hiện tại')}</td><td class="fin-pay-c2"></td><td></td><td class="num">${money(pay.total)}</td></tr>${pay.com.length ? `<tr class="fin-pay-g"><td>${tv('Inbound goods — committed, paid as they ship and land', 'Hàng nhập — đã cam kết, trả khi hàng xuất xưởng và về tới')}</td><td class="fin-pay-c2"></td><td></td><td class="num">${money(pay.comTotal)}</td></tr>${comBody}<tr class="rp-tot"><td>${tv('Payables + inbound goods', 'Phải trả + hàng nhập')}</td><td class="fin-pay-c2"></td><td></td><td class="num">${money(pay.total + pay.comTotal)}</td></tr>` : ''}</tbody></table></div>
       <div class="caption">${payNote}${pay.err ? ' ['+finEsc(pay.err)+']' : ''}</div></div>`;
     root.innerHTML = `
