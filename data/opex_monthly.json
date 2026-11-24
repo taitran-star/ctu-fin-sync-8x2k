@@ -508,45 +508,31 @@
   },
   "2026-10": {
    "status": "open",
-   "actual_to_date": {
-    "software": {
-     "amount": 8805.81,
-     "from": "2026-10-01",
-     "to": "2026-10-19",
-     "fixed": 11999.99,
-     "source": "Slash"
-    },
-    "upwork": {
-     "amount": 1276.4,
-     "from": "2026-09-28",
-     "to": "2026-10-18",
-     "source": "Upwork"
-    },
-    "training": {
-     "amount": 0.0,
-     "from": "2026-10-01",
-     "to": "2026-10-19",
-     "fixed": 1704.57,
-     "source": "Slash"
-    }
-   },
    "mkt_agency": 10000,
    "basis_notes": {
     "mkt_agency": {
      "en": "Adcrate minimum commitment $10k (invoice INV-1757 issued 04/11, unpaid) - last month: the owner confirmed no Adcrate or Goodo from 11/2026",
      "vi": "Adcrate cam kết tối thiểu $10k (hoá đơn INV-1757 phát hành 04/11, chưa trả) — tháng cuối: anh Tài xác nhận từ 11/2026 không còn Adcrate, Goodo"
+    },
+    "ful_other": {
+     "en": "Andejian fountain fulfilment: invoice to 05/10 $719.43 + accrual for 06-31/10 = 734 fountain-line units on Shopify x 0.90 orders per unit x $6.70 per order = $4,426.02 (no invoice entered yet)",
+     "vi": "Fulfillment đài nước Andejian: hoá đơn tới 05/10 $719,43 + trích 06–31/10 = 734 sản phẩm dòng đài nước trên Shopify × 0,90 đơn/sản phẩm × $6,70/đơn = $4.426,02 (chưa nhập hoá đơn)"
     }
    },
    "income_tax": null,
-   "note": "T10/2026 DANG MO (chua chot so) - bang P&L tu tam tinh: luong VN, van phong, khac, ke toan = TB 6 thang da chot gan nhat (04-09/2026); software = Slash API: phan co dinh $11,999.99/thang (goi thang da/sap tru: Shopify, Adobe, Elevar, Replo... + phan bo goi nam/6 thang: Helium 10, Intelligems, AdsPower, Hostinger...) + phan theo muc dung (Higgsfield, OpenRouter, Anthropic, Grok, DigitalOcean) thuc te $8,805.81 tu 01-19/10 rai theo ngay; Upwork = 3 hoa don tuan $1,276.40 (28/09-18/10); mkt_agency = Adcrate cam ket toi thieu $10.000; mkt_creator = 0 (Insense/Billo/MossCreator/tra truc tiep chua co; Tremendous $4.100 la nap vi tra hoa hong Snowball - khong phai chi phi). training = Daily Mentor $1,457.57 (thang cuoi khoa 7 thang 04-10/2026; da dung Daily Mentor, khong gia han) + Skool $247 (07/10). Khi chot so: xoa \"status\": \"open\" va dien so that. | V12.5 (21/10/2026, đối chiếu Slash 13/07→20/10 + chính sách tài sản): ful_other + 719,43 phí fulfillment đài nước SSWF theo kỳ dịch vụ (hoá đơn 21/06→05/10/2026 chia theo số ngày); other_us + 67,77 phí ngân hàng Slash 13/07→20/10 (wire quốc tế, phí thuê bao, phí ngoại tệ/high decline); cert = 720,00 thử nghiệm STANDARD 100 $500 + cước gửi mẫu $220. | V12.17 (27/10/2026): mkt_creator bo nap Tremendous (= vi tra hoa hong Snowball, da co o dong Hoa hong Snowball x1,04 tren P&L; phan nap chua tra = tra truoc, khong vao P&L): bo actual_to_date.mkt_creator {'amount': 4100.0, 'from': '2026-10-01', 'to': '2026-10-19', 'source': 'Tremendous'} | 24/11/2026: Adcrate thang 10 = hoa don INV-1757 $10.000 (phat hanh 04/11, han 11/11, CHUA TRA) - thang cuoi; tu thang 11 khong con agency. Daily Mentor: thang 10 la thang cuoi cua khoa 7 thang.",
-   "ful_other": 719.43,
+   "note": "T10/2026 DANG MO (chua chot so) - bang P&L tu tam tinh: luong VN, van phong, khac, ke toan = TB 6 thang da chot gan nhat (04-09/2026); software = Slash API: phan co dinh $11,999.99/thang (goi thang da/sap tru: Shopify, Adobe, Elevar, Replo... + phan bo goi nam/6 thang: Helium 10, Intelligems, AdsPower, Hostinger...) + phan theo muc dung (Higgsfield, OpenRouter, Anthropic, Grok, DigitalOcean) thuc te $8,805.81 tu 01-19/10 rai theo ngay; Upwork = 3 hoa don tuan $1,276.40 (28/09-18/10); mkt_agency = Adcrate cam ket toi thieu $10.000; mkt_creator = 0 (Insense/Billo/MossCreator/tra truc tiep chua co; Tremendous $4.100 la nap vi tra hoa hong Snowball - khong phai chi phi). training = Daily Mentor $1,457.57 (thang cuoi khoa 7 thang 04-10/2026; da dung Daily Mentor, khong gia han) + Skool $247 (07/10). Khi chot so: xoa \"status\": \"open\" va dien so that. | V12.5 (21/10/2026, đối chiếu Slash 13/07→20/10 + chính sách tài sản): ful_other + 719,43 phí fulfillment đài nước SSWF theo kỳ dịch vụ (hoá đơn 21/06→05/10/2026 chia theo số ngày); other_us + 67,77 phí ngân hàng Slash 13/07→20/10 (wire quốc tế, phí thuê bao, phí ngoại tệ/high decline); cert = 720,00 thử nghiệm STANDARD 100 $500 + cước gửi mẫu $220. | V12.17 (27/10/2026): mkt_creator bo nap Tremendous (= vi tra hoa hong Snowball, da co o dong Hoa hong Snowball x1,04 tren P&L; phan nap chua tra = tra truoc, khong vao P&L): bo actual_to_date.mkt_creator {'amount': 4100.0, 'from': '2026-10-01', 'to': '2026-10-19', 'source': 'Tremendous'} | 24/11/2026: Adcrate thang 10 = hoa don INV-1757 $10.000 (phat hanh 04/11, han 11/11, CHUA TRA) - thang cuoi; tu thang 11 khong con agency. Daily Mentor: thang 10 la thang cuoi cua khoa 7 thang. | 24/11/2026 (anh Tai: 'xu ly dashboard P&L, coi chi phi dung chua'): thay cac so tam tinh bang so THUC cua the Slash ca thang 10 (slash_pnl.json 24/11, theo thang dich vu): software = SHOP 7.128,47 + SW 1.059,14 + MC 15.187,89 + MT 2.430,53 = 25.806,03 (truoc: 12.000 + muc dung toi 19/10 nhan len = 26.367); upwork = 1.762,21 (truoc 1.884); accounting = Numeral 2.400 + phan bo goi nam 56,26 = 2.456,26 (truoc lay bang thang 9 = 2.400); training = 1.704,57 (khong doi); mkt_creator = MossCreator 239 ngay 30/10 (truoc 0). ful_other = 719,43 + trich 4.426,02 (xem basis_notes) - thay bang hoa don Andejian khi co. CON TAM TINH (lay bang thang 9): luong VN, van phong, khac - cho file CP VN T10 cua ke toan.",
+   "ful_other": 5145.45,
    "mkt_other": 0,
    "other_us": 67.77,
    "cashback": 0,
    "cogs_adj": 0,
    "cert": 720.0,
    "tooling_exp": 0,
-   "mkt_creator": 0
+   "mkt_creator": 239.0,
+   "software": 25806.03,
+   "upwork": 1762.21,
+   "training": 1704.57,
+   "accounting": 2456.26
   },
   "2026-11": {
    "status": "open",
@@ -560,9 +546,48 @@
     "training": {
      "en": "Slash card: no Daily Mentor / Skool / Whop charge from 01/11 (Daily Mentor's 7-month term ended 10/2026; Skool Evolve cancelled 10/08, God Tier Ecom cancelled 15/07)",
      "vi": "Thẻ Slash: từ 01/11 không có khoản Daily Mentor / Skool / Whop nào (Daily Mentor hết kỳ 7 tháng ở 10/2026; Skool Evolve huỷ 10/08, God Tier Ecom huỷ 15/07)"
+    },
+    "ful_other": {
+     "en": "Andejian fountain fulfilment accrued: 2,046 fountain-line units on Shopify 01-23/11 x 0.90 orders per unit x $6.70 per order (no invoice entered yet)",
+     "vi": "Trích fulfillment đài nước Andejian: 2.046 sản phẩm dòng đài nước trên Shopify 01–23/11 × 0,90 đơn/sản phẩm × $6,70/đơn (chưa nhập hoá đơn)"
     }
    },
-   "note": "T11/2026 DANG MO (chua chot so). 24/11/2026 (anh Tai): mkt_agency = 0 vi da ngung dung Goodo va Adcrate (truoc do bang P&L tu lay bang thang 9 = $10.000); training = thuc te the Slash tu 01/11 = $0 (truoc do tu lay bang thang 9 = $1.604,24, trong do co $1.457,57 Daily Mentor da het ky). Cac khoan khac van tam tinh nhu thang chua co dong. LUU Y: Adcrate van phat hanh hoa don $10.000/thang (INV-1741 han 15/10, INV-1757 han 11/11, chua tra) va Goodo van phat hanh hoa don tu dong qua Anchor (ANC-00017, ANC-00025, ANC-00037) - neu phai tra thi nhap lai vao thang dich vu."
+   "note": "T11/2026 DANG MO (chua chot so). 24/11/2026 (anh Tai): mkt_agency = 0 vi da ngung dung Goodo va Adcrate (truoc do bang P&L tu lay bang thang 9 = $10.000); training = thuc te the Slash tu 01/11 = $0 (truoc do tu lay bang thang 9 = $1.604,24, trong do co $1.457,57 Daily Mentor da het ky). Cac khoan khac van tam tinh nhu thang chua co dong. LUU Y: Adcrate van phat hanh hoa don $10.000/thang (INV-1741 han 15/10, INV-1757 han 11/11, chua tra) va Goodo van phat hanh hoa don tu dong qua Anchor (ANC-00017, ANC-00025, ANC-00037) - neu phai tra thi nhap lai vao thang dich vu. | 24/11/2026 (lan 2): thay so 'lay bang thang 9' bang thuc te toi 23/11: software = goi thang/nam 13.100,30 + muc dung (Higgsfield 5.522, Anthropic, OpenRouter, Grok...) 6.473,85 toi 23/11 rai theo ngay (truoc 17.762/thang); upwork = 3 hoa don tuan 1.581,59 (26/10-15/11); accounting = Numeral 2.775 (02/11) + phan bo goi nam 56,26; mkt_creator = 0 (the Slash chua co khoan creator nao trong thang 11); ful_other = trich Andejian 12.337,38 toi 23/11 (truoc 7.345,51/thang) - ty le 0,90 don/san pham doi chieu voi 3 ky da biet (0,88 / 0,90 / 0,95). CON TAM TINH (lay bang thang 9): luong VN, van phong, khac, other_us.",
+   "actual_to_date": {
+    "software": {
+     "amount": 6473.85,
+     "from": "2026-11-01",
+     "to": "2026-11-23",
+     "fixed": 13100.3,
+     "source": "Slash"
+    },
+    "upwork": {
+     "amount": 1581.59,
+     "from": "2026-10-26",
+     "to": "2026-11-15",
+     "source": "Upwork"
+    },
+    "accounting": {
+     "amount": 0.0,
+     "from": "2026-11-01",
+     "to": "2026-11-23",
+     "fixed": 2831.26,
+     "source": "Slash"
+    },
+    "mkt_creator": {
+     "amount": 0.0,
+     "from": "2026-11-01",
+     "to": "2026-11-23",
+     "fixed": 0,
+     "source": "Slash"
+    },
+    "ful_other": {
+     "amount": 12337.38,
+     "from": "2026-11-01",
+     "to": "2026-11-23",
+     "source": "Shopify × $6,70"
+    }
+   }
   },
   "2026-12": {
    "status": "open",
