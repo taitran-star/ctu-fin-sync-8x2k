@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build 141edbf3b0).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 917586fa28).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -5342,13 +5342,16 @@ ${tv('Click to show / hide', 'Bấm để ẩn / hiện')}"><span class="sw" sty
       const tr = SL.filter(x=> x && x.status==='Closed' && /^(Processing|Pending|Initiated|Requested)$/i.test(String(x.transfer_status||'')) && (+x.original_total||0)>0 && x.end_day && dayDiff(x.end_day, TODAY_ISO)<=21);
       const op = SL.filter(x=> x && x.status==='Open');
       const transit = sum(tr.map(x=>+x.original_total||0)), openBal = sum(op.map(x=>+x.original_total||0));
+      const opCutL = {inbound_freight: tv('inbound freight', 'cước nhập kho'), fba_storage_posted: tv('FBA storage', 'phí lưu kho FBA'), service_fees: tv('service fees', 'phí dịch vụ'), ad_spend: tv('ads', 'quảng cáo')}, opCutV = {};
+      op.forEach(x=> Object.keys(opCutL).forEach(k=>{ opCutV[k] = (opCutV[k]||0) + (+((x.totals||{})[k])||0); }));
+      const opCut = Object.keys(opCutL).filter(k=> opCutV[k] < -500).map(k=> opCutL[k]+' '+fin$(-opCutV[k]));
       let unposted = 0, unU = 0;
       if(AD) Object.keys(AD).forEach(iso=>{ if(iso>TODAY_ISO || dayDiff(iso, TODAY_ISO)>45) return; const r = AD[iso]||{}, u = +r.ordered_units||0, pu = +r.ordered_units_pending_fees||0; if(!(u>0) || !(pu>0)) return; const f = Math.min(1, pu/u);
         unposted += ((+r.ordered_sales||0) - (+r.ordered_promotions||0) + (+r.ordered_shipping||0))*f + (+r.ordered_referral_fees_pending||0) + (+r.ordered_fba_fulfillment_fees_pending||0); unU += pu; });
       unposted = Math.max(0, unposted);
       amazon = transit + openBal + unposted;
       if(tr.length) items.push({l: tv('Amazon — transfer to the bank in progress', 'Amazon — đang chuyển về ngân hàng'), per: tr.map(x=>dm(x.start_day)+'–'+dm(x.end_day)).join(', '), v: transit, d: tv('settlement closed, transfer not confirmed yet · ', 'kỳ thanh toán đã đóng, chưa xác nhận tiền về · ')+asRead(AS)});
-      items.push({l: tv('Amazon — balance of the open settlement', 'Amazon — số dư kỳ thanh toán đang mở'), per: op.length ? tv('from ', 'từ ')+dm(op[0].start_day) : '', v: openBal, d: tv('what Amazon has posted so far (includes its reserve) · ', 'phần Amazon đã ghi vào số dư (gồm khoản giữ lại) · ')+asRead(AS)});
+      items.push({l: tv('Amazon — balance of the open settlement', 'Amazon — số dư kỳ thanh toán đang mở'), per: op.length ? tv('from ', 'từ ')+dm(op[0].start_day) : '', v: openBal, d: tv('what Amazon has posted so far (includes its reserve)', 'phần Amazon đã ghi vào số dư (gồm khoản giữ lại)')+(opCut.length ? tv(' — already charged to this balance: ', ' — Amazon đã trừ vào số dư này: ')+opCut.join(', ') : '')+' · '+asRead(AS)});
       items.push({l: tv('Amazon — orders sold, not posted to the balance yet', 'Amazon — đơn đã bán, Amazon chưa ghi vào số dư'), v: unposted, est: true, d: tv(Math.round(unU).toLocaleString('en-US')+' units of the last 45 days with no fee posted yet: selling price less the expected referral and FBA fees (Amazon posts an order after delivery)', Math.round(unU).toLocaleString('en-US')+' sản phẩm 45 ngày gần nhất chưa có phí: giá bán trừ phí referral và FBA dự kiến (Amazon ghi đơn sau khi giao)')});
     } else items.push({l: tv('Amazon — last 14 days of sales net of fees', 'Amazon — doanh thu 14 ngày gần nhất trừ phí'), v: amazon, est: true});
     // TikTok Shop
