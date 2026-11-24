@@ -1,19 +1,19 @@
 {
  "schema": 1,
- "generated_at": "2026-11-24T13:37:53Z",
+ "generated_at": "2026-11-24T23:17:25Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
   "to": "2026-11-24",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 3331,
-  "charges": 804,
+  "transactions_read": 3333,
+  "charges": 805,
   "stats": {
-   "status:posted": 2533,
+   "status:posted": 2535,
    "rail:rtp": 11,
-   "rail:ach": 903,
-   "rail:fee": 102,
+   "rail:ach": 904,
+   "rail:fee": 103,
    "rail:wire": 32,
    "status:failed": 797,
    "rail:card": 1839,
@@ -199,7 +199,7 @@
    "ADS_CARD": 364547.73,
    "DSP": 8500.0,
    "KLV": 5775.0,
-   "MC": 7815.99,
+   "MC": 8049.74,
    "MT": 2801.26,
    "SBW": 3500.0,
    "SHOP": 8370.33,
@@ -304,7 +304,7 @@
   "2026-11": {
    "DSP": 8500.0,
    "KLV": 5775.0,
-   "MC": 7016.82,
+   "MC": 7250.57,
    "MT": 3114.02,
    "SBW": 3500.0,
    "SHOP": 8370.33,
@@ -366,7 +366,7 @@
   }
  },
  "pending": {
-  "MC": 233.75
+  "SHOP": -47251.37
  },
  "charges": [
   {
@@ -7474,6 +7474,14 @@
    "v": "Grok / xAI",
    "l": "MC",
    "a": 20.0,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-11-24",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 233.75,
    "k": "card",
    "cy": "U"
   },
