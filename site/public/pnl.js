@@ -1,4 +1,4 @@
-// Cattasaurus P&L dashboard — built from the template by build_site.py (build d286cc598d).
+// Cattasaurus P&L dashboard — built from the template by build_site.py (build 8185056398).
 // Data arrives in window.__LIVE (see the loader in index.html); do not edit by hand, rebuild instead.
 
   // Brand icon set: 24px grid, 2px round strokes with a 16% tint fill (the mascot's line style); colour = currentColor.
@@ -617,10 +617,11 @@
     const nr = (NONREV_LIVE_DATA && NONREV_LIVE_DATA.daily) || null;
     if(nr) Object.keys(nr).forEach(iso=>{ const cats = nr[iso]||{}; Object.keys(cats).forEach(cat=>{
       if(!NONREV_CH[cat]) return;
-      if(cat==='tiktok_sample' && out.tkFrom && iso>=out.tkFrom) return;   // TikTok's own list covers these days
-      const v = cats[cat]||{}; Object.keys(v.sku||{}).forEach(s=>put(iso, cat, s, v.sku[s]));
-      const f = out.fee[iso] = out.fee[iso] || {}; f[cat] = (f[cat]||0) + (parseFloat(v.fee)||0);
+      const v = cats[cat]||{};
+      const f = out.fee[iso] = out.fee[iso] || {}; f[cat] = (f[cat]||0) + (parseFloat(v.fee)||0);   // ShipMonk's charges for these orders (memo), whichever list counts the units
       if(!out.smTo || iso>out.smTo) out.smTo = iso;
+      if(cat==='tiktok_sample' && out.tkFrom && iso>=out.tkFrom) return;   // units: TikTok's own list covers these days
+      Object.keys(v.sku||{}).forEach(s=>put(iso, cat, s, v.sku[s]));
     }); });
     tkDays.forEach(iso=> Object.keys(tk[iso]).forEach(s=>put(iso, 'tiktok_sample', s, tk[iso][s])));
     return (_nonrevDays = out);
@@ -1147,14 +1148,15 @@
     let mktSamples = 0, mktSamplesUnits = 0, mktSamplesUnpriced = 0, mktSamplesFee = 0, mktSamplesDays = 0;
     const mktSamplesBy = {}, mktSamplesCh = {};
     if(FX && FX.ok){ const NRD = nonrevDays(); rows.forEach(r=>{
-      const nv = FX.day[r.iso] && FX.day[r.iso].nonrev; if(!nv) return;
       const Fm = r._factors || null; let hit = false;
+      const fe = NRD.fee[r.iso]; if(fe) Object.keys(fe).forEach(c=>{ const f = Fm ? (Fm[NONREV_CH[c] || 'shopify']||0) : 1; if(f>0) mktSamplesFee += fe[c]*f; });
+      const nv = FX.day[r.iso] && FX.day[r.iso].nonrev; if(!nv) return;
       Object.keys(nv.cats).forEach(c=>{
         const ch = NONREV_CH[c] || 'shopify', f = Fm ? (Fm[ch]||0) : 1; if(!(f>0)) return;
         const v = nv.cats[c], b = mktSamplesBy[c] = mktSamplesBy[c] || {cost:0, units:0, unpriced:0};
         b.cost += v.cost*f; b.units += v.units*f; b.unpriced += v.unpriced*f;
         mktSamples += v.cost*f; mktSamplesUnits += v.units*f; mktSamplesUnpriced += v.unpriced*f; mktSamplesCh[ch] = (mktSamplesCh[ch]||0) + v.cost*f;
-        mktSamplesFee += ((NRD.fee[r.iso]||{})[c]||0)*f; hit = true;
+        hit = true;
       });
       if(hit) mktSamplesDays++;
     }); }
