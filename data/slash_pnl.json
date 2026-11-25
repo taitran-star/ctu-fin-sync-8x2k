@@ -1,23 +1,23 @@
 {
  "schema": 1,
- "generated_at": "2026-11-24T23:17:25Z",
+ "generated_at": "2026-11-25T13:37:52Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
-  "to": "2026-11-24",
+  "to": "2026-11-25",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 3333,
-  "charges": 805,
+  "transactions_read": 3341,
+  "charges": 807,
   "stats": {
-   "status:posted": 2535,
+   "status:posted": 2541,
    "rail:rtp": 11,
-   "rail:ach": 904,
+   "rail:ach": 905,
    "rail:fee": 103,
    "rail:wire": 32,
-   "status:failed": 797,
-   "rail:card": 1839,
-   "rail:other": 444,
+   "status:failed": 799,
+   "rail:card": 1844,
+   "rail:other": 446,
    "status:pending": 1
   },
   "lines": {
@@ -199,12 +199,12 @@
    "ADS_CARD": 364547.73,
    "DSP": 8500.0,
    "KLV": 5775.0,
-   "MC": 8049.74,
+   "MC": 8248.94,
    "MT": 2801.26,
    "SBW": 3500.0,
    "SHOP": 8370.33,
    "SUP": 24326.32,
-   "SW": 1354.6,
+   "SW": 1408.6,
    "TAX": 2775.0,
    "UPW": 2114.43
   }
@@ -304,12 +304,12 @@
   "2026-11": {
    "DSP": 8500.0,
    "KLV": 5775.0,
-   "MC": 7250.57,
+   "MC": 7449.77,
    "MT": 3114.02,
    "SBW": 3500.0,
    "SHOP": 8370.33,
    "SUP": 24326.32,
-   "SW": 1354.6,
+   "SW": 1408.6,
    "TAX": 2831.26,
    "UPW": 2114.43
   },
@@ -366,7 +366,7 @@
   }
  },
  "pending": {
-  "SHOP": -47251.37
+  "MC": 99.6
  },
  "charges": [
   {
@@ -7463,6 +7463,14 @@
   },
   {
    "d": "2026-11-24",
+   "v": "Atlassian",
+   "l": "SW",
+   "a": 54.0,
+   "k": "card",
+   "cy": "M"
+  },
+  {
+   "d": "2026-11-24",
    "v": "Figma",
    "l": "MT",
    "a": 62.42,
@@ -7482,6 +7490,14 @@
    "v": "Higgsfield",
    "l": "MC",
    "a": 233.75,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-11-24",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 199.2,
    "k": "card",
    "cy": "U"
   },
