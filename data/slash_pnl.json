@@ -1,24 +1,24 @@
 {
  "schema": 1,
- "generated_at": "2026-11-25T22:49:14Z",
+ "generated_at": "2026-11-26T13:37:43Z",
  "meta": {
   "source": "Slash API (read-only key)",
   "script_version": "1.4",
   "from": "2026-04-01",
-  "to": "2026-11-25",
+  "to": "2026-11-26",
   "timezone": "America/Los_Angeles",
-  "transactions_read": 3345,
-  "charges": 809,
+  "transactions_read": 3355,
+  "charges": 810,
   "stats": {
-   "status:posted": 2543,
+   "status:posted": 2547,
    "rail:rtp": 11,
-   "rail:ach": 906,
+   "rail:ach": 908,
    "rail:fee": 103,
-   "rail:wire": 32,
-   "status:failed": 800,
-   "rail:card": 1847,
-   "rail:other": 446,
-   "status:pending": 2
+   "rail:wire": 34,
+   "status:failed": 802,
+   "rail:card": 1851,
+   "rail:other": 448,
+   "status:pending": 6
   },
   "lines": {
    "SHOP": "Shopify plan + apps billed by Shopify",
@@ -199,7 +199,7 @@
    "ADS_CARD": 364547.73,
    "DSP": 8500.0,
    "KLV": 5775.0,
-   "MC": 8348.54,
+   "MC": 8547.74,
    "MT": 2801.26,
    "SBW": 3500.0,
    "SHOP": 8370.33,
@@ -304,7 +304,7 @@
   "2026-11": {
    "DSP": 8500.0,
    "KLV": 5775.0,
-   "MC": 7549.37,
+   "MC": 7748.57,
    "MT": 3114.02,
    "SBW": 3500.0,
    "SHOP": 8370.33,
@@ -7519,6 +7519,14 @@
   },
   {
    "d": "2026-11-25",
+   "v": "Higgsfield",
+   "l": "MC",
+   "a": 199.2,
+   "k": "card",
+   "cy": "U"
+  },
+  {
+   "d": "2026-11-25",
    "v": "Squarespace / Google Workspace",
    "l": "SW",
    "a": 24.83,
@@ -7610,6 +7618,12 @@
    "v": "Amazon",
    "m": "2026-10",
    "a": 1.12,
+   "n": 1
+  },
+  {
+   "v": "METAPAY*SUBS",
+   "m": "2026-11",
+   "a": 399.0,
    "n": 1
   },
   {
