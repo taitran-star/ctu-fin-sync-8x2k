@@ -18383,44 +18383,49 @@
     },
     "2026-11-27": {
       "by_event_code": {
+        "T0006": {
+          "amount": 142.87,
+          "count": 1,
+          "fee": -7.62
+        },
         "T0400": {
           "amount": -5037.05,
           "count": 1,
           "fee": 0.0
         }
       },
-      "fees": 0,
+      "fees": 7.62,
       "fees_credited": 0,
       "other": 0,
-      "payments": 0,
-      "payments_count": 0,
+      "payments": 142.87,
+      "payments_count": 1,
       "refunds": 0,
       "refunds_count": 0,
-      "transactions": 1,
+      "transactions": 2,
       "withdrawals": 5037.05
     }
   },
-  "generated_at": "2026-11-27T12:37:21Z",
+  "generated_at": "2026-11-27T13:07:18Z",
   "meta": {
     "api_requests": 5,
     "api_retries": 0,
     "counts": {
-      "transactions_counted": 1644,
+      "transactions_counted": 1645,
       "transactions_duplicate": 0,
       "transactions_not_success": 13,
       "transactions_outside_window": 12,
-      "transactions_seen": 1669,
+      "transactions_seen": 1670,
       "transactions_without_date": 0
     },
     "currencies_seen": {
       "CAD": 27,
-      "USD": 3171
+      "USD": 3173
     },
     "event_codes_seen": {
       "T0000": 1,
       "T0001": 1,
       "T0003": 60,
-      "T0006": 1485,
+      "T0006": 1486,
       "T0114": 2,
       "T0200": 22,
       "T0300": 5,
@@ -18457,43 +18462,43 @@
     "script_version": "1.0",
     "slices": 2,
     "warnings": [
-      "transactions in currencies other than USD were summed as-is: {'USD': 3171, 'CAD': 27}"
+      "transactions in currencies other than USD were summed as-is: {'USD': 3173, 'CAD': 27}"
     ]
   },
   "source": "paypal_transaction_search",
   "timezone": "America/Los_Angeles",
   "totals": {
     "last_30d": {
-      "fees": 6343.02,
+      "fees": 6350.64,
       "fees_credited": 12.27,
       "other": -542.06,
-      "payments": 155371.75,
-      "payments_count": 1269,
+      "payments": 155514.62,
+      "payments_count": 1270,
       "refunds": 3205.02,
       "refunds_count": 30,
-      "transactions": 1345,
+      "transactions": 1346,
       "withdrawals": 146719.24
     },
     "mtd": {
-      "fees": 5863.7,
+      "fees": 5871.32,
       "fees_credited": 11.63,
       "other": -486.06,
-      "payments": 143831.69,
-      "payments_count": 1179,
+      "payments": 143974.56,
+      "payments_count": 1180,
       "refunds": 3186.74,
       "refunds_count": 29,
-      "transactions": 1245,
+      "transactions": 1246,
       "withdrawals": 137829.97
     },
     "today": {
-      "fees": 0,
+      "fees": 7.62,
       "fees_credited": 0,
       "other": 0,
-      "payments": 0,
-      "payments_count": 0,
+      "payments": 142.87,
+      "payments_count": 1,
       "refunds": 0,
       "refunds_count": 0,
-      "transactions": 1,
+      "transactions": 2,
       "withdrawals": 5037.05
     }
   },
